@@ -15,6 +15,11 @@ setup(
     description='Reader, processor, and viewer of MINFLUX raw data.',
     license='TBD',
     packages=find_packages(),
-    install_requires=['numpy >= 1.20.0', 'pandas >= 1.2.0', 'pptk >= 0.1.0'],
+    install_requires=[
+        'numpy >= 1.20.0',
+        'pandas >= 1.2.0',
+        'pptk >= 0.1.0',
+        'open3d >= 0.12.0',
+    ],
     python_requires='>=3.6, <3.8',
 )
