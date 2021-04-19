@@ -4,11 +4,18 @@ from pathlib import Path
 from typing import Union
 
 
-def get_colors_for_unique_ids(ids: Union[pd.Series, np.ndarray]) -> np.ndarray:
+def get_colors_for_unique_ids(
+        ids: Union[pd.Series, np.ndarray],
+        make_unique: bool = False
+) -> np.ndarray:
     """Return an Nx3 matrix of RGB colors in the range 0.0 ... 1.0 for all unique ids in `ids`
 
     @param ids: Union[pd.Series, np.ndarray]
-        Series or array of ids, that may contain reperitions.
+        Series or array of ids, that may contain repetitions.
+
+    @param make_unique: bool
+        Set to True to make unique (one row per ID) or False to map a unique
+        color to each of the original IDs vector.
 
     @return np.ndarray
         Nx3 matrix of RGB colors in the range 0.0 ... 1.0.
@@ -17,23 +24,42 @@ def get_colors_for_unique_ids(ids: Union[pd.Series, np.ndarray]) -> np.ndarray:
     # Get the list of unique IDs
     u_ids = np.unique(ids)
 
-    # Allocate the matrix of colors
-    colors = np.zeros((len(ids), 3), dtype=np.float64)
+    if make_unique:
 
-    for id in u_ids:
-        i = np.where(ids == id)
-        colors[i, 0] = np.random.rand(1)
-        colors[i, 1] = np.random.rand(1)
-        colors[i, 2] = np.random.rand(1)
+        # Allocate the matrix of colors
+        colors = np.zeros((len(u_ids), 3), dtype=np.float64)
+
+        for i in range(len(u_ids)):
+            colors[i, 0] = np.random.rand(1)
+            colors[i, 1] = np.random.rand(1)
+            colors[i, 2] = np.random.rand(1)
+
+    else:
+        # Allocate the matrix of colors
+        colors = np.zeros((len(ids), 3), dtype=np.float64)
+
+        for id in u_ids:
+            i = np.where(ids == id)
+            colors[i, 0] = np.random.rand(1)
+            colors[i, 1] = np.random.rand(1)
+            colors[i, 2] = np.random.rand(1)
 
     return colors
 
 
-def process_minflux_file(filename: Union[Path, str], verbose: bool = False) -> Union[pd.DataFrame, None]:
+def process_minflux_file(
+        filename: Union[Path, str],
+        scaling_factor: float = 1e9,
+        verbose: bool = False
+) -> Union[pd.DataFrame, None]:
     """Load the MINFLUX .npy file and extract the valid hits.
 
     @param filename: Union[Path, str]
         Full path of the .npy file to process.
+
+    @param scaling_factor: float
+        Scaling factor for the hit coordinates. Default is 1e9 since the coordinates appear to be
+        saved in meters at the resolution of 1 nm.
 
     @param verbose: bool (Optional, default: False)
         Set to True to display verbose information. Otherwise, the function is silent.
@@ -81,9 +107,9 @@ def process_minflux_file(filename: Union[Path, str], verbose: bool = False) -> U
 
     # Store the extracted valid hits into the dataframe
     hits_df["tid"] = tid
-    hits_df["x"] = loc[:, 0] * 1e9
-    hits_df["y"] = loc[:, 1] * 1e9
-    hits_df["z"] = loc[:, 2] * 1e9
+    hits_df["x"] = loc[:, 0] * scaling_factor
+    hits_df["y"] = loc[:, 1] * scaling_factor
+    hits_df["z"] = loc[:, 2] * scaling_factor
     hits_df["tim"] = tim
 
     if verbose:

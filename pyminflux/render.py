@@ -1,5 +1,8 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import open3d as o3d
+import pandas as pd
+from pathlib import Path
 import pptk
 from typing import Union
 
@@ -98,3 +101,88 @@ def render_o3d(
 
     # Blocking
     vis.run()
+
+
+def render_mpl(
+        points: pd.DataFrame,
+        colors: Union[np.ndarray, None] = None,
+        filename: Union[Path, str, None] = None,
+        point_size: float = 1.0,
+        plot_trajectories: bool = False
+):
+    """Render the points with the passed colors using MATPLOTLIB.
+
+    @param filename: np.ndarray
+        Nx3 matrix of coordinates [x, y, z]N
+
+    @param points: Union[Path, str, None] (optional, default = None)
+        Filename for saving the plot. If not set (or None), the plot will only be shown.
+
+    @param colors: np.ndarray (optional, default = None)
+        Nx3 matrix of coordinates [x, y, z]N. If omitted, all points will be painted white.
+
+    @param colors: np.ndarray (optional, default = None)
+        Nx3 matrix of coordinates [x, y, z]N. If omitted, all points will be painted white.
+
+    @param point_size: float
+        Scaling factor for the points.
+
+    @param plot_trajectories: bool (optional, default = False)
+        Set to True to connect consecutive dots for a given 'tid' with a line;
+        use to plot tracking experiments.
+    """
+
+    # Make sure that the points are sorted by track identifier first and time second.
+    sorted_points = points.sort_values(by=['tid', 'tim'])
+
+    # Do we plot trajectories or individual points?
+    if plot_trajectories:
+        line_style = '-'
+        line_width = 0.25
+        marker = None
+        marker_size = 0
+    else:
+        line_style = None
+        line_width = 0.0
+        marker = '.'
+        marker_size = point_size
+
+    # Plot using MATPLOTLIB
+    fig, ax = plt.subplots()
+    ids = sorted_points['tid'].unique()
+
+    for i, id in enumerate(ids):
+
+        # Get the points for current id
+        tmp = sorted_points[sorted_points['tid'] == id]
+
+        # Define the colors
+        if colors is not None:
+            try:
+                color = colors[i, :]
+            except:
+                color = [0.0, 0.0, 0.0]
+        else:
+            color = [0.0, 0.0, 0.0]
+
+        # Plot
+        ax.plot(
+            tmp['x'],
+            tmp['y'],
+            linestyle=line_style,
+            linewidth=line_width,
+            marker=marker,
+            markersize=marker_size,
+            label=str(id),
+            color=color
+        )
+
+    ax.legend(loc="best", fontsize="xx-small")
+    ax.invert_yaxis()
+
+    if filename is not None:
+        try:
+            fig.savefig(filename, dpi=1200)
+            plt.close(fig)
+        except:
+            print(f"Could not save plot to {filename}.")
