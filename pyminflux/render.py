@@ -1,3 +1,4 @@
+from matplotlib.collections import LineCollection
 import matplotlib.pyplot as plt
 import numpy as np
 import open3d as o3d
@@ -108,14 +109,18 @@ def render_mpl(
         colors: Union[np.ndarray, None] = None,
         filename: Union[Path, str, None] = None,
         point_size: float = 1.0,
-        plot_trajectories: bool = False
+        plot_trajectories: bool = False,
+        legend: bool = True,
+        axes: bool = True,
+        dpi: int = 1200,
+        skip_ids: tuple = ()
 ):
     """Render the points with the passed colors using MATPLOTLIB.
 
-    @param filename: np.ndarray
+    @param points: np.ndarray
         Nx3 matrix of coordinates [x, y, z]N
 
-    @param points: Union[Path, str, None] (optional, default = None)
+    @param filename: Union[Path, str, None] (optional, default = None)
         Filename for saving the plot. If not set (or None), the plot will only be shown.
 
     @param colors: np.ndarray (optional, default = None)
@@ -130,6 +135,15 @@ def render_mpl(
     @param plot_trajectories: bool (optional, default = False)
         Set to True to connect consecutive dots for a given 'tid' with a line;
         use to plot tracking experiments.
+
+    @param legend: bool (optional, default = True)
+        Set to True to add the plot legend.
+
+    @param axes: bool (optional, default = True)
+        Set to True to show the axes.
+
+    @param dpi: int (optional, default = 1200)
+        Resolution of the rendered plot.
     """
 
     # Make sure that the points are sorted by track identifier first and time second.
@@ -152,6 +166,9 @@ def render_mpl(
     ids = sorted_points['tid'].unique()
 
     for i, id in enumerate(ids):
+
+        if id in skip_ids:
+            continue
 
         # Get the points for current id
         tmp = sorted_points[sorted_points['tid'] == id]
@@ -177,12 +194,89 @@ def render_mpl(
             color=color
         )
 
-    ax.legend(loc="best", fontsize="xx-small")
+    if legend:
+        ax.legend(loc="best", fontsize="xx-small")
+
     ax.invert_yaxis()
+    ax.axis('equal')
+
+    if not axes:
+        ax.set_axis_off()
 
     if filename is not None:
         try:
-            fig.savefig(filename, dpi=1200)
+            format = Path(filename).suffix[1:]
+            fig.savefig(filename, dpi=dpi, format=format)
             plt.close(fig)
         except:
             print(f"Could not save plot to {filename}.")
+            plt.show()
+    else:
+        plt.show()
+
+
+def plot_time_encoded_trajectory_mpl(
+        points: pd.DataFrame,
+        tid: int,
+        filename: Union[Path, str, None] = None,
+        axes: bool = True,
+        dpi: int = 1200
+):
+    """Plot a time-encoded trajectory for requested ID using MATPLOTLIB.
+
+    @param points: np.ndarray
+        Nx3 matrix of coordinates [x, y, z]N
+
+    @param tid: int
+        Trajectory id ('tid') to plot.
+
+    @param filename: Union[Path, str, None] (optional, default = None)
+        Filename for saving the plot. If not set (or None), the plot will only be shown.
+
+    @param axes: bool (optional, default = True)
+        Set to True to show the axes.
+
+    @param dpi: int (optional, default = 1200)
+        Resolution of the rendered plot.
+    """
+
+    # Make sure that the points are sorted by track identifier first and time second.
+    sorted_points = points.sort_values(by=['tid', 'tim'])
+
+    # Only consider requested trajectory id
+    points_tid = sorted_points[sorted_points["tid"] == tid].copy()
+
+    # Extract needed data and prepare it for plotting
+    x = points_tid["x"].values
+    y = points_tid["y"].values
+    time = points_tid["tim"].values
+    points_reshaped = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points_reshaped[:-1], points_reshaped[1:]], axis=1)
+
+    # Create a continuous norm to map from data points to colors
+    norm = plt.Normalize(time.min(), time.max())
+    lc = LineCollection(segments, cmap='Blues', norm=norm)
+    # Set the values used for colormapping
+    lc.set_array(time)
+    lc.set_linewidth(2)
+
+    # Prepare the plot
+    fig, ax = plt.subplots()
+    line = ax.add_collection(lc)
+    fig.colorbar(line, ax=ax)
+    ax.invert_yaxis()
+    ax.axis('equal')
+
+    if not axes:
+        ax.set_axis_off()
+
+    if filename is not None:
+        try:
+            format = Path(filename).suffix[1:]
+            fig.savefig(filename, dpi=dpi, format=format)
+            plt.close(fig)
+        except:
+            print(f"Could not save plot to {filename}.")
+            plt.show()
+    else:
+        plt.show()
