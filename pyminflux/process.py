@@ -6,7 +6,8 @@ from typing import Union
 
 def get_colors_for_unique_ids(
         ids: Union[pd.Series, np.ndarray],
-        make_unique: bool = False
+        make_unique: bool = False,
+        seed: int = 2021
 ) -> np.ndarray:
     """Return an Nx3 matrix of RGB colors in the range 0.0 ... 1.0 for all unique ids in `ids`
 
@@ -17,9 +18,16 @@ def get_colors_for_unique_ids(
         Set to True to make unique (one row per ID) or False to map a unique
         color to each of the original IDs vector.
 
+    @param seed: int
+        Seed of the random generator to make sure that the sequence of colors
+        is reproducible.
+
     @return np.ndarray
         Nx3 matrix of RGB colors in the range 0.0 ... 1.0.
     """
+
+    # Make sure the sequence of colors is preserved across runs
+    rng = np.random.default_rng(seed)
 
     # Get the list of unique IDs
     u_ids = np.unique(ids)
@@ -30,9 +38,9 @@ def get_colors_for_unique_ids(
         colors = np.zeros((len(u_ids), 3), dtype=np.float64)
 
         for i in range(len(u_ids)):
-            colors[i, 0] = np.random.rand(1)
-            colors[i, 1] = np.random.rand(1)
-            colors[i, 2] = np.random.rand(1)
+            colors[i, 0] = rng.random(1)
+            colors[i, 1] = rng.random(1)
+            colors[i, 2] = rng.random(1)
 
     else:
         # Allocate the matrix of colors
@@ -40,9 +48,9 @@ def get_colors_for_unique_ids(
 
         for id in u_ids:
             i = np.where(ids == id)
-            colors[i, 0] = np.random.rand(1)
-            colors[i, 1] = np.random.rand(1)
-            colors[i, 2] = np.random.rand(1)
+            colors[i, 0] = rng.random(1)
+            colors[i, 1] = rng.random(1)
+            colors[i, 2] = rng.random(1)
 
     return colors
 
