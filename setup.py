@@ -7,7 +7,7 @@ with open(ver_path) as ver_file:
     exec(ver_file.read(), main_ns)
 
 setup(
-    name='pyMINFLUX',
+    name='pyminflux',
     version=main_ns['__version__'],
     url='https://git.bsse.ethz.ch/pontia/pyminflux',
     author='Aaron Ponti',
