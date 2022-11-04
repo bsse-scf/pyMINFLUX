@@ -99,7 +99,9 @@ class MinFluxReader:
         df["cfr"] = cfr
 
         if not self.is_3d():
-            assert np.all(df["z"].values == 0)
+            if np.any(df["z"].values != 0):
+                valid_str = "valid" if valid else "invalid"
+                print(f"This 2D dataset seems to have '{valid_str}' z coordinates != 0.0.")
 
         return df
 
