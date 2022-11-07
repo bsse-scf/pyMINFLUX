@@ -30,6 +30,20 @@ class MinFluxReader:
         # Keep track of last error
         self.last_error: str = ""
 
+    @property
+    def num_valid_entries(self):
+        """Number of valid entries."""
+        if self.data is None:
+            return 0
+        return self.valid_entries.sum()
+
+    @property
+    def num_invalid_entries(self):
+        """Number of valid entries."""
+        if self.data is None:
+            return 0
+        return len(self.valid_entries) - self.valid_entries.sum()
+
     def load(self) -> bool:
         """Load the file."""
 
@@ -98,10 +112,16 @@ class MinFluxReader:
         df["efo"] = efo
         df["cfr"] = cfr
 
-        if not self.is_3d():
-            if np.any(df["z"].values != 0):
-                valid_str = "valid" if valid else "invalid"
-                print(f"This 2D dataset seems to have '{valid_str}' z coordinates != 0.0.")
+        # Internal control
+        num_zero_values = np.sum(df["z"].values == 0.0)
+        num_nan_values = np.sum(np.isnan(df["z"].values))
+        num_non_null_values = len(df["z"].values) - num_zero_values - num_nan_values
+        valid_str = "valid" if valid else "invalid"
+        num_dir_str = "3D" if self.is_3d() else "2D"
+
+        print(f"This {valid_str} {num_dir_str} dataset has "
+              f"{num_zero_values} 0.0 values and {num_nan_values} NaN values "
+              f"from a total of {len(df['z'].values)} ({num_non_null_values} non-zero values).")
 
         return df
 
@@ -111,8 +131,8 @@ class MinFluxReader:
             return "No file loaded."
 
         str_valid = "all valid" \
-            if len(self.data) == np.sum(self.valid_entries) else \
-            f"{np.sum(self.valid_entries)} valid"
+            if len(self.data) == self.num_valid_entries else \
+            f"{self.num_valid_entries} valid and {self.num_invalid_entries} non valid"
 
         str_acq = "3D" if self.is_3d() else "2D"
 
