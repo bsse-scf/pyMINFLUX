@@ -1,5 +1,5 @@
 .mypy_cache/
 __pycache__/
-/pyMINFLUX.egg-info/
 /.idea/
 /scratch/
+/pyminflux.egg-info/
