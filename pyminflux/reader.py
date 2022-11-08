@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import Union
 
@@ -124,15 +125,15 @@ class MinFluxReader:
         itr = self._data["itr"][indices]
         loc = itr[:, self.loc_index]["loc"]
 
-        # Calculate the mean position
-        mean_loc = np.nanmean(itr["loc"], axis=1)
-
-        # Calculate variability of localizations (std)
-        std_loc = np.nanstd(itr["loc"], axis=1)
-
-        # Count the number of valid localizations per trace (i.e. non NaN)
-        not_nan_loc = np.logical_not(np.isnan(itr["loc"][:, :, 0]))
-        valid_loc_count = np.sum(not_nan_loc, axis=1)
+        # Calculate the mean position, its deviation and the count.
+        # The following can give warning when loading "invalid" data,
+        # hence we put it in a catch_warnings() scope for now.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            mean_loc = np.nanmean(itr["loc"], axis=1)
+            std_loc = np.nanstd(itr["loc"], axis=1)
+            not_nan_loc = np.logical_not(np.isnan(itr["loc"][:, :, 0]))
+            valid_loc_count = np.sum(not_nan_loc, axis=1)
 
         # Extract the valid identifiers
         tid = self._data["tid"][indices]
