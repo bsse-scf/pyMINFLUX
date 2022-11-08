@@ -64,6 +64,11 @@ class MinFluxReader:
             return 0
         return len(self._valid_entries) - self._valid_entries.sum()
 
+    @property
+    def raw_data(self):
+        """Return the raw data."""
+        return self._data.copy()
+
     def load(self) -> bool:
         """Load the file."""
 
