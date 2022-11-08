@@ -70,7 +70,7 @@ class MinFluxReader:
             raise ValueError("No file loaded.")
         return self.data["itr"].shape[1] == 10
 
-    def process(self, valid: bool = True, scaling_factor: float = 1.0) -> pd.DataFrame:
+    def process(self, valid: bool = True, scaling_factor: float = 1.0, drop_nan: bool = True) -> pd.DataFrame:
         """Returns processed dataframe for valid (or invalid) entries."""
 
         if valid:
@@ -122,6 +122,10 @@ class MinFluxReader:
         print(f"This {valid_str} {num_dir_str} dataset has "
               f"{num_zero_values} 0.0 values and {num_nan_values} NaN values "
               f"from a total of {len(df['z'].values)} ({num_non_null_values} non-zero values).")
+
+        if drop_nan:
+            print(f"Dropping NaN values.")
+            df.dropna(axis=0, how="any", inplace=True)
 
         return df
 
