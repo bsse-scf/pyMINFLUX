@@ -16,10 +16,14 @@ setup(
     license='TBD',
     packages=find_packages(),
     install_requires=[
-        'numpy >= 1.20.0',
-        'pandas >= 1.2.0',
-        'pptk >= 0.1.0',
-        'open3d >= 0.12.0',
+        'jupyter',
+        'matplotlib',
+        'numpy',
+        'pandas',
+        'PySide6',
+        'pyqtgraph',
+        'scipy',
+        'scikit-learn'
     ],
-    python_requires='>=3.6, <3.8',
+    python_requires='>=3.9',
 )
