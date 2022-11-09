@@ -20,7 +20,7 @@ setup(
         'matplotlib',
         'numpy',
         'pandas',
-        'PySide6',
+        'pyqt5',
         'pyqtgraph',
         'scipy',
         'scikit-learn'
