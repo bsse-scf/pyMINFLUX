@@ -4,6 +4,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 
 class MinFluxReader:
@@ -22,6 +23,7 @@ class MinFluxReader:
 
         # Initialize the data
         self._data = None
+        self._data_df = None
         self._valid_entries = None
 
     @property
@@ -30,6 +32,16 @@ class MinFluxReader:
         if self._data is None:
             raise ValueError("No data loaded.")
         return self._data["itr"].shape[1] == 10
+
+    @property
+    def reps(self):
+        """Returns the number of repetitions per individual trace."""
+        if self._data is None:
+            raise ValueError("No data loaded.")
+        if self.is_3d:
+            return 10
+        else:
+            return 5
 
     @property
     def loc_index(self):
@@ -72,9 +84,19 @@ class MinFluxReader:
         return len(self._valid_entries) - self._valid_entries.sum()
 
     @property
-    def raw_data(self):
+    def raw_data(self) -> Union[None, np.ndarray]:
         """Return the raw data."""
+        if self._data is None:
+            return None
         return self._data.copy()
+
+    @property
+    def raw_data_df(self) -> Union[None, pd.DataFrame]:
+        """Return the raw data as dataframe."""
+        if self._data_df is not None:
+            return self._data_df
+        self._data_df = self._process_all()
+        return self._data_df
 
     def load(self) -> bool:
         """Load the file."""
@@ -95,8 +117,101 @@ class MinFluxReader:
         # Return success
         return True
 
+    def process_id(self, tid: int) -> tuple:
+        """Returns dataframe of measurements for given ID.
+
+        Parameters
+        ----------
+
+        tid: int
+            Id of the trace to process.
+
+        Returns
+        -------
+
+        vld: np.ndarray (Nx5) for 2D, (Nx10) for 3D
+            Valid flags for the localizations in the trace
+
+        tim: np.ndarray (1xN)
+            Timepoints
+
+        loc: np.ndarray (Nx5x3) for 2D, (Nx10x3) for 3D
+            Localization coordinates
+
+        n_loc: np.ndarray (Nx1)
+            Number of non-NaN localizations per trace
+
+        efo: np.ndarray (Nx5) for 2D, (Nx10) for 3D
+            EFO meaurements
+
+        n_efo: np.ndarray (Nx1)
+            Number of non-NaN EFO measurements per trace
+
+        cfr: np.ndarray (Nx5) for 2D, (Nx10) for 3D
+            CFR meaurements
+
+        n_cfr: np.ndarray (Nx1)
+            Number of non-NaN CFR measurements per trace
+
+        dcr: np.ndarray (Nx5) for 2D, (Nx10) for 3D
+            DCR meaurements
+
+        n_dcr: np.ndarray (Nx1)
+            Number of non-NaN DCR measurements per trace
+        """
+
+        data = self._data[self._data["tid"] == tid]
+        if len(data) == 0:
+            print(f"No trace with ID {tid} found in the data.")
+            return None, None, None, None, None, None, None, None, None, None
+
+        # Extract the valid time points
+        tim = data["tim"]
+
+        # Extract valid flags for these trace
+        vld = data["vld"]
+
+        # Extract the localizations for the valid iterations and
+        # count how many valid localizations there are for each trace
+        loc = data["itr"]["loc"]
+        n_loc = np.logical_not(np.isnan(loc))[:, :, 0].sum(axis=1)
+
+        # Extract EFO
+        efo = data["itr"]["efo"]
+        n_efo = np.logical_not(np.isnan(efo)).sum(axis=1)
+
+        # Extract CFR
+        cfr = data["itr"]["cfr"]
+        n_cfr = np.logical_not(np.isnan(cfr)).sum(axis=1)
+
+        # Extract DCR
+        dcr = data["itr"]["dcr"]
+        n_dcr = np.logical_not(np.isnan(dcr)).sum(axis=1)
+
+        return vld, tim, loc, n_loc, efo, n_efo, cfr, n_cfr, dcr, n_dcr
+
+    def save_full_dataframe(self, out_file: Union[Path, str]):
+        """Convert (if needed) and save the full dataframe to disk.
+
+        Note: these are the exported dataframe columns:
+
+        "tid", "aid", "vld", "tim", "x", "y", "z", "efo", "cfr", "dcr"
+        """
+
+        # Prepare the output file
+        out_dir = Path(out_file).parent
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        # This will create the dataframe if needed
+        df = self.raw_data_df
+
+        # Save
+        df.to_csv(out_file, index=False, header=True, na_rep="nan", encoding="utf-8")
+
     def process(self, valid: bool = True, drop_nan: bool = True) -> pd.DataFrame:
         """Returns processed dataframe for valid (or invalid) entries.
+
+        **NOTE** This does not currently work correctly!
 
         Parameters
         ----------
@@ -110,7 +225,12 @@ class MinFluxReader:
         **Notes**:
 
         * Even for traces marked as valid, CFR values seem to only make sense if DCR values are not NaN!
-        * Should 'sta' be used 'instead' of 'valid' for valid localizations?
+
+        Returns
+        -------
+
+        df: pd.DataFrame
+            Processed and filtered data as DataFrame.
         """
 
         if valid:
@@ -203,6 +323,118 @@ class MinFluxReader:
             print(f"Dropping NaN values.")
             df.dropna(axis=0, how="any", inplace=True)
             df.reset_index(drop=True, inplace=True)
+
+        return df
+
+    def _process_all(self) -> Union[None, pd.DataFrame]:
+        """Return raw data arranged into a dataframe."""
+        if self._data is None:
+            return None
+
+        # Intialize output dataframe
+        df = pd.DataFrame(
+            columns=[
+                "tid",
+                "aid",
+                "vld",
+                "tim",
+                "x",
+                "y",
+                "z",
+                "efo",
+                "cfr",
+                "dcr",
+            ],
+        )
+
+        # Allocate space for the columns
+        n_rows = len(self._data) * self.reps
+        tid = np.empty(shape=(n_rows, ), dtype=np.int32)
+        aid = np.empty(shape=(n_rows, ), dtype=np.int32)
+        vld = np.empty(shape=(n_rows, ), dtype=bool)
+        tim = np.empty(shape=(n_rows, ), dtype=float)
+        x = np.empty(shape=(n_rows, ), dtype=float)
+        y = np.empty(shape=(n_rows, ), dtype=float)
+        z = np.empty(shape=(n_rows, ), dtype=float)
+        efo = np.empty(shape=(n_rows, ), dtype=float)
+        cfr = np.empty(shape=(n_rows, ), dtype=float)
+        dcr = np.empty(shape=(n_rows, ), dtype=float)
+
+        # Get all unique TIDs
+        tids = np.unique(self._data["tid"])
+
+        # Keep track of the index at the beginning of each iteration
+        index = 0
+
+        for c_tid in tqdm(tids):
+
+            # Get data for current TID
+            data = self._data[self._data["tid"] == c_tid]
+
+            # Build the artificial IDs: one for each of the
+            # traces that share the same TID
+            c_aid = np.repeat(np.arange(len(data)), self.reps)
+
+            # Keep track of the number of elements that will be added
+            # to each column in this iteration
+            n_els = len(c_aid)
+
+            # Add the artificial IDs
+            aid[index: index + n_els] = c_aid
+
+            # Timepoints
+            c_tim = np.repeat(data["tim"], self.reps)
+            tim[index: index + n_els] = c_tim
+
+            # Extract valid flags
+            c_vld = np.repeat(data["vld"], self.reps)
+            vld[index: index + n_els] = c_vld
+
+            # Extract the localizations from the iterations
+            internal_index = index
+            for c_loc in data["itr"]["loc"]:
+                x[internal_index: internal_index + self.reps] = c_loc[:, 0]
+                y[internal_index: internal_index + self.reps] = c_loc[:, 1]
+                z[internal_index: internal_index + self.reps] = c_loc[:, 2]
+                internal_index += self.reps
+
+            # Extract EFO
+            internal_index = index
+            for c_efo in data["itr"]["efo"]:
+                efo[internal_index: internal_index + self.reps] = c_efo
+                internal_index += self.reps
+
+            # Extract CFR
+            internal_index = index
+            for c_cfr in data["itr"]["cfr"]:
+                cfr[internal_index: internal_index + self.reps] = c_cfr
+                internal_index += self.reps
+
+            # Extract DCR
+            internal_index = index
+            for c_dcr in data["itr"]["dcr"]:
+                dcr[internal_index: internal_index + self.reps] = c_dcr
+                internal_index += self.reps
+
+            # Add the tid
+            tid[index: index + n_els] = c_tid * np.ones(np.shape(c_aid))
+
+            # Update the starting index
+            index += n_els
+
+            assert index <= n_rows
+
+        # Build the dataframe
+        df["tid"] = tid
+        df["aid"] = aid
+        df["vld"] = vld
+        df["tim"] = tim
+        df["x"] = x
+        df["y"] = y
+        df["z"] = z
+        df["efo"] = efo
+        df["cfr"] = cfr
+        df["dcr"] = dcr
 
         return df
 
