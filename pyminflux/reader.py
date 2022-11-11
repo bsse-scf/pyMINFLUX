@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from pyminflux.processor.processor import process_raw_data_cython
+
 
 class MinFluxReader:
     def __init__(self, filename: Union[Path, str]):
@@ -423,6 +425,55 @@ class MinFluxReader:
             index += n_els
 
             assert index <= n_rows
+
+        # Build the dataframe
+        df["tid"] = tid
+        df["aid"] = aid
+        df["vld"] = vld
+        df["tim"] = tim
+        df["x"] = x
+        df["y"] = y
+        df["z"] = z
+        df["efo"] = efo
+        df["cfr"] = cfr
+        df["dcr"] = dcr
+
+        return df
+
+    def process_cython(self):
+        """Try running the Cython code."""
+
+        if self._data is None:
+            return None
+
+        # Intialize output dataframe
+        df = pd.DataFrame(
+            columns=[
+                "tid",
+                "aid",
+                "vld",
+                "tim",
+                "x",
+                "y",
+                "z",
+                "efo",
+                "cfr",
+                "dcr",
+            ],
+        )
+
+        # Process tha data array in cython
+        tid, aid, vld, tim, x, y, z, efo, cfr, dcr = process_raw_data_cython(self._data, self.is_3d)
+        tid = np.asarray(tid)
+        aid = np.asarray(aid)
+        vld = np.asarray(vld, dtype=bool)
+        tim = np.asarray(tim)
+        x = np.asarray(x)
+        y = np.asarray(y)
+        z = np.asarray(z)
+        efo = np.asarray(efo)
+        cfr = np.asarray(cfr)
+        dcr = np.asarray(dcr)
 
         # Build the dataframe
         df["tid"] = tid
