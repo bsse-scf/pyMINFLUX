@@ -4,13 +4,20 @@ from setuptools.extension import Extension
 from numpy import get_include
 from Cython.Build import cythonize
 import sysconfig
+import os
+
 
 extra_compile_args = sysconfig.get_config_var('CFLAGS')
 if extra_compile_args is not None:
     extra_compile_args = extra_compile_args.split()
 else:
     extra_compile_args = []
-extra_compile_args += ["/O3"]
+
+if os.name == 'nt':
+    extra_compile_args += ["/O3"]
+else:
+    extra_compile_args += ["-O3"]
+
 
 main_ns = {}
 ver_path = convert_path('pyminflux/version.py')
