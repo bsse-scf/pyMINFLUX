@@ -55,21 +55,21 @@ class MinFluxReader:
         """Return the index of the iteration from which to extract the CFR."""
         if self._data is None:
             raise ValueError("No data loaded.")
-        return 5 if self.is_3d else 2
+        return 6 if self.is_3d else 3
 
     @property
     def dcr_index(self):
         """Return the index of the iteration from which to extract the DCR."""
         if self._data is None:
             raise ValueError("No data loaded.")
-        return 5 if self.is_3d else 2
+        return 9 if self.is_3d else 4
 
     @property
     def efo_index(self):
         """Return the index of the iteration from which to extract the EFO."""
         if self._data is None:
             raise ValueError("No data loaded.")
-        return 8 if self.is_3d else 3
+        return 9 if self.is_3d else 4
 
     @property
     def num_valid_entries(self):
