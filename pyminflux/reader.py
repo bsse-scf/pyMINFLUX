@@ -10,7 +10,7 @@ from pyminflux.processor.processor import process_raw_data_cython
 
 
 class MinFluxReader:
-    def __init__(self, filename: Union[Path, str]):
+    def __init__(self, filename: Union[Path, str], valid: bool = True):
         """Constructor.
 
         Parameters
@@ -23,82 +23,70 @@ class MinFluxReader:
         # Store the filename
         self._filename: Path = Path(filename)
 
+        # Store the valid flag
+        self._valid = valid
+
         # Initialize the data
-        self._data = None
+        self._data_array = None
         self._data_df = None
+        self._data_full_df = None
         self._valid_entries = None
+
+        # Indices dependent on 2D or 3D acquisition
+        self._reps: int = -1
+        self._efo_index: int = -1
+        self._cfr_index: int = -1
+        self._dcr_index: int = -1
+        self._loc_index: int = -1
+
+        # Constant indices
+        self._tid_index: int = 0
+        self._tim_index: int = 0
+        self._vld_index: int = 0
 
     @property
     def is_3d(self):
         """Returns True is the acquisition is 3D, False otherwise."""
-        if self._data is None:
+        if self._data_array is None:
             raise ValueError("No data loaded.")
-        return self._data["itr"].shape[1] == 10
-
-    @property
-    def reps(self):
-        """Returns the number of repetitions per individual trace."""
-        if self._data is None:
-            raise ValueError("No data loaded.")
-        if self.is_3d:
-            return 10
-        else:
-            return 5
-
-    @property
-    def loc_index(self):
-        """Return the index of the iteration from which to extract the location."""
-        return -1
-
-    @property
-    def cfr_index(self):
-        """Return the index of the iteration from which to extract the CFR."""
-        if self._data is None:
-            raise ValueError("No data loaded.")
-        return 6 if self.is_3d else 3
-
-    @property
-    def dcr_index(self):
-        """Return the index of the iteration from which to extract the DCR."""
-        if self._data is None:
-            raise ValueError("No data loaded.")
-        return 9 if self.is_3d else 4
-
-    @property
-    def efo_index(self):
-        """Return the index of the iteration from which to extract the EFO."""
-        if self._data is None:
-            raise ValueError("No data loaded.")
-        return 9 if self.is_3d else 4
+        return self._data_array["itr"].shape[1] == 10
 
     @property
     def num_valid_entries(self):
         """Number of valid entries."""
-        if self._data is None:
+        if self._data_array is None:
             return 0
         return self._valid_entries.sum()
 
     @property
     def num_invalid_entries(self):
         """Number of valid entries."""
-        if self._data is None:
+        if self._data_array is None:
             return 0
-        return len(self._valid_entries) - self._valid_entries.sum()
+        return np.logical_not(self._valid_entries).sum()
 
     @property
     def raw_data(self) -> Union[None, np.ndarray]:
         """Return the raw data."""
-        if self._data is None:
+        if self._data_array is None:
             return None
-        return self._data.copy()
+        return self._data_array.copy()
 
     @property
-    def raw_data_df(self) -> Union[None, pd.DataFrame]:
-        """Return the raw data as dataframe."""
+    def processed_data(self) -> Union[None, pd.DataFrame]:
+        """Return the raw data as processed_data (some properties only)."""
         if self._data_df is not None:
             return self._data_df
-        self._data_df = self._process_all()
+        self._data_df = self._process()
         return self._data_df
+
+    @property
+    def raw_data_full_df(self) -> Union[None, pd.DataFrame]:
+        """Return the raw data as processed_data (some properties only)."""
+        if self._data_full_df is not None:
+            return self._data_full_df
+        self._data_full_df = self._raw_data_to_full_dataframe()
+        return self._data_full_df
 
     def load(self) -> bool:
         """Load the file."""
@@ -108,94 +96,24 @@ class MinFluxReader:
             return False
 
         try:
-            self._data = np.load(str(self._filename))
+            self._data_array = np.load(str(self._filename))
         except ValueError as e:
             print(f"Could not open {self._filename}: {e}")
             return False
 
         # Store a logical array with the valid entries
-        self._valid_entries = self._data["vld"]
+        self._valid_entries = self._data_array["vld"]
+
+        # Set all relevant indices
+        self._set_all_indices()
 
         # Return success
         return True
 
-    def process_id(self, tid: int) -> tuple:
-        """Returns dataframe of measurements for given ID.
+    def save_raw_data_full_dataframe(self, out_file: Union[Path, str]):
+        """Convert (if needed) and save the full processed_data to disk.
 
-        Parameters
-        ----------
-
-        tid: int
-            Id of the trace to process.
-
-        Returns
-        -------
-
-        vld: np.ndarray (Nx5) for 2D, (Nx10) for 3D
-            Valid flags for the localizations in the trace
-
-        tim: np.ndarray (1xN)
-            Timepoints
-
-        loc: np.ndarray (Nx5x3) for 2D, (Nx10x3) for 3D
-            Localization coordinates
-
-        n_loc: np.ndarray (Nx1)
-            Number of non-NaN localizations per trace
-
-        efo: np.ndarray (Nx5) for 2D, (Nx10) for 3D
-            EFO meaurements
-
-        n_efo: np.ndarray (Nx1)
-            Number of non-NaN EFO measurements per trace
-
-        cfr: np.ndarray (Nx5) for 2D, (Nx10) for 3D
-            CFR meaurements
-
-        n_cfr: np.ndarray (Nx1)
-            Number of non-NaN CFR measurements per trace
-
-        dcr: np.ndarray (Nx5) for 2D, (Nx10) for 3D
-            DCR meaurements
-
-        n_dcr: np.ndarray (Nx1)
-            Number of non-NaN DCR measurements per trace
-        """
-
-        data = self._data[self._data["tid"] == tid]
-        if len(data) == 0:
-            print(f"No trace with ID {tid} found in the data.")
-            return None, None, None, None, None, None, None, None, None, None
-
-        # Extract the valid time points
-        tim = data["tim"]
-
-        # Extract valid flags for these trace
-        vld = data["vld"]
-
-        # Extract the localizations for the valid iterations and
-        # count how many valid localizations there are for each trace
-        loc = data["itr"]["loc"]
-        n_loc = np.logical_not(np.isnan(loc))[:, :, 0].sum(axis=1)
-
-        # Extract EFO
-        efo = data["itr"]["efo"]
-        n_efo = np.logical_not(np.isnan(efo)).sum(axis=1)
-
-        # Extract CFR
-        cfr = data["itr"]["cfr"]
-        n_cfr = np.logical_not(np.isnan(cfr)).sum(axis=1)
-
-        # Extract DCR
-        dcr = data["itr"]["dcr"]
-        n_dcr = np.logical_not(np.isnan(dcr)).sum(axis=1)
-
-        return vld, tim, loc, n_loc, efo, n_efo, cfr, n_cfr, dcr, n_dcr
-
-    def save_full_dataframe(self, out_file: Union[Path, str]):
-        """Convert (if needed) and save the full dataframe to disk.
-
-        Note: these are the exported dataframe columns:
+        Note: these are the exported processed_data columns:
 
         "tid", "aid", "vld", "tim", "x", "y", "z", "efo", "cfr", "dcr"
         """
@@ -204,86 +122,56 @@ class MinFluxReader:
         out_dir = Path(out_file).parent
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        # This will create the dataframe if needed
-        df = self.raw_data_df
+        # This will create the processed_data if needed
+        df = self.raw_data_full_df
 
         # Save
         df.to_csv(out_file, index=False, header=True, na_rep="nan", encoding="utf-8")
 
-    def process(self, valid: bool = True, drop_nan: bool = True) -> pd.DataFrame:
-        """Returns processed dataframe for valid (or invalid) entries.
-
-        **NOTE** This does not currently work correctly!
-
-        Parameters
-        ----------
-
-        valid: bool
-            Whether to return valid (or invalid) entries. See note below.
-
-        drop_nan: bool
-            Whether to drop rows with NaNs from the dataframe.
-
-        **Notes**:
-
-        * Even for traces marked as valid, CFR values seem to only make sense if DCR values are not NaN!
+    def _process(self) -> pd.DataFrame:
+        """Returns processed processed_data for valid (or invalid) entries.
 
         Returns
         -------
 
         df: pd.DataFrame
-            Processed and filtered data as DataFrame.
+            Processed data as DataFrame.
         """
 
-        if valid:
+        if self._valid:
             indices = self._valid_entries
         else:
             indices = np.logical_not(self._valid_entries)
 
-        # Extract the valid time points
-        tim = self._data["tim"][indices]
-
-        # Extract the localizations for the valid iterations
-        itr = self._data["itr"][indices]
-        loc = itr[:, self.loc_index]["loc"]
-
-        # Calculate the mean position, its deviation and the count.
-        # The following can give warning when loading "invalid" data,
-        # hence we put it in a catch_warnings() scope for now.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            mean_loc = np.nanmean(itr["loc"], axis=1)
-            std_loc = np.nanstd(itr["loc"], axis=1)
-            not_nan_loc = np.logical_not(np.isnan(itr["loc"][:, :, 0]))
-            valid_loc_count = np.sum(not_nan_loc, axis=1)
+        # Extract the valid iterations
+        itr = self._data_array["itr"][indices]
 
         # Extract the valid identifiers
-        tid = self._data["tid"][indices]
+        tid = self._data_array["tid"][indices]
+
+        # Extract the valid time points
+        tim = self._data_array["tim"][indices]
+
+        # Extract the locations
+        loc = itr[:, self._loc_index]["loc"]
 
         # Extract EFO
-        efo = itr[:, self.efo_index]["efo"]
+        efo = itr[:, self._efo_index]["efo"]
 
         # Extract CFR
-        cfr = itr[:, self.cfr_index]["cfr"]
+        cfr = itr[:, self._cfr_index]["cfr"]
 
         # Extract DCR
-        dcr = itr[:, self.dcr_index]["dcr"]
+        dcr = itr[:, self._dcr_index]["dcr"]
 
-        # Create a Pandas dataframe for the results
+        # Create a Pandas processed_data for the results
         df = pd.DataFrame(
-            index=pd.RangeIndex(start=0, stop=np.sum(indices)),
+            index=pd.RangeIndex(start=0, stop=len(tid)),
             columns=[
                 "tid",
                 "x",
                 "y",
                 "z",
-                "mx",
-                "my",
-                "mz",
-                "sx",
-                "sy",
-                "sz",
-                "nloc",
                 "tim",
                 "efo",
                 "cfr",
@@ -291,49 +179,30 @@ class MinFluxReader:
             ],
         )
 
-        # Store the extracted valid hits into the dataframe
+        # Store the extracted valid hits into the processed_data
         df["tid"] = tid
         df["x"] = loc[:, 0]
         df["y"] = loc[:, 1]
         df["z"] = loc[:, 2]
-        df["mx"] = mean_loc[:, 0]
-        df["my"] = mean_loc[:, 1]
-        df["mz"] = mean_loc[:, 2]
-        df["sx"] = std_loc[:, 0]
-        df["sy"] = std_loc[:, 1]
-        df["sz"] = std_loc[:, 2]
-        df["nloc"] = valid_loc_count
         df["tim"] = tim
         df["efo"] = efo
         df["cfr"] = cfr
         df["dcr"] = dcr
 
-        # Internal control
-        num_zero_values = np.sum(df["z"].values == 0.0)
-        num_nan_values = np.sum(np.isnan(df["z"].values))
-        num_non_null_values = len(df["z"].values) - num_zero_values - num_nan_values
-        valid_str = "valid" if valid else "invalid"
-        num_dir_str = "3D" if self.is_3d else "2D"
-
-        print(
-            f"This {valid_str} {num_dir_str} dataset has "
-            f"{num_zero_values} 0.0 values and {num_nan_values} NaN values "
-            f"from a total of {len(df['z'].values)} ({num_non_null_values} non-zero values)."
-        )
-
-        if drop_nan:
-            print(f"Dropping NaN values.")
-            df.dropna(axis=0, how="any", inplace=True)
-            df.reset_index(drop=True, inplace=True)
-
         return df
 
-    def _process_all(self) -> Union[None, pd.DataFrame]:
-        """Return raw data arranged into a dataframe."""
-        if self._data is None:
+    def describe(self):
+        """Calculate per-trace statistics."""
+        if self._data_df is None:
+            return None
+        print("Implement me!")
+
+    def _raw_data_to_full_dataframe(self) -> Union[None, pd.DataFrame]:
+        """Return raw data arranged into a processed_data."""
+        if self._data_array is None:
             return None
 
-        # Intialize output dataframe
+        # Intialize output processed_data
         df = pd.DataFrame(
             columns=[
                 "tid",
@@ -350,7 +219,7 @@ class MinFluxReader:
         )
 
         # Allocate space for the columns
-        n_rows = len(self._data) * self.reps
+        n_rows = len(self._data_array) * self._reps
         tid = np.empty(shape=(n_rows, ), dtype=np.int32)
         aid = np.empty(shape=(n_rows, ), dtype=np.int32)
         vld = np.empty(shape=(n_rows, ), dtype=bool)
@@ -363,7 +232,7 @@ class MinFluxReader:
         dcr = np.empty(shape=(n_rows, ), dtype=float)
 
         # Get all unique TIDs
-        tids = np.unique(self._data["tid"])
+        tids = np.unique(self._data_array["tid"])
 
         # Keep track of the index at the beginning of each iteration
         index = 0
@@ -371,11 +240,11 @@ class MinFluxReader:
         for c_tid in tqdm(tids):
 
             # Get data for current TID
-            data = self._data[self._data["tid"] == c_tid]
+            data = self._data_array[self._data_array["tid"] == c_tid]
 
             # Build the artificial IDs: one for each of the
             # traces that share the same TID
-            c_aid = np.repeat(np.arange(len(data)), self.reps)
+            c_aid = np.repeat(np.arange(len(data)), self._reps)
 
             # Keep track of the number of elements that will be added
             # to each column in this iteration
@@ -385,38 +254,38 @@ class MinFluxReader:
             aid[index: index + n_els] = c_aid
 
             # Timepoints
-            c_tim = np.repeat(data["tim"], self.reps)
+            c_tim = np.repeat(data["tim"], self._reps)
             tim[index: index + n_els] = c_tim
 
             # Extract valid flags
-            c_vld = np.repeat(data["vld"], self.reps)
+            c_vld = np.repeat(data["vld"], self._reps)
             vld[index: index + n_els] = c_vld
 
             # Extract the localizations from the iterations
             internal_index = index
             for c_loc in data["itr"]["loc"]:
-                x[internal_index: internal_index + self.reps] = c_loc[:, 0]
-                y[internal_index: internal_index + self.reps] = c_loc[:, 1]
-                z[internal_index: internal_index + self.reps] = c_loc[:, 2]
-                internal_index += self.reps
+                x[internal_index: internal_index + self._reps] = c_loc[:, 0]
+                y[internal_index: internal_index + self._reps] = c_loc[:, 1]
+                z[internal_index: internal_index + self._reps] = c_loc[:, 2]
+                internal_index += self._reps
 
             # Extract EFO
             internal_index = index
             for c_efo in data["itr"]["efo"]:
-                efo[internal_index: internal_index + self.reps] = c_efo
-                internal_index += self.reps
+                efo[internal_index: internal_index + self._reps] = c_efo
+                internal_index += self._reps
 
             # Extract CFR
             internal_index = index
             for c_cfr in data["itr"]["cfr"]:
-                cfr[internal_index: internal_index + self.reps] = c_cfr
-                internal_index += self.reps
+                cfr[internal_index: internal_index + self._reps] = c_cfr
+                internal_index += self._reps
 
             # Extract DCR
             internal_index = index
             for c_dcr in data["itr"]["dcr"]:
-                dcr[internal_index: internal_index + self.reps] = c_dcr
-                internal_index += self.reps
+                dcr[internal_index: internal_index + self._reps] = c_dcr
+                internal_index += self._reps
 
             # Add the tid
             tid[index: index + n_els] = c_tid * np.ones(np.shape(c_aid))
@@ -426,7 +295,7 @@ class MinFluxReader:
 
             assert index <= n_rows
 
-        # Build the dataframe
+        # Build the processed_data
         df["tid"] = tid
         df["aid"] = aid
         df["vld"] = vld
@@ -440,13 +309,13 @@ class MinFluxReader:
 
         return df
 
-    def process_cython(self):
+    def _raw_data_to_full_dataframe_cython(self):
         """Try running the Cython code."""
 
-        if self._data is None:
+        if self._data_array is None:
             return None
 
-        # Intialize output dataframe
+        # Intialize output processed_data
         df = pd.DataFrame(
             columns=[
                 "tid",
@@ -463,7 +332,7 @@ class MinFluxReader:
         )
 
         # Process tha data array in cython
-        tid, aid, vld, tim, x, y, z, efo, cfr, dcr = process_raw_data_cython(self._data, self.is_3d)
+        tid, aid, vld, tim, x, y, z, efo, cfr, dcr = process_raw_data_cython(self._data_array, self.is_3d)
         tid = np.asarray(tid)
         aid = np.asarray(aid)
         vld = np.asarray(vld, dtype=bool)
@@ -475,7 +344,7 @@ class MinFluxReader:
         cfr = np.asarray(cfr)
         dcr = np.asarray(dcr)
 
-        # Build the dataframe
+        # Build the processed_data
         df["tid"] = tid
         df["aid"] = aid
         df["vld"] = vld
@@ -488,15 +357,32 @@ class MinFluxReader:
         df["dcr"] = dcr
 
         return df
+    def _set_all_indices(self):
+        """Set indices of properties to be read."""
+        if self._data_array is None:
+            return False
+
+        if self.is_3d:
+            self._reps: int = 10
+            self._efo_index: int = 9
+            self._cfr_index: int = 6
+            self._dcr_index: int = 9
+            self._loc_index: int = 9
+        else:
+            self._reps: int = 5
+            self._efo_index: int = 4
+            self._cfr_index: int = 3
+            self._dcr_index: int = 4
+            self._loc_index: int = 4
 
     def __repr__(self):
         """String representation of the object."""
-        if self._data is None:
+        if self._data_array is None:
             return "No file loaded."
 
         str_valid = (
             "all valid"
-            if len(self._data) == self.num_valid_entries
+            if len(self._data_array) == self.num_valid_entries
             else f"{self.num_valid_entries} valid and {self.num_invalid_entries} non valid"
         )
 
@@ -504,7 +390,7 @@ class MinFluxReader:
 
         return (
             f"File: {self._filename.name}\n"
-            f"Number of entries: {len(self._data)} entries ({str_valid})\n"
+            f"Number of entries: {len(self._data_array)} entries ({str_valid})\n"
             f"Acquisition: {str_acq}"
         )
 
