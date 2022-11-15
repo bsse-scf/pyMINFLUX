@@ -22,6 +22,8 @@ class MinFluxReader:
 
         # Store the filename
         self._filename: Path = Path(filename)
+        if not self._filename.is_file():
+            raise IOError(f"The file {self._filename} does not seem to exist.")
 
         # Store the valid flag
         self._valid = valid
@@ -29,6 +31,7 @@ class MinFluxReader:
         # Initialize the data
         self._data_array = None
         self._data_df = None
+        self._data_df_stats = None
         self._data_full_df = None
         self._valid_entries = None
 
@@ -43,6 +46,9 @@ class MinFluxReader:
         self._tid_index: int = 0
         self._tim_index: int = 0
         self._vld_index: int = 0
+
+        # Load the file
+        self._load()
 
     @property
     def is_3d(self):
@@ -73,22 +79,31 @@ class MinFluxReader:
         return self._data_array.copy()
 
     @property
-    def processed_data(self) -> Union[None, pd.DataFrame]:
-        """Return the raw data as processed_data (some properties only)."""
+    def processed_dataframe(self) -> Union[None, pd.DataFrame]:
+        """Return the raw data as dataframe (some properties only)."""
         if self._data_df is not None:
             return self._data_df
+
         self._data_df = self._process()
         return self._data_df
 
     @property
-    def raw_data_full_df(self) -> Union[None, pd.DataFrame]:
-        """Return the raw data as processed_data (some properties only)."""
+    def processed_dataframe_stats(self) -> Union[None, pd.DataFrame]:
+        """Return some status on the processed dataframe (some properties only)."""
+        if self._data_df_stats is not None:
+            return self._data_df_stats
+        self._data_df_stats = self._calculate_statistics()
+        return self._data_df_stats
+
+    @property
+    def raw_data_dataframe(self) -> Union[None, pd.DataFrame]:
+        """Return the raw data as dataframe (some properties only)."""
         if self._data_full_df is not None:
             return self._data_full_df
         self._data_full_df = self._raw_data_to_full_dataframe()
         return self._data_full_df
 
-    def load(self) -> bool:
+    def _load(self) -> bool:
         """Load the file."""
 
         if not self._filename.is_file():
@@ -111,9 +126,9 @@ class MinFluxReader:
         return True
 
     def save_raw_data_full_dataframe(self, out_file: Union[Path, str]):
-        """Convert (if needed) and save the full processed_data to disk.
+        """Convert (if needed) and save the full raw dataframe to disk.
 
-        Note: these are the exported processed_data columns:
+        Note: these are the exported dataframe columns:
 
         "tid", "aid", "vld", "tim", "x", "y", "z", "efo", "cfr", "dcr"
         """
@@ -122,14 +137,14 @@ class MinFluxReader:
         out_dir = Path(out_file).parent
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        # This will create the processed_data if needed
-        df = self.raw_data_full_df
+        # This will create the dataframe if needed
+        df = self.raw_data_dataframe
 
         # Save
         df.to_csv(out_file, index=False, header=True, na_rep="nan", encoding="utf-8")
 
-    def _process(self) -> pd.DataFrame:
-        """Returns processed processed_data for valid (or invalid) entries.
+    def _process(self) -> Union[None, pd.DataFrame]:
+        """Returns processed dataframe for valid (or invalid) entries.
 
         Returns
         -------
@@ -137,6 +152,10 @@ class MinFluxReader:
         df: pd.DataFrame
             Processed data as DataFrame.
         """
+
+        # Do we have a data array to work on?
+        if self._data_array is None:
+            return None
 
         if self._valid:
             indices = self._valid_entries
@@ -164,7 +183,7 @@ class MinFluxReader:
         # Extract DCR
         dcr = itr[:, self._dcr_index]["dcr"]
 
-        # Create a Pandas processed_data for the results
+        # Create a Pandas dataframe for the results
         df = pd.DataFrame(
             index=pd.RangeIndex(start=0, stop=len(tid)),
             columns=[
@@ -179,7 +198,7 @@ class MinFluxReader:
             ],
         )
 
-        # Store the extracted valid hits into the processed_data
+        # Store the extracted valid hits into the dataframe
         df["tid"] = tid
         df["x"] = loc[:, 0]
         df["y"] = loc[:, 1]
@@ -191,18 +210,50 @@ class MinFluxReader:
 
         return df
 
-    def describe(self):
+    def _calculate_statistics(self):
         """Calculate per-trace statistics."""
-        if self._data_df is None:
-            return None
-        print("Implement me!")
+
+        # Make sure we have processed dataframe to work on
+        if self.processed_dataframe is None:
+            return
+
+        # Calculate some statistics per TID on the processed dataframe
+        df_grouped = self._data_df.groupby("tid")
+
+        tid = df_grouped["tid"].first().values
+        n = df_grouped["tid"].count().values
+        mx = df_grouped["x"].mean().values
+        my = df_grouped["y"].mean().values
+        mz = df_grouped["z"].mean().values
+        sx = df_grouped["x"].std().values
+        sy = df_grouped["y"].std().values
+        sz = df_grouped["z"].std().values
+
+        # Prepare a dataframe with the statistics
+        df_tid = pd.DataFrame(columns=[
+            "tid", "n", "mx", "my", "mz", "sx", "sy", "sz"
+        ])
+
+        df_tid["tid"] = tid
+        df_tid["n"] = n
+        df_tid["mx"] = mx
+        df_tid["my"] = my
+        df_tid["mz"] = mz
+        df_tid["sx"] = sx
+        df_tid["sy"] = sy
+        df_tid["sz"] = sz
+
+        # sx, sy sz columns will contain np.nan is n == 1: we replace with 0.0
+        df_tid[["sx", "sy", "sz"]] = df_tid[["sx", "sy", "sz"]].fillna(value=0.0)
+
+        return df_tid
 
     def _raw_data_to_full_dataframe(self) -> Union[None, pd.DataFrame]:
-        """Return raw data arranged into a processed_data."""
+        """Return raw data arranged into a dataframe."""
         if self._data_array is None:
             return None
 
-        # Intialize output processed_data
+        # Intialize output dataframe
         df = pd.DataFrame(
             columns=[
                 "tid",
@@ -295,7 +346,7 @@ class MinFluxReader:
 
             assert index <= n_rows
 
-        # Build the processed_data
+        # Build the dataframe
         df["tid"] = tid
         df["aid"] = aid
         df["vld"] = vld
@@ -315,7 +366,7 @@ class MinFluxReader:
         if self._data_array is None:
             return None
 
-        # Intialize output processed_data
+        # Intialize output dataframe
         df = pd.DataFrame(
             columns=[
                 "tid",
@@ -344,7 +395,7 @@ class MinFluxReader:
         cfr = np.asarray(cfr)
         dcr = np.asarray(dcr)
 
-        # Build the processed_data
+        # Build the dataframe
         df["tid"] = tid
         df["aid"] = aid
         df["vld"] = vld
