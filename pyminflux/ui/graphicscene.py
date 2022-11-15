@@ -1,8 +1,8 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QCursor
-from PyQt5.QtWidgets import QGraphicsScene, QApplication
-from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtWidgets import QGraphicsScene, QApplication
+from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtCore import pyqtSignal
 
 from .Vector import Vector
 from .Point import Point
@@ -61,8 +61,8 @@ class GraphicScene(QGraphicsScene):
         :param event: A mouse press event.
         :return: 
         """
-        if event.buttons() == Qt.LeftButton:
-            if QApplication.keyboardModifiers() == Qt.ShiftModifier:
+        if event.buttons() == Qt.MouseButton.LeftButton:
+            if QApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier:
                 x = event.scenePos().x()
                 y = event.scenePos().y()
                 self.signal_add_cell_at_position.emit(x, y)

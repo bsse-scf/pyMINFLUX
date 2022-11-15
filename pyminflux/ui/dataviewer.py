@@ -1,8 +1,9 @@
-from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSignal, QPoint
-from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtWidgets import QSizePolicy, QAbstractItemView, QAction, QMenu
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
+from PyQt6 import QtCore
+from PyQt6.QtCore import pyqtSignal, QPoint
+from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtWidgets import QSizePolicy, QAbstractItemView, QMenu
+from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
+from PyQt6.QtGui import QAction
 import numpy as np
 
 from .Point import Point
@@ -27,15 +28,15 @@ class DataViewer(QTableWidget):
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
         self.setMinimumWidth(500)
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setSelectionMode(QAbstractItemView.MultiSelection)
+        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self.setWindowTitle("Lineage Tracer :: Data Viewer")
         self.itemSelectionChanged.connect(self.selection_changed)
 
         # Add a context menu to the table
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.context_menu)
 
     @pyqtSlot(QPoint, name="context_menu")
@@ -77,14 +78,14 @@ class DataViewer(QTableWidget):
 
             # Track index
             new_item = QTableWidgetItem(str(int(T[i])))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 0, new_item)
 
             # Cell index
             new_item = QTableWidgetItem(str(int(C[i])))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 1, new_item)
 
             # Track index (quality control)
@@ -93,50 +94,50 @@ class DataViewer(QTableWidget):
             else:
                 v = int(TQC[i])
             new_item = QTableWidgetItem(str(v))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 2, new_item)
 
             # Area
             new_item = QTableWidgetItem(str(A[i]))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 3, new_item)
 
             # Eccentricity
             new_item = QTableWidgetItem(str(E[i]))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 4, new_item)
 
             # Cost
             new_item = QTableWidgetItem(str(Cost[i]))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 5, new_item)
 
             # Cost1
             new_item = QTableWidgetItem(str(Cost1[i]))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 6, new_item)
 
             # Cost2
             new_item = QTableWidgetItem(str(Cost2[i]))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 7, new_item)
 
             # Cost3
             new_item = QTableWidgetItem(str(Cost3[i]))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 8, new_item)
 
             # Cost4
             new_item = QTableWidgetItem(str(Cost4[i]))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 9, new_item)
 
     def setup(self):
@@ -158,8 +159,8 @@ class DataViewer(QTableWidget):
 
             # Add an empty cell
             empty_item = QTableWidgetItem("")
-            empty_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                                QtCore.Qt.ItemIsEnabled)
+            empty_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                                QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(0, i, empty_item)
 
     def clear(self):

@@ -2,19 +2,18 @@ import os
 import sys
 
 import numpy as np
-import pandas as pd
-from PyQt5 import QtGui
-from PyQt5.QtCore import QSettings
-from PyQt5.QtCore import Qt
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtGui import QImage
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QGraphicsView
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtWidgets import QScrollArea
-from PyQt5.uic import loadUiType
+from PyQt6 import QtGui
+from PyQt6.QtCore import QSettings
+from PyQt6.QtCore import Qt
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtGui import QImage
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QFileDialog
+from PyQt6.QtWidgets import QGraphicsView
+from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QScrollArea
+from PyQt6.uic import loadUiType
 
 from analysis.tracker import Tracker
 from threads import TrackerThread
@@ -217,7 +216,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         Append text to the QTextEdit.
         """
         cursor = self.txConsole.textCursor()
-        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.movePosition(QtGui.QTextCursor.MoveOperation.End)
         cursor.insertText(text)
         self.txConsole.setTextCursor(cursor)
 
@@ -230,9 +229,9 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
 
         button = QMessageBox.question(self, "Lineage Tracer",
                                       "Are you sure you want to quit?",
-                                      QMessageBox.Yes, QMessageBox.No)
+                                      QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
 
-        if button != QMessageBox.Yes:
+        if button != QMessageBox.StandardButton.Yes:
             event.ignore()
         else:
             # @todo Do this in a safer way!
@@ -257,8 +256,8 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         self.scene = GraphicScene()
         self.graphicsView.setScene(self.scene)
         self.graphicsView.setViewportUpdateMode(
-            QGraphicsView.FullViewportUpdate)
-        self.graphicsView.setDragMode(QGraphicsView.RubberBandDrag)
+            QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
+        self.graphicsView.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
         self.graphicsView.setMouseTracking(True)
 
     def setup_conn(self):
@@ -298,7 +297,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         """
         filter_ext = "TXT (*.txt);;All files (*.*)"
         file_name = QFileDialog()
-        file_name.setFileMode(QFileDialog.ExistingFiles)
+        file_name.setFileMode(QFileDialog.FileMode.ExistingFiles)
         res = file_name.getOpenFileNames(self, "Pick CellX result files",
                                          self.last_selected_path, filter_ext)
         names = res[0]
@@ -319,7 +318,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         """
         filter_ext = "TIF (*.tif);;TIFF (*.tiff);;PNG (*.png);;All files (*.*)"
         file_name = QFileDialog()
-        file_name.setFileMode(QFileDialog.ExistingFiles)
+        file_name.setFileMode(QFileDialog.FileMode.ExistingFiles)
         res = file_name.getOpenFileNames(self, "Pick image files",
                                          self.last_selected_path, filter_ext)
         names = res[0]
@@ -340,8 +339,8 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         result_dir = QFileDialog.getExistingDirectory(self,
                                                       "Pick project folder",
                                                       self.last_selected_path,
-                                                      QFileDialog.ShowDirsOnly |
-                                                      QFileDialog.DontResolveSymlinks)
+                                                      QFileDialog.Option.ShowDirsOnly |
+                                                      QFileDialog.Option.DontResolveSymlinks)
 
         if result_dir != "":
             self.tracker.result_folder = result_dir
@@ -525,10 +524,10 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
             points = []
             for i in range(X.shape[0]):
                 if plot_cell_indices:
-                    point_color = Qt.red
+                    point_color = Qt.GlobalColor.red
                     plot_track_index = False
                 else:
-                    point_color = Qt.magenta
+                    point_color = Qt.GlobalColor.magenta
                     plot_track_index = True
                 points.append(Point(float(X[i]), float(Y[i]), 3.0,
                                     cell_index=C[i],
@@ -543,7 +542,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
                 for i in range(X.shape[0]):
                     vectors.append(Vector(float(X[i]), float(Y[i]),
                                           float(U[i]), float(V[i]),
-                                          T[i], "raw", True, Qt.yellow))
+                                          T[i], "raw", True, Qt.GlobalColor.yellow))
                 self.scene.display_vectors(vectors)
 
             # Plot the filtered vectors
@@ -553,7 +552,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
                     filtered_vectors.append(Vector(float(X[i]), float(Y[i]),
                                                    float(fU[i]), float(fV[i]),
                                                    T[i], "filtered", True,
-                                                   Qt.darkGreen))
+                                                   Qt.GlobalColor.darkGreen))
                 self.scene.display_vectors(filtered_vectors)
 
         except Exception as e:
@@ -787,19 +786,19 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
 
         if self.tracker_is_running:
             msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
+            msg.setIcon(QMessageBox.Icon.Information)
             msg.setText("Sorry, you cannot modify the data"
                         " while the tracker is running!")
             msg.setWindowTitle("Info")
-            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg.exec()
             return
 
         reply = QMessageBox.question(self, 'Question',
                                      "Delete selected cell(s)?",
-                                     QMessageBox.Yes, QMessageBox.No)
+                                     QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
 
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
 
             for item in selected_items:
 
@@ -839,11 +838,11 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
 
         if self.tracker_is_running:
             msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
+            msg.setIcon(QMessageBox.Icon.Information)
             msg.setText("Sorry, you cannot modify the data while"
                         " the tracker is running!")
             msg.setWindowTitle("Info")
-            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg.exec()
             return
 

@@ -1,7 +1,7 @@
 import os
-from PyQt5 import QtGui
-from PyQt5.uic import loadUiType
-from PyQt5.QtCore import pyqtSignal
+from PyQt6 import QtGui
+from PyQt6.uic import loadUiType
+from PyQt6.QtCore import pyqtSignal
 from analysis.defaults import DEFAULT_FACTOR_AREA, \
     DEFAULT_MAX_PENALTY,  DEFAULT_DRIFT, DEFAULT_JUMP_PENALTY, \
     DEFAULT_MAX_JUMP, DEFAULT_GROWTH_PENALTY, DEFAULT_DISPLACEMENT_PENALTY,\

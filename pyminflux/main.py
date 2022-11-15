@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication
 
 from ui.appeventfilter import AppEventFilter
 from ui.tracermainwindow import TracerMainWindow
@@ -21,4 +21,4 @@ if __name__ == '__main__':
     appEventFilter.signal_zoom_out.connect(main.scene.zoom_out)
     appEventFilter.signal_delete_selection.connect(main.delete_selection)
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

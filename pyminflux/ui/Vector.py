@@ -1,6 +1,6 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPen
-from PyQt5.QtWidgets import QGraphicsLineItem
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPen
+from PyQt6.QtWidgets import QGraphicsLineItem
 
 
 class Vector(QGraphicsLineItem):
@@ -10,7 +10,7 @@ class Vector(QGraphicsLineItem):
     By default, the vector is drawn from (x, y) to (x+u, y+v), but it can optionally
     by drawn from (x-u, y-v) to (x, y).
     """
-    def __init__(self, x, y, u, v, index, class_name='raw', to_xy=False, color=Qt.yellow, parent=None):
+    def __init__(self, x, y, u, v, index, class_name='raw', to_xy=False, color=Qt.GlobalColor.yellow, parent=None):
         """
         Draws a vector.
         :param x: origin, x coordinate.
@@ -21,7 +21,7 @@ class Vector(QGraphicsLineItem):
         :param class_name: vector type (default = 'raw')
         :param to_xy: (default = False). If False, the arrow is drawn from (x, y) to (x+u, y+v);
                                          if True, the arrow is drawn from (x-u, y-v) to (x, y).
-        :param color: a valid Qt color (default = Qt.yellow)
+        :param color: a valid Qt color (default = Qt.GlobalColor.yellow)
         :param parent: parent widget (default = None).
         """
 
@@ -36,7 +36,7 @@ class Vector(QGraphicsLineItem):
         self._class_name = class_name
 
         self.setFlag(QGraphicsLineItem.ItemIsSelectable, True)
-        pen = QPen(color, 1.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        pen = QPen(color, 1.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
         self.setPen(pen)
 
     @property

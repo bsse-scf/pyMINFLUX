@@ -1,6 +1,6 @@
 import sys
-from PyQt5.QtCore import QObject
-from PyQt5.QtCore import pyqtSignal
+from PyQt6.QtCore import QObject
+from PyQt6.QtCore import pyqtSignal
 
 
 class EmittingStream(QObject):

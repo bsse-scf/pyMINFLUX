@@ -1,13 +1,13 @@
-from PyQt5 import QtCore
+from PyQt6 import QtCore
 
-from PyQt5.QtCore import pyqtSignal, QPoint
-from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtCore import Qt
-from PyQt5.QtCore import QObject
-from PyQt5.QtWidgets import QSizePolicy, QAbstractItemView, QMenu, QAction
-from PyQt5.QtWidgets import QTableWidget
-from PyQt5.QtWidgets import QTableWidgetItem
-from PyQt5.QtWidgets import QHeaderView
+from PyQt6.QtCore import pyqtSignal, QPoint
+from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtGui import QAction
+from PyQt6.QtCore import QObject
+from PyQt6.QtWidgets import QSizePolicy, QAbstractItemView, QMenu
+from PyQt6.QtWidgets import QTableWidget
+from PyQt6.QtWidgets import QTableWidgetItem
+from PyQt6.QtWidgets import QHeaderView
 import ntpath
 
 
@@ -29,14 +29,14 @@ class FileViewer(QTableWidget, QObject):
         self.setup()
         self.resizeRowsToContents()
         self.setMinimumWidth(500)
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.cellClicked.connect(self.handle_cell_clicked)
         self.setWindowTitle("Lineage Tracer :: File Viewer")
 
         # Add a context menu to the table
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.context_menu)
 
     @pyqtSlot(QPoint, name="context_menu")
@@ -76,8 +76,8 @@ class FileViewer(QTableWidget, QObject):
 
             # Modified flag
             new_item = QTableWidgetItem("")
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 0, new_item)
 
             # Input file name
@@ -87,8 +87,8 @@ class FileViewer(QTableWidget, QObject):
                 input_file = ''
 
             new_item = QTableWidgetItem(ntpath.basename(input_file))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 1, new_item)
 
             # Image file name index
@@ -98,8 +98,8 @@ class FileViewer(QTableWidget, QObject):
                 image_file = ''
 
             new_item = QTableWidgetItem(ntpath.basename(image_file))
-            new_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                              QtCore.Qt.ItemIsEnabled)
+            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                              QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(i, 2, new_item)
 
     def setup(self):
@@ -111,15 +111,15 @@ class FileViewer(QTableWidget, QObject):
         self.setRowCount(0)
         for i in range(2):
             empty_item = QTableWidgetItem("")
-            empty_item.setFlags(QtCore.Qt.ItemIsSelectable |
-                                QtCore.Qt.ItemIsEnabled)
+            empty_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+                                QtCore.Qt.ItemFlag.ItemIsEnabled)
             self.setItem(0, i, empty_item)
 
         # Set column sizes and modes
         self.horizontalHeader().resizeSection(0, 20)
-        self.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-        self.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
 
     @pyqtSlot(int, int)
     def handle_cell_clicked(self, row, col):
