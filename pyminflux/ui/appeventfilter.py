@@ -1,34 +1,34 @@
-from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
-from PyQt5.QtCore import pyqtSignal
+from PySide6 import QtCore
+from PySide6.QtCore import Qt
+from PySide6.QtCore import Signal
 
 
 class AppEventFilter(QtCore.QObject):
 
     # Add a signal for changing current image index
-    signal_zoom_in = pyqtSignal(int, name='signal_zoom_in')
-    signal_zoom_out = pyqtSignal(int, name='signal_zoom_out')
-    signal_delete_selection = pyqtSignal(name='signal_delete_selection')
+    signal_zoom_in = Signal(int, name='signal_zoom_in')
+    signal_zoom_out = Signal(int, name='signal_zoom_out')
+    signal_delete_selection = Signal(name='signal_delete_selection')
 
     def eventFilter(self, receiver, event):
 
-        if event.type() == QtCore.QEvent.KeyPress:
+        if event.type() == QtCore.QEvent.Type.KeyPress:
 
-            if event.key() == Qt.Key_Minus:
+            if event.key() == Qt.Key.Key_Minus:
 
                 # Emit the zoom_out signal
                 self.signal_zoom_out.emit(2)
 
                 return True
 
-            if event.key() == Qt.Key_Plus:
+            if event.key() == Qt.Key.Key_Plus:
 
                 # Emit the zoom_in signal
                 self.signal_zoom_in.emit(2)
 
                 return True
 
-            if event.key() == Qt.Key_Delete:
+            if event.key() == Qt.Key.Key_Delete:
 
                 # Emit the delete_objects signal
                 self.signal_delete_selection.emit()

@@ -1,28 +1,41 @@
 import os
-from PyQt5 import QtGui
-from PyQt5.uic import loadUiType
-from PyQt5.QtCore import pyqtSignal
+from PySide6 import QtGui
+from PySide6.QtUiTools import QUiLoader
+
+from PySide6.QtCore import Signal, QFile
+from PySide6.QtWidgets import QDialog
+
 from analysis.defaults import DEFAULT_FACTOR_AREA, \
     DEFAULT_MAX_PENALTY,  DEFAULT_DRIFT, DEFAULT_JUMP_PENALTY, \
     DEFAULT_MAX_JUMP, DEFAULT_GROWTH_PENALTY, DEFAULT_DISPLACEMENT_PENALTY,\
     DEFAULT_FACTOR_ORIENTATION, DEFAULT_FILTER_SUPPORT, DEFAULT_QC
 
-Ui_SettingsDlg, QDialog = loadUiType(os.path.join(
-    os.path.dirname(__file__), 'settings_dialog.ui'))
+
+# Ui_SettingsDlg, QDialog = loadUiType(os.path.join(
+#     os.path.dirname(__file__), 'settings_dialog.ui'))
 
 
-class Settings(QDialog, Ui_SettingsDlg):
+class Settings(QDialog):
 
-    signal_settings_changed = pyqtSignal(dict,
+    signal_settings_changed = Signal(dict,
                                          name='signal_settings_changed')
 
-    def __init__(self, settings_dictionary):
+    def __init__(self, settings_dictionary, parent=None):
         """
         Constructor.
         """
+
+        # Call the base constructor
         super(Settings, self).__init__()
 
-        self.setupUi(self)
+        # Load the dialog
+        loader = QUiLoader()
+        ui_file = QFile(os.path.join(os.path.dirname(__file__), 'settings_dialog.ui'))
+        ui_file.open(QFile.ReadOnly)
+        loader.load(ui_file, self)
+        ui_file.close()
+
+        # self.setupUi(self)
 
         # Store the reference to the __settings dictionary passed from
         # the caller.

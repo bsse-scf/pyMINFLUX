@@ -1,6 +1,6 @@
 import sys
-from PyQt5.QtCore import QObject
-from PyQt5.QtCore import pyqtSignal
+from PySide6.QtCore import QObject
+from PySide6.QtCore import Signal
 
 
 class EmittingStream(QObject):
@@ -8,7 +8,7 @@ class EmittingStream(QObject):
     Redirect standard output and error to be displayed by a QWidget.
     """
 
-    signal_textWritten = pyqtSignal(str, name="signal_textWritten")
+    signal_textWritten = Signal(str, name="signal_textWritten")
 
     def write(self, text):
         self.signal_textWritten.emit(str(text))

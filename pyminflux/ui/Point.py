@@ -1,15 +1,15 @@
-from PyQt5.QtGui import QBrush, QPen
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QGraphicsEllipseItem
-from PyQt5.QtWidgets import QGraphicsItem
-from PyQt5.QtCore import Qt
+from PySide6.QtGui import QBrush, QPen
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QGraphicsEllipseItem
+from PySide6.QtWidgets import QGraphicsItem
+from PySide6.QtCore import Qt
 import numpy as np
 
 
 class Point(QGraphicsEllipseItem):
 
     def __init__(self, x, y, diameter=3, cell_index=None, track_index=None,
-                 color=Qt.red, selected_color=Qt.yellow,
+                 color=Qt.GlobalColor.red, selected_color=Qt.GlobalColor.yellow,
                  plot_track_index=False, parent=None):
 
         self._x = x
@@ -24,7 +24,7 @@ class Point(QGraphicsEllipseItem):
         QGraphicsEllipseItem.__init__(self, x - self.radius, y - self.radius,
                                       diameter, diameter, parent)
 
-        self.setFlag(QGraphicsItem.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setPen(self._color)
         self.setBrush(self._color)
 

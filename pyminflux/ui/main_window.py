@@ -1,22 +1,20 @@
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
-import pandas as pd
-from PyQt5 import QtGui
-from PyQt5.QtCore import QSettings
-from PyQt5.QtCore import Qt
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtGui import QImage
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QGraphicsView
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtWidgets import QScrollArea
-from PyQt5.uic import loadUiType
+from PySide6 import QtGui
+from PySide6.QtCore import QSettings
+from PySide6.QtCore import Qt
+from PySide6.QtCore import Signal
+from PySide6.QtCore import Slot
+from PySide6.QtGui import QImage
+from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QGraphicsView
+from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QScrollArea
 
-from analysis.tracker import Tracker
 from threads import TrackerThread
 from ui.Point import Point
 from ui.Vector import Vector
@@ -26,27 +24,34 @@ from ui.fileviewer import FileViewer
 from ui.graphicscene import GraphicScene
 from ui.settings import Settings
 
-# Set up UIs
-Ui_MainWindow, QMainWindow = loadUiType(os.path.join(os.path.dirname(__file__), 'main_window.ui'))
+from ui.ui_main_window import Ui_MainWindow
+
+from pyminflux import __version__
+from pyminflux.reader import MinFluxReader
 
 
-class TracerMainWindow(QMainWindow, Ui_MainWindow):
+class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     """
     Main application window.
     """
 
     # Add a signal for changing current image index
-    signal_image_index_changed = pyqtSignal(int,
-                                            name='signal_image_index_changed')
+    signal_image_index_changed = Signal(int, name='signal_image_index_changed')
 
     # Add a signal for marking dataframe of given index as modified
-    signal_mark_dataframe_as_modified = pyqtSignal(int, bool,
-                                                   name='signal_mark_dataframe_as_modified')
+    signal_mark_dataframe_as_modified = Signal(int, bool, name='signal_mark_dataframe_as_modified')
 
-    def __init__(self, ):
+    def __init__(self, parent=None):
         """
         Constructor.
         """
+
+        # Call the base constructor
+        super().__init__(parent)
+
+        # Initialize the dialog
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
 
         self.scene = None
         self.current_image_index = 0
@@ -65,25 +70,27 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         self.text_handle_track_indices = []
         self.pickEvent = False
 
-        super(TracerMainWindow, self).__init__()
-        self.setupUi(self)
-        self.setWindowTitle('Lineage Tracer')
+        # super(TracerMainWindow, self).__init__()
+        # self.setupUi(self)
+        self.setWindowTitle(f"pyMinFlux v{__version__}")
         self.setup_file_viewer()
         self.setup_data_viewer()
         self.setup_data_plotter()
         self.setup_conn()
+
+        # Keep a reference to the MinFluxReader
+        self._minfluxreader = None
 
         # Install the custom output stream
         sys.stdout = EmittingStream()
         sys.stdout.signal_textWritten.connect(self.print_to_console)
 
         # Read the application settings
-        app_settings = QSettings('BSSE', 'lineage_tracer')
-        self.last_selected_path = app_settings.value("io/last_selected_path",
-                                                     ".")
+        app_settings = QSettings('ch.ethz.bsse.scf', 'pyminflux')
+        self.last_selected_path = app_settings.value("io/last_selected_path", ".")
 
         # Initialize tracker
-        self.tracker = Tracker()
+        self.tracker = None
 
         # Initialize the tracker thread
         self.tracker_thread = TrackerThread(self.tracker)
@@ -98,7 +105,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         sys.stdout = sys.__stdout__
         sys.stdout.flush()
 
-    @pyqtSlot(int, name="handle_changed_image_index")
+    @Slot(int, name="handle_changed_image_index")
     def handle_changed_image_index(self, i):
         """
         :param i: new image index.
@@ -111,7 +118,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         self.show_results_in_data_viewer()
         self.update_plots()
 
-    @pyqtSlot(str, name="handle_request_revert_file")
+    @Slot(str, name="handle_request_revert_file")
     def handle_request_revert_file(self, file_name):
         """
         :param file_name: name of the file to revert.
@@ -129,7 +136,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         self.show_results_in_data_viewer()
         self.update_plots()
 
-    @pyqtSlot(int)
+    @Slot(int)
     def retrieve_costs_for_track(self, track_index):
         """
         Collect costs for speficied track index.
@@ -198,10 +205,10 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         :return: 
         """
         self.scene.clear()
-        self.show_image()
-        self.plot_results()
-        self.show_files_in_file_viewer()
-        self.show_results_in_data_viewer()
+        #self.show_image()
+        #self.plot_results()
+        #self.show_files_in_file_viewer()
+        #self.show_results_in_data_viewer()
 
     def update_plots(self):
         """
@@ -216,10 +223,10 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         """
         Append text to the QTextEdit.
         """
-        cursor = self.txConsole.textCursor()
-        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor = self.ui.txConsole.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.MoveOperation.End)
         cursor.insertText(text)
-        self.txConsole.setTextCursor(cursor)
+        self.ui.txConsole.setTextCursor(cursor)
 
     def closeEvent(self, event):
         """
@@ -230,9 +237,9 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
 
         button = QMessageBox.question(self, "Lineage Tracer",
                                       "Are you sure you want to quit?",
-                                      QMessageBox.Yes, QMessageBox.No)
+                                      QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
 
-        if button != QMessageBox.Yes:
+        if button != QMessageBox.StandardButton.Yes:
             event.ignore()
         else:
             # @todo Do this in a safer way!
@@ -242,9 +249,8 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
 
             # Store the application settings
             if self.last_selected_path != '':
-                app_settings = QSettings('BSSE', 'lineage_tracer')
-                app_settings.setValue("io/last_selected_path",
-                                      self.last_selected_path)
+                app_settings = QSettings('ch.ethz.bsse.scf', 'pyminflux')
+                app_settings.setValue("io/last_selected_path", str(self.last_selected_path))
 
             # Now exit
             event.accept()
@@ -255,28 +261,28 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         :return: void
         """
         self.scene = GraphicScene()
-        self.graphicsView.setScene(self.scene)
-        self.graphicsView.setViewportUpdateMode(
-            QGraphicsView.FullViewportUpdate)
-        self.graphicsView.setDragMode(QGraphicsView.RubberBandDrag)
-        self.graphicsView.setMouseTracking(True)
+        self.ui.graphicsView.setScene(self.scene)
+        self.ui.graphicsView.setViewportUpdateMode(
+            QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
+        self.ui.graphicsView.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+        self.ui.graphicsView.setMouseTracking(True)
 
     def setup_conn(self):
         """
         Set up signals and slots
         :return: void
         """
-        self.pbSelectData.clicked.connect(self.select_input_files)
-        self.pbSelectImages.clicked.connect(self.select_image_files)
-        self.pbSelectProjectFolder.clicked.connect(self.select_project_folder)
-        self.pbRunTracker.clicked.connect(self.run_tracker)
-        self.pbSaveProject.clicked.connect(self.save_project)
-        self.pbExportResults.clicked.connect(self.export_results)
-        self.pbSettings.clicked.connect(self.show_settings_dialog)
-        self.cbPlotRawVectors.stateChanged.connect(self.plot_results)
-        self.cbPlotFiltVectors.stateChanged.connect(self.plot_results)
-        self.rbPlotCellIndex.toggled.connect(self.plot_results)
-        self.rbPlotTrackIndex.toggled.connect(self.plot_results)
+        self.ui.pbSelectData.clicked.connect(self.select_input_files)
+        self.ui.pbSelectImages.clicked.connect(self.select_image_files)
+        self.ui.pbLoadNumpyDataFile.clicked.connect(self.select_and_open_numpy_file)
+        self.ui.pbRunTracker.clicked.connect(self.run_tracker)
+        self.ui.pbSaveProject.clicked.connect(self.save_project)
+        self.ui.pbExportResults.clicked.connect(self.export_results)
+        self.ui.pbSettings.clicked.connect(self.show_settings_dialog)
+        self.ui.cbPlotRawVectors.stateChanged.connect(self.plot_results)
+        self.ui.cbPlotFiltVectors.stateChanged.connect(self.plot_results)
+        self.ui.rbPlotCellIndex.toggled.connect(self.plot_results)
+        self.ui.rbPlotTrackIndex.toggled.connect(self.plot_results)
         self.signal_image_index_changed.connect(self.handle_changed_image_index)
         self.file_viewer.signal_request_revert_file.connect(
             self.handle_request_revert_file)
@@ -298,7 +304,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         """
         filter_ext = "TXT (*.txt);;All files (*.*)"
         file_name = QFileDialog()
-        file_name.setFileMode(QFileDialog.ExistingFiles)
+        file_name.setFileMode(QFileDialog.FileMode.ExistingFiles)
         res = file_name.getOpenFileNames(self, "Pick CellX result files",
                                          self.last_selected_path, filter_ext)
         names = res[0]
@@ -319,7 +325,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         """
         filter_ext = "TIF (*.tif);;TIFF (*.tiff);;PNG (*.png);;All files (*.*)"
         file_name = QFileDialog()
-        file_name.setFileMode(QFileDialog.ExistingFiles)
+        file_name.setFileMode(QFileDialog.FileMode.ExistingFiles)
         res = file_name.getOpenFileNames(self, "Pick image files",
                                          self.last_selected_path, filter_ext)
         names = res[0]
@@ -332,27 +338,34 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
             self.full_update_ui()
             print("Selected %d image files." % (len(sorted_image_file_list)))
 
-    def select_project_folder(self):
+    def select_and_open_numpy_file(self):
         """
-        Select folder where to store the results.
+        Pick NumPy MINFLUX data file to open.
         :return: void
         """
-        result_dir = QFileDialog.getExistingDirectory(self,
-                                                      "Pick project folder",
-                                                      self.last_selected_path,
-                                                      QFileDialog.ShowDirsOnly |
-                                                      QFileDialog.DontResolveSymlinks)
 
-        if result_dir != "":
-            self.tracker.result_folder = result_dir
-            self.last_selected_path = result_dir
-            print("Set project folder to %s." % result_dir)
+        # Open a file dialog for the user to pick an .npy file
+        res = QFileDialog.getOpenFileName(
+            self,
+            "Open Image",
+            str(self.last_selected_path),
+            "NumPy binary file (*.npy);;All files (*.*)"
+        )
+        filename = res[0]
+        if filename != "":
+            self.last_selected_path = Path(filename).parent
 
-            # Try loading the project
-            self.load_project()
+            # Open the file
+            self.minfluxreader = MinFluxReader(filename)
 
-            # Show the folder path on the button
-            self.pbSelectProjectFolder.setText(result_dir)
+            # @TODO
+            # Display the processed dataframe in the data viewer
+
+            # Show some info
+            print(self.minfluxreader)
+
+            # Show the filename on the button
+            self.ui.pbLoadNumpyDataFile.setText(filename)
 
             # Update the ui
             self.full_update_ui()
@@ -391,7 +404,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         # Start it modal
         self.settings_dialog.exec()
 
-    @pyqtSlot(dict, name="on_settings_changed")
+    @Slot(dict, name="on_settings_changed")
     def on_settings_changed(self, changed_settings):
         """
         Update the UI
@@ -427,7 +440,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         Disable all buttons
         :return: void
         """
-        self.pbSelectProjectFolder.setEnabled(False)
+        self.pbLoadNumpyDataFile.setEnabled(False)
         self.wgAnalysis.setEnabled(False)
         self.wgInputFiles.setEnabled(False)
 
@@ -436,7 +449,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         Enable all buttons.
         :return: void
         """
-        self.pbSelectProjectFolder.setEnabled(True)
+        self.pbLoadNumpyDataFile.setEnabled(True)
         self.wgAnalysis.setEnabled(True)
         self.wgInputFiles.setEnabled(True)
 
@@ -525,10 +538,10 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
             points = []
             for i in range(X.shape[0]):
                 if plot_cell_indices:
-                    point_color = Qt.red
+                    point_color = Qt.GlobalColor.red
                     plot_track_index = False
                 else:
-                    point_color = Qt.magenta
+                    point_color = Qt.GlobalColor.magenta
                     plot_track_index = True
                 points.append(Point(float(X[i]), float(Y[i]), 3.0,
                                     cell_index=C[i],
@@ -543,7 +556,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
                 for i in range(X.shape[0]):
                     vectors.append(Vector(float(X[i]), float(Y[i]),
                                           float(U[i]), float(V[i]),
-                                          T[i], "raw", True, Qt.yellow))
+                                          T[i], "raw", True, Qt.GlobalColor.yellow))
                 self.scene.display_vectors(vectors)
 
             # Plot the filtered vectors
@@ -553,7 +566,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
                     filtered_vectors.append(Vector(float(X[i]), float(Y[i]),
                                                    float(fU[i]), float(fV[i]),
                                                    T[i], "filtered", True,
-                                                   Qt.darkGreen))
+                                                   Qt.GlobalColor.darkGreen))
                 self.scene.display_vectors(filtered_vectors)
 
         except Exception as e:
@@ -669,7 +682,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.file_viewer)
-        self.data_layout.addWidget(scroll_area)
+        self.ui.data_layout.addWidget(scroll_area)
 
         # Show the widget
         self.file_viewer.show()
@@ -687,7 +700,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.data_viewer)
-        self.result_layout.addWidget(scroll_area)
+        self.ui.result_layout.addWidget(scroll_area)
 
         # Show the widget
         self.data_viewer.show()
@@ -776,7 +789,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         self.data_viewer.set_data(T, C, TQC, A, E, Cost,
                                   Cost1, Cost2, Cost3, Cost4)
 
-    @pyqtSlot(name="delete_selection")
+    @Slot(name="delete_selection")
     def delete_selection(self):
         # DataViewer and Scene are in sync. So we collect the objects to be
         # deleted from the Scene.
@@ -787,19 +800,19 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
 
         if self.tracker_is_running:
             msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
+            msg.setIcon(QMessageBox.Icon.Information)
             msg.setText("Sorry, you cannot modify the data"
                         " while the tracker is running!")
             msg.setWindowTitle("Info")
-            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg.exec()
             return
 
         reply = QMessageBox.question(self, 'Question',
                                      "Delete selected cell(s)?",
-                                     QMessageBox.Yes, QMessageBox.No)
+                                     QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
 
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
 
             for item in selected_items:
 
@@ -831,7 +844,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         else:
             return
 
-    @pyqtSlot(float, float, name="handle_add_cell_at_position")
+    @Slot(float, float, name="handle_add_cell_at_position")
     def handle_add_cell_at_position(self, x, y):
 
         if self.tracker.num_data_frames() == 0:
@@ -839,11 +852,11 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
 
         if self.tracker_is_running:
             msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
+            msg.setIcon(QMessageBox.Icon.Information)
             msg.setText("Sorry, you cannot modify the data while"
                         " the tracker is running!")
             msg.setWindowTitle("Info")
-            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg.exec()
             return
 

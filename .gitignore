@@ -6,3 +6,4 @@ __pycache__/
 /build/
 /pyminflux/processor/build/
 /pyminflux/processor/processor.c
+/.vscode/
