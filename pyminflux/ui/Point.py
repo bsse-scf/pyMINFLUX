@@ -1,8 +1,8 @@
-from PyQt6.QtGui import QBrush, QPen
-from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QGraphicsEllipseItem
-from PyQt6.QtWidgets import QGraphicsItem
-from PyQt6.QtCore import Qt
+from PySide6.QtGui import QBrush, QPen
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QGraphicsEllipseItem
+from PySide6.QtWidgets import QGraphicsItem
+from PySide6.QtCore import Qt
 import numpy as np
 
 

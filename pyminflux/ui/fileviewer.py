@@ -1,13 +1,13 @@
-from PyQt6 import QtCore
+from PySide6 import QtCore
 
-from PyQt6.QtCore import pyqtSignal, QPoint
-from PyQt6.QtCore import pyqtSlot
-from PyQt6.QtGui import QAction
-from PyQt6.QtCore import QObject
-from PyQt6.QtWidgets import QSizePolicy, QAbstractItemView, QMenu
-from PyQt6.QtWidgets import QTableWidget
-from PyQt6.QtWidgets import QTableWidgetItem
-from PyQt6.QtWidgets import QHeaderView
+from PySide6.QtCore import Signal, QPoint
+from PySide6.QtCore import Slot
+from PySide6.QtGui import QAction
+from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QSizePolicy, QAbstractItemView, QMenu
+from PySide6.QtWidgets import QTableWidget
+from PySide6.QtWidgets import QTableWidgetItem
+from PySide6.QtWidgets import QHeaderView
 import ntpath
 
 
@@ -17,8 +17,8 @@ class FileViewer(QTableWidget, QObject):
     """
 
     # Define signals
-    signal_image_index_changed = pyqtSignal(int, name='signal_image_index_changed')
-    signal_request_revert_file = pyqtSignal(str, name='signal_request_revert_file')
+    signal_image_index_changed = Signal(int, name='signal_image_index_changed')
+    signal_request_revert_file = Signal(str, name='signal_request_revert_file')
 
     def __init__(self):
         """
@@ -39,7 +39,7 @@ class FileViewer(QTableWidget, QObject):
         self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.context_menu)
 
-    @pyqtSlot(QPoint, name="context_menu")
+    @Slot(QPoint, name="context_menu")
     def context_menu(self, position):
         if self.rowCount() == 0:
             return
@@ -121,7 +121,7 @@ class FileViewer(QTableWidget, QObject):
         self.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
 
-    @pyqtSlot(int, int)
+    @Slot(int, int)
     def handle_cell_clicked(self, row, col):
         """
         Emits the signal_image_index_changed signal after a user click on a cell.
@@ -131,7 +131,7 @@ class FileViewer(QTableWidget, QObject):
         """
         self.signal_image_index_changed.emit(row)
 
-    @pyqtSlot(int, bool)
+    @Slot(int, bool)
     def mark_as_modified(self, index, reverted=False):
         """
         Mark the row corresponding to the selected data frame as modified.

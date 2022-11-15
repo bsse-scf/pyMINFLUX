@@ -1,6 +1,6 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPen
-from PyQt6.QtWidgets import QGraphicsLineItem
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPen
+from PySide6.QtWidgets import QGraphicsLineItem
 
 
 class Vector(QGraphicsLineItem):

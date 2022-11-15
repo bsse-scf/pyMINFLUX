@@ -1,14 +1,14 @@
-from PyQt6 import QtCore
-from PyQt6.QtCore import Qt
-from PyQt6.QtCore import pyqtSignal
+from PySide6 import QtCore
+from PySide6.QtCore import Qt
+from PySide6.QtCore import Signal
 
 
 class AppEventFilter(QtCore.QObject):
 
     # Add a signal for changing current image index
-    signal_zoom_in = pyqtSignal(int, name='signal_zoom_in')
-    signal_zoom_out = pyqtSignal(int, name='signal_zoom_out')
-    signal_delete_selection = pyqtSignal(name='signal_delete_selection')
+    signal_zoom_in = Signal(int, name='signal_zoom_in')
+    signal_zoom_out = Signal(int, name='signal_zoom_out')
+    signal_delete_selection = Signal(name='signal_delete_selection')
 
     def eventFilter(self, receiver, event):
 

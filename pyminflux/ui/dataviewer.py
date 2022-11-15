@@ -1,9 +1,9 @@
-from PyQt6 import QtCore
-from PyQt6.QtCore import pyqtSignal, QPoint
-from PyQt6.QtCore import pyqtSlot
-from PyQt6.QtWidgets import QSizePolicy, QAbstractItemView, QMenu
-from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
-from PyQt6.QtGui import QAction
+from PySide6 import QtCore
+from PySide6.QtCore import Signal, QPoint
+from PySide6.QtCore import Slot
+from PySide6.QtWidgets import QSizePolicy, QAbstractItemView, QMenu
+from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
+from PySide6.QtGui import QAction
 import numpy as np
 
 from .Point import Point
@@ -15,11 +15,11 @@ class DataViewer(QTableWidget):
     """
 
     # Add a signal for changing selection in the data viewer
-    signal_selection_completed = pyqtSignal(list,
+    signal_selection_completed = Signal(list,
                                             name='signal_selection_completed')
 
     # Add a signal for retrieving the costs associated to the selected track
-    signal_retrieve_costs_for_track = pyqtSignal(int,
+    signal_retrieve_costs_for_track = Signal(int,
                                                  name='signal_retrieve_costs_for_track')
 
     def __init__(self, *args):
@@ -39,7 +39,7 @@ class DataViewer(QTableWidget):
         self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.context_menu)
 
-    @pyqtSlot(QPoint, name="context_menu")
+    @Slot(QPoint, name="context_menu")
     def context_menu(self, position):
         if self.rowCount() == 0:
             return
@@ -171,7 +171,7 @@ class DataViewer(QTableWidget):
         self.setRowCount(0)
         self.viewport().update()
 
-    @pyqtSlot(name="selection_changed")
+    @Slot(name="selection_changed")
     def selection_changed(self):
         """
         Called on selection change.
@@ -183,7 +183,7 @@ class DataViewer(QTableWidget):
             cell_indices.append(cell_index)
         self.signal_selection_completed.emit(cell_indices)
 
-    @pyqtSlot(list, name="handle_scene_selection_completed")
+    @Slot(list, name="handle_scene_selection_completed")
     def handle_scene_selection_completed(self, items):
 
         cell_indices = []

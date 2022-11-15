@@ -1,8 +1,8 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QGraphicsScene, QApplication
-from PyQt6.QtCore import pyqtSlot
-from PyQt6.QtCore import pyqtSignal
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QGraphicsScene, QApplication
+from PySide6.QtCore import Slot
+from PySide6.QtCore import Signal
 
 from .Vector import Vector
 from .Point import Point
@@ -16,10 +16,10 @@ class GraphicScene(QGraphicsScene):
 
     # Add a signal for changing selection in the scene
     signal_selection_completed = \
-        pyqtSignal(list, name='signal_selection_completed')
+        Signal(list, name='signal_selection_completed')
 
     signal_add_cell_at_position = \
-        pyqtSignal(float, float, name='signal_add_cell_at_position')
+        Signal(float, float, name='signal_add_cell_at_position')
 
     def __init__(self, parent=None):
         QGraphicsScene.__init__(self, parent)
@@ -27,7 +27,7 @@ class GraphicScene(QGraphicsScene):
         self.image = None
         self.selectionChanged.connect(self.selection_changed)
 
-    @pyqtSlot(int, name="zoom_in")
+    @Slot(int, name="zoom_in")
     def zoom_in(self, zoom_in_factor):
         """
         Zoom the scene in
@@ -36,7 +36,7 @@ class GraphicScene(QGraphicsScene):
         f = float(zoom_in_factor)
         self.views()[0].scale(f, f)
 
-    @pyqtSlot(int, name="zoom_out")
+    @Slot(int, name="zoom_out")
     def zoom_out(self, zoom_out_factor):
         """
         Zoom the scene out
@@ -45,7 +45,7 @@ class GraphicScene(QGraphicsScene):
         f = 1.0 / float(zoom_out_factor)
         self.views()[0].scale(f, f)
 
-    @pyqtSlot(list, name="handle_data_viewer_selection_completed")
+    @Slot(list, name="handle_data_viewer_selection_completed")
     def handle_data_viewer_selection_completed(self, cell_indices):
 
         for item in self.items():
@@ -127,7 +127,7 @@ class GraphicScene(QGraphicsScene):
                 else:
                     pass
 
-    @pyqtSlot(name="selection_changed")
+    @Slot(name="selection_changed")
     def selection_changed(self):
         """
         Called on selection change.

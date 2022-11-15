@@ -1,21 +1,22 @@
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
-from PyQt6 import QtGui
-from PyQt6.QtCore import QSettings
-from PyQt6.QtCore import Qt
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtCore import pyqtSlot
-from PyQt6.QtGui import QImage
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtWidgets import QFileDialog
-from PyQt6.QtWidgets import QGraphicsView
-from PyQt6.QtWidgets import QMessageBox
-from PyQt6.QtWidgets import QScrollArea
-from PyQt6.uic import loadUiType
+from PySide6 import QtGui
+from PySide6.QtCore import QSettings, QFile
+from PySide6.QtCore import Qt
+from PySide6.QtCore import Signal
+from PySide6.QtCore import Slot
+from PySide6.QtGui import QImage
+from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QGraphicsView
+from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QScrollArea
+from PySide6.QtUiTools import QUiLoader
 
-from analysis.tracker import Tracker
+#from analysis.tracker import Tracker
 from threads import TrackerThread
 from ui.Point import Point
 from ui.Vector import Vector
@@ -25,8 +26,10 @@ from ui.fileviewer import FileViewer
 from ui.graphicscene import GraphicScene
 from ui.settings import Settings
 
-# Set up UIs
-Ui_MainWindow, QMainWindow = loadUiType(os.path.join(os.path.dirname(__file__), 'main_window.ui'))
+from ui.ui_main_window import Ui_MainWindow
+
+# # Set up UIs
+# Ui_MainWindow, QMainWindow = loadUiType(os.path.join(os.path.dirname(__file__), 'main_window.ui'))
 
 
 class TracerMainWindow(QMainWindow, Ui_MainWindow):
@@ -35,17 +38,22 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
     """
 
     # Add a signal for changing current image index
-    signal_image_index_changed = pyqtSignal(int,
-                                            name='signal_image_index_changed')
+    signal_image_index_changed = Signal(int, name='signal_image_index_changed')
 
     # Add a signal for marking dataframe of given index as modified
-    signal_mark_dataframe_as_modified = pyqtSignal(int, bool,
-                                                   name='signal_mark_dataframe_as_modified')
+    signal_mark_dataframe_as_modified = Signal(int, bool, name='signal_mark_dataframe_as_modified')
 
-    def __init__(self, ):
+    def __init__(self, parent=None):
         """
         Constructor.
         """
+
+        # Call the base constructor
+        super().__init__(parent)
+
+        # Initialize the dialog
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
 
         self.scene = None
         self.current_image_index = 0
@@ -64,8 +72,8 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         self.text_handle_track_indices = []
         self.pickEvent = False
 
-        super(TracerMainWindow, self).__init__()
-        self.setupUi(self)
+        # super(TracerMainWindow, self).__init__()
+        # self.setupUi(self)
         self.setWindowTitle('Lineage Tracer')
         self.setup_file_viewer()
         self.setup_data_viewer()
@@ -82,7 +90,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
                                                      ".")
 
         # Initialize tracker
-        self.tracker = Tracker()
+        self.tracker = None
 
         # Initialize the tracker thread
         self.tracker_thread = TrackerThread(self.tracker)
@@ -97,7 +105,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         sys.stdout = sys.__stdout__
         sys.stdout.flush()
 
-    @pyqtSlot(int, name="handle_changed_image_index")
+    @Slot(int, name="handle_changed_image_index")
     def handle_changed_image_index(self, i):
         """
         :param i: new image index.
@@ -110,7 +118,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         self.show_results_in_data_viewer()
         self.update_plots()
 
-    @pyqtSlot(str, name="handle_request_revert_file")
+    @Slot(str, name="handle_request_revert_file")
     def handle_request_revert_file(self, file_name):
         """
         :param file_name: name of the file to revert.
@@ -128,7 +136,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         self.show_results_in_data_viewer()
         self.update_plots()
 
-    @pyqtSlot(int)
+    @Slot(int)
     def retrieve_costs_for_track(self, track_index):
         """
         Collect costs for speficied track index.
@@ -254,28 +262,28 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         :return: void
         """
         self.scene = GraphicScene()
-        self.graphicsView.setScene(self.scene)
-        self.graphicsView.setViewportUpdateMode(
+        self.ui.graphicsView.setScene(self.scene)
+        self.ui.graphicsView.setViewportUpdateMode(
             QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
-        self.graphicsView.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
-        self.graphicsView.setMouseTracking(True)
+        self.ui.graphicsView.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+        self.ui.graphicsView.setMouseTracking(True)
 
     def setup_conn(self):
         """
         Set up signals and slots
         :return: void
         """
-        self.pbSelectData.clicked.connect(self.select_input_files)
-        self.pbSelectImages.clicked.connect(self.select_image_files)
-        self.pbSelectProjectFolder.clicked.connect(self.select_project_folder)
-        self.pbRunTracker.clicked.connect(self.run_tracker)
-        self.pbSaveProject.clicked.connect(self.save_project)
-        self.pbExportResults.clicked.connect(self.export_results)
-        self.pbSettings.clicked.connect(self.show_settings_dialog)
-        self.cbPlotRawVectors.stateChanged.connect(self.plot_results)
-        self.cbPlotFiltVectors.stateChanged.connect(self.plot_results)
-        self.rbPlotCellIndex.toggled.connect(self.plot_results)
-        self.rbPlotTrackIndex.toggled.connect(self.plot_results)
+        self.ui.pbSelectData.clicked.connect(self.select_input_files)
+        self.ui.pbSelectImages.clicked.connect(self.select_image_files)
+        self.ui.pbSelectProjectFolder.clicked.connect(self.select_project_folder)
+        self.ui.pbRunTracker.clicked.connect(self.run_tracker)
+        self.ui.pbSaveProject.clicked.connect(self.save_project)
+        self.ui.pbExportResults.clicked.connect(self.export_results)
+        self.ui.pbSettings.clicked.connect(self.show_settings_dialog)
+        self.ui.cbPlotRawVectors.stateChanged.connect(self.plot_results)
+        self.ui.cbPlotFiltVectors.stateChanged.connect(self.plot_results)
+        self.ui.rbPlotCellIndex.toggled.connect(self.plot_results)
+        self.ui.rbPlotTrackIndex.toggled.connect(self.plot_results)
         self.signal_image_index_changed.connect(self.handle_changed_image_index)
         self.file_viewer.signal_request_revert_file.connect(
             self.handle_request_revert_file)
@@ -390,7 +398,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         # Start it modal
         self.settings_dialog.exec()
 
-    @pyqtSlot(dict, name="on_settings_changed")
+    @Slot(dict, name="on_settings_changed")
     def on_settings_changed(self, changed_settings):
         """
         Update the UI
@@ -668,7 +676,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.file_viewer)
-        self.data_layout.addWidget(scroll_area)
+        self.ui.data_layout.addWidget(scroll_area)
 
         # Show the widget
         self.file_viewer.show()
@@ -686,7 +694,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.data_viewer)
-        self.result_layout.addWidget(scroll_area)
+        self.ui.result_layout.addWidget(scroll_area)
 
         # Show the widget
         self.data_viewer.show()
@@ -775,7 +783,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         self.data_viewer.set_data(T, C, TQC, A, E, Cost,
                                   Cost1, Cost2, Cost3, Cost4)
 
-    @pyqtSlot(name="delete_selection")
+    @Slot(name="delete_selection")
     def delete_selection(self):
         # DataViewer and Scene are in sync. So we collect the objects to be
         # deleted from the Scene.
@@ -830,7 +838,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         else:
             return
 
-    @pyqtSlot(float, float, name="handle_add_cell_at_position")
+    @Slot(float, float, name="handle_add_cell_at_position")
     def handle_add_cell_at_position(self, x, y):
 
         if self.tracker.num_data_frames() == 0:
