@@ -1,12 +1,8 @@
-import warnings
 from pathlib import Path
 from typing import Union
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
-
-from pyminflux.processor.processor import process_raw_data_cython
 
 
 class MinFluxReader:
@@ -271,143 +267,55 @@ class MinFluxReader:
 
         # Allocate space for the columns
         n_rows = len(self._data_array) * self._reps
-        tid = np.empty(shape=(n_rows, ), dtype=np.int32)
-        aid = np.empty(shape=(n_rows, ), dtype=np.int32)
-        vld = np.empty(shape=(n_rows, ), dtype=bool)
-        tim = np.empty(shape=(n_rows, ), dtype=float)
-        x = np.empty(shape=(n_rows, ), dtype=float)
-        y = np.empty(shape=(n_rows, ), dtype=float)
-        z = np.empty(shape=(n_rows, ), dtype=float)
-        efo = np.empty(shape=(n_rows, ), dtype=float)
-        cfr = np.empty(shape=(n_rows, ), dtype=float)
-        dcr = np.empty(shape=(n_rows, ), dtype=float)
 
-        # Get all unique TIDs
-        tids = np.unique(self._data_array["tid"])
+        # Get all unique TIDs and their counts
+        _, tid_counts = np.unique(self._data_array["tid"], return_counts=True)
 
-        # Keep track of the index at the beginning of each iteration
+        # Get all tids (repeated over the repetitions)
+        tid = np.repeat(self._data_array["tid"], self._reps)
+
+        # Create virtual IDs to mark the measurements of repeated tids
+        # @TODO Optimize this!
+        aid = np.zeros((n_rows, 1), dtype=np.int32)
         index = 0
+        for c in np.nditer(tid_counts):
+            tmp = np.repeat(np.arange(c), self._reps)
+            n = len(tmp)
+            aid[index: index + n, 0] = tmp
+            index += n
 
-        for c_tid in tqdm(tids):
+        # Get all valid flags (repeated over the repetitions)
+        vld = np.repeat(self._data_array["vld"], self._reps)
 
-            # Get data for current TID
-            data = self._data_array[self._data_array["tid"] == c_tid]
+        # Get all timepoints (repeated over the repetitions)
+        tim = np.repeat(self._data_array["tim"], self._reps)
 
-            # Build the artificial IDs: one for each of the
-            # traces that share the same TID
-            c_aid = np.repeat(np.arange(len(data)), self._reps)
+        # Get all localizations (reshaped to drop the first dimension)
+        loc = self._data_array["itr"]["loc"].reshape((n_rows, 3))
 
-            # Keep track of the number of elements that will be added
-            # to each column in this iteration
-            n_els = len(c_aid)
+        # Get all efos (reshaped to drop the first dimension)
+        efo = self._data_array["itr"]["efo"].reshape((n_rows, 1))
 
-            # Add the artificial IDs
-            aid[index: index + n_els] = c_aid
+        # Get all cfrs (reshaped to drop the first dimension)
+        cfr = self._data_array["itr"]["cfr"].reshape((n_rows, 1))
 
-            # Timepoints
-            c_tim = np.repeat(data["tim"], self._reps)
-            tim[index: index + n_els] = c_tim
-
-            # Extract valid flags
-            c_vld = np.repeat(data["vld"], self._reps)
-            vld[index: index + n_els] = c_vld
-
-            # Extract the localizations from the iterations
-            internal_index = index
-            for c_loc in data["itr"]["loc"]:
-                x[internal_index: internal_index + self._reps] = c_loc[:, 0]
-                y[internal_index: internal_index + self._reps] = c_loc[:, 1]
-                z[internal_index: internal_index + self._reps] = c_loc[:, 2]
-                internal_index += self._reps
-
-            # Extract EFO
-            internal_index = index
-            for c_efo in data["itr"]["efo"]:
-                efo[internal_index: internal_index + self._reps] = c_efo
-                internal_index += self._reps
-
-            # Extract CFR
-            internal_index = index
-            for c_cfr in data["itr"]["cfr"]:
-                cfr[internal_index: internal_index + self._reps] = c_cfr
-                internal_index += self._reps
-
-            # Extract DCR
-            internal_index = index
-            for c_dcr in data["itr"]["dcr"]:
-                dcr[internal_index: internal_index + self._reps] = c_dcr
-                internal_index += self._reps
-
-            # Add the tid
-            tid[index: index + n_els] = c_tid * np.ones(np.shape(c_aid))
-
-            # Update the starting index
-            index += n_els
-
-            assert index <= n_rows
+        # Get all dcrs (reshaped to drop the first dimension)
+        dcr = self._data_array["itr"]["dcr"].reshape((n_rows, 1))
 
         # Build the dataframe
-        df["tid"] = tid
-        df["aid"] = aid
+        df["tid"] = tid.astype(np.int32)
+        df["aid"] = aid.astype(np.int32)
         df["vld"] = vld
         df["tim"] = tim
-        df["x"] = x
-        df["y"] = y
-        df["z"] = z
+        df["x"] = loc[:, 0]
+        df["y"] = loc[:, 1]
+        df["z"] = loc[:, 2]
         df["efo"] = efo
         df["cfr"] = cfr
         df["dcr"] = dcr
 
         return df
 
-    def _raw_data_to_full_dataframe_cython(self):
-        """Try running the Cython code."""
-
-        if self._data_array is None:
-            return None
-
-        # Intialize output dataframe
-        df = pd.DataFrame(
-            columns=[
-                "tid",
-                "aid",
-                "vld",
-                "tim",
-                "x",
-                "y",
-                "z",
-                "efo",
-                "cfr",
-                "dcr",
-            ],
-        )
-
-        # Process tha data array in cython
-        tid, aid, vld, tim, x, y, z, efo, cfr, dcr = process_raw_data_cython(self._data_array, self.is_3d)
-        tid = np.asarray(tid)
-        aid = np.asarray(aid)
-        vld = np.asarray(vld, dtype=bool)
-        tim = np.asarray(tim)
-        x = np.asarray(x)
-        y = np.asarray(y)
-        z = np.asarray(z)
-        efo = np.asarray(efo)
-        cfr = np.asarray(cfr)
-        dcr = np.asarray(dcr)
-
-        # Build the dataframe
-        df["tid"] = tid
-        df["aid"] = aid
-        df["vld"] = vld
-        df["tim"] = tim
-        df["x"] = x
-        df["y"] = y
-        df["z"] = z
-        df["efo"] = efo
-        df["cfr"] = cfr
-        df["dcr"] = dcr
-
-        return df
     def _set_all_indices(self):
         """Set indices of properties to be read."""
         if self._data_array is None:
