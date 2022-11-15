@@ -255,7 +255,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0">
-           <layout class="QGridLayout" name="result_layout"/>
+           <layout class="QGridLayout" name="dataframe_layout"/>
           </item>
          </layout>
         </widget>

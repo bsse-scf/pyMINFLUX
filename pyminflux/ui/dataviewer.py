@@ -1,15 +1,16 @@
 from PySide6 import QtCore
 from PySide6.QtCore import Signal, QPoint
 from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QSizePolicy, QAbstractItemView, QMenu
+from PySide6.QtWidgets import QSizePolicy, QAbstractItemView, QMenu, QTableView, QFrame
 from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
 from PySide6.QtGui import QAction
 import numpy as np
 
 from .Point import Point
+from .pandas_datamodel import PandasDataModel
 
 
-class DataViewer(QTableWidget):
+class DataViewer(QTableView):
     """
     A QTableWidget to display track data.
     """
@@ -18,150 +19,167 @@ class DataViewer(QTableWidget):
     signal_selection_completed = Signal(list,
                                             name='signal_selection_completed')
 
-    # Add a signal for retrieving the costs associated to the selected track
-    signal_retrieve_costs_for_track = Signal(int,
-                                                 name='signal_retrieve_costs_for_track')
+    # # Add a signal for retrieving the costs associated to the selected track
+    # signal_retrieve_costs_for_track = Signal(int,
+    #                                              name='signal_retrieve_costs_for_track')
 
     def __init__(self, *args):
-        QTableWidget.__init__(self, 1, 10)
-        self.setup()
+        super().__init__()
+
+        self.data_model = None
+
+        # #self.setup()
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
-        self.setMinimumWidth(500)
-        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        #self.setMinimumWidth(500)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-        self.setWindowTitle("Lineage Tracer :: Data Viewer")
-        self.itemSelectionChanged.connect(self.selection_changed)
+        self.setWindowTitle("Parameters")
+        #self.itemSelectionChanged.connect(self.selection_changed)
 
         # Add a context menu to the table
-        self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.context_menu)
+        #self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        #self.customContextMenuRequested.connect(self.context_menu)
 
-    @Slot(QPoint, name="context_menu")
-    def context_menu(self, position):
-        if self.rowCount() == 0:
-            return
-        menu = QMenu()
-        plot_action = QAction("Plot track costs", self)
-        menu.addAction(plot_action)
-        action = menu.exec_(self.mapToGlobal(position))
-        if action == plot_action:
-            row = self.rowAt(position.y())
-            try:
-                track_index = int(self.item(row, 0).text())
-            except ValueError:
-                print("Could not retrieve track index! This seems to be a "
-                      "bug. Please report it!")
-                return
-            self.signal_retrieve_costs_for_track.emit(track_index)
+    # @Slot(QPoint, name="context_menu")
+    # def context_menu(self, position):
+    #     if self.rowCount() == 0:
+    #         return
+    #     menu = QMenu()
+    #     plot_action = QAction("Plot track costs", self)
+    #     menu.addAction(plot_action)
+    #     action = menu.exec_(self.mapToGlobal(position))
+    #     if action == plot_action:
+    #         row = self.rowAt(position.y())
+    #         try:
+    #             track_index = int(self.item(row, 0).text())
+    #         except ValueError:
+    #             print("Could not retrieve track index! This seems to be a "
+    #                   "bug. Please report it!")
+    #             return
+    #         self.signal_retrieve_costs_for_track.emit(track_index)
 
-    def set_data(self, T, C, TQC, A, E,
-                 Cost, Cost1, Cost2, Cost3, Cost4):
+    def set_data(self, df):
+        """Display the Pandas dataframe."""
+        self.data_model = PandasDataModel(df)
+        self.setModel(self.data_model)
+        self.show()
+
+    def optimize(self):
+        """Asking the QTableView to automatically resize the columns is very slow for large models.
+
+        With this function, the column can be resized only once on demand.
         """
-        Displays the input data.
-        """
+        for c in range(self.model().columnCount()):
+            self.resizeColumnToContents(c)
 
-        # Delete current content
-        self.setRowCount(0)
 
-        # Create enough rows to fit the data
-        num_elements = len(T)
-        if num_elements == 0:
-            self.viewport().update()
-            return
+        # def set_data(self, tid, aid, vld, x, y, z, tim, efo, cfr, dcr):
+    #     """
+    #     Displays the input data.
+    #     """
+    #
+    #     # Delete current content
+    #     self.setRowCount(0)
+    #
+    #     # Create enough rows to fit the data
+    #     num_elements = len(tid)
+    #     if num_elements == 0:
+    #         self.viewport().update()
+    #         return
+    #
+    #     # Fill the table
+    #     self.setRowCount(num_elements)
+    #     for i in range(num_elements):
+    #
+    #         # Track index
+    #         new_item = QTableWidgetItem(str(int(tid[i])))
+    #         new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(i, 0, new_item)
+    #
+    #         # Cell index
+    #         new_item = QTableWidgetItem(str(int(tid[i])))
+    #         new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(i, 1, new_item)
+    #
+    #         # Track index (quality control)
+    #         if np.isnan(TQC[i]):
+    #             v = -1
+    #         else:
+    #             v = int(TQC[i])
+    #         new_item = QTableWidgetItem(str(v))
+    #         new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(i, 2, new_item)
+    #
+    #         # Area
+    #         new_item = QTableWidgetItem(str(A[i]))
+    #         new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(i, 3, new_item)
+    #
+    #         # Eccentricity
+    #         new_item = QTableWidgetItem(str(E[i]))
+    #         new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(i, 4, new_item)
+    #
+    #         # Cost
+    #         new_item = QTableWidgetItem(str(Cost[i]))
+    #         new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(i, 5, new_item)
+    #
+    #         # Cost1
+    #         new_item = QTableWidgetItem(str(Cost1[i]))
+    #         new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(i, 6, new_item)
+    #
+    #         # Cost2
+    #         new_item = QTableWidgetItem(str(Cost2[i]))
+    #         new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(i, 7, new_item)
+    #
+    #         # Cost3
+    #         new_item = QTableWidgetItem(str(Cost3[i]))
+    #         new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(i, 8, new_item)
+    #
+    #         # Cost4
+    #         new_item = QTableWidgetItem(str(Cost4[i]))
+    #         new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(i, 9, new_item)
 
-        # Fill the table
-        self.setRowCount(num_elements)
-        for i in range(num_elements):
-
-            # Track index
-            new_item = QTableWidgetItem(str(int(T[i])))
-            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                              QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(i, 0, new_item)
-
-            # Cell index
-            new_item = QTableWidgetItem(str(int(C[i])))
-            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                              QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(i, 1, new_item)
-
-            # Track index (quality control)
-            if np.isnan(TQC[i]):
-                v = -1
-            else:
-                v = int(TQC[i])
-            new_item = QTableWidgetItem(str(v))
-            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                              QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(i, 2, new_item)
-
-            # Area
-            new_item = QTableWidgetItem(str(A[i]))
-            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                              QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(i, 3, new_item)
-
-            # Eccentricity
-            new_item = QTableWidgetItem(str(E[i]))
-            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                              QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(i, 4, new_item)
-
-            # Cost
-            new_item = QTableWidgetItem(str(Cost[i]))
-            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                              QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(i, 5, new_item)
-
-            # Cost1
-            new_item = QTableWidgetItem(str(Cost1[i]))
-            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                              QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(i, 6, new_item)
-
-            # Cost2
-            new_item = QTableWidgetItem(str(Cost2[i]))
-            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                              QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(i, 7, new_item)
-
-            # Cost3
-            new_item = QTableWidgetItem(str(Cost3[i]))
-            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                              QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(i, 8, new_item)
-
-            # Cost4
-            new_item = QTableWidgetItem(str(Cost4[i]))
-            new_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                              QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(i, 9, new_item)
-
-    def setup(self):
-        """
-        Sets the column headers.
-        """
-        headers = ['Ti', 'Ci', 'Ti (QC)',
-                   'A', 'E', 'C', 'C1',
-                   'C2', 'C3', 'C4']
-        tooltips = ['Track index', 'Cell index', 'Track index (QC)',
-                    'Cell area', 'Cell eccentricity', 'Total cost', 'Cost 1',
-                    'Cost 2', 'Cost 3', 'Cost 4']
-        self.setHorizontalHeaderLabels(headers)
-        self.setRowCount(0)
-        for i in range(10):
-
-            # Set a tool tip for the column
-            self.horizontalHeaderItem(i).setToolTip(tooltips[i])
-
-            # Add an empty cell
-            empty_item = QTableWidgetItem("")
-            empty_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
-                                QtCore.Qt.ItemFlag.ItemIsEnabled)
-            self.setItem(0, i, empty_item)
+    # def setup(self):
+    #     """
+    #     Sets the column headers.
+    #     """
+    #     headers = ['Ti', 'Ci', 'Ti (QC)',
+    #                'A', 'E', 'C', 'C1',
+    #                'C2', 'C3', 'C4']
+    #     tooltips = ['Track index', 'Cell index', 'Track index (QC)',
+    #                 'Cell area', 'Cell eccentricity', 'Total cost', 'Cost 1',
+    #                 'Cost 2', 'Cost 3', 'Cost 4']
+    #     self.setHorizontalHeaderLabels(headers)
+    #     self.setRowCount(0)
+    #     for i in range(10):
+    #
+    #         # Set a tool tip for the column
+    #         self.horizontalHeaderItem(i).setToolTip(tooltips[i])
+    #
+    #         # Add an empty cell
+    #         empty_item = QTableWidgetItem("")
+    #         empty_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable |
+    #                             QtCore.Qt.ItemFlag.ItemIsEnabled)
+    #         self.setItem(0, i, empty_item)
 
     def clear(self):
         """

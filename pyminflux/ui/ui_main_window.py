@@ -175,10 +175,10 @@ class Ui_MainWindow(object):
         self.wgResults.setSizePolicy(sizePolicy2)
         self.gridLayout_4 = QGridLayout(self.wgResults)
         self.gridLayout_4.setObjectName(u"gridLayout_4")
-        self.result_layout = QGridLayout()
-        self.result_layout.setObjectName(u"result_layout")
+        self.dataframe_layout = QGridLayout()
+        self.dataframe_layout.setObjectName(u"dataframe_layout")
 
-        self.gridLayout_4.addLayout(self.result_layout, 0, 0, 1, 1)
+        self.gridLayout_4.addLayout(self.dataframe_layout, 0, 0, 1, 1)
 
 
         self.project_layout.addWidget(self.wgResults)

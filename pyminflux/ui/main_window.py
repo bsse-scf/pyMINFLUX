@@ -115,7 +115,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             return
 
         self.current_image_index = i
-        self.show_results_in_data_viewer()
+        self.show_processed_dataframe()
         self.update_plots()
 
     @Slot(str, name="handle_request_revert_file")
@@ -133,7 +133,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             print("Could not revert file!")
 
         # Update UI
-        self.show_results_in_data_viewer()
+        self.show_processed_dataframe()
         self.update_plots()
 
     @Slot(int)
@@ -208,7 +208,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         #self.show_image()
         #self.plot_results()
         #self.show_files_in_file_viewer()
-        #self.show_results_in_data_viewer()
+        self.show_processed_dataframe()
 
     def update_plots(self):
         """
@@ -294,8 +294,8 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.handle_add_cell_at_position)
         self.signal_mark_dataframe_as_modified.connect(
             self.file_viewer.mark_as_modified)
-        self.data_viewer.signal_retrieve_costs_for_track.connect(
-            self.retrieve_costs_for_track)
+        # self.data_viewer.signal_retrieve_costs_for_track.connect(
+        #     self.retrieve_costs_for_track)
 
     def select_input_files(self):
         """
@@ -696,11 +696,8 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.data_viewer is None:
             self.data_viewer = DataViewer()
 
-        # Add a scroll area
-        scroll_area = QScrollArea(self)
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.data_viewer)
-        self.ui.result_layout.addWidget(scroll_area)
+        # Add to the UI
+        self.ui.dataframe_layout.addWidget(self.data_viewer)
 
         # Show the widget
         self.data_viewer.show()
@@ -714,80 +711,25 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.file_viewer.set_data(self.tracker.file_list,
                                   self.tracker.image_file_list)
 
-    def show_results_in_data_viewer(self):
+    def show_processed_dataframe(self):
         """
         Displays the results for current frame in the data viewer.
         """
-        if self.data_viewer is None:
-            return
 
-        if self.tracker.result_folder == '':
+        # Is there data to process?
+        if self.minfluxreader is None:
             self.data_viewer.clear()
             return
 
-        if len(self.tracker.image_file_list) == 0:
-            self.data_viewer.clear()
-            return
+        # @TODO
+        # This must be run in a parallel QThread
+        df = self.minfluxreader.processed_dataframe
 
-        if self.tracker.num_data_frames() == 0:
-            self.data_viewer.clear()
-            return
+        # Pass the dataframe to the pdDataViewer
+        self.data_viewer.set_data(df)
 
-        if not self.tracker.results_up_to_date:
-            self.data_viewer.clear()
-            return
-
-        # Load the results if needed
-        current_data_frame = self.tracker.load_dataframe_for_index(
-            self.current_image_index)
-
-        if current_data_frame is None:
-            self.data_viewer.clear()
-            return
-
-        # If no results yet, we cannot retrieve track indices and costs.
-        if 'track.index' not in current_data_frame.columns:
-            self.data_viewer.clear()
-            return
-
-        # Display the positions
-        X = current_data_frame['cell.center.x'].values
-        Y = current_data_frame['cell.center.y'].values
-        C = current_data_frame["cell.index"].values
-        T = current_data_frame["track.index"].values
-        A = current_data_frame["cell.area"].values
-        E = current_data_frame["cell.eccentricity"].values
-
-        # Get the costs
-        try:
-            # The first time point does not have costs associated with it.
-            Cost = current_data_frame["cost"].values
-            Cost1 = current_data_frame["cost1"].values
-            Cost2 = current_data_frame["cost2"].values
-            Cost3 = current_data_frame["cost3"].values
-            Cost4 = current_data_frame["cost4"].values
-
-        except KeyError:
-            Cost = np.empty(X.shape)
-            Cost.fill(np.nan)
-            Cost1 = np.empty(X.shape)
-            Cost1.fill(np.nan)
-            Cost2 = np.empty(X.shape)
-            Cost2.fill(np.nan)
-            Cost3 = np.empty(X.shape)
-            Cost3.fill(np.nan)
-            Cost4 = np.empty(X.shape)
-            Cost4.fill(np.nan)
-
-        # Get the quality control track indices
-        try:
-            TQC = current_data_frame["qc_track_index"].values
-        except KeyError:
-            TQC = -1 * np.ones(X.shape)
-
-        # Display it
-        self.data_viewer.set_data(T, C, TQC, A, E, Cost,
-                                  Cost1, Cost2, Cost3, Cost4)
+        # Optimize the table view columns
+        self.data_viewer.optimize()
 
     @Slot(name="delete_selection")
     def delete_selection(self):
@@ -839,7 +781,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.update_plots()
 
             # Update the data viewer
-            self.show_results_in_data_viewer()
+            self.show_processed_dataframe()
 
         else:
             return
@@ -916,4 +858,4 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.update_plots()
 
         # Update the data viewer
-        self.show_results_in_data_viewer()
+        self.show_processed_dataframe()
