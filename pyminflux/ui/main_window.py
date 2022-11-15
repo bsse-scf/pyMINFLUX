@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 from PySide6 import QtGui
-from PySide6.QtCore import QSettings, QFile
+from PySide6.QtCore import QSettings
 from PySide6.QtCore import Qt
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Slot
@@ -14,9 +14,7 @@ from PySide6.QtWidgets import QFileDialog
 from PySide6.QtWidgets import QGraphicsView
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtWidgets import QScrollArea
-from PySide6.QtUiTools import QUiLoader
 
-#from analysis.tracker import Tracker
 from threads import TrackerThread
 from ui.Point import Point
 from ui.Vector import Vector
@@ -28,11 +26,11 @@ from ui.settings import Settings
 
 from ui.ui_main_window import Ui_MainWindow
 
-# # Set up UIs
-# Ui_MainWindow, QMainWindow = loadUiType(os.path.join(os.path.dirname(__file__), 'main_window.ui'))
+from pyminflux import __version__
+from pyminflux.reader import MinFluxReader
 
 
-class TracerMainWindow(QMainWindow, Ui_MainWindow):
+class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     """
     Main application window.
     """
@@ -74,20 +72,22 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
 
         # super(TracerMainWindow, self).__init__()
         # self.setupUi(self)
-        self.setWindowTitle('Lineage Tracer')
+        self.setWindowTitle(f"pyMinFlux v{__version__}")
         self.setup_file_viewer()
         self.setup_data_viewer()
         self.setup_data_plotter()
         self.setup_conn()
+
+        # Keep a reference to the MinFluxReader
+        self._minfluxreader = None
 
         # Install the custom output stream
         sys.stdout = EmittingStream()
         sys.stdout.signal_textWritten.connect(self.print_to_console)
 
         # Read the application settings
-        app_settings = QSettings('BSSE', 'lineage_tracer')
-        self.last_selected_path = app_settings.value("io/last_selected_path",
-                                                     ".")
+        app_settings = QSettings('ch.ethz.bsse.scf', 'pyminflux')
+        self.last_selected_path = app_settings.value("io/last_selected_path", ".")
 
         # Initialize tracker
         self.tracker = None
@@ -205,10 +205,10 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         :return: 
         """
         self.scene.clear()
-        self.show_image()
-        self.plot_results()
-        self.show_files_in_file_viewer()
-        self.show_results_in_data_viewer()
+        #self.show_image()
+        #self.plot_results()
+        #self.show_files_in_file_viewer()
+        #self.show_results_in_data_viewer()
 
     def update_plots(self):
         """
@@ -223,10 +223,10 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         """
         Append text to the QTextEdit.
         """
-        cursor = self.txConsole.textCursor()
+        cursor = self.ui.txConsole.textCursor()
         cursor.movePosition(QtGui.QTextCursor.MoveOperation.End)
         cursor.insertText(text)
-        self.txConsole.setTextCursor(cursor)
+        self.ui.txConsole.setTextCursor(cursor)
 
     def closeEvent(self, event):
         """
@@ -249,9 +249,8 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
 
             # Store the application settings
             if self.last_selected_path != '':
-                app_settings = QSettings('BSSE', 'lineage_tracer')
-                app_settings.setValue("io/last_selected_path",
-                                      self.last_selected_path)
+                app_settings = QSettings('ch.ethz.bsse.scf', 'pyminflux')
+                app_settings.setValue("io/last_selected_path", str(self.last_selected_path))
 
             # Now exit
             event.accept()
@@ -275,7 +274,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         """
         self.ui.pbSelectData.clicked.connect(self.select_input_files)
         self.ui.pbSelectImages.clicked.connect(self.select_image_files)
-        self.ui.pbSelectProjectFolder.clicked.connect(self.select_project_folder)
+        self.ui.pbLoadNumpyDataFile.clicked.connect(self.select_and_open_numpy_file)
         self.ui.pbRunTracker.clicked.connect(self.run_tracker)
         self.ui.pbSaveProject.clicked.connect(self.save_project)
         self.ui.pbExportResults.clicked.connect(self.export_results)
@@ -339,27 +338,34 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
             self.full_update_ui()
             print("Selected %d image files." % (len(sorted_image_file_list)))
 
-    def select_project_folder(self):
+    def select_and_open_numpy_file(self):
         """
-        Select folder where to store the results.
+        Pick NumPy MINFLUX data file to open.
         :return: void
         """
-        result_dir = QFileDialog.getExistingDirectory(self,
-                                                      "Pick project folder",
-                                                      self.last_selected_path,
-                                                      QFileDialog.Option.ShowDirsOnly |
-                                                      QFileDialog.Option.DontResolveSymlinks)
 
-        if result_dir != "":
-            self.tracker.result_folder = result_dir
-            self.last_selected_path = result_dir
-            print("Set project folder to %s." % result_dir)
+        # Open a file dialog for the user to pick an .npy file
+        res = QFileDialog.getOpenFileName(
+            self,
+            "Open Image",
+            str(self.last_selected_path),
+            "NumPy binary file (*.npy);;All files (*.*)"
+        )
+        filename = res[0]
+        if filename != "":
+            self.last_selected_path = Path(filename).parent
 
-            # Try loading the project
-            self.load_project()
+            # Open the file
+            self.minfluxreader = MinFluxReader(filename)
 
-            # Show the folder path on the button
-            self.pbSelectProjectFolder.setText(result_dir)
+            # @TODO
+            # Display the processed dataframe in the data viewer
+
+            # Show some info
+            print(self.minfluxreader)
+
+            # Show the filename on the button
+            self.ui.pbLoadNumpyDataFile.setText(filename)
 
             # Update the ui
             self.full_update_ui()
@@ -434,7 +440,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         Disable all buttons
         :return: void
         """
-        self.pbSelectProjectFolder.setEnabled(False)
+        self.pbLoadNumpyDataFile.setEnabled(False)
         self.wgAnalysis.setEnabled(False)
         self.wgInputFiles.setEnabled(False)
 
@@ -443,7 +449,7 @@ class TracerMainWindow(QMainWindow, Ui_MainWindow):
         Enable all buttons.
         :return: void
         """
-        self.pbSelectProjectFolder.setEnabled(True)
+        self.pbLoadNumpyDataFile.setEnabled(True)
         self.wgAnalysis.setEnabled(True)
         self.wgInputFiles.setEnabled(True)
 

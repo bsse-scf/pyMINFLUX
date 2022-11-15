@@ -37,7 +37,7 @@
       </property>
       <layout class="QVBoxLayout" name="project_layout">
        <item>
-        <widget class="QLabel" name="lbProject">
+        <widget class="QLabel" name="lbDataViewer">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -57,14 +57,14 @@
           </font>
          </property>
          <property name="text">
-          <string>Project</string>
+          <string>Data Viewer</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pbSelectProjectFolder">
+        <widget class="QPushButton" name="pbLoadNumpyDataFile">
          <property name="text">
-          <string>Set folder</string>
+          <string>Load</string>
          </property>
         </widget>
        </item>
