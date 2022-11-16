@@ -1,8 +1,6 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QGraphicsScene, QApplication
-from PySide6.QtCore import Slot
-from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QApplication, QGraphicsScene
 
 from .Point import Point
 
@@ -14,11 +12,11 @@ class GraphicScene(QGraphicsScene):
     """
 
     # Add a signal for changing selection in the scene
-    signal_selection_completed = \
-        Signal(list, name='signal_selection_completed')
+    signal_selection_completed = Signal(list, name="signal_selection_completed")
 
-    signal_add_cell_at_position = \
-        Signal(float, float, name='signal_add_cell_at_position')
+    signal_add_cell_at_position = Signal(
+        float, float, name="signal_add_cell_at_position"
+    )
 
     def __init__(self, parent=None):
         QGraphicsScene.__init__(self, parent)
@@ -58,7 +56,7 @@ class GraphicScene(QGraphicsScene):
         """
         Process a mouse press event on the scene.
         :param event: A mouse press event.
-        :return: 
+        :return:
         """
         if event.buttons() == Qt.MouseButton.LeftButton:
             if QApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier:
@@ -93,7 +91,7 @@ class GraphicScene(QGraphicsScene):
     def remove_points(self):
         """
         Remove points
-        :return: 
+        :return:
         """
         for item in self.items():
             if isinstance(item, Point):

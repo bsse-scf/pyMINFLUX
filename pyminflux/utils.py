@@ -161,11 +161,12 @@ def print_summary_statistics(values: np.ndarray):
         print("Nothing to summarize.")
         return
 
-    print(f"Num valid entries = {num_valid}/{len(values)} ({100 * num_valid / len(values):.2f}%)\n"
-          f"Min               = {np.nanmin(values)}\n"
-          f"25% percentile    = {np.nanpercentile(values, 25)}\n"
-          f"Median            = {np.nanmedian(values)}\n"
-          f"Mean              = {np.nanmean(values):.2f}\n"
-          f"75% percentile    = {np.nanpercentile(values, 75)}\n"
-          f"Max               = {np.nanmax(values)}"
-          )
+    print(
+        f"Num valid entries = {num_valid}/{len(values)} ({100 * num_valid / len(values):.2f}%)\n"
+        f"Min               = {np.nanmin(values)}\n"
+        f"25% percentile    = {np.nanpercentile(values, 25)}\n"
+        f"Median            = {np.nanmedian(values)}\n"
+        f"Mean              = {np.nanmean(values):.2f}\n"
+        f"75% percentile    = {np.nanpercentile(values, 75)}\n"
+        f"Max               = {np.nanmax(values)}"
+    )

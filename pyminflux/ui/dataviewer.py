@@ -1,13 +1,20 @@
-from PySide6 import QtCore
-from PySide6.QtCore import Signal, QPoint
-from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QSizePolicy, QAbstractItemView, QMenu, QTableView, QFrame
-from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
-from PySide6.QtGui import QAction
 import numpy as np
+from PySide6 import QtCore
+from PySide6.QtCore import QPoint, Signal, Slot
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QFrame,
+    QHeaderView,
+    QMenu,
+    QSizePolicy,
+    QTableView,
+    QTableWidget,
+    QTableWidgetItem,
+)
 
-from .Point import Point
 from .pandas_datamodel import PandasDataModel
+from .Point import Point
 
 
 class DataViewer(QTableView):
@@ -16,7 +23,7 @@ class DataViewer(QTableView):
     """
 
     # Add a signal for changing selection in the data viewer
-    signal_selection_completed = Signal(list, name='signal_selection_completed')
+    signal_selection_completed = Signal(list, name="signal_selection_completed")
 
     def __init__(self, *args):
         super().__init__()
@@ -26,17 +33,19 @@ class DataViewer(QTableView):
         # #self.setup()
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
-        #self.setMinimumWidth(500)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        self.setMinimumWidth(600)
+        self.setSizePolicy(
+            QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Preferred
+        )
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self.setWindowTitle("Parameters")
-        #self.itemSelectionChanged.connect(self.selection_changed)
+        # self.itemSelectionChanged.connect(self.selection_changed)
 
         # Add a context menu to the table
-        #self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
-        #self.customContextMenuRequested.connect(self.context_menu)
+        # self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        # self.customContextMenuRequested.connect(self.context_menu)
 
     # @Slot(QPoint, name="context_menu")
     # def context_menu(self, position):
@@ -70,8 +79,8 @@ class DataViewer(QTableView):
         for c in range(self.model().columnCount()):
             self.resizeColumnToContents(c)
 
-
         # def set_data(self, tid, aid, vld, x, y, z, tim, efo, cfr, dcr):
+
     #     """
     #     Displays the input data.
     #     """
@@ -208,9 +217,9 @@ class DataViewer(QTableView):
 
     def highlight_rows_for_cell_indices(self, indices):
         """
-        Highlight the rows with cell index corresponding to the indices of the selected Points. 
+        Highlight the rows with cell index corresponding to the indices of the selected Points.
         :param indices: cell indices of the selected Points.
-        :return: 
+        :return:
         """
         self.selectionModel().clearSelection()
 
@@ -222,7 +231,7 @@ class DataViewer(QTableView):
         """
         Delete rows for given cell indices.
         :param cell_indices: cell indices
-        :return: 
+        :return:
         """
         rows = []
         for i in range(self.rowCount()):

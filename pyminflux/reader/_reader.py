@@ -226,9 +226,7 @@ class MinFluxReader:
         sz = df_grouped["z"].std().values
 
         # Prepare a dataframe with the statistics
-        df_tid = pd.DataFrame(columns=[
-            "tid", "n", "mx", "my", "mz", "sx", "sy", "sz"
-        ])
+        df_tid = pd.DataFrame(columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz"])
 
         df_tid["tid"] = tid
         df_tid["n"] = n
@@ -281,7 +279,7 @@ class MinFluxReader:
         for c in np.nditer(tid_counts):
             tmp = np.repeat(np.arange(c), self._reps)
             n = len(tmp)
-            aid[index: index + n, 0] = tmp
+            aid[index : index + n, 0] = tmp
             index += n
 
         # Get all valid flags (repeated over the repetitions)
@@ -347,11 +345,7 @@ class MinFluxReader:
 
         str_acq = "3D" if self.is_3d else "2D"
 
-        return (
-            f"File: {self._filename.name}\n"
-            f"Number of entries: {len(self._data_array)} entries ({str_valid})\n"
-            f"Acquisition: {str_acq}"
-        )
+        return f"File: {self._filename.name}: {str_acq} acquisition with {len(self._data_array)} entries ({str_valid})."
 
     def __str__(self):
         """Human-friendly representation of the object."""

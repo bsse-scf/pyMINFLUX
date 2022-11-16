@@ -5,6 +5,7 @@ class TrackerThread(QtCore.QThread):
     """
     Thread that runs the tracker without blocking the UI.
     """
+
     def __init__(self, tracker):
         super(TrackerThread, self).__init__()
 

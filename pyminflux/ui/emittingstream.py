@@ -1,6 +1,6 @@
 import sys
-from PySide6.QtCore import QObject
-from PySide6.QtCore import Signal
+
+from PySide6.QtCore import QObject, Signal
 
 
 class EmittingStream(QObject):

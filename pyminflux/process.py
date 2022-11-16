@@ -1,13 +1,12 @@
-import numpy as np
-import pandas as pd
 from pathlib import Path
 from typing import Union
 
+import numpy as np
+import pandas as pd
+
 
 def get_colors_for_unique_ids(
-        ids: Union[pd.Series, np.ndarray],
-        make_unique: bool = False,
-        seed: int = 2021
+    ids: Union[pd.Series, np.ndarray], make_unique: bool = False, seed: int = 2021
 ) -> np.ndarray:
     """Return an Nx3 matrix of RGB colors in the range 0.0 ... 1.0 for all unique ids in `ids`
 
@@ -56,9 +55,7 @@ def get_colors_for_unique_ids(
 
 
 def process_minflux_file(
-        filename: Union[Path, str],
-        scaling_factor: float = 1e9,
-        verbose: bool = False
+    filename: Union[Path, str], scaling_factor: float = 1e9, verbose: bool = False
 ) -> Union[pd.DataFrame, None]:
     """Load the MINFLUX .npy file and extract the valid hits.
 
@@ -110,7 +107,7 @@ def process_minflux_file(
     # Create a Pandas dataframe for the results
     hits_df = pd.DataFrame(
         index=pd.RangeIndex(start=0, stop=n_valid),
-        columns=["tid", "x", "y", "z", "tim"]
+        columns=["tid", "x", "y", "z", "tim"],
     )
 
     # Store the extracted valid hits into the dataframe

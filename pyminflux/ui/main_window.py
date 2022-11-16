@@ -4,24 +4,19 @@ from pathlib import Path
 
 import numpy as np
 from PySide6 import QtGui
-from PySide6.QtCore import QSettings
-from PySide6.QtCore import Qt
-from PySide6.QtCore import Signal
-from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QApplication, QMainWindow
-from PySide6.QtWidgets import QFileDialog
-from PySide6.QtWidgets import QMessageBox
-
+from PySide6.QtCore import QSettings, Signal, Slot
+from PySide6.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox
 from threads import TrackerThread
-from ui.Point import Point
 from ui.dataviewer import DataViewer
 from ui.emittingstream import EmittingStream
 from ui.plotter import Plotter
-
+from ui.Point import Point
 from ui.ui_main_window_new import Ui_MainWindow
 
 from pyminflux import __version__
 from pyminflux.reader import MinFluxReader
+
+__APP_NAME__ = "pyMinFlux"
 
 
 class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
@@ -30,10 +25,12 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     """
 
     # Add a signal for changing current image index
-    signal_image_index_changed = Signal(int, name='signal_image_index_changed')
+    signal_image_index_changed = Signal(int, name="signal_image_index_changed")
 
     # Add a signal for marking dataframe of given index as modified
-    signal_mark_dataframe_as_modified = Signal(int, bool, name='signal_mark_dataframe_as_modified')
+    signal_mark_dataframe_as_modified = Signal(
+        int, bool, name="signal_mark_dataframe_as_modified"
+    )
 
     def __init__(self, parent=None):
         """
@@ -51,7 +48,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.current_image_index = 0
         self.tracker_thread = None
         self.tracker_is_running = False
-        self.last_selected_path = ''
+        self.last_selected_path = ""
         self.data_viewer = None
         self.line_handle_positions = []
         self.line_handle_translations = []
@@ -63,7 +60,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # super(TracerMainWindow, self).__init__()
         # self.setupUi(self)
-        self.setWindowTitle(f"pyMinFlux v{__version__}")
+        self.setWindowTitle(f"{__APP_NAME__} v{__version__}")
         self.setup_data_viewer()
         self.setup_data_plotter()
         self.setup_conn()
@@ -76,7 +73,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         sys.stdout.signal_textWritten.connect(self.print_to_console)
 
         # Read the application settings
-        app_settings = QSettings('ch.ethz.bsse.scf', 'pyminflux')
+        app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
         self.last_selected_path = app_settings.value("io/last_selected_path", ".")
 
         # Initialize tracker
@@ -98,9 +95,9 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def full_update_ui(self):
         """
         Updates the UI completely (after a project load, for instance).
-        :return: 
+        :return:
         """
-        #self.plotter.clear()
+        self.plotter.clear()
         self.plot_localizations()
         self.show_processed_dataframe()
 
@@ -128,9 +125,13 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         :return:
         """
 
-        button = QMessageBox.question(self, "Lineage Tracer",
-                                      "Are you sure you want to quit?",
-                                      QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+        button = QMessageBox.question(
+            self,
+            f"{__APP_NAME__}",
+            "Are you sure you want to quit?",
+            QMessageBox.StandardButton.Yes,
+            QMessageBox.StandardButton.No,
+        )
 
         if button != QMessageBox.StandardButton.Yes:
             event.ignore()
@@ -141,9 +142,11 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.tracker_thread.wait()
 
             # Store the application settings
-            if self.last_selected_path != '':
-                app_settings = QSettings('ch.ethz.bsse.scf', 'pyminflux')
-                app_settings.setValue("io/last_selected_path", str(self.last_selected_path))
+            if self.last_selected_path != "":
+                app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
+                app_settings.setValue(
+                    "io/last_selected_path", str(self.last_selected_path)
+                )
 
             # Now exit
             event.accept()
@@ -181,7 +184,12 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         Set up signals and slots
         :return: void
         """
-        self.ui.pbLoadNumpyDataFile.clicked.connect(self.select_and_open_numpy_file)
+        self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
+        self.ui.actionQuit.triggered.connect(self.quit_application)
+
+    def quit_application(self):
+        """Quit the application."""
+        self.close()
 
     def select_and_open_numpy_file(self):
         """
@@ -194,7 +202,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self,
             "Open Image",
             str(self.last_selected_path),
-            "NumPy binary file (*.npy);;All files (*.*)"
+            "NumPy binary file (*.npy);;All files (*.*)",
         )
         filename = res[0]
         if filename != "":
@@ -206,8 +214,10 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Show some info
             print(self.minfluxreader)
 
-            # Show the filename on the button
-            self.ui.pbLoadNumpyDataFile.setText(filename)
+            # Show the filename on the main window
+            self.setWindowTitle(
+                f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
+            )
 
             # Update the ui
             self.full_update_ui()
@@ -221,14 +231,16 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             print("Select files to be processed.")
             return
 
-        if self.tracker.result_folder == '':
+        if self.tracker.result_folder == "":
             print("Select project folder.")
             return
 
         # Launch the actual process in a separate thread
         if self.tracker_is_running:
-            print("Cannot currently run the tracker because another"
-                  " process is running.")
+            print(
+                "Cannot currently run the tracker because another"
+                " process is running."
+            )
         else:
             self.tracker_thread.start()
 
@@ -280,14 +292,13 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plotter.plot_localizations(
                 x=self.minfluxreader.processed_dataframe["x"],
                 y=self.minfluxreader.processed_dataframe["y"],
-                z=self.minfluxreader.processed_dataframe["z"]
+                z=self.minfluxreader.processed_dataframe["z"],
             )
         else:
             self.plotter.plot_localizations(
                 x=self.minfluxreader.processed_dataframe["x"],
-                y=self.minfluxreader.processed_dataframe["y"]
+                y=self.minfluxreader.processed_dataframe["y"],
             )
-
 
     def save_plots(self):
         """
@@ -295,7 +306,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         :return: void
         """
-        if self.tracker.result_folder == '':
+        if self.tracker.result_folder == "":
             return
 
         if len(self.tracker.image_file_list) == 0:
@@ -306,7 +317,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             return
 
         # Is there a result folder already?
-        if self.tracker.result_folder == '':
+        if self.tracker.result_folder == "":
             return
 
         plot_folder = os.path.join(self.tracker.result_folder, "plots")
@@ -324,9 +335,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Save to disk
             plot_file_name = os.path.join(plot_folder, "plot%05d.tif" % (i + 1))
-            self.ui.canvas.figure.savefig(plot_file_name,
-                                       dpi=150,
-                                       bbox_inches='tight')
+            self.ui.canvas.figure.savefig(plot_file_name, dpi=150, bbox_inches="tight")
 
             # Inform
             print("Saved plot %s." % plot_file_name)
@@ -371,16 +380,21 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.tracker_is_running:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Icon.Information)
-            msg.setText("Sorry, you cannot modify the data"
-                        " while the tracker is running!")
+            msg.setText(
+                "Sorry, you cannot modify the data" " while the tracker is running!"
+            )
             msg.setWindowTitle("Info")
             msg.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg.exec()
             return
 
-        reply = QMessageBox.question(self, 'Question',
-                                     "Delete selected cell(s)?",
-                                     QMessageBox.StandardButton.Yes, QMessageBox.StandardButton.No)
+        reply = QMessageBox.question(
+            self,
+            "Question",
+            "Delete selected cell(s)?",
+            QMessageBox.StandardButton.Yes,
+            QMessageBox.StandardButton.No,
+        )
 
         if reply == QMessageBox.StandardButton.Yes:
 
@@ -392,15 +406,13 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                     index = int(item.cell_index)
 
                     # Remove the object from the data frame
-                    df = self.tracker.load_dataframe_for_index(
-                        self.current_image_index)
+                    df = self.tracker.load_dataframe_for_index(self.current_image_index)
                     self.tracker.store_dataframe_for_index(
-                        self.current_image_index,
-                        df[(df['cell.index'] != index)])
+                        self.current_image_index, df[(df["cell.index"] != index)]
+                    )
 
             # Announce that the data frame was modified
-            self.signal_mark_dataframe_as_modified.emit(
-                self.current_image_index, False)
+            self.signal_mark_dataframe_as_modified.emit(self.current_image_index, False)
 
             # Mark the results as invalid
             self.tracker.results_up_to_date = False
@@ -423,8 +435,9 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.tracker_is_running:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Icon.Information)
-            msg.setText("Sorry, you cannot modify the data while"
-                        " the tracker is running!")
+            msg.setText(
+                "Sorry, you cannot modify the data while" " the tracker is running!"
+            )
             msg.setWindowTitle("Info")
             msg.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg.exec()
@@ -434,7 +447,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         df = self.tracker.load_dataframe_for_index(self.current_image_index)
 
         # Set the cell index for the new cell
-        cell_index = np.max(df['cell.index'].values) + 1
+        cell_index = np.max(df["cell.index"].values) + 1
         if np.isnan(cell_index):
             cell_index = 1  # Lowest index is 1
 
@@ -444,43 +457,41 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         s = df.xs(df.index[0])
 
         # Override some values
-        s['cell.index'] = cell_index
-        s['cell.center.x'] = round(x)
-        s['cell.center.y'] = round(y)
-        s['track.index'] = -1
-        s['dif.x'] = 0
-        s['dif.y'] = 0
-        s['filtered.dif.x'] = 0
-        s['filtered.dif.y'] = 0
-        s['cost'] = np.nan
-        s['cost1'] = np.nan
-        s['cost2'] = np.nan
-        s['cost3'] = np.nan
-        s['cost4'] = np.nan
-        if 'qc_fingerprint' in s:
-            s['qc_fingerprint'] = 0
-            s['qc_dist'] = 0.0
-            s['qc_validated'] = False
-            s['qc_track_index'] = -1
-            s['qc_age'] = 0
+        s["cell.index"] = cell_index
+        s["cell.center.x"] = round(x)
+        s["cell.center.y"] = round(y)
+        s["track.index"] = -1
+        s["dif.x"] = 0
+        s["dif.y"] = 0
+        s["filtered.dif.x"] = 0
+        s["filtered.dif.y"] = 0
+        s["cost"] = np.nan
+        s["cost1"] = np.nan
+        s["cost2"] = np.nan
+        s["cost3"] = np.nan
+        s["cost4"] = np.nan
+        if "qc_fingerprint" in s:
+            s["qc_fingerprint"] = 0
+            s["qc_dist"] = 0.0
+            s["qc_validated"] = False
+            s["qc_track_index"] = -1
+            s["qc_age"] = 0
 
         # Update the cell.index
-        s['cell.index'] = cell_index
+        s["cell.index"] = cell_index
 
         # Append the new row at the end (preserving the index)
         s.name = np.max(df.index.values) + 1
         df = df.append(s, ignore_index=False)
 
         # Store the updated dataframe
-        self.tracker.store_dataframe_for_index(self.current_image_index,
-                                               df)
+        self.tracker.store_dataframe_for_index(self.current_image_index, df)
 
         # Mark the results as invalid
         self.tracker.results_up_to_date = False
 
         # Announce that the data frame was modified
-        self.signal_mark_dataframe_as_modified.emit(
-            self.current_image_index, False)
+        self.signal_mark_dataframe_as_modified.emit(self.current_image_index, False)
 
         # Update the plots
         self.update_plots()

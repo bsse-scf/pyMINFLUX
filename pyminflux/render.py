@@ -1,17 +1,16 @@
-from matplotlib.collections import LineCollection
+from pathlib import Path
+from typing import Union
+
 import matplotlib.pyplot as plt
 import numpy as np
 import open3d as o3d
 import pandas as pd
-from pathlib import Path
 import pptk
-from typing import Union
+from matplotlib.collections import LineCollection
 
 
 def render_pptk(
-        points: np.ndarray,
-        colors: Union[np.ndarray, None] = None,
-        point_size: float = 1.0
+    points: np.ndarray, colors: Union[np.ndarray, None] = None, point_size: float = 1.0
 ):
     """Render the points with the passed colors using pptk.
 
@@ -34,24 +33,19 @@ def render_pptk(
 
     # Assign the colors
     v.attributes(colors)
-    v.color_map('cool')
+    v.color_map("cool")
 
     # Draw the point cloud
-    v.set(
-        point_size=point_size,
-        bg_color=[0, 0, 0, 0],
-        show_axis=0,
-        show_grid=0
-    )
+    v.set(point_size=point_size, bg_color=[0, 0, 0, 0], show_axis=0, show_grid=0)
 
 
 def render_o3d(
-        points: np.ndarray,
-        colors: Union[np.ndarray, None] = None,
-        point_size: float = 1.0,
-        on_grid: bool = False,
-        voxel_size: float = 1.0,
-        calc_normals: bool = False
+    points: np.ndarray,
+    colors: Union[np.ndarray, None] = None,
+    point_size: float = 1.0,
+    on_grid: bool = False,
+    voxel_size: float = 1.0,
+    calc_normals: bool = False,
 ):
     """Render the points with the passed colors using pptk.
 
@@ -92,8 +86,7 @@ def render_o3d(
     if on_grid:
         # Interpolate the point cloud on a grid with given voxel size
         voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(
-            pcd,
-            voxel_size=voxel_size
+            pcd, voxel_size=voxel_size
         )
         vis.add_geometry(voxel_grid)
     else:
@@ -105,15 +98,15 @@ def render_o3d(
 
 
 def render_mpl(
-        points: pd.DataFrame,
-        colors: Union[np.ndarray, None] = None,
-        filename: Union[Path, str, None] = None,
-        point_size: float = 1.0,
-        plot_trajectories: bool = False,
-        legend: bool = True,
-        axes: bool = True,
-        dpi: int = 1200,
-        skip_ids: tuple = ()
+    points: pd.DataFrame,
+    colors: Union[np.ndarray, None] = None,
+    filename: Union[Path, str, None] = None,
+    point_size: float = 1.0,
+    plot_trajectories: bool = False,
+    legend: bool = True,
+    axes: bool = True,
+    dpi: int = 1200,
+    skip_ids: tuple = (),
 ):
     """Render the points with the passed colors using MATPLOTLIB.
 
@@ -147,23 +140,23 @@ def render_mpl(
     """
 
     # Make sure that the points are sorted by track identifier first and time second.
-    sorted_points = points.sort_values(by=['tid', 'tim'])
+    sorted_points = points.sort_values(by=["tid", "tim"])
 
     # Do we plot trajectories or individual points?
     if plot_trajectories:
-        line_style = '-'
+        line_style = "-"
         line_width = 0.25
         marker = None
         marker_size = 0
     else:
         line_style = None
         line_width = 0.0
-        marker = '.'
+        marker = "."
         marker_size = point_size
 
     # Plot using MATPLOTLIB
     fig, ax = plt.subplots()
-    ids = sorted_points['tid'].unique()
+    ids = sorted_points["tid"].unique()
 
     for i, id in enumerate(ids):
 
@@ -171,7 +164,7 @@ def render_mpl(
             continue
 
         # Get the points for current id
-        tmp = sorted_points[sorted_points['tid'] == id]
+        tmp = sorted_points[sorted_points["tid"] == id]
 
         # Define the colors
         if colors is not None:
@@ -184,21 +177,21 @@ def render_mpl(
 
         # Plot
         ax.plot(
-            tmp['x'],
-            tmp['y'],
+            tmp["x"],
+            tmp["y"],
             linestyle=line_style,
             linewidth=line_width,
             marker=marker,
             markersize=marker_size,
             label=str(id),
-            color=color
+            color=color,
         )
 
     if legend:
         ax.legend(loc="best", fontsize="xx-small")
 
     ax.invert_yaxis()
-    ax.axis('equal')
+    ax.axis("equal")
 
     if not axes:
         ax.set_axis_off()
@@ -216,11 +209,11 @@ def render_mpl(
 
 
 def plot_time_encoded_trajectory_mpl(
-        points: pd.DataFrame,
-        tid: int,
-        filename: Union[Path, str, None] = None,
-        axes: bool = True,
-        dpi: int = 1200
+    points: pd.DataFrame,
+    tid: int,
+    filename: Union[Path, str, None] = None,
+    axes: bool = True,
+    dpi: int = 1200,
 ):
     """Plot a time-encoded trajectory for requested ID using MATPLOTLIB.
 
@@ -241,7 +234,7 @@ def plot_time_encoded_trajectory_mpl(
     """
 
     # Make sure that the points are sorted by track identifier first and time second.
-    sorted_points = points.sort_values(by=['tid', 'tim'])
+    sorted_points = points.sort_values(by=["tid", "tim"])
 
     # Only consider requested trajectory id
     points_tid = sorted_points[sorted_points["tid"] == tid].copy()
@@ -255,7 +248,7 @@ def plot_time_encoded_trajectory_mpl(
 
     # Create a continuous norm to map from data points to colors
     norm = plt.Normalize(time.min(), time.max())
-    lc = LineCollection(segments, cmap='Blues', norm=norm)
+    lc = LineCollection(segments, cmap="Blues", norm=norm)
     # Set the values used for colormapping
     lc.set_array(time)
     lc.set_linewidth(2)
@@ -265,7 +258,7 @@ def plot_time_encoded_trajectory_mpl(
     line = ax.add_collection(lc)
     fig.colorbar(line, ax=ax)
     ax.invert_yaxis()
-    ax.axis('equal')
+    ax.axis("equal")
 
     if not axes:
         ax.set_axis_off()

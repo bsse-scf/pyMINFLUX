@@ -22,21 +22,22 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QPushButton" name="pbLoadNumpyDataFile">
-      <property name="text">
-       <string>Load</string>
-      </property>
-     </widget>
-    </item>
-    <item>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="2" colspan="2">
-       <layout class="QGridLayout" name="plotting_layout"/>
+      <item row="0" column="0">
+       <layout class="QHBoxLayout" name="all_data_layout" stretch="0">
+        <item>
+         <layout class="QGridLayout" name="dataframe_layout">
+          <property name="horizontalSpacing">
+           <number>0</number>
+          </property>
+         </layout>
+        </item>
+       </layout>
       </item>
-      <item row="0" column="0" colspan="2">
-       <layout class="QGridLayout" name="dataframe_layout">
-        <property name="sizeConstraint">
-         <enum>QLayout::SetDefaultConstraint</enum>
+      <item row="0" column="1">
+       <layout class="QGridLayout" name="plotting_layout">
+        <property name="horizontalSpacing">
+         <number>0</number>
         </property>
        </layout>
       </item>
@@ -53,6 +54,15 @@
      <height>22</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionLoad"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <addaction name="menuFile"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QDockWidget" name="dwBottom">
@@ -74,9 +84,15 @@
       <rect>
        <x>10</x>
        <y>10</y>
-       <width>1256</width>
+       <width>16777215</width>
        <height>200</height>
       </rect>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
      <property name="maximumSize">
       <size>
@@ -90,6 +106,28 @@
     </widget>
    </widget>
   </widget>
+  <action name="actionLoad">
+   <property name="text">
+    <string>&amp;Load data</string>
+   </property>
+   <property name="toolTip">
+    <string>Load MinFlux binary NumPy data</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="toolTip">
+    <string>Quit application</string>
+   </property>
+   <property name="shortcut">
+    <string/>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
