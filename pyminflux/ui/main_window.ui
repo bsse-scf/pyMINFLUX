@@ -37,39 +37,7 @@
       </property>
       <layout class="QVBoxLayout" name="project_layout">
        <item>
-        <widget class="QLabel" name="lbDataViewer">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>24</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Data Viewer</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pbLoadNumpyDataFile">
-         <property name="text">
-          <string>Load</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QWidget" name="wgResults" native="true">
+        <widget class="QWidget" name="wgDataframe" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -79,6 +47,13 @@
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0">
            <layout class="QGridLayout" name="dataframe_layout"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="pbLoadNumpyDataFile">
+            <property name="text">
+             <string>Load</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -130,23 +105,7 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <item>
-          <widget class="QWidget" name="plotting_widget" native="true">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_10">
-            <item row="0" column="0">
-             <widget class="QGraphicsView" name="graphicsView"/>
-            </item>
-           </layout>
-          </widget>
-         </item>
-        </layout>
+        <layout class="QVBoxLayout" name="plotting_layout"/>
        </item>
       </layout>
      </widget>

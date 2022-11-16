@@ -18,8 +18,8 @@ if __name__ == '__main__':
     app.installEventFilter(appEventFilter)
 
     # Add some connections
-    appEventFilter.signal_zoom_in.connect(main.scene.zoom_in)
-    appEventFilter.signal_zoom_out.connect(main.scene.zoom_out)
-    appEventFilter.signal_delete_selection.connect(main.delete_selection)
+    # appEventFilter.signal_zoom_in.connect(main.plotter.zoom_in)
+    # appEventFilter.signal_zoom_out.connect(main.plotter.zoom_out)
+    # appEventFilter.signal_delete_selection.connect(main.delete_selection)
 
     sys.exit(app.exec())
