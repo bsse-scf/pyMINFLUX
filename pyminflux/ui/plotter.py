@@ -9,6 +9,9 @@ class Plotter(PlotWidget):
         super().__init__()
         self.setBackground('w')
         self.brush = pg.mkBrush(240, 50, 20, 180)
+        self.remove_points()
+        self.hideAxis('bottom')
+        self.hideAxis('left')
         self.show()
 
     def remove_points(self):
@@ -20,3 +23,5 @@ class Plotter(PlotWidget):
         scatter = pg.ScatterPlotItem(size=10, brush=self.brush)
         scatter.setData(coords["x"], coords["y"])
         self.addItem(scatter)
+        self.showAxis('bottom')
+        self.showAxis('left')

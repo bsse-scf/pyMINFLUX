@@ -15,9 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QGridLayout, QMainWindow, QMenuBar,
-    QPushButton, QSizePolicy, QStatusBar, QTextEdit,
-    QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QDockWidget, QGridLayout, QLayout,
+    QMainWindow, QMenuBar, QPushButton, QSizePolicy,
+    QStatusBar, QTextEdit, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -36,13 +36,6 @@ class Ui_MainWindow(object):
 
         self.gridLayout = QGridLayout()
         self.gridLayout.setObjectName(u"gridLayout")
-        self.txConsole = QTextEdit(self.centralwidget)
-        self.txConsole.setObjectName(u"txConsole")
-        self.txConsole.setMaximumSize(QSize(16777215, 200))
-        self.txConsole.setReadOnly(True)
-
-        self.gridLayout.addWidget(self.txConsole, 2, 0, 1, 4)
-
         self.plotting_layout = QGridLayout()
         self.plotting_layout.setObjectName(u"plotting_layout")
 
@@ -50,6 +43,7 @@ class Ui_MainWindow(object):
 
         self.dataframe_layout = QGridLayout()
         self.dataframe_layout.setObjectName(u"dataframe_layout")
+        self.dataframe_layout.setSizeConstraint(QLayout.SetDefaultConstraint)
 
         self.gridLayout.addLayout(self.dataframe_layout, 0, 0, 1, 2)
 
@@ -64,6 +58,19 @@ class Ui_MainWindow(object):
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
         MainWindow.setStatusBar(self.statusbar)
+        self.dwBottom = QDockWidget(MainWindow)
+        self.dwBottom.setObjectName(u"dwBottom")
+        self.dwBottom.setAllowedAreas(Qt.BottomDockWidgetArea)
+        self.dockWidgetContents = QWidget()
+        self.dockWidgetContents.setObjectName(u"dockWidgetContents")
+        self.dockWidgetContents.setMinimumSize(QSize(0, 200))
+        self.txConsole = QTextEdit(self.dockWidgetContents)
+        self.txConsole.setObjectName(u"txConsole")
+        self.txConsole.setGeometry(QRect(10, 10, 1256, 200))
+        self.txConsole.setMaximumSize(QSize(16777215, 200))
+        self.txConsole.setReadOnly(True)
+        self.dwBottom.setWidget(self.dockWidgetContents)
+        MainWindow.addDockWidget(Qt.BottomDockWidgetArea, self.dwBottom)
 
         self.retranslateUi(MainWindow)
 
