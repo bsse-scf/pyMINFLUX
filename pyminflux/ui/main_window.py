@@ -13,16 +13,12 @@ from PySide6.QtWidgets import QApplication, QMainWindow
 from PySide6.QtWidgets import QFileDialog
 from PySide6.QtWidgets import QGraphicsView
 from PySide6.QtWidgets import QMessageBox
-from PySide6.QtWidgets import QScrollArea
 
 from threads import TrackerThread
 from ui.Point import Point
-from ui.Vector import Vector
 from ui.dataviewer import DataViewer
 from ui.emittingstream import EmittingStream
-from ui.fileviewer import FileViewer
 from ui.graphicscene import GraphicScene
-from ui.settings import Settings
 
 from ui.ui_main_window import Ui_MainWindow
 
@@ -55,12 +51,9 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         self.scene = None
         self.current_image_index = 0
-        self.input_file_indices_list = []
         self.tracker_thread = None
         self.tracker_is_running = False
         self.last_selected_path = ''
-        self.settings_dialog = None
-        self.file_viewer = None
         self.data_viewer = None
         self.line_handle_positions = []
         self.line_handle_translations = []
@@ -73,7 +66,6 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # super(TracerMainWindow, self).__init__()
         # self.setupUi(self)
         self.setWindowTitle(f"pyMinFlux v{__version__}")
-        self.setup_file_viewer()
         self.setup_data_viewer()
         self.setup_data_plotter()
         self.setup_conn()
@@ -272,30 +264,13 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         Set up signals and slots
         :return: void
         """
-        self.ui.pbSelectData.clicked.connect(self.select_input_files)
-        self.ui.pbSelectImages.clicked.connect(self.select_image_files)
         self.ui.pbLoadNumpyDataFile.clicked.connect(self.select_and_open_numpy_file)
-        self.ui.pbRunTracker.clicked.connect(self.run_tracker)
-        self.ui.pbSaveProject.clicked.connect(self.save_project)
-        self.ui.pbExportResults.clicked.connect(self.export_results)
-        self.ui.pbSettings.clicked.connect(self.show_settings_dialog)
-        self.ui.cbPlotRawVectors.stateChanged.connect(self.plot_results)
-        self.ui.cbPlotFiltVectors.stateChanged.connect(self.plot_results)
-        self.ui.rbPlotCellIndex.toggled.connect(self.plot_results)
-        self.ui.rbPlotTrackIndex.toggled.connect(self.plot_results)
-        self.signal_image_index_changed.connect(self.handle_changed_image_index)
-        self.file_viewer.signal_request_revert_file.connect(
-            self.handle_request_revert_file)
         self.scene.signal_selection_completed.connect(
             self.data_viewer.handle_scene_selection_completed)
         self.data_viewer.signal_selection_completed.connect(
             self.scene.handle_data_viewer_selection_completed)
         self.scene.signal_add_cell_at_position.connect(
             self.handle_add_cell_at_position)
-        self.signal_mark_dataframe_as_modified.connect(
-            self.file_viewer.mark_as_modified)
-        # self.data_viewer.signal_retrieve_costs_for_track.connect(
-        #     self.retrieve_costs_for_track)
 
     def select_input_files(self):
         """
@@ -664,28 +639,6 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print("Exporting results...")
         self.tracker.export()
         print("Done.")
-
-    def setup_file_viewer(self):
-        """
-        Set up the file viewer.
-        """
-
-        # Initialize widget if need
-        if self.file_viewer is None:
-            self.file_viewer = FileViewer()
-
-        # Connect the signal
-        self.file_viewer.signal_image_index_changed.connect(
-            self.handle_changed_image_index)
-
-        # Add a scroll area
-        scroll_area = QScrollArea(self)
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.file_viewer)
-        self.ui.data_layout.addWidget(scroll_area)
-
-        # Show the widget
-        self.file_viewer.show()
 
     def setup_data_viewer(self):
         """

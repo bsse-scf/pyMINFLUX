@@ -16,12 +16,7 @@ class DataViewer(QTableView):
     """
 
     # Add a signal for changing selection in the data viewer
-    signal_selection_completed = Signal(list,
-                                            name='signal_selection_completed')
-
-    # # Add a signal for retrieving the costs associated to the selected track
-    # signal_retrieve_costs_for_track = Signal(int,
-    #                                              name='signal_retrieve_costs_for_track')
+    signal_selection_completed = Signal(list, name='signal_selection_completed')
 
     def __init__(self, *args):
         super().__init__()

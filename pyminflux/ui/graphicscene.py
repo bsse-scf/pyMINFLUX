@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QGraphicsScene, QApplication
 from PySide6.QtCore import Slot
 from PySide6.QtCore import Signal
 
-from .Vector import Vector
 from .Point import Point
 
 
@@ -99,33 +98,6 @@ class GraphicScene(QGraphicsScene):
         for item in self.items():
             if isinstance(item, Point):
                 self.removeItem(item)
-
-    def display_vectors(self, vectors):
-        """
-        This function adds all vectors from a list to the scene and redraws.
-        :param vectors: a list of Vectors.
-        :return:
-        """
-
-        for vector in vectors:
-            self.addItem(vector)
-
-    def remove_vectors(self, class_name=None):
-        """
-        This function removes all vectors of a given class (all, if no class name is given)
-        :param class_name: (default = None). Name of the Vectors to remove. If None. all Vectors are removed.  
-        :param vectors: a list of Vectors.
-        :return:
-        """
-
-        for item in self.items():
-            if isinstance(item, Vector):
-                if class_name is None:
-                    self.removeItem(item)
-                elif item.class_name == class_name:
-                    self.removeItem(item)
-                else:
-                    pass
 
     @Slot(name="selection_changed")
     def selection_changed(self):
