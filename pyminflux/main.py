@@ -1,7 +1,8 @@
 import sys
 
 from PySide6.QtWidgets import QApplication
-#from ui.appeventfilter import AppEventFilter
+
+# from ui.appeventfilter import AppEventFilter
 from ui.main_window import pyMinFluxMainWindow
 
 if __name__ == "__main__":
@@ -13,8 +14,8 @@ if __name__ == "__main__":
     main.show()
 
     # Attach the event filter
-    #appEventFilter = AppEventFilter()
-    #app.installEventFilter(appEventFilter)
+    # appEventFilter = AppEventFilter()
+    # app.installEventFilter(appEventFilter)
 
     # Add some connections
     # appEventFilter.signal_zoom_in.connect(main.plotter.zoom_in)

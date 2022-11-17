@@ -65,6 +65,12 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QDockWidget" name="dwBottom">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="allowedAreas">
     <set>Qt::BottomDockWidgetArea</set>
    </property>
@@ -152,6 +158,11 @@
   <action name="actionSave_plot">
    <property name="text">
     <string>Save plot</string>
+   </property>
+  </action>
+  <action name="actionCamera_parameters">
+   <property name="text">
+    <string>Camera parameters</string>
    </property>
   </action>
  </widget>

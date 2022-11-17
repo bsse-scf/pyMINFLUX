@@ -14,10 +14,9 @@ __APP_NAME__ = "pyMinFlux"
 
 from pyminflux.threading import BaseThread
 from pyminflux.ui.dataviewer import DataViewer
-
 from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.plotter import Plotter
-
+from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.ui_main_window_new import Ui_MainWindow
 
 
@@ -60,11 +59,11 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.text_handle_track_indices = []
         self.pickEvent = False
 
-        # super(TracerMainWindow, self).__init__()
-        # self.setupUi(self)
         self.setWindowTitle(f"{__APP_NAME__} v{__version__}")
+
         self.setup_data_viewer()
         self.setup_data_plotter()
+        self.plotter3D = None
         self.setup_conn()
 
         # Keep a reference to the MinFluxReader
@@ -169,10 +168,9 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.data_viewer.show()
 
     def setup_data_plotter(self):
-        """
-        Setup canvases with respective figures.
-        :return: void
-        """
+        """Setup 2D in-window plotter."""
+
+        # 2D plotter
         self.plotter = Plotter()
 
         # Add to the UI
@@ -283,25 +281,32 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Plot the localizations."""
 
         if self.minfluxreader is None:
-            self.plotter.redraw()
+            self.plotter.remove_points()
             return
 
         # Remove the previous plots
-        # TODO: Make this a bit cleverer
         self.plotter.remove_points()
 
-        # Plot the positions
+        # Always plot the (x, y) coordinates in the 2D plotter
+        self.plotter.plot_localizations(
+            x=self.minfluxreader.processed_dataframe["x"],
+            y=self.minfluxreader.processed_dataframe["y"],
+        )
+
+        # If the dataset is 3D, also plot the coordinates in the 3D plotter.
+        # @TODO Make this optional.
         if self.minfluxreader.is_3d:
-            self.plotter.plot_localizations(
-                x=self.minfluxreader.processed_dataframe["x"],
-                y=self.minfluxreader.processed_dataframe["y"],
-                z=self.minfluxreader.processed_dataframe["z"],
+
+            # Create the 3D Plotter if it does not exist yet
+            if self.plotter3D is None:
+                self.plotter3D = Plotter3D(parent=self)
+
+            self.plotter3D.plot(
+                self.minfluxreader.processed_dataframe[["x", "y", "z"]].values
             )
-        else:
-            self.plotter.plot_localizations(
-                x=self.minfluxreader.processed_dataframe["x"],
-                y=self.minfluxreader.processed_dataframe["y"],
-            )
+
+            # Show the plotter
+            self.plotter3D.show()
 
     def show_processed_dataframe(self):
         """

@@ -23,10 +23,12 @@ class Plotter(PlotWidget):
         self.clear()
 
     def plot_localizations(self, **coords):
+        """Plot localizations in a 2D scatter plot."""
+
         if "z" in coords:
             print("3D scatter plot support will follow soon.")
         scatter = pg.ScatterPlotItem(
-            size=3,
+            size=5,
             pen=self.pen,
             brush=self.brush,
             hoverable=True,
