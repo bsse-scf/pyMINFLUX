@@ -38,6 +38,8 @@ class Ui_MainWindow(object):
         self.actionData_viewer.setObjectName(u"actionData_viewer")
         self.actionData_viewer.setCheckable(True)
         self.actionData_viewer.setChecked(True)
+        self.actionSave_plot = QAction(MainWindow)
+        self.actionSave_plot.setObjectName(u"actionSave_plot")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -111,6 +113,7 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(shortcut)
         self.actionConsole.setText(QCoreApplication.translate("MainWindow", u"Console", None))
         self.actionData_viewer.setText(QCoreApplication.translate("MainWindow", u"Data viewer", None))
+        self.actionSave_plot.setText(QCoreApplication.translate("MainWindow", u"Save plot", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", u"View", None))
     # retranslateUi
