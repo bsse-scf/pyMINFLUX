@@ -3,99 +3,64 @@ from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-import open3d as o3d
 import pandas as pd
-import pptk
 from matplotlib.collections import LineCollection
 
 
-def render_pptk(
-    points: np.ndarray, colors: Union[np.ndarray, None] = None, point_size: float = 1.0
-):
-    """Render the points with the passed colors using pptk.
 
-    @param points: np.ndarray
-        Nx3 matrix of coordinates [x, y, z]N
+from typing import Union
 
-    @param colors: np.ndarray (optional, default = None)
-        Nx3 matrix of coordinates [x, y, z]N. If omitted, all points will be painted white.
+import numpy as np
+import pandas as pd
 
-    @param point_size: float
-        Scaling factor for the points.
+
+def get_colors_for_unique_ids(
+    ids: Union[pd.Series, np.ndarray], make_unique: bool = False, seed: int = 2021
+) -> np.ndarray:
+    """Return an Nx3 matrix of RGB colors in the range 0.0 ... 1.0 for all unique ids in `ids`
+
+    @param ids: Union[pd.Series, np.ndarray]
+        Series or array of ids, that may contain repetitions.
+
+    @param make_unique: bool
+        Set to True to make unique (one row per ID) or False to map a unique
+        color to each of the original IDs vector.
+
+    @param seed: int
+        Seed of the random generator to make sure that the sequence of colors
+        is reproducible.
+
+    @return np.ndarray
+        Nx3 matrix of RGB colors in the range 0.0 ... 1.0.
     """
 
-    # Initialize the viewer (blocking)
-    v = pptk.viewer(points)
+    # Make sure the sequence of colors is preserved across runs
+    rng = np.random.default_rng(seed)
 
-    # If no colors were specified, set them all to white
-    if colors is None:
-        colors = np.ones(points.shape, dtype=np.float32)
+    # Get the list of unique IDs
+    u_ids = np.unique(ids)
 
-    # Assign the colors
-    v.attributes(colors)
-    v.color_map("cool")
+    if make_unique:
 
-    # Draw the point cloud
-    v.set(point_size=point_size, bg_color=[0, 0, 0, 0], show_axis=0, show_grid=0)
+        # Allocate the matrix of colors
+        colors = np.zeros((len(u_ids), 3), dtype=np.float64)
 
+        for i in range(len(u_ids)):
+            colors[i, 0] = rng.random(1)
+            colors[i, 1] = rng.random(1)
+            colors[i, 2] = rng.random(1)
 
-def render_o3d(
-    points: np.ndarray,
-    colors: Union[np.ndarray, None] = None,
-    point_size: float = 1.0,
-    on_grid: bool = False,
-    voxel_size: float = 1.0,
-    calc_normals: bool = False,
-):
-    """Render the points with the passed colors using pptk.
-
-    @param points: np.ndarray
-        Nx3 matrix of coordinates [x, y, z]N
-
-    @param colors: np.ndarray (optional, default = None)
-        Nx3 matrix of coordinates [x, y, z]N. If omitted, all points will be painted white.
-
-    @param point_size: float
-        Scaling factor for the points.
-
-    @param on_grid: bool (optional, default = True)
-        Set to True to interpolate points on a regular grid with given voxel size.
-
-    @param voxel_size: float (optional, default = 1.0)
-        Voxel size for the interpolation of the points. Ignored if on_grid is False.
-
-    @param calc_normals: bool
-        Set to True to calculate and use normals.
-
-    """
-
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(points)
-    pcd.colors = o3d.utility.Vector3dVector(colors)
-
-    if calc_normals:
-        pcd.estimate_normals()
-
-    # Initialize the Visualizer
-    vis = o3d.visualization.Visualizer()
-    vis.create_window()
-    opt = vis.get_render_option()
-    opt.background_color = np.array([0.0, 0.0, 0.0])
-    opt.point_size = point_size
-
-    if on_grid:
-        # Interpolate the point cloud on a grid with given voxel size
-        voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(
-            pcd, voxel_size=voxel_size
-        )
-        vis.add_geometry(voxel_grid)
     else:
-        # Render point cloud as is
-        vis.add_geometry(pcd)
+        # Allocate the matrix of colors
+        colors = np.zeros((len(ids), 3), dtype=np.float64)
 
-    # Blocking
-    vis.run()
+        for id in u_ids:
+            i = np.where(ids == id)
+            colors[i, 0] = rng.random(1)
+            colors[i, 1] = rng.random(1)
+            colors[i, 2] = rng.random(1)
 
+    return colors
 
 def render_mpl(
     points: pd.DataFrame,
