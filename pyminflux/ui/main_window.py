@@ -160,7 +160,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.data_viewer = DataViewer()
 
         # Add to the UI
-        self.ui.dataframe_layout.addWidget(self.data_viewer)
+        self.ui.splitter_layout.addWidget(self.data_viewer)
 
         # Show the widget
         self.data_viewer.show()
@@ -173,21 +173,19 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter = Plotter()
 
         # Add to the UI
-        self.ui.plotting_layout.addWidget(self.plotter)
+        self.ui.splitter_layout.addWidget(self.plotter)
 
         # Show the widget
         self.data_viewer.show()
 
     def setup_conn(self):
-        """
-        Set up signals and slots
-        :return: void
-        """
+        """Set up signals and slots."""
 
         # Menu actions
         self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
         self.ui.actionQuit.triggered.connect(self.quit_application)
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
+        self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
 
         # Other connections
         self.plotter.locations_selected.connect(self.highlight_selected_locations)
@@ -204,6 +202,15 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.ui.dwBottom.show()
         else:
             self.ui.dwBottom.hide()
+
+    @Slot(bool, name="toggle_dataviewer_visibility")
+    def toggle_dataviewer_visibility(self):
+        """Toggle the visibility of the console dock widget."""
+        if self.data_viewer is not None:
+            if self.ui.actionData_viewer.isChecked():
+                self.data_viewer.show()
+            else:
+                self.data_viewer.hide()
 
     @Slot(None, name="select_and_open_numpy_file")
     def select_and_open_numpy_file(self):

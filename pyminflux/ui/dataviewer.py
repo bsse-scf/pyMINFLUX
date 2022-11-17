@@ -16,7 +16,6 @@ class DataViewer(QTableView):
         # #self.setup()
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
-        self.setMinimumWidth(600)
         self.setSizePolicy(
             QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Preferred
         )

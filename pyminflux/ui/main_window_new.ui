@@ -20,28 +20,19 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <layout class="QHBoxLayout" name="all_data_layout" stretch="0">
-        <item>
-         <layout class="QGridLayout" name="dataframe_layout">
-          <property name="horizontalSpacing">
-           <number>0</number>
-          </property>
-         </layout>
-        </item>
-       </layout>
-      </item>
-      <item row="0" column="1">
-       <layout class="QGridLayout" name="plotting_layout">
-        <property name="horizontalSpacing">
-         <number>0</number>
-        </property>
-       </layout>
-      </item>
-     </layout>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QSplitter" name="splitter_layout">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -66,6 +57,7 @@
     <property name="title">
      <string>View</string>
     </property>
+    <addaction name="actionData_viewer"/>
     <addaction name="actionConsole"/>
    </widget>
    <addaction name="menuFile"/>
@@ -126,7 +118,7 @@
   </action>
   <action name="actionQuit">
    <property name="text">
-    <string>&amp;Quit</string>
+    <string>Quit</string>
    </property>
    <property name="toolTip">
     <string>Quit application</string>
@@ -144,6 +136,17 @@
    </property>
    <property name="text">
     <string>Console</string>
+   </property>
+  </action>
+  <action name="actionData_viewer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Data viewer</string>
    </property>
   </action>
  </widget>
