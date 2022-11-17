@@ -17,7 +17,7 @@ from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
-from pyminflux.ui.ui_main_window_new import Ui_MainWindow
+from pyminflux.ui.ui_main_window import Ui_MainWindow
 
 
 class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
