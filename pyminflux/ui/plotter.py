@@ -1,8 +1,12 @@
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget
+from PySide6.QtCore import Signal
 
 
 class Plotter(PlotWidget):
+
+    locations_selected = Signal(list, name="locations_selected")
+
     def __init__(self):
         super().__init__()
         self.setMinimumWidth(600)
@@ -38,6 +42,6 @@ class Plotter(PlotWidget):
         self.showAxis("left")
         self.setBackground("k")
 
-    def clicked(self, plot, points):
-        for p in points:
-            print(f"index = {p.index()}, position = {p.pos()}")
+    def clicked(self, _, points):
+        """Emit 'signal_selected_locations' when points are selected in the plot."""
+        self.locations_selected.emit(points)

@@ -184,10 +184,10 @@ class MinFluxReader:
             index=pd.RangeIndex(start=0, stop=len(tid)),
             columns=[
                 "tid",
+                "tim",
                 "x",
                 "y",
                 "z",
-                "tim",
                 "efo",
                 "cfr",
                 "dcr",

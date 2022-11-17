@@ -7,13 +7,6 @@ import pandas as pd
 from matplotlib.collections import LineCollection
 
 
-
-from typing import Union
-
-import numpy as np
-import pandas as pd
-
-
 def get_colors_for_unique_ids(
     ids: Union[pd.Series, np.ndarray], make_unique: bool = False, seed: int = 2021
 ) -> np.ndarray:
@@ -61,6 +54,7 @@ def get_colors_for_unique_ids(
             colors[i, 2] = rng.random(1)
 
     return colors
+
 
 def render_mpl(
     points: pd.DataFrame,

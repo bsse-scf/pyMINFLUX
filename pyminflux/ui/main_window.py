@@ -18,7 +18,6 @@ from pyminflux.reader import MinFluxReader
 __APP_NAME__ = "pyMinFlux"
 
 
-
 class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     """
     Main application window.
@@ -184,9 +183,14 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         Set up signals and slots
         :return: void
         """
+
+        # Menu actions
         self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
         self.ui.actionQuit.triggered.connect(self.quit_application)
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
+
+        # Other connections
+        self.plotter.locations_selected.connect(self.highlight_selected_locations)
 
     @Slot(None, name="quit_application")
     def quit_application(self):
@@ -232,6 +236,18 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Update the ui
             self.full_update_ui()
+
+    @Slot(list, "highlight_selected_locations")
+    def highlight_selected_locations(self, points):
+        """Highlight selected locations in the dataframe viewer and scroll to the first one."""
+
+        # Extract indices of the rows corresponding to the selected points
+        indices = []
+        for p in points:
+            indices.append(p.index())
+
+        # Update the dataviewer
+        self.data_viewer.select_and_scroll_to_rows(indices)
 
     def run_tracker(self):
         """
