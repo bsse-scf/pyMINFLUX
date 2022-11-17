@@ -10,13 +10,13 @@ from threads import TrackerThread
 from ui.dataviewer import DataViewer
 from ui.emittingstream import EmittingStream
 from ui.plotter import Plotter
-from ui.Point import Point
 from ui.ui_main_window_new import Ui_MainWindow
 
 from pyminflux import __version__
 from pyminflux.reader import MinFluxReader
 
 __APP_NAME__ = "pyMinFlux"
+
 
 
 class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
@@ -84,6 +84,9 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.tracker_thread.started.connect(self.tracker_started)
         self.tracker_thread.finished.connect(self.tracker_finished)
 
+        # Print a welcome message to the console
+        print(f"Welcome to {__APP_NAME__}.")
+
     def __del__(self):
         """
         Destructor.
@@ -119,12 +122,9 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.txConsole.setTextCursor(cursor)
 
     def closeEvent(self, event):
-        """
-        Application close event
-        :param event: a QCloseEvent
-        :return:
-        """
+        """Application close event."""
 
+        # Ask the user
         button = QMessageBox.question(
             self,
             f"{__APP_NAME__}",
@@ -186,11 +186,22 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """
         self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
         self.ui.actionQuit.triggered.connect(self.quit_application)
+        self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
 
+    @Slot(None, name="quit_application")
     def quit_application(self):
         """Quit the application."""
         self.close()
 
+    @Slot(bool, name="toggle_dock_console_visibility")
+    def toggle_dock_console_visibility(self):
+        """Toggle the visibility of the console dock widget."""
+        if self.ui.actionConsole.isChecked():
+            self.ui.dwBottom.show()
+        else:
+            self.ui.dwBottom.hide()
+
+    @Slot(None, name="select_and_open_numpy_file")
     def select_and_open_numpy_file(self):
         """
         Pick NumPy MINFLUX data file to open.
