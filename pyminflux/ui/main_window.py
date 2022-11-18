@@ -12,7 +12,7 @@ from pyminflux.reader import MinFluxReader
 
 __APP_NAME__ = "pyMinFlux"
 
-from pyminflux.thread import BaseThread
+from pyminflux.threads import BaseThread
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.plotter import Plotter
@@ -80,7 +80,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Initialize tracker
         self.tracker = None
 
-        # # Initialize the thread
+        # # Initialize the threads
         # self.base_thread = BaseThread(self.tracker)
         # self.base_thread.started.connect(self.base_thread_started)
         # self.base_thread.finished.connect(self.base_thread_finished)
@@ -95,6 +95,19 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Restore sys.stdout
         sys.stdout = sys.__stdout__
         sys.stdout.flush()
+
+    def setup_conn(self):
+        """Set up signals and slots."""
+
+        # Menu actions
+        self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
+        self.ui.actionQuit.triggered.connect(self.quit_application)
+        self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
+        self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
+        self.ui.action3D_Plotter.changed.connect(self.toggle_3d_plotter_visibility)
+
+        # Other connections
+        self.plotter.locations_selected.connect(self.highlight_selected_locations)
 
     def full_update_ui(self):
         """
@@ -179,18 +192,6 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Show the widget
         self.data_viewer.show()
 
-    def setup_conn(self):
-        """Set up signals and slots."""
-
-        # Menu actions
-        self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
-        self.ui.actionQuit.triggered.connect(self.quit_application)
-        self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
-        self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
-
-        # Other connections
-        self.plotter.locations_selected.connect(self.highlight_selected_locations)
-
     @Slot(None, name="quit_application")
     def quit_application(self):
         """Quit the application."""
@@ -258,22 +259,22 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.data_viewer.select_and_scroll_to_rows(indices)
 
     # def run_base_thread(self):
-    #     """Run the thread."""
-    #     # Launch the actual process in a separate thread
+    #     """Run the threads."""
+    #     # Launch the actual process in a separate threads
     #     if self.base_thread_is_running:
     #         print(
-    #             "Cannot currently run the thread because another"
+    #             "Cannot currently run the threads because another"
     #             " process is running."
     #         )
     #     else:
     #         self.base_thread.start()
 
     # def base_thread_started(self):
-    #     """Callback for starting the thread."""
+    #     """Callback for starting the threads."""
     #     self.base_thread_is_running = True
 
     # def tracker_finished(self):
-    #     """Callback for starting the thread."""
+    #     """Callback for starting the threads."""
     #     self.base_thread_is_running = False
     #     self.full_update_ui()
 
@@ -294,19 +295,48 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
 
         # If the dataset is 3D, also plot the coordinates in the 3D plotter.
-        # @TODO Make this optional.
         if self.minfluxreader.is_3d:
+            self.plot_localizations_3d()
 
-            # Create the 3D Plotter if it does not exist yet
-            if self.plotter3D is None:
-                self.plotter3D = Plotter3D(parent=self)
+    def plot_localizations_3d(self):
+        """If the acquisition is 3D and the Show Plotter menu is checked, show the 3D plotter."""
 
-            self.plotter3D.plot(
-                self.minfluxreader.processed_dataframe[["x", "y", "z"]].values
-            )
+        # Only plot if the View 3D Plotter menu is checked
+        if not self.ui.action3D_Plotter.isChecked():
+            return
 
-            # Show the plotter
-            self.plotter3D.show()
+        # Create the 3D Plotter if it does not exist yet
+        if self.plotter3D is None:
+            self.plotter3D = Plotter3D(parent=self)
+
+        self.plotter3D.plot(
+            self.minfluxreader.processed_dataframe[["x", "y", "z"]].values
+        )
+
+        # Show the plotter
+        self.plotter3D.show()
+
+    @Slot(None, name="toggle_3d_plotter_visibility")
+    def toggle_3d_plotter_visibility(self):
+        """Toggle 3D plotter visibility."""
+
+        # Get state of the visibility from the menu
+        visible = self.ui.action3D_Plotter.isChecked()
+        if self.plotter3D is None:
+            if not visible:
+                # Nothing to be done
+                return
+            else:
+                # Create the 3D plotter if needed and make it visible
+                self.plot_localizations_3d()
+                self.plotter3D.show()
+        else:
+            if not visible:
+                # Hide the plotter
+                self.plotter3D.hide()
+            else:
+                # Show the plotter
+                self.plotter3D.show()
 
     def show_processed_dataframe(self):
         """

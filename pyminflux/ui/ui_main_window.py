@@ -42,6 +42,9 @@ class Ui_MainWindow(object):
         self.actionSave_plot.setObjectName(u"actionSave_plot")
         self.actionCamera_parameters = QAction(MainWindow)
         self.actionCamera_parameters.setObjectName(u"actionCamera_parameters")
+        self.action3D_Plotter = QAction(MainWindow)
+        self.action3D_Plotter.setObjectName(u"action3D_Plotter")
+        self.action3D_Plotter.setCheckable(True)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -96,6 +99,8 @@ class Ui_MainWindow(object):
         self.menuFile.addAction(self.actionQuit)
         self.menuView.addAction(self.actionData_viewer)
         self.menuView.addAction(self.actionConsole)
+        self.menuView.addSeparator()
+        self.menuView.addAction(self.action3D_Plotter)
 
         self.retranslateUi(MainWindow)
 
@@ -122,6 +127,7 @@ class Ui_MainWindow(object):
         self.actionData_viewer.setText(QCoreApplication.translate("MainWindow", u"Data viewer", None))
         self.actionSave_plot.setText(QCoreApplication.translate("MainWindow", u"Save plot", None))
         self.actionCamera_parameters.setText(QCoreApplication.translate("MainWindow", u"Camera parameters", None))
+        self.action3D_Plotter.setText(QCoreApplication.translate("MainWindow", u"3D Plotter", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", u"View", None))
     # retranslateUi

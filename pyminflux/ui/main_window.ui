@@ -59,6 +59,8 @@
     </property>
     <addaction name="actionData_viewer"/>
     <addaction name="actionConsole"/>
+    <addaction name="separator"/>
+    <addaction name="action3D_Plotter"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -163,6 +165,14 @@
   <action name="actionCamera_parameters">
    <property name="text">
     <string>Camera parameters</string>
+   </property>
+  </action>
+  <action name="action3D_Plotter">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>3D Plotter</string>
    </property>
   </action>
  </widget>
