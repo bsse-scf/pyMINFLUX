@@ -13,6 +13,7 @@ pandas = "^1.5.1"
 pyside6 = "^6.4.0.1"
 pyqtgraph = "^0.13.1"
 scipy = "^1.9.3"
+pyopengl = "^3.1.6"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.10.1"
