@@ -12,26 +12,18 @@ from pyminflux.reader import MinFluxReader
 
 __APP_NAME__ = "pyMinFlux"
 
-from pyminflux.threads import BaseThread
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
+from pyminflux.ui.histogram_viewer import HistogramViewer
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 
 
-class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
+class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     """
     Main application window.
     """
-
-    # Add a signal for changing current image index
-    signal_image_index_changed = Signal(int, name="signal_image_index_changed")
-
-    # Add a signal for marking dataframe of given index as modified
-    signal_mark_dataframe_as_modified = Signal(
-        int, bool, name="signal_mark_dataframe_as_modified"
-    )
 
     def __init__(self, parent=None):
         """
@@ -45,25 +37,24 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.plotter = None
-        self.current_image_index = 0
-        self.tracker_thread = None
-        self.tracker_is_running = False
-        self.last_selected_path = ""
-        self.data_viewer = None
-        self.line_handle_positions = []
-        self.line_handle_translations = []
-        self.line_handle_filtered_positions = []
-        self.line_handle_filtered_translations = []
-        self.text_handle_cell_indices = []
-        self.text_handle_track_indices = []
-        self.pickEvent = False
-
+        # Main window title
         self.setWindowTitle(f"{__APP_NAME__} v{__version__}")
 
+        # Dialogs and widgets
+        self.data_viewer = None
+        self.histogram_viewer = None
+        self.plotter = None
+        self.plotter3D = None
+
+        # Read the application settings
+        app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
+        self.last_selected_path = app_settings.value("io/last_selected_path", ".")
+
+        # Initialize in-window widgets
         self.setup_data_viewer()
         self.setup_data_plotter()
-        self.plotter3D = None
+
+        # Set up signals and slots
         self.setup_conn()
 
         # Keep a reference to the MinFluxReader
@@ -72,18 +63,6 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Install the custom output stream
         sys.stdout = EmittingStream()
         sys.stdout.signal_textWritten.connect(self.print_to_console)
-
-        # Read the application settings
-        app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
-        self.last_selected_path = app_settings.value("io/last_selected_path", ".")
-
-        # Initialize tracker
-        self.tracker = None
-
-        # # Initialize the threads
-        # self.base_thread = BaseThread(self.tracker)
-        # self.base_thread.started.connect(self.base_thread_started)
-        # self.base_thread.finished.connect(self.base_thread_finished)
 
         # Print a welcome message to the console
         print(f"Welcome to {__APP_NAME__}.")
@@ -105,6 +84,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.changed.connect(self.toggle_3d_plotter_visibility)
+        self.ui.actionHistogram_Viewer.triggered.connect(self.open_histogram_viewer)
 
         # Other connections
         self.plotter.locations_selected.connect(self.highlight_selected_locations)
@@ -150,10 +130,7 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if button != QMessageBox.StandardButton.Yes:
             event.ignore()
         else:
-            # @todo Do this in a safer way!
-            if self.tracker_is_running:
-                self.tracker_thread.terminate()
-                self.tracker_thread.wait()
+            # @TODO Shutdown threads if any are running
 
             # Store the application settings
             if self.last_selected_path != "":
@@ -246,7 +223,15 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Update the ui
             self.full_update_ui()
 
-    @Slot(list, "highlight_selected_locations")
+    @Slot(None, name="self.open_histogram_viewer")
+    def open_histogram_viewer(self):
+        """Initialize and open the histogram viewer."""
+        if self.histogram_viewer is None:
+            self.histogram_viewer = HistogramViewer()
+            self.histogram_viewer.plot(self.minfluxreader)
+        self.histogram_viewer.show()
+
+    @Slot(list, name="highlight_selected_locations")
     def highlight_selected_locations(self, points):
         """Highlight selected locations in the dataframe viewer and scroll to the first one."""
 
@@ -257,26 +242,6 @@ class pyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Update the dataviewer
         self.data_viewer.select_and_scroll_to_rows(indices)
-
-    # def run_base_thread(self):
-    #     """Run the threads."""
-    #     # Launch the actual process in a separate threads
-    #     if self.base_thread_is_running:
-    #         print(
-    #             "Cannot currently run the threads because another"
-    #             " process is running."
-    #         )
-    #     else:
-    #         self.base_thread.start()
-
-    # def base_thread_started(self):
-    #     """Callback for starting the threads."""
-    #     self.base_thread_is_running = True
-
-    # def tracker_finished(self):
-    #     """Callback for starting the threads."""
-    #     self.base_thread_is_running = False
-    #     self.full_update_ui()
 
     def plot_localizations(self):
         """Plot the localizations."""
