@@ -61,6 +61,7 @@
     <addaction name="actionConsole"/>
     <addaction name="separator"/>
     <addaction name="action3D_Plotter"/>
+    <addaction name="actionHistogram_Viewer"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -173,6 +174,11 @@
    </property>
    <property name="text">
     <string>3D Plotter</string>
+   </property>
+  </action>
+  <action name="actionHistogram_Viewer">
+   <property name="text">
+    <string>Histogram Viewer</string>
    </property>
   </action>
  </widget>

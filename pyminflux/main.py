@@ -3,14 +3,14 @@ import sys
 from PySide6.QtWidgets import QApplication
 
 # from ui.appeventfilter import AppEventFilter
-from ui.main_window import pyMinFluxMainWindow
+from ui.main_window import PyMinFluxMainWindow
 
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     if sys.platform.startswith("linux"):
         app.setStyle("fusion")
-    main = pyMinFluxMainWindow()
+    main = PyMinFluxMainWindow()
     main.show()
 
     # Attach the event filter
