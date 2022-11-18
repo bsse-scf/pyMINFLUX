@@ -12,7 +12,7 @@ from pyminflux.reader import MinFluxReader
 
 __APP_NAME__ = "pyMinFlux"
 
-from pyminflux.threading import BaseThread
+from pyminflux.thread import BaseThread
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.plotter import Plotter
