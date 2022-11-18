@@ -21,6 +21,10 @@ class Plotter3D(QDialog, Ui_Plotter3D):
         self.view = gl.GLViewWidget()
         self.ui.mainLayout.addWidget(self.view)
 
+        # Keep a reference to the grid and the plot
+        self.grid = None
+        self.scatter = None
+
         # Set color
         self.color = (1.0, 1.0, 1.0, 0.5)
 
@@ -46,17 +50,23 @@ class Plotter3D(QDialog, Ui_Plotter3D):
         distance = np.max((range_x, range_y, range_z))
 
         # Create a grid and center it at the center of mass of the point cloud
-        grid = gl.GLGridItem()
-        grid.setSize(range_x, range_y, range_z)
-        grid.setSpacing(spacing_x, spacing_y, spacing_z)
-        self.view.addItem(grid)
+        if self.grid is not None:
+            self.view.removeItem(self.grid)
+            self.grid = None
+        self.grid = gl.GLGridItem()
+        self.grid.setSize(range_x, range_y, range_z)
+        self.grid.setSpacing(spacing_x, spacing_y, spacing_z)
+        self.view.addItem(self.grid)
 
         # Add the points
-        scatter = gl.GLScatterPlotItem(
+        if self.scatter is not None:
+            self.view.removeItem(self.scatter)
+            self.scatter = None
+        self.scatter = gl.GLScatterPlotItem(
             pos=coords, size=5.0, color=self.color, pxMode=True
         )
-        scatter.translate(-center_x, -center_y, -center_z)
-        self.view.addItem(scatter)
+        self.scatter.translate(-center_x, -center_y, -center_z)
+        self.view.addItem(self.scatter)
 
         # Set the camera
         self.view.opts["distance"] = distance
