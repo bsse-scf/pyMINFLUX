@@ -18,7 +18,6 @@ class State(metaclass=Singleton):
         self.cfr_thresholds: Union[None, tuple] = None
 
         # Flags for enabling disabling filtering using thresholds on EFO and CFR value (and global switch)
-        self.filter: bool = False
         self.filter_efo: bool = False
         self.filter_cfr: bool = False
 
@@ -30,7 +29,6 @@ class State(metaclass=Singleton):
         return {
             "efo_thresholds": self.efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
-            "filter": self.filter,
             "filter_efo": self.filter_efo,
             "filter_cfr": self.filter_cfr,
             "filter_thresh_factor": self.filter_thresh_factor,

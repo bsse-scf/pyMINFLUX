@@ -2,8 +2,8 @@ from typing import Optional, Tuple
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import Slot
-from PySide6.QtGui import QColor, QFont, QPen, Qt
+from PySide6.QtCore import Slot, Signal
+from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import QDialog
 
 from ..analysis import get_robust_threshold, ideal_hist_bins
@@ -13,6 +13,10 @@ from .ui_histogram_viewer import Ui_HistogramViewer
 
 
 class HistogramViewer(QDialog, Ui_HistogramViewer):
+
+    # Signal that the data viewers should be updated
+    data_filters_changed = Signal(name="data_filters_changed")
+
     def __init__(self, parent=None):
         """Constructor."""
 
@@ -33,39 +37,45 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         # Keep a reference to the singleton State class
         self.state = State()
 
+        # Update fields (before we connect signals and slots)
+        self.ui.cbEnableEFOFiltering.setChecked(self.state.filter_efo)
+        self.ui.cbEnableCFRFiltering.setChecked(self.state.filter_cfr)
+
         # Set signal-slot connections
         self.setup_conn()
 
-        # Update fields
-        self.ui.cbEnableFiltering.setChecked(self.state.filter)
-        self.ui.cbEnableEFOFiltering.setChecked(self.state.filter_efo)
-        self.ui.cbEnableCFRFiltering.setChecked(self.state.filter_cfr)
-        self.ui.cbEnableEFOFiltering.setEnabled(self.state.filter)
-        self.ui.cbEnableEFOFiltering.setEnabled(self.state.filter)
-
     def setup_conn(self):
         """Set up signal-slot connections."""
-        self.ui.cbEnableFiltering.stateChanged.connect(self.persist_filtering_state)
+        self.ui.pbAutoThreshold.clicked.connect(self.run_auto_threshold)
         self.ui.cbEnableEFOFiltering.stateChanged.connect(
             self.persist_efo_filtering_state
         )
         self.ui.cbEnableCFRFiltering.stateChanged.connect(
             self.persist_cfr_filtering_state
         )
+        self.ui.pbUpdateViewers.clicked.connect(self.broadcast_viewers_update)
 
-    @Slot(int, name="persist_filtering_state")
-    def persist_filtering_state(self, state):
-        self.state.filter = state != 0
-        self.ui.cbEnableEFOFiltering.setEnabled(self.state.filter)
-        self.ui.cbEnableCFRFiltering.setEnabled(self.state.filter)
+    @Slot(name="run_auto_threshold")
+    def run_auto_threshold(self):
+        """Run auto-threshold on EFO and CFR values and update the plots."""
+        print("* * * IMPLEMENT ME!!! * * *")
 
     @Slot(int, name="persist_efo_filtering_state")
     def persist_efo_filtering_state(self, state):
         self.state.filter_efo = state != 0
+        self.ui.pbUpdateViewers.setEnabled(True)
 
     @Slot(int, name="persist_cfr_filtering_state")
     def persist_cfr_filtering_state(self, state):
         self.state.filter_cfr = state != 0
+        self.ui.pbUpdateViewers.setEnabled(True)
+
+    @Slot(name="broadcast_viewers_update")
+    def broadcast_viewers_update(self):
+        """Inform the rest of the application that the data viewers should be updated."""
+        self.data_filters_changed.emit()
+        self.ui.pbUpdateViewers.setEnabled(False)
+        print("* * * CONNECT ME TO SOME SLOTS!!! * * *")
 
     def plot(self, minfluxreader: MinFluxReader):
         """Plot histograms."""
@@ -284,6 +294,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             self.state.cfr_thresholds = item.getRegion()
         else:
             raise ValueError(f"Unexpected data label {item.data_label}.")
+        self.ui.pbUpdateViewers.setEnabled(True)
 
     def _change_region_label_font(self, region_label):
         """Change the region label font style."""
