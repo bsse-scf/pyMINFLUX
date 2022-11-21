@@ -14,42 +14,52 @@
    <string>Histogram Viewer</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+   <item row="1" column="0">
     <layout class="QHBoxLayout" name="parameters_layout"/>
    </item>
-   <item row="2" column="0">
+   <item row="3" column="0">
     <layout class="QGridLayout" name="gridLayout_2">
      <item row="0" column="0">
-      <widget class="QCheckBox" name="cbEnableFiltering">
+      <widget class="QCheckBox" name="cbEnableEFOFiltering">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="text">
-        <string>Filter data</string>
+        <string>Filter on EFO values</string>
        </property>
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QCheckBox" name="cbEnableEFOFiltering">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>EFO</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
       <widget class="QCheckBox" name="cbEnableCFRFiltering">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="text">
-        <string>CFR</string>
+        <string>Filter on CFR values</string>
        </property>
       </widget>
      </item>
     </layout>
    </item>
-   <item row="1" column="0">
+   <item row="4" column="0">
+    <widget class="QPushButton" name="pbUpdateViewers">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Update</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
     <layout class="QHBoxLayout" name="localizations_layout"/>
+   </item>
+   <item row="0" column="0">
+    <widget class="QPushButton" name="pbAutoThreshold">
+     <property name="text">
+      <string>Auto-threshold</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
