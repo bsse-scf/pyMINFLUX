@@ -63,19 +63,31 @@ class Ui_HistogramViewer(object):
 
         self.gridLayout.addLayout(self.parameters_layout, 0, 0, 1, 1)
 
+        self.gridLayout_2 = QGridLayout()
+        self.gridLayout_2.setObjectName("gridLayout_2")
+        self.cbEnableFiltering = QCheckBox(HistogramViewer)
+        self.cbEnableFiltering.setObjectName("cbEnableFiltering")
+
+        self.gridLayout_2.addWidget(self.cbEnableFiltering, 0, 0, 1, 1)
+
+        self.cbEnableEFOFiltering = QCheckBox(HistogramViewer)
+        self.cbEnableEFOFiltering.setObjectName("cbEnableEFOFiltering")
+        self.cbEnableEFOFiltering.setEnabled(False)
+
+        self.gridLayout_2.addWidget(self.cbEnableEFOFiltering, 0, 1, 1, 1)
+
+        self.cbEnableCFRFiltering = QCheckBox(HistogramViewer)
+        self.cbEnableCFRFiltering.setObjectName("cbEnableCFRFiltering")
+        self.cbEnableCFRFiltering.setEnabled(False)
+
+        self.gridLayout_2.addWidget(self.cbEnableCFRFiltering, 0, 2, 1, 1)
+
+        self.gridLayout.addLayout(self.gridLayout_2, 2, 0, 1, 1)
+
         self.localizations_layout = QHBoxLayout()
         self.localizations_layout.setObjectName("localizations_layout")
 
         self.gridLayout.addLayout(self.localizations_layout, 1, 0, 1, 1)
-
-        self.controls_layouts = QHBoxLayout()
-        self.controls_layouts.setObjectName("controls_layouts")
-        self.cbEnableFiltering = QCheckBox(HistogramViewer)
-        self.cbEnableFiltering.setObjectName("cbEnableFiltering")
-
-        self.controls_layouts.addWidget(self.cbEnableFiltering)
-
-        self.gridLayout.addLayout(self.controls_layouts, 2, 0, 1, 1)
 
         self.retranslateUi(HistogramViewer)
 
@@ -89,6 +101,12 @@ class Ui_HistogramViewer(object):
         )
         self.cbEnableFiltering.setText(
             QCoreApplication.translate("HistogramViewer", "Filter data", None)
+        )
+        self.cbEnableEFOFiltering.setText(
+            QCoreApplication.translate("HistogramViewer", "EFO", None)
+        )
+        self.cbEnableCFRFiltering.setText(
+            QCoreApplication.translate("HistogramViewer", "CFR", None)
         )
 
     # retranslateUi

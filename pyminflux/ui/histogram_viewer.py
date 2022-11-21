@@ -1,6 +1,9 @@
+from typing import Optional, Tuple
+
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtGui import QColor, QFont, QPen
+from PySide6.QtCore import Slot
+from PySide6.QtGui import QColor, QFont, QPen, Qt
 from PySide6.QtWidgets import QDialog
 
 from ..analysis import get_robust_threshold, ideal_hist_bins
@@ -27,11 +30,42 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         self.sy_plot = None
         self.sz_plot = None
 
-        # Keep track of the multiplicative factor for the robust threshold
-        self.thresh_factor = 2.0
-
         # Keep a reference to the singleton State class
         self.state = State()
+
+        # Set signal-slot connections
+        self.setup_conn()
+
+        # Update fields
+        self.ui.cbEnableFiltering.setChecked(self.state.filter)
+        self.ui.cbEnableEFOFiltering.setChecked(self.state.filter_efo)
+        self.ui.cbEnableCFRFiltering.setChecked(self.state.filter_cfr)
+        self.ui.cbEnableEFOFiltering.setEnabled(self.state.filter)
+        self.ui.cbEnableEFOFiltering.setEnabled(self.state.filter)
+
+    def setup_conn(self):
+        """Set up signal-slot connections."""
+        self.ui.cbEnableFiltering.stateChanged.connect(self.persist_filtering_state)
+        self.ui.cbEnableEFOFiltering.stateChanged.connect(
+            self.persist_efo_filtering_state
+        )
+        self.ui.cbEnableCFRFiltering.stateChanged.connect(
+            self.persist_cfr_filtering_state
+        )
+
+    @Slot(int, name="persist_filtering_state")
+    def persist_filtering_state(self, state):
+        self.state.filter = state != 0
+        self.ui.cbEnableEFOFiltering.setEnabled(self.state.filter)
+        self.ui.cbEnableCFRFiltering.setEnabled(self.state.filter)
+
+    @Slot(int, name="persist_efo_filtering_state")
+    def persist_efo_filtering_state(self, state):
+        self.state.filter_efo = state != 0
+
+    @Slot(int, name="persist_cfr_filtering_state")
+    def persist_cfr_filtering_state(self, state):
+        self.state.filter_cfr = state != 0
 
     def plot(self, minfluxreader: MinFluxReader):
         """Plot histograms."""
@@ -51,10 +85,13 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         n_efo, efo_bin_edges, efo_bin_centers, efo_bin_width = self._prepare_histogram(
             minfluxreader.processed_dataframe["efo"].values
         )
-        thresh_efo = self.calculate_threshold(
-            minfluxreader.processed_dataframe["efo"].values,
-            thresh_factor=self.thresh_factor,
-        )
+        if self.state.efo_thresholds is None:
+            thresh_efo = self.calculate_upper_threshold(
+                minfluxreader.processed_dataframe["efo"].values,
+                thresh_factor=self.state.filter_thresh_factor,
+            )
+            self.state.efo_thresholds = (efo_bin_edges[0], thresh_efo)
+
         self.efo_plot = self._create_plot(
             n_efo,
             efo_bin_edges,
@@ -63,7 +100,8 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             title="EFO",
             brush="b",
             fmt="{value:.0f}",
-            threshold=thresh_efo,
+            support_thresholding=True,
+            thresholds=self.state.efo_thresholds,
         )
         self.ui.parameters_layout.addWidget(self.efo_plot)
         self.efo_plot.show()
@@ -72,10 +110,13 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         n_cfr, cfr_bin_edges, cfr_bin_centers, cfr_bin_width = self._prepare_histogram(
             minfluxreader.processed_dataframe["cfr"].values
         )
-        thresh_cfr = self.calculate_threshold(
-            minfluxreader.processed_dataframe["cfr"].values,
-            thresh_factor=self.thresh_factor,
-        )
+        if self.state.cfr_thresholds is None:
+            thresh_cfr = self.calculate_upper_threshold(
+                minfluxreader.processed_dataframe["cfr"].values,
+                thresh_factor=self.state.filter_thresh_factor,
+            )
+            self.state.cfr_thresholds = (cfr_bin_edges[0], thresh_cfr)
+
         self.cfr_plot = self._create_plot(
             n_cfr,
             cfr_bin_edges,
@@ -84,7 +125,8 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             title="CFR",
             brush="r",
             fmt="{value:.2f}",
-            threshold=thresh_cfr,
+            support_thresholding=True,
+            thresholds=self.state.cfr_thresholds,
         )
         self.ui.parameters_layout.addWidget(self.cfr_plot)
         self.cfr_plot.show()
@@ -94,7 +136,13 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             minfluxreader.processed_dataframe_stats["sx"].values
         )
         self.sx_plot = self._create_plot(
-            n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width, title="SX", brush="k"
+            n_sx,
+            sx_bin_edges,
+            sx_bin_centers,
+            sx_bin_width,
+            title="SX",
+            brush="k",
+            support_thresholding=False,
         )
         self.ui.localizations_layout.addWidget(self.sx_plot)
         self.sx_plot.show()
@@ -104,7 +152,13 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             minfluxreader.processed_dataframe_stats["sy"].values
         )
         self.sy_plot = self._create_plot(
-            n_sy, sy_bin_edges, sy_bin_centers, sy_bin_width, title="SY", brush="k"
+            n_sy,
+            sy_bin_edges,
+            sy_bin_centers,
+            sy_bin_width,
+            title="SY",
+            brush="k",
+            support_thresholding=False,
         )
         self.ui.localizations_layout.addWidget(self.sy_plot)
         self.sy_plot.show()
@@ -115,7 +169,13 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
                 minfluxreader.processed_dataframe_stats["sz"].values
             )
             self.sz_plot = self._create_plot(
-                n_sz, sz_bin_edges, sz_bin_centers, sz_bin_width, title="SZ", brush="k"
+                n_sz,
+                sz_bin_edges,
+                sz_bin_centers,
+                sz_bin_width,
+                title="SZ",
+                brush="k",
+                support_thresholding=False,
             )
             self.ui.localizations_layout.addWidget(self.sz_plot)
             self.sz_plot.show()
@@ -129,17 +189,29 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
     def _create_plot(
         self,
-        n,
-        bin_edges,
-        bin_centers,
-        bin_width,
+        n: np.ndarray,
+        bin_edges: np.ndarray,
+        bin_centers: np.ndarray,
+        bin_width: np.ndarray,
         *,
-        title="",
-        brush="b",
-        fmt="{value:0.2f}",
-        threshold=None
+        title: str = "",
+        brush: str = "b",
+        fmt: str = "{value:0.2f}",
+        support_thresholding: bool = False,
+        thresholds: Optional[Tuple] = None,
     ):
         """Create a plot and return it to be added to the layout."""
+
+        # Check for consistency
+        if support_thresholding and thresholds is None:
+            raise ValueError(
+                "If 'support_thresholding' is True, 'thresholds' must be a tuple with two values."
+            )
+        if thresholds is not None and len(thresholds) != 2:
+            raise ValueError(
+                "If 'support_thresholding' is True, 'thresholds' must be a tuple with two values."
+            )
+
         chart = pg.BarGraphItem(
             x=bin_centers, height=n, width=0.9 * bin_width, brush=brush
         )
@@ -151,11 +223,11 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         plot.setYRange(0.0, n.max())
         plot.addItem(chart)
 
-        if threshold is not None:
+        if support_thresholding:
 
             # Create a linear region for setting filtering thresholds
             region = pg.LinearRegionItem(
-                values=[bin_edges[0], float(threshold)], pen={"color": "k", "width": 3}
+                values=[thresholds[0], thresholds[1]], pen={"color": "k", "width": 3}
             )
 
             # Mark region with data label for callbacks
@@ -179,7 +251,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
         return plot
 
-    def calculate_threshold(self, values, thresh_factor):
+    def calculate_upper_threshold(self, values, thresh_factor):
         """Prepare filter line."""
 
         # Calculate robust threshold
@@ -206,7 +278,12 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         pass
 
     def region_pos_changed_finished(self, item):
-        print(item.data_label)
+        if item.data_label == "efo":
+            self.state.efo_thresholds = item.getRegion()
+        elif item.data_label == "cfr":
+            self.state.cfr_thresholds = item.getRegion()
+        else:
+            raise ValueError(f"Unexpected data label {item.data_label}.")
 
     def _change_region_label_font(self, region_label):
         """Change the region label font style."""

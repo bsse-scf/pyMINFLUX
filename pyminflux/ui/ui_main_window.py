@@ -84,6 +84,8 @@ class Ui_MainWindow(object):
         self.actionHistogram_Viewer = QAction(MainWindow)
         self.actionHistogram_Viewer.setObjectName("actionHistogram_Viewer")
         self.actionHistogram_Viewer.setEnabled(False)
+        self.actionState = QAction(MainWindow)
+        self.actionState.setObjectName("actionState")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -141,6 +143,8 @@ class Ui_MainWindow(object):
         self.menuView.addSeparator()
         self.menuView.addAction(self.action3D_Plotter)
         self.menuView.addAction(self.actionHistogram_Viewer)
+        self.menuView.addSeparator()
+        self.menuView.addAction(self.actionState)
 
         self.retranslateUi(MainWindow)
 
@@ -193,6 +197,9 @@ class Ui_MainWindow(object):
         )
         self.actionHistogram_Viewer.setText(
             QCoreApplication.translate("MainWindow", "Histogram Viewer", None)
+        )
+        self.actionState.setText(
+            QCoreApplication.translate("MainWindow", "[DEBUG] Show state", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
