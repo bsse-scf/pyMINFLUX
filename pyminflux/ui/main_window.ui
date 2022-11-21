@@ -177,6 +177,9 @@
    </property>
   </action>
   <action name="actionHistogram_Viewer">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Histogram Viewer</string>
    </property>

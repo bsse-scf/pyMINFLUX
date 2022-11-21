@@ -2,6 +2,8 @@ import pyqtgraph as pg
 from pyqtgraph import PlotWidget
 from PySide6.QtCore import Signal
 
+from ..state import State
+
 
 class Plotter(PlotWidget):
 
@@ -14,9 +16,13 @@ class Plotter(PlotWidget):
         self.brush = pg.mkBrush(255, 255, 255, 128)
         self.pen = pg.mkPen(None)
         self.remove_points()
+        self.customize_context_menu()
         self.hideAxis("bottom")
         self.hideAxis("left")
         self.show()
+
+        # Keep a reference to the singleton State class
+        self.state = State()
 
     def remove_points(self):
         self.setBackground("w")
@@ -43,6 +49,18 @@ class Plotter(PlotWidget):
         self.showAxis("bottom")
         self.showAxis("left")
         self.setBackground("k")
+
+    def customize_context_menu(self):
+        """Remove some of the default context menu actions.
+
+        See: https://stackoverflow.com/questions/44402399/how-to-disable-the-default-context-menu-of-pyqtgraph#44420152
+        """
+        # All menu entries but the "Plot Options" menu can be accessed via:
+        # viewbox = self.getPlotItem().getViewBox()
+        # actions = viewbox.menu.actions()
+
+        # Hide the "Plot Options" menu
+        self.getPlotItem().ctrlMenu.menuAction().setVisible(False)
 
     def clicked(self, _, points):
         """Emit 'signal_selected_locations' when points are selected in the plot."""

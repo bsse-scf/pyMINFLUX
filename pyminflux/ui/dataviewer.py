@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QSizePolicy, QTableView
 
+from ..state import State
 from .pandas_datamodel import PandasDataModel
 
 
@@ -23,6 +24,9 @@ class DataViewer(QTableView):
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self.setWindowTitle("Parameters")
+
+        # Keep a reference to the singleton State class
+        self.state = State()
 
     def set_data(self, df):
         """Display the Pandas dataframe."""
