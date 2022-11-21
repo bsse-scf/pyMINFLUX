@@ -12,6 +12,7 @@ from pyminflux.reader import MinFluxReader
 
 __APP_NAME__ = "pyMinFlux"
 
+from pyminflux.state import State
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.histogram_viewer import HistogramViewer
@@ -39,6 +40,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Main window title
         self.setWindowTitle(f"{__APP_NAME__} v{__version__}")
+
+        # Keep a reference to the state machine
+        self.state = State()
 
         # Dialogs and widgets
         self.data_viewer = None
@@ -85,6 +89,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.changed.connect(self.toggle_3d_plotter_visibility)
         self.ui.actionHistogram_Viewer.triggered.connect(self.open_histogram_viewer)
+        self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Other connections
         self.plotter.locations_selected.connect(self.highlight_selected_locations)
@@ -233,6 +238,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Enable selected ui components
             self.enable_ui_components_on_loaded_data()
+
+    @Slot(None, name="print_current_state")
+    def print_current_state(self):
+        """Print current contents of the state machine (DEBUG)."""
+        print(f"{self.state.asdict()}")
 
     @Slot(None, name="self.open_histogram_viewer")
     def open_histogram_viewer(self):
