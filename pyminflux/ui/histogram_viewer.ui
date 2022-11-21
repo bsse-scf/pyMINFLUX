@@ -21,7 +21,15 @@
     <layout class="QHBoxLayout" name="localizations_layout"/>
    </item>
    <item row="2" column="0">
-    <layout class="QHBoxLayout" name="controls_layouts"/>
+    <layout class="QHBoxLayout" name="controls_layouts">
+     <item>
+      <widget class="QCheckBox" name="cbEnableFiltering">
+       <property name="text">
+        <string>Filter data</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

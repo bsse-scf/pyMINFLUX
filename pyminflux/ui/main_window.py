@@ -89,6 +89,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Other connections
         self.plotter.locations_selected.connect(self.highlight_selected_locations)
 
+    def enable_ui_components_on_loaded_data(self):
+        """Enable UI components."""
+        self.ui.actionHistogram_Viewer.setEnabled(True)
+
+    def disable_ui_components_on_closed_data(self):
+        """Disable UI components."""
+        self.ui.actionHistogram_Viewer.setEnabled(False)
+
     def full_update_ui(self):
         """
         Updates the UI completely (after a project load, for instance).
@@ -222,6 +230,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Update the ui
             self.full_update_ui()
+
+            # Enable selected ui components
+            self.enable_ui_components_on_loaded_data()
 
     @Slot(None, name="self.open_histogram_viewer")
     def open_histogram_viewer(self):

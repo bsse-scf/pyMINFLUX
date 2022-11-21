@@ -83,6 +83,7 @@ class Ui_MainWindow(object):
         self.action3D_Plotter.setCheckable(True)
         self.actionHistogram_Viewer = QAction(MainWindow)
         self.actionHistogram_Viewer.setObjectName("actionHistogram_Viewer")
+        self.actionHistogram_Viewer.setEnabled(False)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)

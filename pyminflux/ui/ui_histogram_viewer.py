@@ -42,6 +42,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QDialog,
     QGridLayout,
     QHBoxLayout,
@@ -69,6 +70,10 @@ class Ui_HistogramViewer(object):
 
         self.controls_layouts = QHBoxLayout()
         self.controls_layouts.setObjectName("controls_layouts")
+        self.cbEnableFiltering = QCheckBox(HistogramViewer)
+        self.cbEnableFiltering.setObjectName("cbEnableFiltering")
+
+        self.controls_layouts.addWidget(self.cbEnableFiltering)
 
         self.gridLayout.addLayout(self.controls_layouts, 2, 0, 1, 1)
 
@@ -81,6 +86,9 @@ class Ui_HistogramViewer(object):
     def retranslateUi(self, HistogramViewer):
         HistogramViewer.setWindowTitle(
             QCoreApplication.translate("HistogramViewer", "Histogram Viewer", None)
+        )
+        self.cbEnableFiltering.setText(
+            QCoreApplication.translate("HistogramViewer", "Filter data", None)
         )
 
     # retranslateUi
