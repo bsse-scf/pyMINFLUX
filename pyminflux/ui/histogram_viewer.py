@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import Slot, Signal
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import QDialog
 
@@ -17,7 +17,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
     # Signal that the data viewers should be updated
     data_filters_changed = Signal(name="data_filters_changed")
 
-    def __init__(self,  minfluxreader: MinFluxReader, parent=None):
+    def __init__(self, minfluxreader: MinFluxReader, parent=None):
         """Constructor."""
 
         # Call the base class
@@ -103,14 +103,16 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
     @Slot(name="broadcast_viewers_update")
     def broadcast_viewers_update(self):
         """Inform the rest of the application that the data viewers should be updated."""
-        if not self.ui.cbEnableEFOFiltering.isChecked() and not self.ui.cbEnableCFRFiltering.isChecked():
+        if (
+            not self.ui.cbEnableEFOFiltering.isChecked()
+            and not self.ui.cbEnableCFRFiltering.isChecked()
+        ):
             print("Enable some filters!")
             return
 
         # Signal that the viewers should be updated
         self.data_filters_changed.emit()
         self.ui.pbUpdateViewers.setEnabled(False)
-        print("* * * CONNECT ME TO SOME SLOTS!!! * * *")
 
     def plot(self):
         """Plot histograms."""
