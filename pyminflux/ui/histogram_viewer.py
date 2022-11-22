@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pyqtgraph as pg
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtGui import QColor, QDoubleValidator, QFont
 from PySide6.QtWidgets import QDialog
 
 from ..analysis import get_robust_threshold, ideal_hist_bins
@@ -42,9 +42,17 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         # Keep a reference to the singleton State class
         self.state = State()
 
+        # Set defaults
+        self.ui.checkLowerThreshold.setChecked(self.state.enable_lower_threshold)
+        self.ui.checkUpperThreshold.setChecked(self.state.enable_upper_threshold)
+        self.ui.leThreshFactor.setText(str(self.state.filter_thresh_factor))
+        self.ui.leThreshFactor.setValidator(
+            QDoubleValidator(bottom=0.0, top=5.0, decimals=2)
+        )
+
         # Update fields (before we connect signals and slots)
-        self.ui.cbEnableEFOFiltering.setChecked(self.state.filter_efo)
-        self.ui.cbEnableCFRFiltering.setChecked(self.state.filter_cfr)
+        self.ui.cbEnableEFOFiltering.setChecked(self.state.enable_filter_efo)
+        self.ui.cbEnableCFRFiltering.setChecked(self.state.enable_filter_cfr)
 
         # Set signal-slot connections
         self.setup_conn()
@@ -59,32 +67,57 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             self.persist_cfr_filtering_state
         )
         self.ui.pbUpdateViewers.clicked.connect(self.broadcast_viewers_update)
+        self.ui.checkLowerThreshold.stateChanged.connect(self.persist_lower_threshold)
+        self.ui.checkUpperThreshold.stateChanged.connect(self.persist_upper_threshold)
+        self.ui.leThreshFactor.textChanged.connect(self.persist_thresh_factor)
 
     @Slot(name="run_auto_threshold")
     def run_auto_threshold(self):
         """Run auto-threshold on EFO and CFR values and update the plots."""
 
-        # Calculate and set upper threshold for EFO
-        thresh_efo = self.calculate_upper_threshold(
+        # Is there something to calculate?
+        if (
+            not self.state.enable_lower_threshold
+            and not self.state.enable_upper_threshold
+        ):
+            print("Both lower and upper thresholds are disabled.")
+            return
+
+        # Initialize values
+        if self.state.efo_thresholds is None:
+            min_efo = self.minfluxreader.processed_dataframe["efo"].values.min()
+            max_efo = self.minfluxreader.processed_dataframe["efo"].values.max()
+        else:
+            min_efo = self.state.efo_thresholds[0]
+            max_efo = self.state.efo_thresholds[1]
+        if self.state.cfr_thresholds is None:
+            min_cfr = self.minfluxreader.processed_dataframe["cfr"].values.min()
+            max_cfr = self.minfluxreader.processed_dataframe["cfr"].values.max()
+        else:
+            min_cfr = self.state.cfr_thresholds[0]
+            max_cfr = self.state.cfr_thresholds[1]
+
+        # Calculate thresholds for EFO
+        upper_thresh_efo, lower_thresh_efo = self.calculate_thresholds(
             self.minfluxreader.processed_dataframe["efo"].values,
             thresh_factor=self.state.filter_thresh_factor,
         )
-        if self.state.efo_thresholds is None:
-            min_efo = self.minfluxreader.processed_dataframe["efo"].values.min()
-        else:
-            min_efo = self.state.efo_thresholds[0]
-        self.state.efo_thresholds = (min_efo, thresh_efo)
+        if self.state.enable_lower_threshold:
+            min_efo = lower_thresh_efo
+        if self.state.enable_upper_threshold:
+            max_efo = upper_thresh_efo
+        self.state.efo_thresholds = (min_efo, max_efo)
 
-        # Calculate and set upper threshold for CFR
-        thresh_cfr = self.calculate_upper_threshold(
+        # Calculate thresholds for CFR
+        upper_thresh_cfr, lower_thresh_cfr = self.calculate_thresholds(
             self.minfluxreader.processed_dataframe["cfr"].values,
             thresh_factor=self.state.filter_thresh_factor,
         )
-        if self.state.cfr_thresholds is None:
-            min_cfr = self.minfluxreader.processed_dataframe["cfr"].values.min()
-        else:
-            min_cfr = self.state.cfr_thresholds[0]
-        self.state.cfr_thresholds = (min_cfr, thresh_cfr)
+        if self.state.enable_lower_threshold:
+            min_cfr = lower_thresh_cfr
+        if self.state.enable_upper_threshold:
+            max_cfr = upper_thresh_cfr
+        self.state.cfr_thresholds = (min_cfr, max_cfr)
 
         # Update plot
         self.efo_region.setRegion(self.state.efo_thresholds)
@@ -92,11 +125,27 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
     @Slot(int, name="persist_efo_filtering_state")
     def persist_efo_filtering_state(self, state):
-        self.state.filter_efo = state != 0
+        self.state.enable_filter_efo = state != 0
+
+    @Slot(int, name="persist_lower_threshold")
+    def persist_lower_threshold(self, state):
+        self.state.enable_lower_threshold = state != 0
+
+    @Slot(int, name="persist_upper_threshold")
+    def persist_upper_threshold(self, state):
+        self.state.enable_upper_threshold = state != 0
+
+    @Slot(str, name="persist_thresh_factor")
+    def persist_thresh_factor(self, text):
+        try:
+            thresh_factor = float(text)
+        except Exception as _:
+            return
+        self.state.filter_thresh_factor = thresh_factor
 
     @Slot(int, name="persist_cfr_filtering_state")
     def persist_cfr_filtering_state(self, state):
-        self.state.filter_cfr = state != 0
+        self.state.enable_filter_cfr = state != 0
 
     @Slot(name="broadcast_viewers_update")
     def broadcast_viewers_update(self):
@@ -282,14 +331,16 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
         return plot, region
 
-    def calculate_upper_threshold(self, values, thresh_factor):
+    def calculate_thresholds(self, values, thresh_factor):
         """Prepare filter line."""
 
         # Calculate robust threshold
-        threshold_valid_cfr, _, _ = get_robust_threshold(values, factor=thresh_factor)
+        upper_threshold, lower_threshold, _, _ = get_robust_threshold(
+            values, factor=thresh_factor
+        )
 
         # Return it
-        return threshold_valid_cfr
+        return upper_threshold, lower_threshold
 
     def customize_context_menu(self, item):
         """Remove some of the default context menu actions.

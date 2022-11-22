@@ -18,8 +18,12 @@ class State(metaclass=Singleton):
         self.cfr_thresholds: Union[None, tuple] = None
 
         # Flags for enabling disabling filtering using thresholds on EFO and CFR value (and global switch)
-        self.filter_efo: bool = False
-        self.filter_cfr: bool = False
+        self.enable_filter_efo: bool = False
+        self.enable_filter_cfr: bool = False
+
+        # Robust threshold bounds
+        self.enable_lower_threshold: bool = False
+        self.enable_upper_threshold: bool = True
 
         # Multiplicative factor for the robust threshold
         self.filter_thresh_factor: float = 2.0
@@ -29,8 +33,10 @@ class State(metaclass=Singleton):
         return {
             "efo_thresholds": self.efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
-            "filter_efo": self.filter_efo,
-            "filter_cfr": self.filter_cfr,
+            "enable_filter_efo": self.enable_filter_efo,
+            "enable_filter_cfr": self.enable_filter_cfr,
+            "enable_lower_bound": self.enable_lower_threshold,
+            "enable_upper_bound": self.enable_upper_threshold,
             "filter_thresh_factor": self.filter_thresh_factor,
         }
 
@@ -39,6 +45,8 @@ class State(metaclass=Singleton):
 
         self.efo_thresholds = None
         self.cfr_thresholds = None
-        self.filter_efo = False
-        self.filter_cfr = False
+        self.enable_filter_efo = False
+        self.enable_filter_cfr = False
+        self.enable_lower_threshold = False
+        self.enable_upper_threshold = True
         self.filter_thresh_factor = 2.0

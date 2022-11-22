@@ -368,14 +368,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         work_dataframe = self.minfluxreader.processed_dataframe.copy()
 
         # Apply filters?
-        if self.state.filter_efo:
+        if self.state.enable_filter_efo:
             if self.state.efo_thresholds is not None:
                 work_dataframe = work_dataframe[
                     (work_dataframe["efo"] > self.state.efo_thresholds[0])
                     & (work_dataframe["efo"] < self.state.efo_thresholds[1])
                 ]
 
-        if self.state.filter_cfr:
+        if self.state.enable_filter_cfr:
             if self.state.efo_thresholds is not None:
                 work_dataframe = work_dataframe[
                     (work_dataframe["cfr"] > self.state.cfr_thresholds[0])
