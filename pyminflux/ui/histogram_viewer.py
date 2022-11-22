@@ -93,26 +93,16 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
     @Slot(int, name="persist_efo_filtering_state")
     def persist_efo_filtering_state(self, state):
         self.state.filter_efo = state != 0
-        self.ui.pbUpdateViewers.setEnabled(True)
 
     @Slot(int, name="persist_cfr_filtering_state")
     def persist_cfr_filtering_state(self, state):
         self.state.filter_cfr = state != 0
-        self.ui.pbUpdateViewers.setEnabled(True)
 
     @Slot(name="broadcast_viewers_update")
     def broadcast_viewers_update(self):
         """Inform the rest of the application that the data viewers should be updated."""
-        if (
-            not self.ui.cbEnableEFOFiltering.isChecked()
-            and not self.ui.cbEnableCFRFiltering.isChecked()
-        ):
-            print("Enable some filters!")
-            return
-
         # Signal that the viewers should be updated
         self.data_filters_changed.emit()
-        self.ui.pbUpdateViewers.setEnabled(False)
 
     def plot(self):
         """Plot histograms."""
@@ -219,7 +209,8 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             self.ui.localizations_layout.addWidget(self.sz_plot)
             self.sz_plot.show()
 
-    def _prepare_histogram(self, values):
+    @staticmethod
+    def _prepare_histogram(values):
         """Prepare data to plot."""
         bin_edges, bin_centers, bin_width = ideal_hist_bins(values, scott=False)
         n, _ = np.histogram(values, bins=bin_edges, density=False)
@@ -324,9 +315,9 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             self.state.cfr_thresholds = item.getRegion()
         else:
             raise ValueError(f"Unexpected data label {item.data_label}.")
-        self.ui.pbUpdateViewers.setEnabled(True)
 
-    def _change_region_label_font(self, region_label):
+    @staticmethod
+    def _change_region_label_font(region_label):
         """Change the region label font style."""
         text_item = region_label.textItem
         text_item.setDefaultTextColor(QColor("black"))
