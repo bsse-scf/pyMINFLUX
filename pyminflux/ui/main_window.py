@@ -233,6 +233,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
 
+            # Reset the state machine
+            self.state.reset()
+
             # Update the ui
             self.full_update_ui()
 

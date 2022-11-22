@@ -33,3 +33,12 @@ class State(metaclass=Singleton):
             "filter_cfr": self.filter_cfr,
             "filter_thresh_factor": self.filter_thresh_factor,
         }
+
+    def reset(self):
+        """Reset to defaults."""
+
+        self.efo_thresholds = None
+        self.cfr_thresholds = None
+        self.filter_efo = False
+        self.filter_cfr = False
+        self.filter_thresh_factor = 2.0
