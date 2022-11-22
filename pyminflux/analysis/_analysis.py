@@ -82,8 +82,11 @@ def get_robust_threshold(values: np.ndarray, factor: float = 2.0):
     Returns
     -------
 
-    threshold: float
-        Calculate threshold.
+    upper_threshold: float
+        Upper threshold.
+
+    lower_threshold: float
+        Lower threshold.
 
     med: float
         Median of the array of values.
@@ -96,11 +99,13 @@ def get_robust_threshold(values: np.ndarray, factor: float = 2.0):
     work_values = values.copy()
     work_values = work_values[np.logical_not(np.isnan(work_values))]
     if len(work_values) == 0:
-        return None, None, None
+        return None, None, None, None
 
     # Calculate robust statistics and threshold
     med = np.median(work_values)
     mad = stats.median_abs_deviation(work_values, scale=0.67449)
-    threshold = med + factor * mad
+    step = factor * mad
+    upper_threshold = med + step
+    lower_threshold = med - step
 
-    return threshold, med, mad
+    return upper_threshold, lower_threshold, med, mad
