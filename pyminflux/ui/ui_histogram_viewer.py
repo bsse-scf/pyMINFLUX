@@ -82,7 +82,7 @@ class Ui_HistogramViewer(object):
 
         self.pbUpdateViewers = QPushButton(HistogramViewer)
         self.pbUpdateViewers.setObjectName("pbUpdateViewers")
-        self.pbUpdateViewers.setEnabled(False)
+        self.pbUpdateViewers.setEnabled(True)
 
         self.gridLayout.addWidget(self.pbUpdateViewers, 4, 0, 1, 1)
 

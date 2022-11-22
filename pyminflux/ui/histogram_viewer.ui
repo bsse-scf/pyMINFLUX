@@ -44,7 +44,7 @@
    <item row="4" column="0">
     <widget class="QPushButton" name="pbUpdateViewers">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="text">
       <string>Update</string>
