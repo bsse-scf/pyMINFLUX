@@ -251,8 +251,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_histogram_viewer(self):
         """Initialize and open the histogram viewer."""
         if self.histogram_viewer is None:
-            self.histogram_viewer = HistogramViewer()
-            self.histogram_viewer.plot(self.minfluxreader)
+            self.histogram_viewer = HistogramViewer(self.minfluxreader)
+            self.histogram_viewer.plot()
         self.histogram_viewer.show()
 
     @Slot(list, name="highlight_selected_locations")
