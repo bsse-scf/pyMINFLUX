@@ -10,6 +10,7 @@ For the moment, it is recommended to install pyMINFLUX in editable mode in a [co
 
 ```bash
 conda create -n pyminflux-env python=3.10
+conda activate pyminflux-env
 git clone https://git.bsse.ethz.ch/pontia/pyminflux ${/path/to/pyminflux}
 cd ${/path/to/pyminflux}
 python -m pip install -e .
@@ -21,6 +22,7 @@ openGL support in recent macOS requires `pyopengl` to be installed with `conda` 
 
 ```bash
 conda create -n pyminflux-env python=3.10
+conda activate pyminflux-env
 git clone https://git.bsse.ethz.ch/pontia/pyminflux ${/path/to/pyminflux}
 cd ${/path/to/pyminflux}
 conda install pyopengl       # This is different
