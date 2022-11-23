@@ -40,13 +40,13 @@ class Plotter3D(QDialog, Ui_Plotter3D):
         min_z, max_z = coords[:, 2].min(), coords[:, 2].max()
         range_x = max_x - min_x
         range_y = max_y - min_y
-        range_z = max_z - min_z
+        range_z = 0.0
         spacing_x = range_x / 25
         spacing_y = range_y / 25
-        spacing_z = range_z / 25
+        spacing_z = 0.0
         center_x = 0.5 * (min_x + max_x)
         center_y = 0.5 * (min_y + max_y)
-        center_z = 0.5 * (min_z + max_z)
+        center_z = 0.0
         distance = np.max((range_x, range_y, range_z))
 
         # Create a grid and center it at the center of mass of the point cloud
