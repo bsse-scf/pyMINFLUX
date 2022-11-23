@@ -3,6 +3,7 @@ from pathlib import Path
 
 from PySide6 import QtGui
 from PySide6.QtCore import QSettings, Slot
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox
 
 from pyminflux import __version__
@@ -10,6 +11,7 @@ from pyminflux.reader import MinFluxReader
 
 __APP_NAME__ = "pyMinFlux"
 
+import pyminflux.resources
 from pyminflux.state import State
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
@@ -38,6 +40,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Main window title
         self.setWindowTitle(f"{__APP_NAME__} v{__version__}")
+
+        # Set the window icon
+        icon = QIcon(":/icons/icon.png")
+        self.setWindowIcon(icon)
 
         # Keep a reference to the state machine
         self.state = State()
