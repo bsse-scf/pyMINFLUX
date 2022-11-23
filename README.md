@@ -1,10 +1,10 @@
 # pyMINFLUX
 
-Reader, processor, and viewer of MINFLUX raw data.
+Reader, analyzer, and viewer of MINFLUX raw data.
 
 ## Installation
 
-For the moment, it is recommended to install in editable mode as follows:
+For the moment, it is recommended to install pyMINFLUX in editable mode in a [conda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links) environment as follows:
 
 ### Windows and Linux
 
@@ -16,6 +16,8 @@ python -m pip install -e .
 ```
 
 ### Recent macOS
+
+openGL support in recent macOS requires `pyopengl` to be installed with `conda` instead of `pip`.
 
 ```bash
 conda create -n pyminflux-env python=3.10
