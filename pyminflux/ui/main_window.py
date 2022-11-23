@@ -233,6 +233,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
 
+            # Close the histogram viewer
+            if self.histogram_viewer is not None:
+                self.histogram_viewer.close()
+                self.histogram_viewer = None
+
             # Reset the state machine
             self.state.reset()
 
@@ -255,6 +260,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.histogram_viewer.data_filters_changed.connect(self.full_update_ui)
             self.histogram_viewer.plot()
         self.histogram_viewer.show()
+        self.histogram_viewer.activateWindow()
 
     @Slot(list, name="highlight_selected_locations")
     def highlight_selected_locations(self, points):
