@@ -21,6 +21,9 @@ class Plotter(PlotWidget):
         self.hideAxis("left")
         self.show()
 
+        # Set aspect ratio to 1.0 locked
+        self.getPlotItem().getViewBox().setAspectLocked(lock=True, ratio=1.0)
+
         # Keep a reference to the singleton State class
         self.state = State()
 

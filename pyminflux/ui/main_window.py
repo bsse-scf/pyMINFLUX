@@ -244,6 +244,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.histogram_viewer.close()
                 self.histogram_viewer = None
 
+            # Close the 3D plotter
+            if self.plotter3D is not None:
+                self.plotter3D.close()
+                self.plotter3D = None
+
             # Reset the state machine
             self.state.reset()
 
