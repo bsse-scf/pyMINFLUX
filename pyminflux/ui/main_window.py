@@ -151,6 +151,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         else:
             # @TODO Shutdown threads if any are running
 
+            # Close the external dialogs
+            if self.plotter3D is not None:
+                self.plotter3D.close()
+                self.plotter3D = None
+
+            if self.histogram_viewer is not None:
+                self.histogram_viewer.close()
+                self.histogram_viewer = None
+
             # Store the application settings
             if self.last_selected_path != "":
                 app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
