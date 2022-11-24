@@ -7,3 +7,4 @@ __pycache__/
 /pyminflux/processor/build/
 /pyminflux/processor/processor.c
 /.vscode/
+/dist/
