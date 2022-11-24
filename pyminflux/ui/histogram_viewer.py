@@ -295,6 +295,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             x=bin_centers, height=n, width=0.9 * bin_width, brush=brush
         )
         plot = pg.PlotWidget(parent=self, background="w", title=title)
+        plot.setMouseEnabled(x=True, y=False)
         padding = 1.0 * (bin_edges[1] - bin_edges[0])
         plot.setXRange(
             bin_edges[0] - padding, bin_edges[-1] + padding, padding=0.0
@@ -328,6 +329,12 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
         # Customize the context menu
         self.customize_context_menu(plot)
+
+        # Make sure the viewbox remembers its own y range
+        viewbox = plot.getPlotItem().getViewBox()
+        viewbox.y_min = 0.0
+        viewbox.y_max = n.max()
+        viewbox.sigXRangeChanged.connect(self.fix_viewbox_y_range)
 
         return plot, region
 
@@ -375,3 +382,8 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         font = text_item.font()
         font.setWeight(QFont.Bold)
         font.setPointSize(20)
+
+    def fix_viewbox_y_range(self, viewbox, x_range_limits):
+        """Reset the y axis range whenever the x range changes."""
+        viewbox.setYRange(viewbox.y_min, viewbox.y_max)
+        viewbox.setAutoVisible(y=True)
