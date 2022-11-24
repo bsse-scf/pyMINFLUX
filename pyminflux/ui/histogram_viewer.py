@@ -2,6 +2,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 import pyqtgraph as pg
+from pyqtgraph import ROI, Point
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QColor, QDoubleValidator, QFont
 from PySide6.QtWidgets import QDialog
@@ -36,8 +37,10 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         self.sx_plot = None
         self.sy_plot = None
         self.sz_plot = None
+        self.cfr_efo_plot = None
         self.efo_region = None
         self.cfr_region = None
+        self.efo_cfr_roi = None
 
         # Keep a reference to the singleton State class
         self.state = State()
@@ -174,7 +177,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         if self.state.efo_thresholds is None:
             self.state.efo_thresholds = (efo_bin_edges[0], efo_bin_edges[-1])
 
-        self.efo_plot, self.efo_region = self._create_plot(
+        self.efo_plot, self.efo_region = self._create_histogram_plot(
             n_efo,
             efo_bin_edges,
             efo_bin_centers,
@@ -195,7 +198,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         if self.state.cfr_thresholds is None:
             self.state.cfr_thresholds = (cfr_bin_edges[0], cfr_bin_edges[-1])
 
-        self.cfr_plot, self.cfr_region = self._create_plot(
+        self.cfr_plot, self.cfr_region = self._create_histogram_plot(
             n_cfr,
             cfr_bin_edges,
             cfr_bin_centers,
@@ -209,16 +212,31 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         self.ui.parameters_layout.addWidget(self.cfr_plot)
         self.cfr_plot.show()
 
+        # cfr vs. efo
+        self.cfr_efo_plot = self._create_scatter_plot(
+            x=self.minfluxreader.processed_dataframe["efo"],
+            y=self.minfluxreader.processed_dataframe["cfr"],
+            title="CFR vs. EFO",
+            x_label="EFO",
+            y_label="CFR",
+            brush=pg.mkBrush(QColor(62, 175, 118, 128)),
+            roi_color="k",  # QColor(1, 65, 130, 128),
+            thresholds_efo=self.state.efo_thresholds,
+            thresholds_cfr=self.state.cfr_thresholds,
+        )
+        self.ui.parameters_layout.addWidget(self.cfr_efo_plot)
+        self.cfr_efo_plot.show()
+
         # sx
         n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = self._prepare_histogram(
             self.minfluxreader.processed_dataframe_stats["sx"].values
         )
-        self.sx_plot, _ = self._create_plot(
+        self.sx_plot, _ = self._create_histogram_plot(
             n_sx,
             sx_bin_edges,
             sx_bin_centers,
             sx_bin_width,
-            title="SX",
+            title="σx",
             brush="k",
             support_thresholding=False,
         )
@@ -232,12 +250,12 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         n_sy, sy_bin_edges, sy_bin_centers, sy_bin_width = self._prepare_histogram(
             self.minfluxreader.processed_dataframe_stats["sy"].values
         )
-        self.sy_plot, _ = self._create_plot(
+        self.sy_plot, _ = self._create_histogram_plot(
             n_sy,
             sy_bin_edges,
             sy_bin_centers,
             sy_bin_width,
-            title="SY",
+            title="σy",
             brush="k",
             support_thresholding=False,
         )
@@ -252,12 +270,12 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             n_sz, sz_bin_edges, sz_bin_centers, sz_bin_width = self._prepare_histogram(
                 self.minfluxreader.processed_dataframe_stats["sz"].values
             )
-            self.sz_plot, _ = self._create_plot(
+            self.sz_plot, _ = self._create_histogram_plot(
                 n_sz,
                 sz_bin_edges,
                 sz_bin_centers,
                 sz_bin_width,
-                title="SZ",
+                title="σz",
                 brush="k",
                 support_thresholding=False,
             )
@@ -275,7 +293,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         n = n / n.sum()
         return n, bin_edges, bin_centers, bin_width
 
-    def _create_plot(
+    def _create_histogram_plot(
         self,
         n: np.ndarray,
         bin_edges: np.ndarray,
@@ -288,7 +306,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         support_thresholding: bool = False,
         thresholds: Optional[Tuple] = None,
     ):
-        """Create a plot and return it to be added to the layout."""
+        """Create a histogram plot and return it to be added to the layout."""
 
         # Check for consistency
         if support_thresholding and thresholds is None:
@@ -317,11 +335,12 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
             # Create a linear region for setting filtering thresholds
             region = pg.LinearRegionItem(
-                values=[thresholds[0], thresholds[1]], pen={"color": "k", "width": 3}
+                values=[thresholds[0], thresholds[1]],
+                pen={"color": "k", "width": 3},
             )
 
             # Mark region with data label for callbacks
-            region.data_label = title.lower()
+            region.data_label = title.lower().replace(" ", "_")
 
             # Add to plot
             plot.addItem(region)
@@ -346,6 +365,70 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         viewbox.sigXRangeChanged.connect(self.fix_viewbox_y_range)
 
         return plot, region
+
+    def _create_scatter_plot(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        *,
+        title: str = "",
+        x_label: str = "",
+        y_label: str = "",
+        brush: str = "b",
+        roi_color: str = "r",
+        thresholds_efo: tuple = None,
+        thresholds_cfr: tuple = None,
+    ):
+        """Create a scatter plot and return it to be added to the layout."""
+        plot = pg.PlotWidget(parent=self, background="w", title=title)
+        plot.setLabel("bottom", text=x_label)
+        plot.setLabel("left", text=y_label)
+        plot.setMouseEnabled(x=True, y=True)
+
+        # Fix plot ratio
+        efo_val = np.mean(self.minfluxreader.processed_dataframe["efo"].values)
+        cfr_val = np.mean(self.minfluxreader.processed_dataframe["cfr"].values)
+        try:
+            ratio = cfr_val / efo_val
+        except:
+            ratio = 1.0
+        plot.getPlotItem().getViewBox().setAspectLocked(lock=True, ratio=ratio)
+
+        scatter = pg.ScatterPlotItem(
+            size=3,
+            pen=None,
+            brush=brush,
+            hoverable=False,
+        )
+        # scatter.sigClicked.connect(self.clicked)
+        scatter.setData(x=x, y=y)
+        plot.addItem(scatter)
+        plot.showAxis("bottom")
+        plot.showAxis("left")
+
+        # Add ROI with thresholds
+        if thresholds_efo is not None and thresholds_cfr is not None:
+            self.efo_cfr_roi = ROI(
+                pos=Point(thresholds_efo[0], thresholds_cfr[0]),
+                size=Point(
+                    thresholds_efo[1] - thresholds_efo[0],
+                    thresholds_cfr[1] - thresholds_cfr[0],
+                ),
+                parent=scatter,
+                pen={"color": roi_color, "width": 3},
+                hoverPen={"color": roi_color, "width": 5},
+                movable=False,
+                rotatable=False,
+                resizable=False,
+                removable=False,
+            )
+            #self.efo_cfr_roi.sigRegionChanged.connect(self.roi_changed)
+            #self.efo_cfr_roi.sigRegionChangeFinished.connect(self.roi_changed_finished)
+
+        # Customize the context menu
+        self.customize_context_menu(plot)
+
+        return plot
 
     def _add_median_line(self, plot, values):
         """Add median line to plot (with median +/- mad as label)."""
@@ -391,15 +474,35 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         item.getPlotItem().ctrlMenu.menuAction().setVisible(False)
 
     def region_pos_changed(self, item):
+        """Called when the line region on one of the histogram plots is changing."""
         pass
 
     def region_pos_changed_finished(self, item):
+        """Called when the line region on one of the histogram plots has changed."""
         if item.data_label == "efo":
             self.state.efo_thresholds = item.getRegion()
+            self.update_efo_cfr_roi()
         elif item.data_label == "cfr":
             self.state.cfr_thresholds = item.getRegion()
+            self.update_efo_cfr_roi()
         else:
             raise ValueError(f"Unexpected data label {item.data_label}.")
+
+    # def roi_changed(self, item):
+    #     """Called when the line region on one of the histogram plots has changed."""
+    #     pass
+    #
+    # def roi_changed_finished(self, item):
+    #     """Called when the ROI in the scatter plot has changed."""
+    #     print("roi_changed_finished: called")
+    #     pos = self.efo_cfr_roi.pos()
+    #     size = self.efo_cfr_roi.size()
+    #     self.state.efo_thresholds = (pos[0], pos[0] + size[0])
+    #     self.state.cfr_thresholds = (pos[1], pos[1] + size[1])
+    #
+    #     # Update plot
+    #     self.efo_region.setRegion(self.state.efo_thresholds)
+    #     self.cfr_region.setRegion(self.state.cfr_thresholds)
 
     @staticmethod
     def _change_region_label_font(region_label):
@@ -414,3 +517,19 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         """Reset the y axis range whenever the x range changes."""
         viewbox.setYRange(viewbox.y_min, viewbox.y_max)
         viewbox.setAutoVisible(y=True)
+
+    def update_efo_cfr_roi(self):
+        """Update the efo_cfr roi with to match current threshold values."""
+        if self.state.efo_thresholds is None or self.state.cfr_thresholds is None:
+            return
+        if self.efo_cfr_roi is None:
+            return
+        self.efo_cfr_roi.setPos(
+            Point(self.state.efo_thresholds[0], self.state.cfr_thresholds[0])
+        )
+        self.efo_cfr_roi.setSize(
+            Point(
+                self.state.efo_thresholds[1] - self.state.efo_thresholds[0],
+                self.state.cfr_thresholds[1] - self.state.cfr_thresholds[0],
+            )
+        )
