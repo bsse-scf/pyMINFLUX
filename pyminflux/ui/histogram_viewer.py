@@ -222,6 +222,9 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             brush="k",
             support_thresholding=False,
         )
+        self._add_median_line(
+            self.sx_plot, self.minfluxreader.processed_dataframe_stats["sx"].values
+        )
         self.ui.localizations_layout.addWidget(self.sx_plot)
         self.sx_plot.show()
 
@@ -237,6 +240,9 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             title="SY",
             brush="k",
             support_thresholding=False,
+        )
+        self._add_median_line(
+            self.sy_plot, self.minfluxreader.processed_dataframe_stats["sy"].values
         )
         self.ui.localizations_layout.addWidget(self.sy_plot)
         self.sy_plot.show()
@@ -254,6 +260,9 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
                 title="SZ",
                 brush="k",
                 support_thresholding=False,
+            )
+            self._add_median_line(
+                self.sz_plot, self.minfluxreader.processed_dataframe_stats["sz"].values
             )
             self.ui.localizations_layout.addWidget(self.sz_plot)
             self.sz_plot.show()
@@ -337,6 +346,24 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         viewbox.sigXRangeChanged.connect(self.fix_viewbox_y_range)
 
         return plot, region
+
+    def _add_median_line(self, plot, values):
+        """Add median line to plot (with median +/- mad as label)."""
+        _, _, med, mad = get_robust_threshold(values, 0.0)
+        line = pg.InfiniteLine(
+            pos=med,
+            movable=False,
+            angle=90,
+            pen={"color": (200, 50, 50), "width": 3},
+            label=f"median={med:.4e} ± {mad:.4e}",
+            labelOpts={
+                "position": 0.95,
+                "color": (200, 50, 50),
+                "fill": (200, 50, 50, 10),
+                "movable": True,
+            },
+        )
+        plot.addItem(line)
 
     def calculate_thresholds(self, values, thresh_factor):
         """Prepare filter line."""
