@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import ROI, Point
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Signal, Slot, QSignalBlocker
 from PySide6.QtGui import QColor, QDoubleValidator, QFont
 from PySide6.QtWidgets import QDialog
 
@@ -41,6 +41,9 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         self.efo_region = None
         self.cfr_region = None
         self.efo_cfr_roi = None
+
+        # Signal blockers
+        self.efo_cfr_roi_blocker = None
 
         # Keep a reference to the singleton State class
         self.state = State()
@@ -220,7 +223,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             x_label="EFO",
             y_label="CFR",
             brush=pg.mkBrush(QColor(62, 175, 118, 128)),
-            roi_color="k",  # QColor(1, 65, 130, 128),
+            roi_color=QColor(36, 60, 253, 255),
             thresholds_efo=self.state.efo_thresholds,
             thresholds_cfr=self.state.cfr_thresholds,
         )
@@ -417,13 +420,13 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
                 parent=scatter,
                 pen={"color": roi_color, "width": 3},
                 hoverPen={"color": roi_color, "width": 5},
-                movable=False,
+                movable=True,
                 rotatable=False,
-                resizable=False,
+                resizable=True,
                 removable=False,
             )
-            #self.efo_cfr_roi.sigRegionChanged.connect(self.roi_changed)
-            #self.efo_cfr_roi.sigRegionChangeFinished.connect(self.roi_changed_finished)
+            self.efo_cfr_roi.sigRegionChanged.connect(self.roi_changed)
+            self.efo_cfr_roi.sigRegionChangeFinished.connect(self.roi_changed_finished)
 
         # Customize the context menu
         self.customize_context_menu(plot)
@@ -479,30 +482,42 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
     def region_pos_changed_finished(self, item):
         """Called when the line region on one of the histogram plots has changed."""
-        if item.data_label == "efo":
-            self.state.efo_thresholds = item.getRegion()
-            self.update_efo_cfr_roi()
-        elif item.data_label == "cfr":
-            self.state.cfr_thresholds = item.getRegion()
-            self.update_efo_cfr_roi()
-        else:
+        if item.data_label not in ["efo", "cfr"]:
             raise ValueError(f"Unexpected data label {item.data_label}.")
 
-    # def roi_changed(self, item):
-    #     """Called when the line region on one of the histogram plots has changed."""
-    #     pass
-    #
-    # def roi_changed_finished(self, item):
-    #     """Called when the ROI in the scatter plot has changed."""
-    #     print("roi_changed_finished: called")
-    #     pos = self.efo_cfr_roi.pos()
-    #     size = self.efo_cfr_roi.size()
-    #     self.state.efo_thresholds = (pos[0], pos[0] + size[0])
-    #     self.state.cfr_thresholds = (pos[1], pos[1] + size[1])
-    #
-    #     # Update plot
-    #     self.efo_region.setRegion(self.state.efo_thresholds)
-    #     self.cfr_region.setRegion(self.state.cfr_thresholds)
+        # Signal blocker on self.efo_cfr_roi
+        if self.efo_cfr_roi_blocker is None:
+            self.efo_cfr_roi_blocker = QSignalBlocker(self.efo_cfr_roi)
+
+        # Block signals from efo_cfr_roi
+        self.efo_cfr_roi_blocker.reblock()
+
+        # Update the correct thresholds
+        if item.data_label == "efo":
+            self.state.efo_thresholds = item.getRegion()
+        else:
+            self.state.cfr_thresholds = item.getRegion()
+
+        # Update the ROI in the scatter plot without emitting signals
+        self.update_efo_cfr_roi()
+
+        # Unblock the efo_cfr_roi signals
+        self.efo_cfr_roi_blocker.unblock()
+
+    def roi_changed(self, item):
+        """Called when the line region on one of the histogram plots has changed."""
+        pass
+
+    def roi_changed_finished(self, item):
+        """Called when the ROI in the scatter plot has changed."""
+        pos = self.efo_cfr_roi.pos()
+        size = self.efo_cfr_roi.size()
+        self.state.efo_thresholds = (pos[0], pos[0] + size[0])
+        self.state.cfr_thresholds = (pos[1], pos[1] + size[1])
+
+        # Update plot
+        self.efo_region.setRegion(self.state.efo_thresholds)
+        self.cfr_region.setRegion(self.state.cfr_thresholds)
 
     @staticmethod
     def _change_region_label_font(region_label):
