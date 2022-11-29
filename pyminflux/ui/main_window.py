@@ -7,6 +7,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox
 
 from pyminflux import __version__
+from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 
 __APP_NAME__ = "pyMinFlux"
@@ -65,8 +66,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Set up signals and slots
         self.setup_conn()
 
-        # Keep a reference to the MinFluxReader
-        self.minfluxreader = None
+        # Keep a reference to the MinFluxProcessor
+        self.minfluxprocessor = None
 
         # Install the custom output stream
         sys.stdout = EmittingStream()
@@ -238,10 +239,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.last_selected_path = Path(filename).parent
 
             # Open the file
-            self.minfluxreader = MinFluxReader(filename)
+            minfluxreader = MinFluxReader(filename)
 
             # Show some info
-            print(self.minfluxreader)
+            print(minfluxreader)
+
+            # Add initialize the processor with the reader
+            self.minfluxprocessor = MinFluxProcessor(minfluxreader)
 
             # Show the filename on the main window
             self.setWindowTitle(
@@ -276,7 +280,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_histogram_viewer(self):
         """Initialize and open the histogram viewer."""
         if self.histogram_viewer is None:
-            self.histogram_viewer = HistogramViewer(self.minfluxreader)
+            self.histogram_viewer = HistogramViewer(self.minfluxprocessor)
             self.histogram_viewer.data_filters_changed.connect(self.full_update_ui)
             self.histogram_viewer.plot()
         self.histogram_viewer.show()
@@ -297,7 +301,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def plot_localizations(self, dataframe=None):
         """Plot the localizations."""
 
-        if self.minfluxreader is None:
+        if self.minfluxprocessor is None:
             self.plotter.remove_points()
             return
 
@@ -315,7 +319,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
 
         # If the dataset is 3D, also plot the coordinates in the 3D plotter.
-        if self.minfluxreader.is_3d:
+        if self.minfluxprocessor.is_3d:
             self.plot_localizations_3d(dataframe[["x", "y", "z"]].values)
 
     def plot_localizations_3d(self, coords=None):
@@ -356,7 +360,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             else:
                 # Create the 3D plotter if needed and make it visible
                 self.plot_localizations_3d(
-                    self.minfluxreader.processed_dataframe[["x", "y", "z"]].values
+                    self.minfluxprocessor.processed_dataframe[["x", "y", "z"]].values
                 )
                 self.plotter3D.show()
         else:
@@ -373,7 +377,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """
 
         # Is there data to process?
-        if self.minfluxreader is None:
+        if self.minfluxprocessor is None:
             self.data_viewer.clear()
             return
 
@@ -391,7 +395,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Apply filters to a copy of the dataframe."""
 
         # Work on a copy of the dataframe
-        work_dataframe = self.minfluxreader.processed_dataframe.copy()
+        work_dataframe = self.minfluxprocessor.processed_dataframe.copy()
 
         # Apply filters?
         if self.state.enable_filter_efo:
