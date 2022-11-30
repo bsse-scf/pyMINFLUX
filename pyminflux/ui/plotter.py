@@ -54,7 +54,7 @@ class Plotter(PlotWidget):
         self.setBackground("k")
 
     def customize_context_menu(self):
-        """Remove some of the default context menu actions.
+        """Remove some default context menu actions.
 
         See: https://stackoverflow.com/questions/44402399/how-to-disable-the-default-context-menu-of-pyqtgraph#44420152
         """
