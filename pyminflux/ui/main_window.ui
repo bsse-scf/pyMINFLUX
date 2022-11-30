@@ -51,6 +51,8 @@
     </property>
     <addaction name="actionLoad"/>
     <addaction name="separator"/>
+    <addaction name="actionOptions"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -189,6 +191,11 @@
   <action name="actionState">
    <property name="text">
     <string>[DEBUG] Show state</string>
+   </property>
+  </action>
+  <action name="actionOptions">
+   <property name="text">
+    <string>Options</string>
    </property>
   </action>
  </widget>

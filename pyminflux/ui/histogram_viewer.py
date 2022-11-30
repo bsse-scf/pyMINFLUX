@@ -5,7 +5,7 @@ import pyqtgraph as pg
 from pyqtgraph import ROI, Point
 from PySide6.QtCore import QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QColor, QDoubleValidator, QFont
-from PySide6.QtWidgets import QDialog
+from PySide6.QtWidgets import QDialog, QLabel
 
 from ..analysis import get_robust_threshold, ideal_hist_bins
 from ..processor import MinFluxProcessor
@@ -156,18 +156,43 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
     @Slot(name="broadcast_viewers_update")
     def broadcast_viewers_update(self):
         """Inform the rest of the application that the data viewers should be updated."""
-        # Signal that the viewers should be updated
+
+        # Apply all filters
+        self._minfluxprocessor.update_filters()
+
+        # Update the histograms
+        self.plot()
+
+        # Signal that the external viewers should be updated
         self.data_filters_changed.emit()
 
     def plot(self):
         """Plot histograms."""
 
         # Make sure there is data to plot
+        is_data = True
         if self._minfluxprocessor is None:
-            return
+            is_data = False
 
         if self._minfluxprocessor.processed_dataframe is None:
+            is_data = False
+
+        if self._minfluxprocessor.num_values == 0:
+            is_data = False
+
+        if not is_data:
+            label = QLabel("Sorry, no data.")
+            font = label.font()
+            font.setPointSize(16)
+            label.setFont(font)
+            self.ui.parameters_layout.addWidget(label)
             return
+
+        # Remove previous plots, if they exist
+        for i in reversed(range(self.ui.parameters_layout.count())):
+            self.ui.parameters_layout.itemAt(i).widget().deleteLater()
+        for i in reversed(range(self.ui.localizations_layout.count())):
+            self.ui.localizations_layout.itemAt(i).widget().deleteLater()
 
         #
         # Get "efo" and "cfr" measurements, and "sx", "sy" and "sz" localization jitter

@@ -17,6 +17,7 @@ from pyminflux.state import State
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.histogram_viewer import HistogramViewer
+from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.ui_main_window import Ui_MainWindow
@@ -54,14 +55,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.histogram_viewer = None
         self.plotter = None
         self.plotter3D = None
+        self.options = None
 
         # Read the application settings
         app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
         self.last_selected_path = app_settings.value("io/last_selected_path", ".")
+        self.state.min_num_loc_per_trace = int(
+            app_settings.value("options/min_num_loc_per_trace", 1)
+        )
 
         # Initialize in-window widgets
         self.setup_data_viewer()
         self.setup_data_plotter()
+        self.options = Options()
 
         # Set up signals and slots
         self.setup_conn()
@@ -89,6 +95,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Menu actions
         self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
+        self.ui.actionOptions.triggered.connect(self.open_options_dialog)
         self.ui.actionQuit.triggered.connect(self.quit_application)
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
@@ -113,7 +120,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         :return:
         """
         self.plotter.clear()
-        dataframe = self.get_filtered_dataframe()
+        dataframe = self.minfluxprocessor.processed_dataframe
         self.plot_localizations(dataframe)
         self.show_processed_dataframe(dataframe)
         print(f"Retrieved {len(dataframe.index)} events.")
@@ -160,6 +167,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.histogram_viewer is not None:
                 self.histogram_viewer.close()
                 self.histogram_viewer = None
+
+            if self.options is not None:
+                self.options.close()
+                self.options = None
 
             # Store the application settings
             if self.last_selected_path != "":
@@ -236,9 +247,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         filename = res[0]
         if filename != "":
-            self.last_selected_path = Path(filename).parent
+
+            # Reset the state machine
+            self.state.reset()
 
             # Open the file
+            self.last_selected_path = Path(filename).parent
             minfluxreader = MinFluxReader(filename)
 
             # Show some info
@@ -262,9 +276,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.plotter3D.close()
                 self.plotter3D = None
 
-            # Reset the state machine
-            self.state.reset()
-
             # Update the ui
             self.full_update_ui()
 
@@ -285,6 +296,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.histogram_viewer.plot()
         self.histogram_viewer.show()
         self.histogram_viewer.activateWindow()
+
+    @Slot(None, name="open_options_dialog")
+    def open_options_dialog(self):
+        """Open the options dialog."""
+        if self.options is None:
+            self.options = Options()
+        self.options.show()
+        self.options.activateWindow()
 
     @Slot(list, name="highlight_selected_locations")
     def highlight_selected_locations(self, points):
@@ -310,7 +329,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         if dataframe is None:
             # Get the (potentially filtered) dataframe
-            dataframe = self.get_filtered_dataframe()
+            dataframe = self.minfluxprocessor.processed_dataframe
 
         # Always plot the (x, y) coordinates in the 2D plotter
         self.plotter.plot_localizations(
@@ -337,7 +356,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plotter3D = Plotter3D(parent=self)
 
         if coords is None:
-            dataframe = self.get_filtered_dataframe()
+            dataframe = self.minfluxprocessor.processed_dataframe
             if dataframe is None:
                 return
             coords = dataframe[["x", "y", "z"]].values
@@ -383,33 +402,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         if dataframe is None:
             # Get the (potentially filtered) dataframe
-            dataframe = self.get_filtered_dataframe()
+            dataframe = self.minfluxprocessor.processed_dataframe()
 
         # Pass the dataframe to the pdDataViewer
         self.data_viewer.set_data(dataframe)
 
         # Optimize the table view columns
         self.data_viewer.optimize()
-
-    def get_filtered_dataframe(self):
-        """Apply filters to a copy of the dataframe."""
-
-        # Work on a copy of the dataframe
-        work_dataframe = self.minfluxprocessor.processed_dataframe.copy()
-
-        # Apply filters?
-        if self.state.enable_filter_efo:
-            if self.state.efo_thresholds is not None:
-                work_dataframe = work_dataframe[
-                    (work_dataframe["efo"] > self.state.efo_thresholds[0])
-                    & (work_dataframe["efo"] < self.state.efo_thresholds[1])
-                ]
-
-        if self.state.enable_filter_cfr:
-            if self.state.efo_thresholds is not None:
-                work_dataframe = work_dataframe[
-                    (work_dataframe["cfr"] > self.state.cfr_thresholds[0])
-                    & (work_dataframe["cfr"] < self.state.cfr_thresholds[1])
-                ]
-
-        return work_dataframe

@@ -86,6 +86,8 @@ class Ui_MainWindow(object):
         self.actionHistogram_Viewer.setEnabled(False)
         self.actionState = QAction(MainWindow)
         self.actionState.setObjectName("actionState")
+        self.actionOptions = QAction(MainWindow)
+        self.actionOptions.setObjectName("actionOptions")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -136,6 +138,8 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuView.menuAction())
         self.menuFile.addAction(self.actionLoad)
+        self.menuFile.addSeparator()
+        self.menuFile.addAction(self.actionOptions)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionQuit)
         self.menuView.addAction(self.actionData_viewer)
@@ -200,6 +204,9 @@ class Ui_MainWindow(object):
         )
         self.actionState.setText(
             QCoreApplication.translate("MainWindow", "[DEBUG] Show state", None)
+        )
+        self.actionOptions.setText(
+            QCoreApplication.translate("MainWindow", "Options", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
