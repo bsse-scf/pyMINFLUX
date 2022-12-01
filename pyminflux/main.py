@@ -5,8 +5,10 @@ from PySide6.QtWidgets import QApplication
 import pyminflux.resources
 
 
+import pyminflux.resources
+
 # from ui.appeventfilter import AppEventFilter
-from ui.main_window import PyMinFluxMainWindow
+from pyminflux.ui.main_window import PyMinFluxMainWindow
 
 if __name__ == "__main__":
 

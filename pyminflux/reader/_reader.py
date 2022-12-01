@@ -27,7 +27,6 @@ class MinFluxReader:
         # Initialize the data
         self._data_array = None
         self._data_df = None
-        self._data_df_stats = None
         self._data_full_df = None
         self._valid_entries = None
 
@@ -84,14 +83,6 @@ class MinFluxReader:
         return self._data_df
 
     @property
-    def processed_dataframe_stats(self) -> Union[None, pd.DataFrame]:
-        """Return some status on the processed dataframe (some properties only)."""
-        if self._data_df_stats is not None:
-            return self._data_df_stats
-        self._data_df_stats = self._calculate_statistics()
-        return self._data_df_stats
-
-    @property
     def raw_data_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return the raw data as dataframe (some properties only)."""
         if self._data_full_df is not None:
@@ -120,24 +111,6 @@ class MinFluxReader:
 
         # Return success
         return True
-
-    def save_raw_data_full_dataframe(self, out_file: Union[Path, str]):
-        """Convert (if needed) and save the full raw dataframe to disk.
-
-        Note: these are the exported dataframe columns:
-
-        "tid", "aid", "vld", "tim", "x", "y", "z", "efo", "cfr", "dcr"
-        """
-
-        # Prepare the output file
-        out_dir = Path(out_file).parent
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        # This will create the dataframe if needed
-        df = self.raw_data_dataframe
-
-        # Save
-        df.to_csv(out_file, index=False, header=True, na_rep="nan", encoding="utf-8")
 
     def _process(self) -> Union[None, pd.DataFrame]:
         """Returns processed dataframe for valid (or invalid) entries.
@@ -205,42 +178,6 @@ class MinFluxReader:
         df["dcr"] = dcr
 
         return df
-
-    def _calculate_statistics(self):
-        """Calculate per-trace statistics."""
-
-        # Make sure we have processed dataframe to work on
-        if self.processed_dataframe is None:
-            return
-
-        # Calculate some statistics per TID on the processed dataframe
-        df_grouped = self._data_df.groupby("tid")
-
-        tid = df_grouped["tid"].first().values
-        n = df_grouped["tid"].count().values
-        mx = df_grouped["x"].mean().values
-        my = df_grouped["y"].mean().values
-        mz = df_grouped["z"].mean().values
-        sx = df_grouped["x"].std().values
-        sy = df_grouped["y"].std().values
-        sz = df_grouped["z"].std().values
-
-        # Prepare a dataframe with the statistics
-        df_tid = pd.DataFrame(columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz"])
-
-        df_tid["tid"] = tid
-        df_tid["n"] = n
-        df_tid["mx"] = mx
-        df_tid["my"] = my
-        df_tid["mz"] = mz
-        df_tid["sx"] = sx
-        df_tid["sy"] = sy
-        df_tid["sz"] = sz
-
-        # sx, sy sz columns will contain np.nan is n == 1: we replace with 0.0
-        df_tid[["sx", "sy", "sz"]] = df_tid[["sx", "sy", "sz"]].fillna(value=0.0)
-
-        return df_tid
 
     def _raw_data_to_full_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return raw data arranged into a dataframe."""

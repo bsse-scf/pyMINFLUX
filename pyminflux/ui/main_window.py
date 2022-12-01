@@ -7,15 +7,17 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox
 
 from pyminflux import __version__
+from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 
 __APP_NAME__ = "pyMinFlux"
 
 import pyminflux.resources
 from pyminflux.state import State
+from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
-from pyminflux.ui.histogram_viewer import HistogramViewer
+from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.ui_main_window import Ui_MainWindow
@@ -50,23 +52,28 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Dialogs and widgets
         self.data_viewer = None
-        self.histogram_viewer = None
+        self.analyzer = None
         self.plotter = None
         self.plotter3D = None
+        self.options = None
 
         # Read the application settings
         app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
         self.last_selected_path = app_settings.value("io/last_selected_path", ".")
+        self.state.min_num_loc_per_trace = int(
+            app_settings.value("options/min_num_loc_per_trace", 1)
+        )
 
         # Initialize in-window widgets
         self.setup_data_viewer()
         self.setup_data_plotter()
+        self.options = Options()
 
         # Set up signals and slots
         self.setup_conn()
 
-        # Keep a reference to the MinFluxReader
-        self.minfluxreader = None
+        # Keep a reference to the MinFluxProcessor
+        self.minfluxprocessor = None
 
         # Install the custom output stream
         sys.stdout = EmittingStream()
@@ -88,11 +95,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Menu actions
         self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
+        self.ui.actionOptions.triggered.connect(self.open_options_dialog)
         self.ui.actionQuit.triggered.connect(self.quit_application)
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
-        self.ui.action3D_Plotter.changed.connect(self.toggle_3d_plotter_visibility)
-        self.ui.actionHistogram_Viewer.triggered.connect(self.open_histogram_viewer)
+        self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
+        self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
         self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Other connections
@@ -100,11 +108,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
-        self.ui.actionHistogram_Viewer.setEnabled(True)
+        self.ui.actionAnalyzer.setEnabled(True)
 
     def disable_ui_components_on_closed_data(self):
         """Disable UI components."""
-        self.ui.actionHistogram_Viewer.setEnabled(False)
+        self.ui.actionAnalyzer.setEnabled(False)
 
     def full_update_ui(self):
         """
@@ -112,7 +120,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         :return:
         """
         self.plotter.clear()
-        dataframe = self.get_filtered_dataframe()
+        dataframe = self.minfluxprocessor.processed_dataframe
         self.plot_localizations(dataframe)
         self.show_processed_dataframe(dataframe)
         print(f"Retrieved {len(dataframe.index)} events.")
@@ -156,9 +164,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.plotter3D.close()
                 self.plotter3D = None
 
-            if self.histogram_viewer is not None:
-                self.histogram_viewer.close()
-                self.histogram_viewer = None
+            if self.analyzer is not None:
+                self.analyzer.close()
+                self.analyzer = None
+
+            if self.options is not None:
+                self.options.close()
+                self.options = None
 
             # Store the application settings
             if self.last_selected_path != "":
@@ -235,31 +247,34 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         filename = res[0]
         if filename != "":
-            self.last_selected_path = Path(filename).parent
+
+            # Reset the state machine
+            self.state.reset()
 
             # Open the file
-            self.minfluxreader = MinFluxReader(filename)
+            self.last_selected_path = Path(filename).parent
+            minfluxreader = MinFluxReader(filename)
 
             # Show some info
-            print(self.minfluxreader)
+            print(minfluxreader)
+
+            # Add initialize the processor with the reader
+            self.minfluxprocessor = MinFluxProcessor(minfluxreader)
 
             # Show the filename on the main window
             self.setWindowTitle(
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
 
-            # Close the histogram viewer
-            if self.histogram_viewer is not None:
-                self.histogram_viewer.close()
-                self.histogram_viewer = None
+            # Close the Analyzer
+            if self.analyzer is not None:
+                self.analyzer.close()
+                self.analyzer = None
 
             # Close the 3D plotter
             if self.plotter3D is not None:
                 self.plotter3D.close()
                 self.plotter3D = None
-
-            # Reset the state machine
-            self.state.reset()
 
             # Update the ui
             self.full_update_ui()
@@ -272,15 +287,23 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Print current contents of the state machine (DEBUG)."""
         print(f"{self.state.asdict()}")
 
-    @Slot(None, name="self.open_histogram_viewer")
-    def open_histogram_viewer(self):
-        """Initialize and open the histogram viewer."""
-        if self.histogram_viewer is None:
-            self.histogram_viewer = HistogramViewer(self.minfluxreader)
-            self.histogram_viewer.data_filters_changed.connect(self.full_update_ui)
-            self.histogram_viewer.plot()
-        self.histogram_viewer.show()
-        self.histogram_viewer.activateWindow()
+    @Slot(None, name="self.open_analyzer")
+    def open_analyzer(self):
+        """Initialize and open the analyzer."""
+        if self.analyzer is None:
+            self.analyzer = Analyzer(self.minfluxprocessor)
+            self.analyzer.data_filters_changed.connect(self.full_update_ui)
+            self.analyzer.plot()
+        self.analyzer.show()
+        self.analyzer.activateWindow()
+
+    @Slot(None, name="open_options_dialog")
+    def open_options_dialog(self):
+        """Open the options dialog."""
+        if self.options is None:
+            self.options = Options()
+        self.options.show()
+        self.options.activateWindow()
 
     @Slot(list, name="highlight_selected_locations")
     def highlight_selected_locations(self, points):
@@ -288,8 +311,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Extract indices of the rows corresponding to the selected points
         indices = []
-        for p in points:
+        for n, p in enumerate(points):
             indices.append(p.index())
+            if n > 100:
+                print(f"Too many points ({len(points)}), only selecting the first 100.")
+                break
 
         # Update the dataviewer
         self.data_viewer.select_and_scroll_to_rows(indices)
@@ -297,7 +323,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def plot_localizations(self, dataframe=None):
         """Plot the localizations."""
 
-        if self.minfluxreader is None:
+        if self.minfluxprocessor is None:
             self.plotter.remove_points()
             return
 
@@ -306,7 +332,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         if dataframe is None:
             # Get the (potentially filtered) dataframe
-            dataframe = self.get_filtered_dataframe()
+            dataframe = self.minfluxprocessor.processed_dataframe
 
         # Always plot the (x, y) coordinates in the 2D plotter
         self.plotter.plot_localizations(
@@ -315,7 +341,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
 
         # If the dataset is 3D, also plot the coordinates in the 3D plotter.
-        if self.minfluxreader.is_3d:
+        if self.minfluxprocessor.is_3d:
             self.plot_localizations_3d(dataframe[["x", "y", "z"]].values)
 
     def plot_localizations_3d(self, coords=None):
@@ -324,48 +350,38 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         If coords is None, filters may be applied.
         """
 
-        # Only plot if the View 3D Plotter menu is checked
-        if not self.ui.action3D_Plotter.isChecked():
+        # Only plot if the View 3D Plotter is open
+        if self.plotter3D is None:
             return
 
-        # Create the 3D Plotter if it does not exist yet
-        if self.plotter3D is None:
-            self.plotter3D = Plotter3D(parent=self)
-
         if coords is None:
-            dataframe = self.get_filtered_dataframe()
+            dataframe = self.minfluxprocessor.processed_dataframe
             if dataframe is None:
                 return
             coords = dataframe[["x", "y", "z"]].values
 
+        # Plot new data (old data will be dropped)
         self.plotter3D.plot(coords)
 
         # Show the plotter
         self.plotter3D.show()
 
-    @Slot(None, name="toggle_3d_plotter_visibility")
-    def toggle_3d_plotter_visibility(self):
-        """Toggle 3D plotter visibility."""
+    @Slot(None, name="open_3d_plotter")
+    def open_3d_plotter(self):
+        """Open 3D plotter."""
 
-        # Get state of the visibility from the menu
-        visible = self.ui.action3D_Plotter.isChecked()
+        """Initialize and open the analyzer."""
         if self.plotter3D is None:
-            if not visible:
-                # Nothing to be done
-                return
-            else:
-                # Create the 3D plotter if needed and make it visible
+            self.plotter3D = Plotter3D()
+            if (
+                self.minfluxprocessor is not None
+                and self.minfluxprocessor.num_values > 0
+            ):
                 self.plot_localizations_3d(
-                    self.minfluxreader.processed_dataframe[["x", "y", "z"]].values
+                    self.minfluxprocessor.processed_dataframe[["x", "y", "z"]].values
                 )
-                self.plotter3D.show()
-        else:
-            if not visible:
-                # Hide the plotter
-                self.plotter3D.hide()
-            else:
-                # Show the plotter
-                self.plotter3D.show()
+        self.plotter3D.show()
+        self.plotter3D.activateWindow()
 
     def show_processed_dataframe(self, dataframe=None):
         """
@@ -373,39 +389,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """
 
         # Is there data to process?
-        if self.minfluxreader is None:
+        if self.minfluxprocessor is None:
             self.data_viewer.clear()
             return
 
         if dataframe is None:
             # Get the (potentially filtered) dataframe
-            dataframe = self.get_filtered_dataframe()
+            dataframe = self.minfluxprocessor.processed_dataframe()
 
         # Pass the dataframe to the pdDataViewer
         self.data_viewer.set_data(dataframe)
 
         # Optimize the table view columns
         self.data_viewer.optimize()
-
-    def get_filtered_dataframe(self):
-        """Apply filters to a copy of the dataframe."""
-
-        # Work on a copy of the dataframe
-        work_dataframe = self.minfluxreader.processed_dataframe.copy()
-
-        # Apply filters?
-        if self.state.enable_filter_efo:
-            if self.state.efo_thresholds is not None:
-                work_dataframe = work_dataframe[
-                    (work_dataframe["efo"] > self.state.efo_thresholds[0])
-                    & (work_dataframe["efo"] < self.state.efo_thresholds[1])
-                ]
-
-        if self.state.enable_filter_cfr:
-            if self.state.efo_thresholds is not None:
-                work_dataframe = work_dataframe[
-                    (work_dataframe["cfr"] > self.state.cfr_thresholds[0])
-                    & (work_dataframe["cfr"] < self.state.cfr_thresholds[1])
-                ]
-
-        return work_dataframe

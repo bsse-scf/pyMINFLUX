@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'histogram_viewer.ui'
+## Form generated from reading UI file 'analyzer.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.4.0
 ##
@@ -55,12 +55,12 @@ from PySide6.QtWidgets import (
 )
 
 
-class Ui_HistogramViewer(object):
-    def setupUi(self, HistogramViewer):
-        if not HistogramViewer.objectName():
-            HistogramViewer.setObjectName("HistogramViewer")
-        HistogramViewer.resize(1191, 1087)
-        self.gridLayout = QGridLayout(HistogramViewer)
+class Ui_Analyzer(object):
+    def setupUi(self, Analyzer):
+        if not Analyzer.objectName():
+            Analyzer.setObjectName("Analyzer")
+        Analyzer.resize(1191, 1087)
+        self.gridLayout = QGridLayout(Analyzer)
         self.gridLayout.setObjectName("gridLayout")
         self.parameters_layout = QHBoxLayout()
         self.parameters_layout.setObjectName("parameters_layout")
@@ -69,13 +69,13 @@ class Ui_HistogramViewer(object):
 
         self.gridLayout_2 = QGridLayout()
         self.gridLayout_2.setObjectName("gridLayout_2")
-        self.cbEnableEFOFiltering = QCheckBox(HistogramViewer)
+        self.cbEnableEFOFiltering = QCheckBox(Analyzer)
         self.cbEnableEFOFiltering.setObjectName("cbEnableEFOFiltering")
         self.cbEnableEFOFiltering.setEnabled(True)
 
         self.gridLayout_2.addWidget(self.cbEnableEFOFiltering, 0, 1, 1, 1)
 
-        self.cbEnableCFRFiltering = QCheckBox(HistogramViewer)
+        self.cbEnableCFRFiltering = QCheckBox(Analyzer)
         self.cbEnableCFRFiltering.setObjectName("cbEnableCFRFiltering")
         self.cbEnableCFRFiltering.setEnabled(True)
 
@@ -95,7 +95,7 @@ class Ui_HistogramViewer(object):
 
         self.gridLayout.addLayout(self.gridLayout_2, 4, 0, 1, 1)
 
-        self.pbUpdateViewers = QPushButton(HistogramViewer)
+        self.pbUpdateViewers = QPushButton(Analyzer)
         self.pbUpdateViewers.setObjectName("pbUpdateViewers")
         self.pbUpdateViewers.setEnabled(True)
 
@@ -114,22 +114,22 @@ class Ui_HistogramViewer(object):
 
         self.horizontalLayout.addItem(self.horizontalSpacer_2)
 
-        self.checkLowerThreshold = QCheckBox(HistogramViewer)
+        self.checkLowerThreshold = QCheckBox(Analyzer)
         self.checkLowerThreshold.setObjectName("checkLowerThreshold")
 
         self.horizontalLayout.addWidget(self.checkLowerThreshold)
 
-        self.checkUpperThreshold = QCheckBox(HistogramViewer)
+        self.checkUpperThreshold = QCheckBox(Analyzer)
         self.checkUpperThreshold.setObjectName("checkUpperThreshold")
 
         self.horizontalLayout.addWidget(self.checkUpperThreshold)
 
-        self.lbThreshMultFactor = QLabel(HistogramViewer)
+        self.lbThreshMultFactor = QLabel(Analyzer)
         self.lbThreshMultFactor.setObjectName("lbThreshMultFactor")
 
         self.horizontalLayout.addWidget(self.lbThreshMultFactor)
 
-        self.leThreshFactor = QLineEdit(HistogramViewer)
+        self.leThreshFactor = QLineEdit(Analyzer)
         self.leThreshFactor.setObjectName("leThreshFactor")
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -149,46 +149,44 @@ class Ui_HistogramViewer(object):
 
         self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 1)
 
-        self.pbAutoThreshold = QPushButton(HistogramViewer)
+        self.pbAutoThreshold = QPushButton(Analyzer)
         self.pbAutoThreshold.setObjectName("pbAutoThreshold")
 
         self.gridLayout.addWidget(self.pbAutoThreshold, 1, 0, 1, 1)
 
-        self.retranslateUi(HistogramViewer)
+        self.retranslateUi(Analyzer)
 
-        QMetaObject.connectSlotsByName(HistogramViewer)
+        QMetaObject.connectSlotsByName(Analyzer)
 
     # setupUi
 
-    def retranslateUi(self, HistogramViewer):
-        HistogramViewer.setWindowTitle(
-            QCoreApplication.translate("HistogramViewer", "Histogram Viewer", None)
+    def retranslateUi(self, Analyzer):
+        Analyzer.setWindowTitle(
+            QCoreApplication.translate("Analyzer", "Analyzer", None)
         )
         self.cbEnableEFOFiltering.setText(
-            QCoreApplication.translate("HistogramViewer", "Filter on EFO values", None)
+            QCoreApplication.translate("Analyzer", "Filter on EFO values", None)
         )
         self.cbEnableCFRFiltering.setText(
-            QCoreApplication.translate("HistogramViewer", "Filter on CFR values", None)
+            QCoreApplication.translate("Analyzer", "Filter on CFR values", None)
         )
         self.pbUpdateViewers.setText(
-            QCoreApplication.translate("HistogramViewer", "Update", None)
+            QCoreApplication.translate("Analyzer", "Filter", None)
         )
         self.checkLowerThreshold.setText(
-            QCoreApplication.translate("HistogramViewer", "Lower bound", None)
+            QCoreApplication.translate("Analyzer", "Lower bound", None)
         )
         self.checkUpperThreshold.setText(
-            QCoreApplication.translate("HistogramViewer", "Upper bound", None)
+            QCoreApplication.translate("Analyzer", "Upper bound", None)
         )
         self.lbThreshMultFactor.setText(
             QCoreApplication.translate(
-                "HistogramViewer", "Robust threshold multiplicative factor", None
+                "Analyzer", "Robust threshold multiplicative factor", None
             )
         )
-        self.leThreshFactor.setText(
-            QCoreApplication.translate("HistogramViewer", "2.0", None)
-        )
+        self.leThreshFactor.setText(QCoreApplication.translate("Analyzer", "2.0", None))
         self.pbAutoThreshold.setText(
-            QCoreApplication.translate("HistogramViewer", "Auto-threshold", None)
+            QCoreApplication.translate("Analyzer", "Auto-threshold", None)
         )
 
     # retranslateUi

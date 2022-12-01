@@ -3,33 +3,33 @@ from typing import Optional, Tuple
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import ROI, Point
-from PySide6.QtCore import Signal, Slot, QSignalBlocker
+from PySide6.QtCore import QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QColor, QDoubleValidator, QFont
-from PySide6.QtWidgets import QDialog
+from PySide6.QtWidgets import QDialog, QLabel
 
 from ..analysis import get_robust_threshold, ideal_hist_bins
-from ..reader import MinFluxReader
+from ..processor import MinFluxProcessor
 from ..state import State
-from .ui_histogram_viewer import Ui_HistogramViewer
+from .ui_analyzer import Ui_Analyzer
 
 
-class HistogramViewer(QDialog, Ui_HistogramViewer):
+class Analyzer(QDialog, Ui_Analyzer):
 
     # Signal that the data viewers should be updated
     data_filters_changed = Signal(name="data_filters_changed")
 
-    def __init__(self, minfluxreader: MinFluxReader, parent=None):
+    def __init__(self, minfluxprocessor: MinFluxProcessor, parent=None):
         """Constructor."""
 
         # Call the base class
         super().__init__(parent=parent)
 
         # Initialize the dialog
-        self.ui = Ui_HistogramViewer()
+        self.ui = Ui_Analyzer()
         self.ui.setupUi(self)
 
         # Store the reference to the reader
-        self.minfluxreader = minfluxreader
+        self._minfluxprocessor = minfluxprocessor
 
         # Keep references to the plots
         self.efo_plot = None
@@ -91,21 +91,21 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
         # Initialize values
         if self.state.efo_thresholds is None:
-            min_efo = self.minfluxreader.processed_dataframe["efo"].values.min()
-            max_efo = self.minfluxreader.processed_dataframe["efo"].values.max()
+            min_efo = self._minfluxprocessor.processed_dataframe["efo"].values.min()
+            max_efo = self._minfluxprocessor.processed_dataframe["efo"].values.max()
         else:
             min_efo = self.state.efo_thresholds[0]
             max_efo = self.state.efo_thresholds[1]
         if self.state.cfr_thresholds is None:
-            min_cfr = self.minfluxreader.processed_dataframe["cfr"].values.min()
-            max_cfr = self.minfluxreader.processed_dataframe["cfr"].values.max()
+            min_cfr = self._minfluxprocessor.processed_dataframe["cfr"].values.min()
+            max_cfr = self._minfluxprocessor.processed_dataframe["cfr"].values.max()
         else:
             min_cfr = self.state.cfr_thresholds[0]
             max_cfr = self.state.cfr_thresholds[1]
 
         # Calculate thresholds for EFO
         upper_thresh_efo, lower_thresh_efo = self.calculate_thresholds(
-            self.minfluxreader.processed_dataframe["efo"].values,
+            self._minfluxprocessor.processed_dataframe["efo"].values,
             thresh_factor=self.state.filter_thresh_factor,
         )
         if self.state.enable_lower_threshold:
@@ -116,7 +116,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
         # Calculate thresholds for CFR
         upper_thresh_cfr, lower_thresh_cfr = self.calculate_thresholds(
-            self.minfluxreader.processed_dataframe["cfr"].values,
+            self._minfluxprocessor.processed_dataframe["cfr"].values,
             thresh_factor=self.state.filter_thresh_factor,
         )
         if self.state.enable_lower_threshold:
@@ -156,18 +156,43 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
     @Slot(name="broadcast_viewers_update")
     def broadcast_viewers_update(self):
         """Inform the rest of the application that the data viewers should be updated."""
-        # Signal that the viewers should be updated
+
+        # Apply all filters
+        self._minfluxprocessor.update_filters()
+
+        # Update the histograms
+        self.plot()
+
+        # Signal that the external viewers should be updated
         self.data_filters_changed.emit()
 
     def plot(self):
         """Plot histograms."""
 
         # Make sure there is data to plot
-        if self.minfluxreader is None:
+        is_data = True
+        if self._minfluxprocessor is None:
+            is_data = False
+
+        if self._minfluxprocessor.processed_dataframe is None:
+            is_data = False
+
+        if self._minfluxprocessor.num_values == 0:
+            is_data = False
+
+        if not is_data:
+            label = QLabel("Sorry, no data.")
+            font = label.font()
+            font.setPointSize(16)
+            label.setFont(font)
+            self.ui.parameters_layout.addWidget(label)
             return
 
-        if self.minfluxreader.processed_dataframe is None:
-            return
+        # Remove previous plots, if they exist
+        for i in reversed(range(self.ui.parameters_layout.count())):
+            self.ui.parameters_layout.itemAt(i).widget().deleteLater()
+        for i in reversed(range(self.ui.localizations_layout.count())):
+            self.ui.localizations_layout.itemAt(i).widget().deleteLater()
 
         #
         # Get "efo" and "cfr" measurements, and "sx", "sy" and "sz" localization jitter
@@ -175,7 +200,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
         # "efo"
         n_efo, efo_bin_edges, efo_bin_centers, efo_bin_width = self._prepare_histogram(
-            self.minfluxreader.processed_dataframe["efo"].values
+            self._minfluxprocessor.processed_dataframe["efo"].values
         )
         if self.state.efo_thresholds is None:
             self.state.efo_thresholds = (efo_bin_edges[0], efo_bin_edges[-1])
@@ -196,7 +221,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
         # cfr
         n_cfr, cfr_bin_edges, cfr_bin_centers, cfr_bin_width = self._prepare_histogram(
-            self.minfluxreader.processed_dataframe["cfr"].values
+            self._minfluxprocessor.processed_dataframe["cfr"].values
         )
         if self.state.cfr_thresholds is None:
             self.state.cfr_thresholds = (cfr_bin_edges[0], cfr_bin_edges[-1])
@@ -217,8 +242,8 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
         # cfr vs. efo
         self.cfr_efo_plot = self._create_scatter_plot(
-            x=self.minfluxreader.processed_dataframe["efo"],
-            y=self.minfluxreader.processed_dataframe["cfr"],
+            x=self._minfluxprocessor.processed_dataframe["efo"],
+            y=self._minfluxprocessor.processed_dataframe["cfr"],
             title="CFR vs. EFO",
             x_label="EFO",
             y_label="CFR",
@@ -232,7 +257,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
 
         # sx
         n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = self._prepare_histogram(
-            self.minfluxreader.processed_dataframe_stats["sx"].values
+            self._minfluxprocessor.processed_dataframe_stats["sx"].values
         )
         self.sx_plot, _ = self._create_histogram_plot(
             n_sx,
@@ -244,14 +269,14 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             support_thresholding=False,
         )
         self._add_median_line(
-            self.sx_plot, self.minfluxreader.processed_dataframe_stats["sx"].values
+            self.sx_plot, self._minfluxprocessor.processed_dataframe_stats["sx"].values
         )
         self.ui.localizations_layout.addWidget(self.sx_plot)
         self.sx_plot.show()
 
         # sy
         n_sy, sy_bin_edges, sy_bin_centers, sy_bin_width = self._prepare_histogram(
-            self.minfluxreader.processed_dataframe_stats["sy"].values
+            self._minfluxprocessor.processed_dataframe_stats["sy"].values
         )
         self.sy_plot, _ = self._create_histogram_plot(
             n_sy,
@@ -263,15 +288,15 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
             support_thresholding=False,
         )
         self._add_median_line(
-            self.sy_plot, self.minfluxreader.processed_dataframe_stats["sy"].values
+            self.sy_plot, self._minfluxprocessor.processed_dataframe_stats["sy"].values
         )
         self.ui.localizations_layout.addWidget(self.sy_plot)
         self.sy_plot.show()
 
         # sz
-        if self.minfluxreader.is_3d:
+        if self._minfluxprocessor.is_3d:
             n_sz, sz_bin_edges, sz_bin_centers, sz_bin_width = self._prepare_histogram(
-                self.minfluxreader.processed_dataframe_stats["sz"].values
+                self._minfluxprocessor.processed_dataframe_stats["sz"].values
             )
             self.sz_plot, _ = self._create_histogram_plot(
                 n_sz,
@@ -283,7 +308,8 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
                 support_thresholding=False,
             )
             self._add_median_line(
-                self.sz_plot, self.minfluxreader.processed_dataframe_stats["sz"].values
+                self.sz_plot,
+                self._minfluxprocessor.processed_dataframe_stats["sz"].values,
             )
             self.ui.localizations_layout.addWidget(self.sz_plot)
             self.sz_plot.show()
@@ -389,8 +415,8 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         plot.setMouseEnabled(x=True, y=True)
 
         # Fix plot ratio
-        efo_val = np.mean(self.minfluxreader.processed_dataframe["efo"].values)
-        cfr_val = np.mean(self.minfluxreader.processed_dataframe["cfr"].values)
+        efo_val = np.mean(self._minfluxprocessor.processed_dataframe["efo"].values)
+        cfr_val = np.mean(self._minfluxprocessor.processed_dataframe["cfr"].values)
         try:
             ratio = cfr_val / efo_val
         except:
