@@ -49,9 +49,11 @@ class Plotter3D(QDialog, Ui_Plotter3D):
         center_z = 0.0
         distance = np.max((range_x, range_y, range_z))
 
+        # Make sure to clear all items from the scene
+        self.view.clear()
+
         # Create a grid and center it at the center of mass of the point cloud
         if self.grid is not None:
-            self.view.removeItem(self.grid)
             self.grid = None
         self.grid = gl.GLGridItem()
         self.grid.setSize(range_x, range_y, range_z)
@@ -60,7 +62,6 @@ class Plotter3D(QDialog, Ui_Plotter3D):
 
         # Add the points
         if self.scatter is not None:
-            self.view.removeItem(self.scatter)
             self.scatter = None
         self.scatter = gl.GLScatterPlotItem(
             pos=coords, size=5.0, color=self.color, pxMode=True

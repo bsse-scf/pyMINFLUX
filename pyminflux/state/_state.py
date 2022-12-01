@@ -13,6 +13,10 @@ class State(metaclass=Singleton):
         application to synchronize state among them.
         """
 
+        # Minimum number of localizations to consider a trace
+        self.default_min_loc_per_trace: int = 1
+        self.min_num_loc_per_trace: int = 1
+
         # Lower and upper (absolute) thresholds for the EFO and CFR values
         self.efo_thresholds: Union[None, tuple] = None
         self.cfr_thresholds: Union[None, tuple] = None
@@ -31,6 +35,7 @@ class State(metaclass=Singleton):
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
+            "min_num_loc_per_trace": self.min_num_loc_per_trace,
             "efo_thresholds": self.efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
             "enable_filter_efo": self.enable_filter_efo,
@@ -41,8 +46,15 @@ class State(metaclass=Singleton):
         }
 
     def reset(self):
+        """Reset to data-specific settings."""
+
+        self.efo_thresholds = None
+        self.cfr_thresholds = None
+
+    def full_reset(self):
         """Reset to defaults."""
 
+        self.min_num_loc_per_trace = 1
         self.efo_thresholds = None
         self.cfr_thresholds = None
         self.enable_filter_efo = False
