@@ -99,7 +99,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionQuit.triggered.connect(self.quit_application)
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
-        self.ui.action3D_Plotter.changed.connect(self.toggle_3d_plotter_visibility)
+        self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
         self.ui.actionState.triggered.connect(self.print_current_state)
 
@@ -311,8 +311,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Extract indices of the rows corresponding to the selected points
         indices = []
-        for p in points:
+        for n, p in enumerate(points):
             indices.append(p.index())
+            if n > 100:
+                print(f"Too many points ({len(points)}), only selecting the first 100.")
+                break
 
         # Update the dataviewer
         self.data_viewer.select_and_scroll_to_rows(indices)
@@ -347,13 +350,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         If coords is None, filters may be applied.
         """
 
-        # Only plot if the View 3D Plotter menu is checked
-        if not self.ui.action3D_Plotter.isChecked():
-            return
-
-        # Create the 3D Plotter if it does not exist yet
+        # Only plot if the View 3D Plotter is open
         if self.plotter3D is None:
-            self.plotter3D = Plotter3D(parent=self)
+            return
 
         if coords is None:
             dataframe = self.minfluxprocessor.processed_dataframe
@@ -361,34 +360,28 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 return
             coords = dataframe[["x", "y", "z"]].values
 
+        # Plot new data (old data will be dropped)
         self.plotter3D.plot(coords)
 
         # Show the plotter
         self.plotter3D.show()
 
-    @Slot(None, name="toggle_3d_plotter_visibility")
-    def toggle_3d_plotter_visibility(self):
-        """Toggle 3D plotter visibility."""
+    @Slot(None, name="open_3d_plotter")
+    def open_3d_plotter(self):
+        """Open 3D plotter."""
 
-        # Get state of the visibility from the menu
-        visible = self.ui.action3D_Plotter.isChecked()
+        """Initialize and open the analyzer."""
         if self.plotter3D is None:
-            if not visible:
-                # Nothing to be done
-                return
-            else:
-                # Create the 3D plotter if needed and make it visible
+            self.plotter3D = Plotter3D()
+            if (
+                self.minfluxprocessor is not None
+                and self.minfluxprocessor.num_values > 0
+            ):
                 self.plot_localizations_3d(
                     self.minfluxprocessor.processed_dataframe[["x", "y", "z"]].values
                 )
-                self.plotter3D.show()
-        else:
-            if not visible:
-                # Hide the plotter
-                self.plotter3D.hide()
-            else:
-                # Show the plotter
-                self.plotter3D.show()
+        self.plotter3D.show()
+        self.plotter3D.activateWindow()
 
     def show_processed_dataframe(self, dataframe=None):
         """

@@ -80,7 +80,7 @@ class Ui_MainWindow(object):
         self.actionCamera_parameters.setObjectName("actionCamera_parameters")
         self.action3D_Plotter = QAction(MainWindow)
         self.action3D_Plotter.setObjectName("action3D_Plotter")
-        self.action3D_Plotter.setCheckable(True)
+        self.action3D_Plotter.setCheckable(False)
         self.actionAnalyzer = QAction(MainWindow)
         self.actionAnalyzer.setObjectName("actionAnalyzer")
         self.actionAnalyzer.setEnabled(False)
@@ -145,8 +145,8 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionData_viewer)
         self.menuView.addAction(self.actionConsole)
         self.menuView.addSeparator()
-        self.menuView.addAction(self.action3D_Plotter)
         self.menuView.addAction(self.actionAnalyzer)
+        self.menuView.addAction(self.action3D_Plotter)
         self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
 

@@ -62,8 +62,8 @@
     <addaction name="actionData_viewer"/>
     <addaction name="actionConsole"/>
     <addaction name="separator"/>
-    <addaction name="action3D_Plotter"/>
     <addaction name="actionAnalyzer"/>
+    <addaction name="action3D_Plotter"/>
     <addaction name="separator"/>
     <addaction name="actionState"/>
    </widget>
@@ -174,7 +174,7 @@
   </action>
   <action name="action3D_Plotter">
    <property name="checkable">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>3D Plotter</string>
