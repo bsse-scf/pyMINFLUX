@@ -63,7 +63,7 @@
     <addaction name="actionConsole"/>
     <addaction name="separator"/>
     <addaction name="action3D_Plotter"/>
-    <addaction name="actionHistogram_Viewer"/>
+    <addaction name="actionAnalyzer"/>
     <addaction name="separator"/>
     <addaction name="actionState"/>
    </widget>
@@ -180,12 +180,12 @@
     <string>3D Plotter</string>
    </property>
   </action>
-  <action name="actionHistogram_Viewer">
+  <action name="actionAnalyzer">
    <property name="enabled">
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Histogram Viewer</string>
+    <string>Analyzer</string>
    </property>
   </action>
   <action name="actionState">

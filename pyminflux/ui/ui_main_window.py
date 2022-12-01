@@ -81,9 +81,9 @@ class Ui_MainWindow(object):
         self.action3D_Plotter = QAction(MainWindow)
         self.action3D_Plotter.setObjectName("action3D_Plotter")
         self.action3D_Plotter.setCheckable(True)
-        self.actionHistogram_Viewer = QAction(MainWindow)
-        self.actionHistogram_Viewer.setObjectName("actionHistogram_Viewer")
-        self.actionHistogram_Viewer.setEnabled(False)
+        self.actionAnalyzer = QAction(MainWindow)
+        self.actionAnalyzer.setObjectName("actionAnalyzer")
+        self.actionAnalyzer.setEnabled(False)
         self.actionState = QAction(MainWindow)
         self.actionState.setObjectName("actionState")
         self.actionOptions = QAction(MainWindow)
@@ -146,7 +146,7 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionConsole)
         self.menuView.addSeparator()
         self.menuView.addAction(self.action3D_Plotter)
-        self.menuView.addAction(self.actionHistogram_Viewer)
+        self.menuView.addAction(self.actionAnalyzer)
         self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
 
@@ -199,8 +199,8 @@ class Ui_MainWindow(object):
         self.action3D_Plotter.setText(
             QCoreApplication.translate("MainWindow", "3D Plotter", None)
         )
-        self.actionHistogram_Viewer.setText(
-            QCoreApplication.translate("MainWindow", "Histogram Viewer", None)
+        self.actionAnalyzer.setText(
+            QCoreApplication.translate("MainWindow", "Analyzer", None)
         )
         self.actionState.setText(
             QCoreApplication.translate("MainWindow", "[DEBUG] Show state", None)

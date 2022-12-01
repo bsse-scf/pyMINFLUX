@@ -14,9 +14,9 @@ __APP_NAME__ = "pyMinFlux"
 
 import pyminflux.resources
 from pyminflux.state import State
+from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
-from pyminflux.ui.histogram_viewer import HistogramViewer
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
@@ -52,7 +52,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Dialogs and widgets
         self.data_viewer = None
-        self.histogram_viewer = None
+        self.analyzer = None
         self.plotter = None
         self.plotter3D = None
         self.options = None
@@ -100,7 +100,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.changed.connect(self.toggle_3d_plotter_visibility)
-        self.ui.actionHistogram_Viewer.triggered.connect(self.open_histogram_viewer)
+        self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
         self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Other connections
@@ -108,11 +108,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
-        self.ui.actionHistogram_Viewer.setEnabled(True)
+        self.ui.actionAnalyzer.setEnabled(True)
 
     def disable_ui_components_on_closed_data(self):
         """Disable UI components."""
-        self.ui.actionHistogram_Viewer.setEnabled(False)
+        self.ui.actionAnalyzer.setEnabled(False)
 
     def full_update_ui(self):
         """
@@ -164,9 +164,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.plotter3D.close()
                 self.plotter3D = None
 
-            if self.histogram_viewer is not None:
-                self.histogram_viewer.close()
-                self.histogram_viewer = None
+            if self.analyzer is not None:
+                self.analyzer.close()
+                self.analyzer = None
 
             if self.options is not None:
                 self.options.close()
@@ -266,10 +266,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
 
-            # Close the histogram viewer
-            if self.histogram_viewer is not None:
-                self.histogram_viewer.close()
-                self.histogram_viewer = None
+            # Close the Analyzer
+            if self.analyzer is not None:
+                self.analyzer.close()
+                self.analyzer = None
 
             # Close the 3D plotter
             if self.plotter3D is not None:
@@ -287,15 +287,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Print current contents of the state machine (DEBUG)."""
         print(f"{self.state.asdict()}")
 
-    @Slot(None, name="self.open_histogram_viewer")
-    def open_histogram_viewer(self):
-        """Initialize and open the histogram viewer."""
-        if self.histogram_viewer is None:
-            self.histogram_viewer = HistogramViewer(self.minfluxprocessor)
-            self.histogram_viewer.data_filters_changed.connect(self.full_update_ui)
-            self.histogram_viewer.plot()
-        self.histogram_viewer.show()
-        self.histogram_viewer.activateWindow()
+    @Slot(None, name="self.open_analyzer")
+    def open_analyzer(self):
+        """Initialize and open the analyzer."""
+        if self.analyzer is None:
+            self.analyzer = Analyzer(self.minfluxprocessor)
+            self.analyzer.data_filters_changed.connect(self.full_update_ui)
+            self.analyzer.plot()
+        self.analyzer.show()
+        self.analyzer.activateWindow()
 
     @Slot(None, name="open_options_dialog")
     def open_options_dialog(self):

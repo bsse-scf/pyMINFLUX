@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>419</width>
+    <height>136</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,7 +29,7 @@
       </font>
      </property>
      <property name="text">
-      <string>This parameter will only apply to new opened data.</string>
+      <string>Changes will be applied to new data and when hitting Filter in the Analyzer.</string>
      </property>
     </widget>
    </item>

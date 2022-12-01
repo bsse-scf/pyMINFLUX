@@ -10,10 +10,10 @@ from PySide6.QtWidgets import QDialog, QLabel
 from ..analysis import get_robust_threshold, ideal_hist_bins
 from ..processor import MinFluxProcessor
 from ..state import State
-from .ui_histogram_viewer import Ui_HistogramViewer
+from .ui_analyzer import Ui_Analyzer
 
 
-class HistogramViewer(QDialog, Ui_HistogramViewer):
+class Analyzer(QDialog, Ui_Analyzer):
 
     # Signal that the data viewers should be updated
     data_filters_changed = Signal(name="data_filters_changed")
@@ -25,7 +25,7 @@ class HistogramViewer(QDialog, Ui_HistogramViewer):
         super().__init__(parent=parent)
 
         # Initialize the dialog
-        self.ui = Ui_HistogramViewer()
+        self.ui = Ui_Analyzer()
         self.ui.setupUi(self)
 
         # Store the reference to the reader

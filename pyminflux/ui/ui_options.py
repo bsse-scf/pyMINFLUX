@@ -58,7 +58,7 @@ class Ui_Options(object):
     def setupUi(self, Options):
         if not Options.objectName():
             Options.setObjectName("Options")
-        Options.resize(400, 300)
+        Options.resize(419, 136)
         self.gridLayout = QGridLayout(Options)
         self.gridLayout.setObjectName("gridLayout")
         self.pbSetDefault = QPushButton(Options)
@@ -113,7 +113,9 @@ class Ui_Options(object):
         )
         self.lbInfo.setText(
             QCoreApplication.translate(
-                "Options", "This parameter will only apply to new opened data.", None
+                "Options",
+                "Changes will be applied to new data and when hitting Filter in the Analyzer.",
+                None,
             )
         )
         self.lbMinTIDNum.setText(
