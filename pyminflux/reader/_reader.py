@@ -30,6 +30,12 @@ class MinFluxReader:
         self._data_full_df = None
         self._valid_entries = None
 
+        # Whether the acquisition is 2D or 3D
+        self._is_3d = False
+
+        # Whether the file contains aggregate measurements
+        self._is_aggregated = False
+
         # Indices dependent on 2D or 3D acquisition
         self._reps: int = -1
         self._efo_index: int = -1
@@ -48,9 +54,12 @@ class MinFluxReader:
     @property
     def is_3d(self):
         """Returns True is the acquisition is 3D, False otherwise."""
-        if self._data_array is None:
-            raise ValueError("No data loaded.")
-        return self._data_array["itr"].shape[1] == 10
+        return self._is_3d
+
+    @property
+    def is_aggregated(self):
+        """Returns True is the acquisition is aggregated, False otherwise."""
+        return self._is_aggregated
 
     @property
     def num_valid_entries(self):
@@ -106,6 +115,21 @@ class MinFluxReader:
         # Store a logical array with the valid entries
         self._valid_entries = self._data_array["vld"]
 
+        # Cache whether the data is 2D or 3D and whether is aggregated
+        num_locs = self._data_array["itr"].shape[1]
+        if num_locs == 10:
+            self._is_aggregated = False
+            self._is_3d = True
+        elif num_locs == 5:
+            self._is_aggregated = False
+            self._is_3d = False
+        elif num_locs == 1:
+            self._is_aggregated = True
+            self._is_3d = np.nanmean(self._data_array["itr"]["loc"][:, :, 2]) != 0.0
+        else:
+            print(f"Unexpected number of localizations per trace ({num_locs}).")
+            return False
+
         # Set all relevant indices
         self._set_all_indices()
 
@@ -140,17 +164,35 @@ class MinFluxReader:
         # Extract the valid time points
         tim = self._data_array["tim"][indices]
 
-        # Extract the locations
-        loc = itr[:, self._loc_index]["loc"]
+        # The following extraction pattern will change whether the
+        # acquisition is normal or aggregated
+        if self.is_aggregated:
 
-        # Extract EFO
-        efo = itr[:, self._efo_index]["efo"]
+            # Extract the locations
+            loc = itr["loc"].squeeze()
 
-        # Extract CFR
-        cfr = itr[:, self._cfr_index]["cfr"]
+            # Extract EFO
+            efo = itr["efo"]
 
-        # Extract DCR
-        dcr = itr[:, self._dcr_index]["dcr"]
+            # Extract CFR
+            cfr = itr["cfr"]
+
+            # Extract DCR
+            dcr = itr["dcr"]
+
+        else:
+
+            # Extract the locations
+            loc = itr[:, self._loc_index]["loc"]
+
+            # Extract EFO
+            efo = itr[:, self._efo_index]["efo"]
+
+            # Extract CFR
+            cfr = itr[:, self._cfr_index]["cfr"]
+
+            # Extract DCR
+            dcr = itr[:, self._dcr_index]["dcr"]
 
         # Create a Pandas dataframe for the results
         df = pd.DataFrame(
@@ -256,18 +298,25 @@ class MinFluxReader:
         if self._data_array is None:
             return False
 
-        if self.is_3d:
-            self._reps: int = 10
-            self._efo_index: int = 9
-            self._cfr_index: int = 6
-            self._dcr_index: int = 9
-            self._loc_index: int = 9
+        if self.is_aggregated:
+            self._reps: int = 1
+            self._efo_index: int = -1  # Not used
+            self._cfr_index: int = -1  # Not used
+            self._dcr_index: int = -1  # Not used
+            self._loc_index: int = -1  # Not used
         else:
-            self._reps: int = 5
-            self._efo_index: int = 4
-            self._cfr_index: int = 3
-            self._dcr_index: int = 4
-            self._loc_index: int = 4
+            if self.is_3d:
+                self._reps: int = 10
+                self._efo_index: int = 9
+                self._cfr_index: int = 6
+                self._dcr_index: int = 9
+                self._loc_index: int = 9
+            else:
+                self._reps: int = 5
+                self._efo_index: int = 4
+                self._cfr_index: int = 3
+                self._dcr_index: int = 4
+                self._loc_index: int = 4
 
     def __repr__(self):
         """String representation of the object."""
@@ -281,8 +330,9 @@ class MinFluxReader:
         )
 
         str_acq = "3D" if self.is_3d else "2D"
+        aggr_str = "aggregated" if self.is_aggregated else "normal"
 
-        return f"File: {self._filename.name}: {str_acq} acquisition with {len(self._data_array)} entries ({str_valid})."
+        return f"File: {self._filename.name}: {str_acq} {aggr_str} acquisition with {len(self._data_array)} entries ({str_valid})."
 
     def __str__(self):
         """Human-friendly representation of the object."""

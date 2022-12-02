@@ -415,10 +415,10 @@ class Analyzer(QDialog, Ui_Analyzer):
         plot.setMouseEnabled(x=True, y=True)
 
         # Fix plot ratio
-        efo_val = np.mean(self._minfluxprocessor.processed_dataframe["efo"].values)
-        cfr_val = np.mean(self._minfluxprocessor.processed_dataframe["cfr"].values)
+        x_val = np.nanmean(x)
+        y_val = np.nanmean(y)
         try:
-            ratio = cfr_val / efo_val
+            ratio = y_val / x_val
         except:
             ratio = 1.0
         plot.getPlotItem().getViewBox().setAspectLocked(lock=True, ratio=ratio)
