@@ -180,6 +180,12 @@ class Analyzer(QDialog, Ui_Analyzer):
         if self._minfluxprocessor.num_values == 0:
             is_data = False
 
+        # Remove previous plots, if they exist
+        for i in reversed(range(self.ui.parameters_layout.count())):
+            self.ui.parameters_layout.itemAt(i).widget().deleteLater()
+        for i in reversed(range(self.ui.localizations_layout.count())):
+            self.ui.localizations_layout.itemAt(i).widget().deleteLater()
+
         if not is_data:
             label = QLabel("Sorry, no data.")
             font = label.font()
@@ -187,12 +193,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             label.setFont(font)
             self.ui.parameters_layout.addWidget(label)
             return
-
-        # Remove previous plots, if they exist
-        for i in reversed(range(self.ui.parameters_layout.count())):
-            self.ui.parameters_layout.itemAt(i).widget().deleteLater()
-        for i in reversed(range(self.ui.localizations_layout.count())):
-            self.ui.localizations_layout.itemAt(i).widget().deleteLater()
 
         #
         # Get "efo" and "cfr" measurements, and "sx", "sy" and "sz" localization jitter
