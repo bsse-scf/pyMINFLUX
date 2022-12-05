@@ -115,7 +115,7 @@ class MinFluxProcessor:
         # Remove all rows where the count of TIDs is lower than self._min_trace_num
         counts = df["tid"].value_counts(normalize=False)
         df = df.loc[
-            df["tid"].isin(counts[counts > self.state.min_num_loc_per_trace].index), :
+            df["tid"].isin(counts[counts >= self.state.min_num_loc_per_trace].index), :
         ]
 
         #
