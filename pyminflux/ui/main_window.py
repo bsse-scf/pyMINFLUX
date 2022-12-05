@@ -120,7 +120,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         :return:
         """
         self.plotter.clear()
-        dataframe = self.minfluxprocessor.processed_dataframe
+        dataframe = self.minfluxprocessor.filtered_dataframe
         self.plot_localizations(dataframe)
         self.show_processed_dataframe(dataframe)
         print(f"Retrieved {len(dataframe.index)} events.")
@@ -332,7 +332,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         if dataframe is None:
             # Get the (potentially filtered) dataframe
-            dataframe = self.minfluxprocessor.processed_dataframe
+            dataframe = self.minfluxprocessor.filtered_dataframe
 
         # Always plot the (x, y) coordinates in the 2D plotter
         self.plotter.plot_localizations(
@@ -355,7 +355,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             return
 
         if coords is None:
-            dataframe = self.minfluxprocessor.processed_dataframe
+            dataframe = self.minfluxprocessor.filtered_dataframe
             if dataframe is None:
                 return
             coords = dataframe[["x", "y", "z"]].values
@@ -378,7 +378,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 and self.minfluxprocessor.num_values > 0
             ):
                 self.plot_localizations_3d(
-                    self.minfluxprocessor.processed_dataframe[["x", "y", "z"]].values
+                    self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
                 )
         self.plotter3D.show()
         self.plotter3D.activateWindow()
@@ -395,7 +395,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         if dataframe is None:
             # Get the (potentially filtered) dataframe
-            dataframe = self.minfluxprocessor.processed_dataframe()
+            dataframe = self.minfluxprocessor.filtered_dataframe()
 
         # Pass the dataframe to the pdDataViewer
         self.data_viewer.set_data(dataframe)

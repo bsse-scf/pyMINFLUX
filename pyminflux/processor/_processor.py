@@ -48,26 +48,18 @@ class MinFluxProcessor:
         return len(self._filtered_dataframe.index)
 
     @property
-    def processed_dataframe(self) -> Union[None, pd.DataFrame]:
+    def filtered_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return dataframe with all filters applied."""
-        if self._must_recalculate:
-            raise NotImplementedError("Implement me!")
         return self._filtered_dataframe
 
     @property
-    def processed_dataframe_stats(self) -> Union[None, pd.DataFrame]:
+    def filtered_dataframe_stats(self) -> Union[None, pd.DataFrame]:
         """Return dataframe stats with all filters applied."""
-        if self._must_recalculate:
-            self._calculate_statistics()
         return self._filtered_stats_dataframe
 
     def update_filters(self):
         """Apply filters."""
-        # self._must_recalculate = True
-        # self._drop_low_tid_count()
         self._apply_thresholds()
-        # self._calculate_statistics()
-        # self._must_recalculate = False
 
     def _calculate_statistics(self):
         """Calculate per-trace statistics."""
@@ -113,12 +105,12 @@ class MinFluxProcessor:
     def _apply_thresholds(self):
         """Apply the data thresholds."""
 
+        # Always start with a copy of the raw data from the reader
+        df = self._minfluxreader.processed_dataframe.copy()
+
         #
         # First, drop TIDs that have less than the minimum number of rows in the original dataframe.
         #
-
-        # Work on a copy of the raw dataframe from the reader
-        df = self._minfluxreader.processed_dataframe.copy()
 
         # Remove all rows where the count of TIDs is lower than self._min_trace_num
         counts = df["tid"].value_counts(normalize=False)
