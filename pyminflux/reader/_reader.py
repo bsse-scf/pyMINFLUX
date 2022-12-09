@@ -34,10 +34,10 @@ class MinFluxReader:
             raise IOError(f"The file {self._filename} does not seem to exist.")
 
         # Store the valid flag
-        self._valid = valid
+        self._valid: bool = valid
 
         # Store the scaling factor
-        self.scaling_factor = scaling_factor
+        self.scaling_factor: float = scaling_factor
 
         # Initialize the data
         self._data_array = None
@@ -46,10 +46,10 @@ class MinFluxReader:
         self._valid_entries = None
 
         # Whether the acquisition is 2D or 3D
-        self._is_3d = False
+        self._is_3d: bool = False
 
         # Whether the file contains aggregate measurements
-        self._is_aggregated = False
+        self._is_aggregated: bool = False
 
         # Indices dependent on 2D or 3D acquisition
         self._reps: int = -1
@@ -314,24 +314,24 @@ class MinFluxReader:
             return False
 
         if self.is_aggregated:
-            self._reps: int = 1
-            self._efo_index: int = -1  # Not used
-            self._cfr_index: int = -1  # Not used
-            self._dcr_index: int = -1  # Not used
-            self._loc_index: int = -1  # Not used
+            self._reps = 1
+            self._efo_index = -1  # Not used
+            self._cfr_index = -1  # Not used
+            self._dcr_index = -1  # Not used
+            self._loc_index = -1  # Not used
         else:
             if self.is_3d:
-                self._reps: int = 10
-                self._efo_index: int = 9
-                self._cfr_index: int = 6
-                self._dcr_index: int = 9
-                self._loc_index: int = 9
+                self._reps = 10
+                self._efo_index = 9
+                self._cfr_index = 6
+                self._dcr_index = 9
+                self._loc_index = 9
             else:
-                self._reps: int = 5
-                self._efo_index: int = 4
-                self._cfr_index: int = 3
-                self._dcr_index: int = 4
-                self._loc_index: int = 4
+                self._reps = 5
+                self._efo_index = 4
+                self._cfr_index = 3
+                self._dcr_index = 4
+                self._loc_index = 4
 
     def __repr__(self):
         """String representation of the object."""
