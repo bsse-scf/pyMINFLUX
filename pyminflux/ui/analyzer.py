@@ -244,6 +244,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             fmt="{value:.2f}",
             support_thresholding=True,
             thresholds=self.state.cfr_thresholds,
+            force_min_x_range_to_zero=False
         )
         self.ui.parameters_layout.addWidget(self.cfr_plot)
         self.cfr_plot.show()
@@ -342,6 +343,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         fmt: str = "{value:0.2f}",
         support_thresholding: bool = False,
         thresholds: Optional[Tuple] = None,
+        force_min_x_range_to_zero: bool = True,
     ):
         """Create a histogram plot and return it to be added to the layout."""
 
@@ -361,9 +363,13 @@ class Analyzer(QDialog, Ui_Analyzer):
         plot = pg.PlotWidget(parent=self, background="w", title=title)
         plot.setMouseEnabled(x=True, y=False)
         padding = 1.0 * (bin_edges[1] - bin_edges[0])
-        plot.setXRange(
-            bin_edges[0] - padding, bin_edges[-1] + padding, padding=0.0
-        )  # setXRange()'s padding misbehaves
+
+        # Range values
+        if force_min_x_range_to_zero:
+            x0 = 0.0
+        else:
+            x0 = bin_edges[0]
+        plot.setXRange(x0 - padding, bin_edges[-1] + padding, padding=0)  # setXRange()'s padding misbehaves
         plot.setYRange(0.0, n.max())
         plot.addItem(chart)
 
