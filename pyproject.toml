@@ -6,6 +6,14 @@ authors = ["Aaron Ponti <aaron.ponti@bsse.ethz.ch>"]
 license = "Apache-2.0"
 readme = "README.md"
 
+[tool.black]
+line-length = 88
+target-version = ['py310', 'py311']
+
+[tool.isort]
+profile = "black"
+py_version = 310
+
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 numpy = "^1.23.4"

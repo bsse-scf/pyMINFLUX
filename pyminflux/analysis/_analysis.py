@@ -35,7 +35,7 @@ def ideal_hist_bins(values, scott=False):
     # Pathological case, all values are the same
     if np.all(np.diff(values) == 0):
         bin_edges = (values[0] - 5e-7, values[0] + 5e-7)
-        bin_centers = (values[0], )
+        bin_centers = (values[0],)
         bin_width = 1e-6
         return bin_edges, bin_centers, bin_width
 
