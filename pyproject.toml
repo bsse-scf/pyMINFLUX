@@ -19,8 +19,8 @@ pyopengl = "^3.1.6"
 isort = "^5.10.1"
 black = "^22.10.0"
 pytest = "^7.2.0"
-nuitka = "^1.2.2"
 ordered-set = "^4.1.0"
+pyinstaller = "^5.7.0"
 
 [build-system]
 requires = ["poetry-core"]
