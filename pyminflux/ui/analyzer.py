@@ -475,7 +475,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             movable=False,
             angle=90,
             pen={"color": (200, 50, 50), "width": 3},
-            label=f"median={med:.4e} ± {mad:.4e}",
+            label=f"median={med:.2f} ± {mad:.2f} nm",
             labelOpts={
                 "position": 0.95,
                 "color": (200, 50, 50),

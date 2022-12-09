@@ -6,7 +6,12 @@ import pandas as pd
 
 
 class MinFluxReader:
-    def __init__(self, filename: Union[Path, str], valid: bool = True):
+    def __init__(
+        self,
+        filename: Union[Path, str],
+        valid: bool = True,
+        scaling_factor: float = 1e9,
+    ):
         """Constructor.
 
         Parameters
@@ -14,6 +19,13 @@ class MinFluxReader:
 
         filename: Union[Path, str]
             Full path to the .npy file to read
+
+        valid: bool (optional, default = True)
+            Whether to load only valid localizations.
+
+        scaling_factor: float (optional, default = 1e9)
+            Measurement are stored in meters, and by default they are
+            scaled to be in nanometers.
         """
 
         # Store the filename
@@ -23,6 +35,9 @@ class MinFluxReader:
 
         # Store the valid flag
         self._valid = valid
+
+        # Store the scaling factor
+        self.scaling_factor = scaling_factor
 
         # Initialize the data
         self._data_array = None
@@ -183,7 +198,7 @@ class MinFluxReader:
         else:
 
             # Extract the locations
-            loc = itr[:, self._loc_index]["loc"]
+            loc = itr[:, self._loc_index]["loc"] * self.scaling_factor
 
             # Extract EFO
             efo = itr[:, self._efo_index]["efo"]
@@ -268,7 +283,7 @@ class MinFluxReader:
         tim = np.repeat(self._data_array["tim"], self._reps)
 
         # Get all localizations (reshaped to drop the first dimension)
-        loc = self._data_array["itr"]["loc"].reshape((n_rows, 3))
+        loc = self._data_array["itr"]["loc"].reshape((n_rows, 3)) * self.scaling_factor
 
         # Get all efos (reshaped to drop the first dimension)
         efo = self._data_array["itr"]["efo"].reshape((n_rows, 1))

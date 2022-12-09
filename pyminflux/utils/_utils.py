@@ -1,5 +1,6 @@
 import numpy as np
-from scipy import stats
+
+from pyminflux.analysis import ideal_hist_bins
 
 
 def calculate_common_bins(first_array_values, second_array_values):

@@ -64,9 +64,6 @@ class MinFluxProcessor:
     def _calculate_statistics(self):
         """Calculate per-trace statistics."""
 
-        # @TODO Debug information: remove
-        print("Recalculating statistics.")
-
         # Make sure we have processed dataframe to work on
         if self._filtered_dataframe is None:
             return

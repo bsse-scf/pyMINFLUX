@@ -4,7 +4,6 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 import pyminflux.resources
-
 from pyminflux.ui.main_window import PyMinFluxMainWindow
 
 if __name__ == "__main__":
