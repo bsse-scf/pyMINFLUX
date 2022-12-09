@@ -1,4 +1,2 @@
-python -m nuitka pyminflux/main.py --jobs=8 --assume-yes-for-downloads --disable-console --noinclude-default-mode=error --follow-imports --standalone --macos-create-app-bundle --macos-app-icon=pyminflux/ui/icons/icon.icns --include-module=OpenGL --enable-plugin=pylint-warnings --enable-plugin=numpy --enable-plugin=pyside6 --output-dir=./dist
-
-#mv dist/main.dist/main dist/main.dist/pyminflux
-#mv dist/main.dist dist/pyminflux
+# To build, use the following command: currently there appears to be an issue with pyqtgraph
+pyinstaller pyminflux/main.py --noconsole --name pyminflux
