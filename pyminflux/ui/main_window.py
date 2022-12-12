@@ -82,14 +82,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Print a welcome message to the console
         print(f"Welcome to {__APP_NAME__}.")
 
-    def __del__(self):
-        """
-        Destructor.
-        """
-        # Restore sys.stdout
-        sys.stdout = sys.__stdout__
-        sys.stdout.flush()
-
     def setup_conn(self):
         """Set up signals and slots."""
 
@@ -178,6 +170,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 app_settings.setValue(
                     "io/last_selected_path", str(self.last_selected_path)
                 )
+
+            # Restore sys.stdout
+            sys.stdout = sys.__stdout__
+            sys.stdout.flush()
 
             # Now exit
             event.accept()
