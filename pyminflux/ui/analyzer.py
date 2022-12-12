@@ -44,6 +44,8 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.efo_cfr_roi = None
 
         # Signal blockers
+        self.efo_plot_blocker = None
+        self.cfr_plot_blocker = None
         self.efo_cfr_roi_blocker = None
 
         # Keep a reference to the singleton State class
@@ -569,22 +571,25 @@ class Analyzer(QDialog, Ui_Analyzer):
     def roi_changes_finished(self):
         """Called when the ROIChanges dialog has accepted the changes."""
 
-        # Signal blocker on self.efo_cfr_roi
-        if self.efo_cfr_roi_blocker is None:
-            self.efo_cfr_roi_blocker = QSignalBlocker(self.efo_cfr_roi)
+        # Signal blocker on self.efo_plot and self.cfr_plot
+        if self.cfr_plot_blocker is None:
+            self.cfr_plot_blocker = QSignalBlocker(self.cfr_plot)
 
-        # Block signals from efo_cfr_roi
-        self.efo_cfr_roi_blocker.reblock()
+        if self.efo_plot_blocker is None:
+            self.efo_plot_blocker = QSignalBlocker(self.efo_plot)
 
-        # Update the thresholds in the EFO and CFR histograms
+        # Block signals from self.efo_plot and self.cfr_plot
+        self.cfr_plot_blocker.reblock()
+        self.efo_plot_blocker.reblock()
+
+        # Update the thresholds in the EFO and CFR histograms. This will automatically
+        # update the ROI, that won't need to change and will not trigger another update.
         self.efo_region.setRegion(self.state.efo_thresholds)
         self.cfr_region.setRegion(self.state.cfr_thresholds)
 
-        # Update the ROI in the scatter plot without emitting signals
-        self.update_efo_cfr_roi()
-
-        # Unblock the efo_cfr_roi signals
-        self.efo_cfr_roi_blocker.unblock()
+        # Unblock the self.efo_cfr_roi, self.efo_plot and self.cfr_plot signals
+        self.cfr_plot_blocker.unblock()
+        self.efo_plot_blocker.unblock()
 
     def region_pos_changed_finished(self, item):
         """Called when the line region on one of the histogram plots has changed."""
