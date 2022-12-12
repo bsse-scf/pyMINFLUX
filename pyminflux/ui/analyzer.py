@@ -3,10 +3,11 @@ from typing import Optional, Tuple
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import ROI, Point
-from PySide6.QtCore import QSignalBlocker, Signal, Slot
-from PySide6.QtGui import QColor, QDoubleValidator, QFont
-from PySide6.QtWidgets import QDialog, QLabel
+from PySide6.QtCore import QSignalBlocker, Signal, Slot, QPoint
+from PySide6.QtGui import QColor, QDoubleValidator, QFont, Qt, QAction
+from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
+from .roi_ranges import ROIRanges
 from ..analysis import get_robust_threshold, ideal_hist_bins
 from ..processor import MinFluxProcessor
 from ..state import State
@@ -60,6 +61,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.cbEnableEFOFiltering.setChecked(self.state.enable_filter_efo)
         self.ui.cbEnableCFRFiltering.setChecked(self.state.enable_filter_cfr)
 
+        # Keep a reference to the ROIRanges dialog
+        self.roi_ranges_dialog = None
+
         # Set signal-slot connections
         self.setup_conn()
 
@@ -77,6 +81,12 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.checkLowerThreshold.stateChanged.connect(self.persist_lower_threshold)
         self.ui.checkUpperThreshold.stateChanged.connect(self.persist_upper_threshold)
         self.ui.leThreshFactor.textChanged.connect(self.persist_thresh_factor)
+
+    def closeEvent(self, ev):
+        """Close event."""
+        if self.roi_ranges_dialog is not None:
+            self.roi_ranges_dialog.close()
+        super().closeEvent(ev)
 
     @Slot(name="run_auto_threshold")
     def run_auto_threshold(self):
@@ -465,6 +475,8 @@ class Analyzer(QDialog, Ui_Analyzer):
                 resizable=True,
                 removable=False,
             )
+            self.efo_cfr_roi.setAcceptedMouseButtons(Qt.MouseButton.RightButton)
+            self.efo_cfr_roi.sigClicked.connect(self.roi_mouse_click_event)
             self.efo_cfr_roi.sigRegionChanged.connect(self.roi_changed)
             self.efo_cfr_roi.sigRegionChangeFinished.connect(self.roi_changed_finished)
 
@@ -472,6 +484,39 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.customize_context_menu(plot)
 
         return plot
+
+    def roi_mouse_click_event(self, roi, ev):
+        """Right-click event on the efo vs cfr scatterplot ROI."""
+        if ev.button() == Qt.MouseButton.RightButton and self.efo_cfr_roi.isMoving:
+            # Make sure the ROI is not moving
+            self.efo_cfr_roi.isMoving = False
+            self.efo_cfr_roi.movePoint(self.efo_cfr_roi.startPos, finish=True)
+            ev.accept()
+        elif self.efo_cfr_roi.acceptedMouseButtons() & ev.button():
+            ev.accept()
+            if ev.button() == Qt.MouseButton.RightButton:
+                self.roi_raise_context_menu(ev)
+        else:
+            ev.ignore()
+
+    def roi_raise_context_menu(self, ev):
+        """Create a context menu on the efo vs cfr scatterplot ROI."""
+        menu = QMenu()
+        ranges_action = QAction("Set ROI ranges")
+        ranges_action.triggered.connect(self.roi_open_ranges_dialog)
+        menu.addAction(ranges_action)
+        pos = ev.screenPos()
+        menu.exec(QPoint(int(pos.x()), int(pos.y())))
+
+    def roi_open_ranges_dialog(self, item):
+        """Open dialog to manually set the filter ranges """
+        if self.roi_ranges_dialog is None:
+            self.roi_ranges_dialog = ROIRanges()
+            self.roi_ranges_dialog.data_ranges_changed.connect(self.roi_changes_finished)
+        else:
+            self.roi_ranges_dialog.update_fields()
+        self.roi_ranges_dialog.show()
+        self.roi_ranges_dialog.activateWindow()
 
     def _add_median_line(self, plot, values):
         """Add median line to plot (with median +/- mad as label)."""
@@ -519,6 +564,27 @@ class Analyzer(QDialog, Ui_Analyzer):
     def region_pos_changed(self, item):
         """Called when the line region on one of the histogram plots is changing."""
         pass
+
+    @Slot(None, name="roi_changes_finished")
+    def roi_changes_finished(self):
+        """Called when the ROIChanges dialog has accepted the changes."""
+
+        # Signal blocker on self.efo_cfr_roi
+        if self.efo_cfr_roi_blocker is None:
+            self.efo_cfr_roi_blocker = QSignalBlocker(self.efo_cfr_roi)
+
+        # Block signals from efo_cfr_roi
+        self.efo_cfr_roi_blocker.reblock()
+
+        # Update the thresholds in the EFO and CFR histograms
+        self.efo_region.setRegion(self.state.efo_thresholds)
+        self.cfr_region.setRegion(self.state.cfr_thresholds)
+
+        # Update the ROI in the scatter plot without emitting signals
+        self.update_efo_cfr_roi()
+
+        # Unblock the efo_cfr_roi signals
+        self.efo_cfr_roi_blocker.unblock()
 
     def region_pos_changed_finished(self, item):
         """Called when the line region on one of the histogram plots has changed."""
