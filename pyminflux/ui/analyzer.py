@@ -219,12 +219,27 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Announce that the plotting has started
         self.plotting_started.emit()
 
-        # Remove previous plots, if they exist
+        # Remove previous plots quickly, if they exist
+        param_widgets = []
         for i in reversed(range(self.ui.parameters_layout.count())):
-            self.ui.parameters_layout.itemAt(i).widget().deleteLater()
-        for i in reversed(range(self.ui.localizations_layout.count())):
-            self.ui.localizations_layout.itemAt(i).widget().deleteLater()
+            widget = self.ui.parameters_layout.itemAt(i).widget()
+            param_widgets.append(widget)
+            self.ui.parameters_layout.removeWidget(widget)
 
+        localization_widgets = []
+        for i in reversed(range(self.ui.localizations_layout.count())):
+            widget = self.ui.localizations_layout.itemAt(i).widget()
+            localization_widgets.append(widget)
+            self.ui.localizations_layout.removeWidget(widget)
+
+        # Now properly delete them (slow)
+        for widget in param_widgets:
+            widget.deleteLater()
+
+        for widget in localization_widgets:
+            widget.deleteLater()
+
+        # Is there data to plot?
         if not is_data:
             label = QLabel("Sorry, no data.")
             font = label.font()
