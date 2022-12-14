@@ -2,8 +2,8 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import QDialog
 
-from .ui_roi_ranges import Ui_ROIRanges
 from ..state import State
+from .ui_roi_ranges import Ui_ROIRanges
 
 
 class ROIRanges(QDialog, Ui_ROIRanges):

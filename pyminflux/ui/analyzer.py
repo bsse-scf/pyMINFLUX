@@ -3,14 +3,14 @@ from typing import Optional, Tuple
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import ROI, Point
-from PySide6.QtCore import QSignalBlocker, Signal, Slot, QPoint
-from PySide6.QtGui import QColor, QDoubleValidator, QFont, Qt, QAction
+from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
+from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
-from .roi_ranges import ROIRanges
 from ..analysis import get_robust_threshold, ideal_hist_bins
 from ..processor import MinFluxProcessor
 from ..state import State
+from .roi_ranges import ROIRanges
 from .ui_analyzer import Ui_Analyzer
 
 
@@ -18,6 +18,8 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     # Signal that the data viewers should be updated
     data_filters_changed = Signal(name="data_filters_changed")
+    plotting_started = Signal(name="plotting_started")
+    plotting_completed = Signal(name="plotting_completed")
 
     def __init__(self, minfluxprocessor: MinFluxProcessor, parent=None):
         """Constructor."""
@@ -83,6 +85,8 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.checkLowerThreshold.stateChanged.connect(self.persist_lower_threshold)
         self.ui.checkUpperThreshold.stateChanged.connect(self.persist_upper_threshold)
         self.ui.leThreshFactor.textChanged.connect(self.persist_thresh_factor)
+        self.plotting_started.connect(self.disable_buttons)
+        self.plotting_completed.connect(self.enable_buttons)
 
     def closeEvent(self, ev):
         """Close event."""
@@ -186,6 +190,18 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Signal that the external viewers should be updated
         self.data_filters_changed.emit()
 
+    @Slot(name="disable_buttons")
+    def disable_buttons(self):
+        self.ui.pbReset.setEnabled(False)
+        self.ui.pbAutoThreshold.setEnabled(False)
+        self.ui.pbUpdateViewers.setEnabled(False)
+
+    @Slot(name="enable_buttons")
+    def enable_buttons(self):
+        self.ui.pbReset.setEnabled(True)
+        self.ui.pbAutoThreshold.setEnabled(True)
+        self.ui.pbUpdateViewers.setEnabled(True)
+
     def plot(self):
         """Plot histograms."""
 
@@ -200,6 +216,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         if self._minfluxprocessor.num_values == 0:
             is_data = False
 
+        # Announce that the plotting has started
+        self.plotting_started.emit()
+
         # Remove previous plots, if they exist
         for i in reversed(range(self.ui.parameters_layout.count())):
             self.ui.parameters_layout.itemAt(i).widget().deleteLater()
@@ -212,6 +231,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             font.setPointSize(16)
             label.setFont(font)
             self.ui.parameters_layout.addWidget(label)
+            self.plotting_completed.emit()
             return
 
         #
@@ -256,7 +276,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             fmt="{value:.2f}",
             support_thresholding=True,
             thresholds=self.state.cfr_thresholds,
-            force_min_x_range_to_zero=False
+            force_min_x_range_to_zero=False,
         )
         self.ui.parameters_layout.addWidget(self.cfr_plot)
         self.cfr_plot.show()
@@ -335,6 +355,9 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.ui.localizations_layout.addWidget(self.sz_plot)
             self.sz_plot.show()
 
+        # Announce that the plotting has completed
+        self.plotting_completed.emit()
+
     @staticmethod
     def _prepare_histogram(values):
         """Prepare data to plot."""
@@ -381,7 +404,9 @@ class Analyzer(QDialog, Ui_Analyzer):
             x0 = 0.0
         else:
             x0 = bin_edges[0]
-        plot.setXRange(x0 - padding, bin_edges[-1] + padding, padding=0)  # setXRange()'s padding misbehaves
+        plot.setXRange(
+            x0 - padding, bin_edges[-1] + padding, padding=0
+        )  # setXRange()'s padding misbehaves
         plot.setYRange(0.0, n.max())
         plot.addItem(chart)
 
@@ -511,10 +536,12 @@ class Analyzer(QDialog, Ui_Analyzer):
         menu.exec(QPoint(int(pos.x()), int(pos.y())))
 
     def roi_open_ranges_dialog(self, item):
-        """Open dialog to manually set the filter ranges """
+        """Open dialog to manually set the filter ranges"""
         if self.roi_ranges_dialog is None:
             self.roi_ranges_dialog = ROIRanges()
-            self.roi_ranges_dialog.data_ranges_changed.connect(self.roi_changes_finished)
+            self.roi_ranges_dialog.data_ranges_changed.connect(
+                self.roi_changes_finished
+            )
         else:
             self.roi_ranges_dialog.update_fields()
         self.roi_ranges_dialog.show()
