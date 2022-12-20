@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph import ROI, Point
+from pyqtgraph import ROI, Point, ViewBox, AxisItem
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
@@ -423,6 +423,8 @@ class Analyzer(QDialog, Ui_Analyzer):
             x0 - padding, bin_edges[-1] + padding, padding=0
         )  # setXRange()'s padding misbehaves
         plot.setYRange(0.0, n.max())
+        plot.setMenuEnabled(False)
+        plot.scene().sigMouseClicked.connect(self.histogram_raise_context_menu)
         plot.addItem(chart)
 
         region = None
@@ -450,9 +452,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             region.sigRegionChanged.connect(self.region_pos_changed)
             region.sigRegionChangeFinished.connect(self.region_pos_changed_finished)
 
-        # Customize the context menu
-        self.customize_context_menu(plot)
-
         # Make sure the viewbox remembers its own y range
         viewbox = plot.getPlotItem().getViewBox()
         viewbox.y_min = 0.0
@@ -479,6 +478,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         plot.setLabel("bottom", text=x_label)
         plot.setLabel("left", text=y_label)
         plot.setMouseEnabled(x=True, y=True)
+        plot.setMenuEnabled(False)
 
         # Fix plot ratio
         x_val = np.nanmean(x)
@@ -495,7 +495,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             brush=brush,
             hoverable=False,
         )
-        # scatter.sigClicked.connect(self.clicked)
         scatter.setData(x=x, y=y)
         plot.addItem(scatter)
         plot.showAxis("bottom")
@@ -522,10 +521,16 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.efo_cfr_roi.sigRegionChanged.connect(self.roi_changed)
             self.efo_cfr_roi.sigRegionChangeFinished.connect(self.roi_changed_finished)
 
-        # Customize the context menu
-        self.customize_context_menu(plot)
-
         return plot
+
+    def histogram_raise_context_menu(self, ev):
+        """Create a context menu on the efo vs cfr scatterplot ROI."""
+        menu = QMenu()
+        shift_action = QAction("Move x axis origin to 0")
+        shift_action.triggered.connect(lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem))
+        menu.addAction(shift_action)
+        pos = ev.screenPos()
+        menu.exec(QPoint(int(pos.x()), int(pos.y())))
 
     def roi_mouse_click_event(self, roi, ev):
         """Right-click event on the efo vs cfr scatterplot ROI."""
@@ -591,19 +596,18 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Return it
         return upper_threshold, lower_threshold
 
-    def customize_context_menu(self, item):
-        """Remove some of the default context menu actions.
-
-        See: https://stackoverflow.com/questions/44402399/how-to-disable-the-default-context-menu-of-pyqtgraph#44420152
-        """
-        # Disable some actions
-        viewbox = item.getPlotItem().getViewBox()
-        actions = viewbox.menu.actions()
-        for action in actions:
-            action.setVisible(False)
-
-        # Hide the "Plot Options" menu
-        item.getPlotItem().ctrlMenu.menuAction().setVisible(False)
+    def shift_x_axis_origin_to_zero(self, item):
+        """Set the lower range of the x axis of the passed viewbox to 0."""
+        if isinstance(item, ViewBox):
+            view_box = item
+        elif isinstance(item, AxisItem):
+            view_box = item.getViewBox()
+        else:
+            return
+        view_range = view_box.viewRange()
+        delta_x = view_range[0][1] - view_range[0][0]
+        new_range = (0.0, delta_x)
+        view_box.setRange(xRange=new_range)
 
     def region_pos_changed(self, item):
         """Called when the line region on one of the histogram plots is changing."""
