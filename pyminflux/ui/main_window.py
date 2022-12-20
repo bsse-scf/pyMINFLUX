@@ -332,6 +332,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Always plot the (x, y) coordinates in the 2D plotter
         self.plotter.plot_localizations(
+            tid=dataframe["tid"],
             x=dataframe["x"],
             y=dataframe["y"],
         )
