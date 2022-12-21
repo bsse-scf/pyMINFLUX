@@ -9,6 +9,13 @@ from pyminflux.state import State
 class MinFluxProcessor:
     """Processor of MINFLUX data."""
 
+    __slots__ = [
+        "__minfluxreader",
+        "state",
+        "__filtered_dataframe",
+        "__filtered_stats_dataframe",
+    ]
+
     def __init__(self, minfluxreader: MinFluxReader):
         """Constructor.
 
@@ -20,17 +27,14 @@ class MinFluxProcessor:
         """
 
         # Store a reference to the MinFluxReader
-        self._minfluxreader = minfluxreader
+        self.__minfluxreader = minfluxreader
 
         # Keep a reference to the state machine
         self.state = State()
 
-        # Keep track of whether recalculation is needed
-        self._must_recalculate = False
-
         # Cache the filtered dataframes
-        self._filtered_dataframe = None
-        self._filtered_stats_dataframe = None
+        self.__filtered_dataframe = None
+        self.__filtered_stats_dataframe = None
 
         # Apply the parameter filters
         self._apply_thresholds()
@@ -38,24 +42,24 @@ class MinFluxProcessor:
     @property
     def is_3d(self):
         """Return True if the acquisition is 3D."""
-        return self._minfluxreader.is_3d
+        return self.__minfluxreader.is_3d
 
     @property
     def num_values(self):
         """Return the number of values in the (filtered) dataframe."""
-        if self._filtered_dataframe is None:
+        if self.__filtered_dataframe is None:
             return 0
-        return len(self._filtered_dataframe.index)
+        return len(self.__filtered_dataframe.index)
 
     @property
     def filtered_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return dataframe with all filters applied."""
-        return self._filtered_dataframe
+        return self.__filtered_dataframe
 
     @property
     def filtered_dataframe_stats(self) -> Union[None, pd.DataFrame]:
         """Return dataframe stats with all filters applied."""
-        return self._filtered_stats_dataframe
+        return self.__filtered_stats_dataframe
 
     def update_filters(self):
         """Apply filters."""
@@ -65,11 +69,11 @@ class MinFluxProcessor:
         """Calculate per-trace statistics."""
 
         # Make sure we have processed dataframe to work on
-        if self._filtered_dataframe is None:
+        if self.__filtered_dataframe is None:
             return
 
         # Calculate some statistics per TID on the processed dataframe
-        df_grouped = self._filtered_dataframe.groupby("tid")
+        df_grouped = self.__filtered_dataframe.groupby("tid")
 
         tid = df_grouped["tid"].first().values
         n = df_grouped["tid"].count().values
@@ -97,13 +101,13 @@ class MinFluxProcessor:
         df_tid[["sx", "sy", "sz"]] = df_tid[["sx", "sy", "sz"]].fillna(value=0.0)
 
         # Store the results
-        self._filtered_stats_dataframe = df_tid
+        self.__filtered_stats_dataframe = df_tid
 
     def _apply_thresholds(self):
         """Apply the data thresholds."""
 
         # Always start with a copy of the raw data from the reader
-        df = self._minfluxreader.processed_dataframe.copy()
+        df = self.__minfluxreader.processed_dataframe.copy()
 
         #
         # First, drop TIDs that have less than the minimum number of rows in the original dataframe.
@@ -135,7 +139,7 @@ class MinFluxProcessor:
                 ]
 
         # Cache the result
-        self._filtered_dataframe = df
+        self.__filtered_dataframe = df
 
         #
         # Finally, update the statistics

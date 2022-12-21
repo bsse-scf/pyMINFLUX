@@ -46,7 +46,7 @@ class Plotter(PlotWidget):
             hoverable=True,
             hoverSymbol="s",
             hoverSize=5,
-            hoverPen=pg.mkPen("r", width=2),
+            hoverPen=pg.mkPen("w", width=2),
             hoverBrush=None,
         )
         scatter.sigClicked.connect(self.clicked)
