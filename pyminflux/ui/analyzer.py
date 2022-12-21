@@ -601,9 +601,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         else:
             return
         view_range = view_box.viewRange()
-        delta_x = view_range[0][1] - view_range[0][0]
-        new_range = (0.0, delta_x)
-        view_box.setRange(xRange=new_range)
+        view_box.setRange(xRange=(0.0, view_range[0][1]))
 
     def region_pos_changed(self, item):
         """Called when the line region on one of the histogram plots is changing."""
