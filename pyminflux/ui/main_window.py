@@ -55,7 +55,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.analyzer = None
         self.plotter = None
         self.plotter3D = None
-        self.options = None
+        self.options = Options()
 
         # Read the application settings
         app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
@@ -64,10 +64,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             app_settings.value("options/min_num_loc_per_trace", 1)
         )
 
-        # Initialize in-window widgets
-        self.setup_data_viewer()
-        self.setup_data_plotter()
-        self.options = Options()
+        # Initialize DataViewer
+        self.data_viewer = DataViewer()
+        self.ui.splitter_layout.addWidget(self.data_viewer)
+        self.data_viewer.show()
+
+        # Initialize Plotter
+        self.plotter = Plotter()
+        self.ui.splitter_layout.addWidget(self.plotter)
+        self.data_viewer.show()
 
         # Set up signals and slots
         self.setup_conn()
@@ -177,33 +182,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Now exit
             event.accept()
-
-    def setup_data_viewer(self):
-        """
-        Set up the data viewer.
-        """
-
-        # Initialize widget if needed
-        if self.data_viewer is None:
-            self.data_viewer = DataViewer()
-
-        # Add to the UI
-        self.ui.splitter_layout.addWidget(self.data_viewer)
-
-        # Show the widget
-        self.data_viewer.show()
-
-    def setup_data_plotter(self):
-        """Setup 2D in-window plotter."""
-
-        # 2D plotter
-        self.plotter = Plotter()
-
-        # Add to the UI
-        self.ui.splitter_layout.addWidget(self.plotter)
-
-        # Show the widget
-        self.data_viewer.show()
 
     @Slot(None, name="quit_application")
     def quit_application(self):
