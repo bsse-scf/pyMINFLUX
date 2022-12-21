@@ -525,12 +525,13 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     def histogram_raise_context_menu(self, ev):
         """Create a context menu on the efo vs cfr scatterplot ROI."""
-        menu = QMenu()
-        shift_action = QAction("Move x axis origin to 0")
-        shift_action.triggered.connect(lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem))
-        menu.addAction(shift_action)
-        pos = ev.screenPos()
-        menu.exec(QPoint(int(pos.x()), int(pos.y())))
+        if ev.button() == Qt.MouseButton.RightButton:
+            menu = QMenu()
+            shift_action = QAction("Move x axis origin to 0")
+            shift_action.triggered.connect(lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem))
+            menu.addAction(shift_action)
+            pos = ev.screenPos()
+            menu.exec(QPoint(int(pos.x()), int(pos.y())))
 
     def roi_mouse_click_event(self, roi, ev):
         """Right-click event on the efo vs cfr scatterplot ROI."""
