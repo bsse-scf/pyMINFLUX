@@ -8,3 +8,4 @@ __pycache__/
 /pyminflux/processor/processor.c
 /.vscode/
 /dist/
+/pyminflux.perf.egg-info/
