@@ -66,9 +66,30 @@ class MinFluxProcessor:
         """Return the processed dataframe columns."""
         return MinFluxReader.processed_properties()
 
-    def get_filtered_dataframe_subset(self, indices):
+    def get_filtered_dataframe_subset_by_indices(self, indices):
         """Return the subset of the filtered dataset defined by the passed indices."""
         return self.__filtered_dataframe.iloc[indices]
+
+    def get_filtered_dataframe_subset_by_range(self, x_range, y_range):
+        """Return the subset of the filtered dataset defined by the passed x and y ranges."""
+
+        # Make sure that the ranges are increasing
+        x_min = x_range[0]
+        x_max = x_range[1]
+        if x_max < x_min:
+            x_max, x_min = x_min, x_max
+
+        y_min = y_range[0]
+        y_max = y_range[1]
+        if y_max < y_min:
+            y_max, y_min = y_min, y_max
+
+        return self.__filtered_dataframe.loc[
+            (self.__filtered_dataframe["x"] >= x_min)
+            & (self.__filtered_dataframe["x"] < x_max)
+            & (self.__filtered_dataframe["y"] >= y_min)
+            & (self.__filtered_dataframe["y"] < y_max)
+        ]
 
     def update_filters(self):
         """Apply filters."""

@@ -103,7 +103,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Other connections
-        self.plotter.locations_selected.connect(self.show_selected_points_in_dataviewer)
+        self.plotter.locations_selected.connect(
+            self.show_selected_points_by_indices_in_dataviewer
+        )
+        self.plotter.locations_selected_by_range.connect(
+            self.show_selected_points_by_range_in_dataviewer
+        )
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
@@ -281,8 +286,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.options.show()
         self.options.activateWindow()
 
-    @Slot(list, name="show_selected_points_in_dataviewer")
-    def show_selected_points_in_dataviewer(self, points):
+    @Slot(list, name="show_selected_points_by_indices_in_dataviewer")
+    def show_selected_points_by_indices_in_dataviewer(self, points):
         """Show the data for the selected points in the dataframe viewer."""
 
         # Extract indices of the rows corresponding to the selected points
@@ -294,7 +299,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         indices = sorted(indices)
 
         # Get the filtered dataframe subset corresponding to selected indices
-        df = self.minfluxprocessor.get_filtered_dataframe_subset(indices=indices)
+        df = self.minfluxprocessor.get_filtered_dataframe_subset_by_indices(
+            indices=indices
+        )
 
         # Update the dataviewer
         self.data_viewer.set_data(df)
@@ -302,6 +309,22 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Inform
         point_str = "event" if len(indices) == 1 else "events"
         print(f"Selected {len(indices)} {point_str}.")
+
+    @Slot(tuple, tuple, name="show_selected_points_by_range_in_dataviewer")
+    def show_selected_points_by_range_in_dataviewer(self, x_range, y_range):
+        """Filter the data by x and y range and show in the dataframe viewer."""
+
+        # Get the filtered dataframe subset contained in the provided x and y ranges
+        df = self.minfluxprocessor.get_filtered_dataframe_subset_by_range(
+            x_range, y_range
+        )
+
+        # Update the dataviewer
+        self.data_viewer.set_data(df)
+
+        # Inform
+        point_str = "event" if len(df.index) == 1 else "events"
+        print(f"Selected {len(df.index)} {point_str}.")
 
     def plot_localizations(self, dataframe=None):
         """Plot the localizations."""
@@ -358,8 +381,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter3D is None:
             self.plotter3D = Plotter3D()
             if (
-                    self.minfluxprocessor is not None
-                    and self.minfluxprocessor.num_values > 0
+                self.minfluxprocessor is not None
+                and self.minfluxprocessor.num_values > 0
             ):
                 self.plot_localizations_3d(
                     self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
