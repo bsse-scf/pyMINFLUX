@@ -10,6 +10,7 @@ from ..state import State
 class Plotter(PlotWidget):
 
     locations_selected = Signal(list, name="locations_selected")
+    locations_selected_by_range = Signal(tuple, tuple, name="locations_selected_by_range")
 
     def __init__(self):
         super().__init__()
@@ -50,6 +51,7 @@ class Plotter(PlotWidget):
             # Remove previous ROI if it exists
             if self.ROI is not None:
                 self.removeItem(self.ROI)
+                self.ROI = None
 
             # Create ROI and keep track of position
             self.__roi_is_being_drawn = True
@@ -108,10 +110,15 @@ class Plotter(PlotWidget):
             and self.__roi_is_being_drawn
         ):
 
-            # Select points
-            print("SELECT POINTS IN ROI!")
+            # Extract the ranges
+            if self.ROI is not None:
 
-            # Emit point selection!
+                # Extract x and y ranges
+                x_range = (self.ROI.pos()[0], self.ROI.pos()[0] + self.ROI.size()[0])
+                y_range = (self.ROI.pos()[1], self.ROI.pos()[1] + self.ROI.size()[1])
+
+                # Update the DataViewer with current selection
+                self.locations_selected_by_range.emit(x_range, y_range)
 
             # Reset flags
             self.__roi_start_point = None
@@ -171,6 +178,11 @@ class Plotter(PlotWidget):
     def clicked(self, _, points):
         """Emit 'signal_selected_locations' when points are selected in the plot."""
         self.locations_selected.emit(points)
+
+        # Remove ROI if it exists
+        if self.ROI is not None:
+            self.removeItem(self.ROI)
+            self.ROI = None
 
     def set_colors_per_tid(self, tids: np.ndarray, seed: int = 142) -> np.ndarray:
         """Creates a matrix of colors where same TIDs get the same color."""
