@@ -135,6 +135,16 @@ class MinFluxReader:
         self.__data_full_df = self._raw_data_to_full_dataframe()
         return self.__data_full_df
 
+    @classmethod
+    def processed_properties(cls):
+        """Returns the properties read from the file that correspond to the processed dataframe column names."""
+        return ["tid", "tim", "x", "y", "z", "efo", "cfr", "dcr"]
+
+    @classmethod
+    def raw_properties(cls):
+        """Returns the properties read from the file and dynamic that correspond to the raw dataframe column names."""
+        return ["tid", "aid", "vld", "tim", "x", "y", "z", "efo", "cfr", "dcr"]
+
     def _load(self) -> bool:
         """Load the file."""
 
@@ -233,16 +243,7 @@ class MinFluxReader:
         # Create a Pandas dataframe for the results
         df = pd.DataFrame(
             index=pd.RangeIndex(start=0, stop=len(tid)),
-            columns=[
-                "tid",
-                "tim",
-                "x",
-                "y",
-                "z",
-                "efo",
-                "cfr",
-                "dcr",
-            ],
+            columns=MinFluxReader.processed_properties(),
         )
 
         # Store the extracted valid hits into the dataframe
@@ -263,20 +264,7 @@ class MinFluxReader:
             return None
 
         # Intialize output dataframe
-        df = pd.DataFrame(
-            columns=[
-                "tid",
-                "aid",
-                "vld",
-                "tim",
-                "x",
-                "y",
-                "z",
-                "efo",
-                "cfr",
-                "dcr",
-            ],
-        )
+        df = pd.DataFrame(columns=MinFluxReader.raw_properties())
 
         # Allocate space for the columns
         n_rows = len(self.__data_array) * self.__reps

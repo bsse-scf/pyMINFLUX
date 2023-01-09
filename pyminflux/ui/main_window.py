@@ -64,14 +64,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             app_settings.value("options/min_num_loc_per_trace", 1)
         )
 
-        # Initialize DataViewer
-        self.data_viewer = DataViewer()
-        self.ui.splitter_layout.addWidget(self.data_viewer)
-        self.data_viewer.show()
-
-        # Initialize Plotter
+        # Initialize Plotter and DataViewer
         self.plotter = Plotter()
+        self.data_viewer = DataViewer()
+
+        # Add them to the splitter
         self.ui.splitter_layout.addWidget(self.plotter)
+        self.ui.splitter_layout.addWidget(self.data_viewer)
+
+        # Show them
+        self.plotter.show()
         self.data_viewer.show()
 
         # Set up signals and slots
@@ -101,7 +103,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Other connections
-        self.plotter.locations_selected.connect(self.highlight_selected_locations)
+        self.plotter.locations_selected.connect(self.show_selected_points_in_dataviewer)
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
@@ -119,7 +121,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter.clear()
         dataframe = self.minfluxprocessor.filtered_dataframe
         self.plot_localizations(dataframe)
-        self.show_processed_dataframe(dataframe)
+        self.data_viewer.clear()
         print(f"Retrieved {len(dataframe.index)} events.")
 
     def update_plots(self):
@@ -279,20 +281,27 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.options.show()
         self.options.activateWindow()
 
-    @Slot(list, name="highlight_selected_locations")
-    def highlight_selected_locations(self, points):
-        """Highlight selected locations in the dataframe viewer and scroll to the first one."""
+    @Slot(list, name="show_selected_points_in_dataviewer")
+    def show_selected_points_in_dataviewer(self, points):
+        """Show the data for the selected points in the dataframe viewer."""
 
         # Extract indices of the rows corresponding to the selected points
         indices = []
-        for n, p in enumerate(points):
+        for p in points:
             indices.append(p.index())
-            if n > 100:
-                print(f"Too many points ({len(points)}), only selecting the first 100.")
-                break
+
+        # Sort the indices
+        indices = sorted(indices)
+
+        # Get the filtered dataframe subset corresponding to selected indices
+        df = self.minfluxprocessor.get_filtered_dataframe_subset(indices=indices)
 
         # Update the dataviewer
-        self.data_viewer.select_and_scroll_to_rows(indices)
+        self.data_viewer.set_data(df)
+
+        # Inform
+        point_str = "event" if len(indices) == 1 else "events"
+        print(f"Selected {len(indices)} {point_str}.")
 
     def plot_localizations(self, dataframe=None):
         """Plot the localizations."""
@@ -349,8 +358,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter3D is None:
             self.plotter3D = Plotter3D()
             if (
-                self.minfluxprocessor is not None
-                and self.minfluxprocessor.num_values > 0
+                    self.minfluxprocessor is not None
+                    and self.minfluxprocessor.num_values > 0
             ):
                 self.plot_localizations_3d(
                     self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
@@ -374,6 +383,3 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Pass the dataframe to the pdDataViewer
         self.data_viewer.set_data(dataframe)
-
-        # Optimize the table view columns
-        self.data_viewer.optimize()

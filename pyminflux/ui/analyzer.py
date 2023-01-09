@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph import ROI, Point, ViewBox, AxisItem
+from pyqtgraph import ROI, AxisItem, Point, ViewBox
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
@@ -523,7 +523,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
             shift_action = QAction("Move x axis origin to 0")
-            shift_action.triggered.connect(lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem))
+            shift_action.triggered.connect(
+                lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
+            )
             menu.addAction(shift_action)
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))

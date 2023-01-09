@@ -61,6 +61,15 @@ class MinFluxProcessor:
         """Return dataframe stats with all filters applied."""
         return self.__filtered_stats_dataframe
 
+    @classmethod
+    def processed_properties(self):
+        """Return the processed dataframe columns."""
+        return MinFluxReader.processed_properties()
+
+    def get_filtered_dataframe_subset(self, indices):
+        """Return the subset of the filtered dataset defined by the passed indices."""
+        return self.__filtered_dataframe.iloc[indices]
+
     def update_filters(self):
         """Apply filters."""
         self._apply_thresholds()
