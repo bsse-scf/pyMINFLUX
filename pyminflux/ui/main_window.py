@@ -103,8 +103,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Other connections
-        self.plotter.locations_selected.connect(self.show_selected_points_by_indices_in_dataviewer)
-        self.plotter.locations_selected_by_range.connect(self.show_selected_points_by_range_in_dataviewer)
+        self.plotter.locations_selected.connect(
+            self.show_selected_points_by_indices_in_dataviewer
+        )
+        self.plotter.locations_selected_by_range.connect(
+            self.show_selected_points_by_range_in_dataviewer
+        )
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
@@ -306,12 +310,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         point_str = "event" if len(indices) == 1 else "events"
         print(f"Selected {len(indices)} {point_str}.")
 
-    @Slot(list, name="show_selected_points_by_range_in_dataviewer")
+    @Slot(tuple, tuple, name="show_selected_points_by_range_in_dataviewer")
     def show_selected_points_by_range_in_dataviewer(self, x_range, y_range):
         """Filter the data by x and y range and show in the dataframe viewer."""
 
         # Get the filtered dataframe subset contained in the provided x and y ranges
-        df = self.minfluxprocessor.get_filtered_dataframe_subset_by_range(x_range, y_range)
+        df = self.minfluxprocessor.get_filtered_dataframe_subset_by_range(
+            x_range, y_range
+        )
 
         # Update the dataviewer
         self.data_viewer.set_data(df)

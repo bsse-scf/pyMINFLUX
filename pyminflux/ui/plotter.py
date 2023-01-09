@@ -10,7 +10,9 @@ from ..state import State
 class Plotter(PlotWidget):
 
     locations_selected = Signal(list, name="locations_selected")
-    locations_selected_by_range = Signal(tuple, tuple, name="locations_selected_by_range")
+    locations_selected_by_range = Signal(
+        tuple, tuple, name="locations_selected_by_range"
+    )
 
     def __init__(self):
         super().__init__()
@@ -68,6 +70,9 @@ class Plotter(PlotWidget):
             self.addItem(self.ROI)
             self.ROI.show()
 
+            # Make sure to react to ROI shifts
+            self.ROI.sigRegionChangeFinished.connect(self.roi_moved)
+
             # Accept the event
             ev.accept()
 
@@ -111,13 +116,10 @@ class Plotter(PlotWidget):
         ):
 
             # Extract the ranges
-            if self.ROI is not None:
+            x_range, y_range = self._get_ranges_from_roi()
 
-                # Extract x and y ranges
-                x_range = (self.ROI.pos()[0], self.ROI.pos()[0] + self.ROI.size()[0])
-                y_range = (self.ROI.pos()[1], self.ROI.pos()[1] + self.ROI.size()[1])
-
-                # Update the DataViewer with current selection
+            # Update the DataViewer with current selection
+            if x_range is not None and y_range is not None:
                 self.locations_selected_by_range.emit(x_range, y_range)
 
             # Reset flags
@@ -175,6 +177,20 @@ class Plotter(PlotWidget):
         # Hide the "Plot Options" menu
         self.getPlotItem().ctrlMenu.menuAction().setVisible(False)
 
+    def roi_moved(self):
+        """Inform that the selection of localizations may have changed after the ROI was moved."""
+
+        # If the ROI is being drawn now, do nothing
+        if self.__roi_is_being_drawn:
+            return
+
+        # Extract the ranges
+        x_range, y_range = self._get_ranges_from_roi()
+
+        # Update the DataViewer with current selection
+        if x_range is not None and y_range is not None:
+            self.locations_selected_by_range.emit(x_range, y_range)
+
     def clicked(self, _, points):
         """Emit 'signal_selected_locations' when points are selected in the plot."""
         self.locations_selected.emit(points)
@@ -212,3 +228,17 @@ class Plotter(PlotWidget):
             colors[i] = color_map[tid]
 
         return tids
+
+    def _get_ranges_from_roi(self):
+        """Calculate x and y ranges from ROI."""
+
+        # Initialize x and y ranges to None
+        x_range = None
+        y_range = None
+
+        # Extract x and y ranges
+        if self.ROI is not None:
+            x_range = (self.ROI.pos()[0], self.ROI.pos()[0] + self.ROI.size()[0])
+            y_range = (self.ROI.pos()[1], self.ROI.pos()[1] + self.ROI.size()[1])
+
+        return x_range, y_range
