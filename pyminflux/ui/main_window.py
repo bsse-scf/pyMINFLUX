@@ -358,8 +358,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter3D is None:
             self.plotter3D = Plotter3D()
             if (
-                    self.minfluxprocessor is not None
-                    and self.minfluxprocessor.num_values > 0
+                self.minfluxprocessor is not None
+                and self.minfluxprocessor.num_values > 0
             ):
                 self.plot_localizations_3d(
                     self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
