@@ -7,7 +7,7 @@ from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
-from ..analysis import get_robust_threshold, ideal_hist_bins
+from ..analysis import get_robust_threshold, ideal_hist_bins, prepare_histogram
 from ..processor import MinFluxProcessor
 from ..state import State
 from .roi_ranges import ROIRanges
@@ -249,7 +249,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         #
 
         # "efo"
-        n_efo, efo_bin_edges, efo_bin_centers, efo_bin_width = self._prepare_histogram(
+        n_efo, efo_bin_edges, efo_bin_centers, efo_bin_width = prepare_histogram(
             self._minfluxprocessor.filtered_dataframe["efo"].values
         )
         if self.state.efo_thresholds is None:
@@ -270,7 +270,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.efo_plot.show()
 
         # cfr
-        n_cfr, cfr_bin_edges, cfr_bin_centers, cfr_bin_width = self._prepare_histogram(
+        n_cfr, cfr_bin_edges, cfr_bin_centers, cfr_bin_width = prepare_histogram(
             self._minfluxprocessor.filtered_dataframe["cfr"].values
         )
         if self.state.cfr_thresholds is None:
@@ -307,7 +307,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.cfr_efo_plot.show()
 
         # sx
-        n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = self._prepare_histogram(
+        n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = prepare_histogram(
             self._minfluxprocessor.filtered_dataframe_stats["sx"].values
         )
         self.sx_plot, _ = self._create_histogram_plot(
@@ -326,7 +326,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.sx_plot.show()
 
         # sy
-        n_sy, sy_bin_edges, sy_bin_centers, sy_bin_width = self._prepare_histogram(
+        n_sy, sy_bin_edges, sy_bin_centers, sy_bin_width = prepare_histogram(
             self._minfluxprocessor.filtered_dataframe_stats["sy"].values
         )
         self.sy_plot, _ = self._create_histogram_plot(
@@ -346,7 +346,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # sz
         if self._minfluxprocessor.is_3d:
-            n_sz, sz_bin_edges, sz_bin_centers, sz_bin_width = self._prepare_histogram(
+            n_sz, sz_bin_edges, sz_bin_centers, sz_bin_width = prepare_histogram(
                 self._minfluxprocessor.filtered_dataframe_stats["sz"].values
             )
             self.sz_plot, _ = self._create_histogram_plot(
@@ -367,14 +367,6 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Announce that the plotting has completed
         self.plotting_completed.emit()
-
-    @staticmethod
-    def _prepare_histogram(values):
-        """Prepare data to plot."""
-        bin_edges, bin_centers, bin_width = ideal_hist_bins(values, scott=False)
-        n, _ = np.histogram(values, bins=bin_edges, density=False)
-        n = n / n.sum()
-        return n, bin_edges, bin_centers, bin_width
 
     def _create_histogram_plot(
         self,
@@ -584,7 +576,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         plot.addItem(line)
 
     def calculate_thresholds(self, values, thresh_factor):
-        """Prepare filter line."""
+        """Calculate robust lower and upper thresholds on histogram values."""
 
         # Calculate robust threshold
         upper_threshold, lower_threshold, _, _ = get_robust_threshold(

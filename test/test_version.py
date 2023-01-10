@@ -1,7 +1,7 @@
-from unittest import TestCase
+import pytest
+
 import pyminflux
 
 
-class TestFundamentals(TestCase):
-    def test_version(self):
-        self.assertTrue(pyminflux.__version__ != "")
+def test_version():
+    assert pyminflux.__version__ != "", "pyMinFlux version not set."
