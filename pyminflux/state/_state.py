@@ -29,8 +29,9 @@ class State(metaclass=Singleton):
         self.enable_lower_threshold: bool = False
         self.enable_upper_threshold: bool = True
 
-        # Multiplicative factor for the robust threshold
-        self.filter_thresh_factor: float = 2.0
+        # Peak detector parameters
+        self.min_relative_peak_prominence: float = 0.01
+        self.median_filter_support: int = 5
 
     def asdict(self) -> dict:
         """Return class as dictionary."""
@@ -42,7 +43,8 @@ class State(metaclass=Singleton):
             "enable_filter_cfr": self.enable_filter_cfr,
             "enable_lower_bound": self.enable_lower_threshold,
             "enable_upper_bound": self.enable_upper_threshold,
-            "filter_thresh_factor": self.filter_thresh_factor,
+            "min_relative_peak_prominence": self.min_relative_peak_prominence,
+            "median_filter_support": self.median_filter_support,
         }
 
     def reset(self):
@@ -61,4 +63,5 @@ class State(metaclass=Singleton):
         self.enable_filter_cfr = False
         self.enable_lower_threshold = False
         self.enable_upper_threshold = True
-        self.filter_thresh_factor = 2.0
+        self.min_relative_peak_prominence = 0.01
+        self.median_filter_support = 5

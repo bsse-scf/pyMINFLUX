@@ -17,7 +17,7 @@
    <item row="1" column="0">
     <widget class="QPushButton" name="pbAutoThreshold">
      <property name="text">
-      <string>Auto-threshold</string>
+      <string>Automatic peak detection</string>
      </property>
     </widget>
    </item>
@@ -104,14 +104,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="lbThreshMultFactor">
+      <widget class="QLabel" name="lbMedianFilterSupport">
        <property name="text">
-        <string>Robust threshold multiplicative factor</string>
+        <string>Median filter support</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="leThreshFactor">
+      <widget class="QLineEdit" name="leMedianFilterSupport">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -119,7 +119,21 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>2.0</string>
+        <string>5</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="lbMinRelativeProminence">
+       <property name="text">
+        <string>Min peak relative prominence</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="leMinRelativeProminence">
+       <property name="text">
+        <string>0.01</string>
        </property>
       </widget>
      </item>

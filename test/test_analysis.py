@@ -148,3 +148,53 @@ def test_find_first_peak_bounds(extract_peak_analysis_data_archive):
     assert (
         pytest.approx(upper_bound, 1e-4) == 0.7850102721958083
     ), "The upper bound is wrong!"
+
+    #
+    # 3D_only_overlabeled_efo.npy
+    #
+
+    # Load data
+    efo = np.load(Path(__file__).parent / "data" / "3d_only_overlabeled_efo.npy")
+    assert efo is not None, "Could not load file."
+    assert len(efo) == 81888, "Wrong dimensions for 3d_only_overlabeled_efo."
+
+    # Calculate the normalized histogram
+    n_efo, _, b_efo, _ = prepare_histogram(efo)
+    assert len(n_efo) == 1280
+    assert pytest.approx(n_efo.sum(), 1e-4) == 1.0, "The histogram is not normalized!"
+
+    # Find the first peak bounds
+    lower_bound, upper_bound = find_first_peak_bounds(
+        n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5, qc=True
+    )
+    assert (
+        pytest.approx(lower_bound, 1e-4) == 11600.761913082442
+    ), "The lower bound is wrong!"
+    assert (
+        pytest.approx(upper_bound, 1e-4) == 44791.84027317494
+    ), "The upper bound is wrong!"
+
+    #
+    # 3D_only_overlabeled_cfr.npy
+    #
+
+    # Load data
+    cfr = np.load(Path(__file__).parent / "data" / "3d_only_overlabeled_cfr.npy")
+    assert cfr is not None, "Could not load file."
+    assert len(cfr) == 81888, "Wrong dimensions for 3d_only_overlabeled_cfr."
+
+    # Calculate the normalized histogram
+    n_cfr, _, b_cfr, _ = prepare_histogram(cfr)
+    assert len(n_cfr) == 133
+    assert pytest.approx(n_cfr.sum(), 1e-4) == 1.0, "The histogram is not normalized!"
+
+    # Find the first peak bounds
+    lower_bound, upper_bound = find_first_peak_bounds(
+        n_cfr, b_cfr, min_rel_prominence=0.01, med_filter_support=5, qc=True
+    )
+    assert (
+        pytest.approx(lower_bound, 1e-4) == -0.09818585947658014
+    ), "The lower bound is wrong!"
+    assert (
+        pytest.approx(upper_bound, 1e-4) == 0.7850102721958083
+    ), "The upper bound is wrong!"

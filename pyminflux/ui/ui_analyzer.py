@@ -118,22 +118,32 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout.addWidget(self.checkUpperThreshold)
 
-        self.lbThreshMultFactor = QLabel(Analyzer)
-        self.lbThreshMultFactor.setObjectName("lbThreshMultFactor")
+        self.lbMedianFilterSupport = QLabel(Analyzer)
+        self.lbMedianFilterSupport.setObjectName("lbMedianFilterSupport")
 
-        self.horizontalLayout.addWidget(self.lbThreshMultFactor)
+        self.horizontalLayout.addWidget(self.lbMedianFilterSupport)
 
-        self.leThreshFactor = QLineEdit(Analyzer)
-        self.leThreshFactor.setObjectName("leThreshFactor")
+        self.leMedianFilterSupport = QLineEdit(Analyzer)
+        self.leMedianFilterSupport.setObjectName("leMedianFilterSupport")
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.leThreshFactor.sizePolicy().hasHeightForWidth()
+            self.leMedianFilterSupport.sizePolicy().hasHeightForWidth()
         )
-        self.leThreshFactor.setSizePolicy(sizePolicy)
+        self.leMedianFilterSupport.setSizePolicy(sizePolicy)
 
-        self.horizontalLayout.addWidget(self.leThreshFactor)
+        self.horizontalLayout.addWidget(self.leMedianFilterSupport)
+
+        self.lbMinRelativeProminence = QLabel(Analyzer)
+        self.lbMinRelativeProminence.setObjectName("lbMinRelativeProminence")
+
+        self.horizontalLayout.addWidget(self.lbMinRelativeProminence)
+
+        self.leMinRelativeProminence = QLineEdit(Analyzer)
+        self.leMinRelativeProminence.setObjectName("leMinRelativeProminence")
+
+        self.horizontalLayout.addWidget(self.leMinRelativeProminence)
 
         self.horizontalSpacer = QSpacerItem(
             40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
@@ -181,7 +191,7 @@ class Ui_Analyzer(object):
             QCoreApplication.translate("Analyzer", "Analyzer", None)
         )
         self.pbAutoThreshold.setText(
-            QCoreApplication.translate("Analyzer", "Auto-threshold", None)
+            QCoreApplication.translate("Analyzer", "Automatic peak detection", None)
         )
         self.cbEnableEFOFiltering.setText(
             QCoreApplication.translate("Analyzer", "Filter on EFO values", None)
@@ -195,12 +205,18 @@ class Ui_Analyzer(object):
         self.checkUpperThreshold.setText(
             QCoreApplication.translate("Analyzer", "Upper bound", None)
         )
-        self.lbThreshMultFactor.setText(
-            QCoreApplication.translate(
-                "Analyzer", "Robust threshold multiplicative factor", None
-            )
+        self.lbMedianFilterSupport.setText(
+            QCoreApplication.translate("Analyzer", "Median filter support", None)
         )
-        self.leThreshFactor.setText(QCoreApplication.translate("Analyzer", "2.0", None))
+        self.leMedianFilterSupport.setText(
+            QCoreApplication.translate("Analyzer", "5", None)
+        )
+        self.lbMinRelativeProminence.setText(
+            QCoreApplication.translate("Analyzer", "Min peak relative prominence", None)
+        )
+        self.leMinRelativeProminence.setText(
+            QCoreApplication.translate("Analyzer", "0.01", None)
+        )
         self.pbUpdateViewers.setText(
             QCoreApplication.translate("Analyzer", "Filter", None)
         )

@@ -4,10 +4,15 @@ import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import ROI, AxisItem, Point, ViewBox
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
-from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
+from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
-from ..analysis import get_robust_threshold, ideal_hist_bins, prepare_histogram
+from ..analysis import (
+    find_first_peak_bounds,
+    get_robust_threshold,
+    ideal_hist_bins,
+    prepare_histogram,
+)
 from ..processor import MinFluxProcessor
 from ..state import State
 from .roi_ranges import ROIRanges
@@ -51,9 +56,13 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Set defaults
         self.ui.checkLowerThreshold.setChecked(self.state.enable_lower_threshold)
         self.ui.checkUpperThreshold.setChecked(self.state.enable_upper_threshold)
-        self.ui.leThreshFactor.setText(str(self.state.filter_thresh_factor))
-        self.ui.leThreshFactor.setValidator(
-            QDoubleValidator(bottom=0.0, top=5.0, decimals=2)
+        self.ui.leMedianFilterSupport.setText(str(self.state.median_filter_support))
+        self.ui.leMedianFilterSupport.setValidator(QIntValidator(bottom=0))
+        self.ui.leMinRelativeProminence.setText(
+            str(self.state.min_relative_peak_prominence)
+        )
+        self.ui.leMinRelativeProminence.setValidator(
+            QDoubleValidator(bottom=0.0, top=1.0, decimals=2)
         )
 
         # Update fields (before we connect signals and slots)
@@ -79,7 +88,12 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.pbReset.clicked.connect(self.reset_filters)
         self.ui.checkLowerThreshold.stateChanged.connect(self.persist_lower_threshold)
         self.ui.checkUpperThreshold.stateChanged.connect(self.persist_upper_threshold)
-        self.ui.leThreshFactor.textChanged.connect(self.persist_thresh_factor)
+        self.ui.leMedianFilterSupport.textChanged.connect(
+            self.persist_median_filter_support
+        )
+        self.ui.leMinRelativeProminence.textChanged.connect(
+            self.persist_min_relative_peak_prominence
+        )
         self.plotting_started.connect(self.disable_buttons)
         self.plotting_completed.connect(self.enable_buttons)
 
@@ -116,9 +130,14 @@ class Analyzer(QDialog, Ui_Analyzer):
             max_cfr = self.state.cfr_thresholds[1]
 
         # Calculate thresholds for EFO
-        upper_thresh_efo, lower_thresh_efo = self.calculate_thresholds(
-            self._minfluxprocessor.filtered_dataframe["efo"].values,
-            thresh_factor=self.state.filter_thresh_factor,
+        n_efo, _, b_efo, _ = prepare_histogram(
+            self._minfluxprocessor.filtered_dataframe["efo"].values
+        )
+        lower_thresh_efo, upper_thresh_efo = find_first_peak_bounds(
+            counts=n_efo,
+            bins=b_efo,
+            min_rel_prominence=self.state.min_relative_peak_prominence,
+            med_filter_support=self.state.median_filter_support,
         )
         if self.state.enable_lower_threshold:
             min_efo = lower_thresh_efo
@@ -127,9 +146,14 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.state.efo_thresholds = (min_efo, max_efo)
 
         # Calculate thresholds for CFR
-        upper_thresh_cfr, lower_thresh_cfr = self.calculate_thresholds(
-            self._minfluxprocessor.filtered_dataframe["cfr"].values,
-            thresh_factor=self.state.filter_thresh_factor,
+        n_cfr, _, b_cfr, _ = prepare_histogram(
+            self._minfluxprocessor.filtered_dataframe["cfr"].values
+        )
+        lower_thresh_cfr, upper_thresh_cfr = find_first_peak_bounds(
+            counts=n_cfr,
+            bins=b_cfr,
+            min_rel_prominence=self.state.min_relative_peak_prominence,
+            med_filter_support=self.state.median_filter_support,
         )
         if self.state.enable_lower_threshold:
             min_cfr = lower_thresh_cfr
@@ -153,13 +177,21 @@ class Analyzer(QDialog, Ui_Analyzer):
     def persist_upper_threshold(self, state):
         self.state.enable_upper_threshold = state != 0
 
-    @Slot(str, name="persist_thresh_factor")
-    def persist_thresh_factor(self, text):
+    @Slot(str, name="persist_median_filter_support")
+    def persist_median_filter_support(self, text):
         try:
-            thresh_factor = float(text)
+            median_filter_support = int(text)
         except Exception as _:
             return
-        self.state.filter_thresh_factor = thresh_factor
+        self.state.median_filter_support = median_filter_support
+
+    @Slot(str, name="persist_min_relative_peak_prominence")
+    def persist_min_relative_peak_prominence(self, text):
+        try:
+            min_relative_peak_prominence = float(text)
+        except Exception as _:
+            return
+        self.state.min_relative_peak_prominence = min_relative_peak_prominence
 
     @Slot(int, name="persist_cfr_filtering_state")
     def persist_cfr_filtering_state(self, state):
@@ -574,17 +606,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             },
         )
         plot.addItem(line)
-
-    def calculate_thresholds(self, values, thresh_factor):
-        """Calculate robust lower and upper thresholds on histogram values."""
-
-        # Calculate robust threshold
-        upper_threshold, lower_threshold, _, _ = get_robust_threshold(
-            values, factor=thresh_factor
-        )
-
-        # Return it
-        return upper_threshold, lower_threshold
 
     def shift_x_axis_origin_to_zero(self, item):
         """Set the lower range of the x axis of the passed viewbox to 0."""
