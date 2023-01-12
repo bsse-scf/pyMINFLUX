@@ -266,7 +266,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot(None, name="print_current_state")
     def print_current_state(self):
         """Print current contents of the state machine (DEBUG)."""
-        print(f"{self.state.asdict()}")
+        state_dict = self.state.asdict()
+        for s in state_dict:
+            print(f"{s}: {state_dict[s]}")
 
     @Slot(None, name="self.open_analyzer")
     def open_analyzer(self):

@@ -6,10 +6,26 @@ from ..base import Singleton
 class State(metaclass=Singleton):
     """State machine (singleton class)."""
 
+    __SLOTS__ = [
+        "default_min_loc_per_trace",
+        "min_num_loc_per_trace",
+        "efo_thresholds",
+        "cfr_thresholds",
+        "enable_filter_efo",
+        "enable_filter_cfr",
+        "enable_efo_lower_threshold",
+        "enable_efo_upper_threshold",
+        "enable_cfr_lower_threshold",
+        "enable_cfr_upper_threshold",
+        "cfr_threshold_factor",
+        "min_efo_relative_peak_prominence",
+        "median_efo_filter_support",
+    ]
+
     def __init__(self):
         """Constructor.
 
-        A sigleton object of this dataclass acts as a state machine that allows various parts of the
+        A singleton object of this dataclass acts as a state machine that allows various parts of the
         application to synchronize state among them.
         """
 
@@ -25,13 +41,18 @@ class State(metaclass=Singleton):
         self.enable_filter_efo: bool = False
         self.enable_filter_cfr: bool = False
 
-        # Robust threshold bounds
-        self.enable_lower_threshold: bool = False
-        self.enable_upper_threshold: bool = True
+        # Parameter bounds
+        self.enable_efo_lower_threshold: bool = False
+        self.enable_efo_upper_threshold: bool = True
+        self.enable_cfr_lower_threshold: bool = False
+        self.enable_cfr_upper_threshold: bool = True
 
-        # Peak detector parameters
-        self.min_relative_peak_prominence: float = 0.01
-        self.median_filter_support: int = 5
+        # CFR thresholding parameters
+        self.cfr_threshold_factor: float = 2.0
+
+        # EFO peak detector parameters
+        self.min_efo_relative_peak_prominence: float = 0.01
+        self.median_efo_filter_support: int = 5
 
     def asdict(self) -> dict:
         """Return class as dictionary."""
@@ -41,10 +62,13 @@ class State(metaclass=Singleton):
             "cfr_thresholds": self.cfr_thresholds,
             "enable_filter_efo": self.enable_filter_efo,
             "enable_filter_cfr": self.enable_filter_cfr,
-            "enable_lower_bound": self.enable_lower_threshold,
-            "enable_upper_bound": self.enable_upper_threshold,
-            "min_relative_peak_prominence": self.min_relative_peak_prominence,
-            "median_filter_support": self.median_filter_support,
+            "enable_efo_lower_threshold": self.enable_efo_lower_threshold,
+            "enable_efo_upper_threshold": self.enable_efo_upper_threshold,
+            "enable_cfr_lower_threshold": self.enable_cfr_lower_threshold,
+            "enable_cfr_upper_threshold": self.enable_cfr_upper_threshold,
+            "min_efo_relative_peak_prominence": self.min_efo_relative_peak_prominence,
+            "median_efo_filter_support": self.median_efo_filter_support,
+            "cfr_threshold_factor": self.cfr_threshold_factor
         }
 
     def reset(self):
@@ -61,7 +85,10 @@ class State(metaclass=Singleton):
         self.cfr_thresholds = None
         self.enable_filter_efo = False
         self.enable_filter_cfr = False
-        self.enable_lower_threshold = False
-        self.enable_upper_threshold = True
-        self.min_relative_peak_prominence = 0.01
-        self.median_filter_support = 5
+        self.enable_efo_lower_threshold = False
+        self.enable_efo_upper_threshold = True
+        self.enable_cfr_lower_threshold = False
+        self.enable_cfr_upper_threshold = True
+        self.min_efo_relative_peak_prominence = 0.01
+        self.median_efo_filter_support = 5
+        self.cfr_threshold_factor = 2.0
