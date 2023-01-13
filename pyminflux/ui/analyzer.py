@@ -7,12 +7,7 @@ from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
-from ..analysis import (
-    find_first_peak_bounds,
-    get_robust_threshold,
-    ideal_hist_bins,
-    prepare_histogram,
-)
+from ..analysis import find_first_peak_bounds, get_robust_threshold, prepare_histogram
 from ..processor import MinFluxProcessor
 from ..state import State
 from .roi_ranges import ROIRanges
@@ -58,7 +53,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.checkEFOUpperThreshold.setChecked(self.state.enable_efo_upper_threshold)
         self.ui.checkCFRLowerThreshold.setChecked(self.state.enable_cfr_lower_threshold)
         self.ui.checkCFRUpperThreshold.setChecked(self.state.enable_cfr_upper_threshold)
-        self.ui.leEFOMedianFilterSupport.setText(str(self.state.median_efo_filter_support))
+        self.ui.leEFOMedianFilterSupport.setText(
+            str(self.state.median_efo_filter_support)
+        )
         self.ui.leEFOMedianFilterSupport.setValidator(QIntValidator(bottom=0))
         self.ui.leEFOMinRelativeProminence.setText(
             str(self.state.min_efo_relative_peak_prominence)
@@ -81,13 +78,25 @@ class Analyzer(QDialog, Ui_Analyzer):
         """Set up signal-slot connections."""
         self.ui.pbEFORunAutoPeakDetection.clicked.connect(self.run_efo_peak_detection)
         self.ui.pbCFRRunAutoThreshold.clicked.connect(self.run_cfr_auto_threshold)
-        self.ui.pbEFORunFilter.clicked.connect(self.run_efo_filter_and_broadcast_viewers_update)
-        self.ui.pbCFRRunFilter.clicked.connect(self.run_cfr_filter_and_broadcast_viewers_update)
+        self.ui.pbEFORunFilter.clicked.connect(
+            self.run_efo_filter_and_broadcast_viewers_update
+        )
+        self.ui.pbCFRRunFilter.clicked.connect(
+            self.run_cfr_filter_and_broadcast_viewers_update
+        )
         self.ui.pbReset.clicked.connect(self.reset_filters)
-        self.ui.checkEFOLowerThreshold.stateChanged.connect(self.persist_efo_lower_threshold)
-        self.ui.checkEFOUpperThreshold.stateChanged.connect(self.persist_efo_upper_threshold)
-        self.ui.checkCFRLowerThreshold.stateChanged.connect(self.persist_cfr_lower_threshold)
-        self.ui.checkCFRUpperThreshold.stateChanged.connect(self.persist_cfr_upper_threshold)
+        self.ui.checkEFOLowerThreshold.stateChanged.connect(
+            self.persist_efo_lower_threshold
+        )
+        self.ui.checkEFOUpperThreshold.stateChanged.connect(
+            self.persist_efo_upper_threshold
+        )
+        self.ui.checkCFRLowerThreshold.stateChanged.connect(
+            self.persist_cfr_lower_threshold
+        )
+        self.ui.checkCFRUpperThreshold.stateChanged.connect(
+            self.persist_cfr_upper_threshold
+        )
         self.ui.leEFOMedianFilterSupport.textChanged.connect(
             self.persist_median_efo_filter_support
         )
@@ -168,7 +177,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Calculate thresholds for CFR
         upper_thresh_cfr, lower_thresh_cfr, _, _ = get_robust_threshold(
             self._minfluxprocessor.filtered_dataframe["cfr"].values,
-            factor=self.state.cfr_threshold_factor
+            factor=self.state.cfr_threshold_factor,
         )
         if self.state.enable_cfr_lower_threshold:
             min_cfr = lower_thresh_cfr
@@ -222,20 +231,27 @@ class Analyzer(QDialog, Ui_Analyzer):
     @Slot(name="reset_filters")
     def reset_filters(self):
         """Reset efo and cfr filters."""
+
+        # Reset filters and data
+        self._minfluxprocessor.reset()
         self.state.efo_thresholds = None
         self.state.cfr_thresholds = None
-        self.run_efo_filter_and_broadcast_viewers_update()
+
+        # Update the plots
+        self.plot()
+
+        # Signal that the external viewers should be updated
+        self.data_filters_changed.emit()
 
     @Slot(name="run_efo_filter_and_broadcast_viewers_update")
     def run_efo_filter_and_broadcast_viewers_update(self):
         """Apply the EFO filter and inform the rest of the application that the data viewers should be updated."""
 
-        # Enable the correct filter
-        self.state.enable_filter_efo = True
-        self.state.enable_filter_cfr = False
-
-        # Apply all filters
-        self._minfluxprocessor.update_filters()
+        # Apply the EFO filter if needed
+        if self.state.efo_thresholds is not None:
+            self._minfluxprocessor.apply_filter(
+                "efo", self.state.efo_thresholds[0], self.state.efo_thresholds[1]
+            )
 
         # Update the histograms
         self.plot()
@@ -247,19 +263,17 @@ class Analyzer(QDialog, Ui_Analyzer):
     def run_cfr_filter_and_broadcast_viewers_update(self):
         """Apply the CFR filter and inform the rest of the application that the data viewers should be updated."""
 
-        # Enable the correct filter
-        self.state.enable_filter_efo = False
-        self.state.enable_filter_cfr = True
-
-        # Apply all filters
-        self._minfluxprocessor.update_filters()
+        # Apply the CFR filter if needed
+        if self.state.cfr_thresholds is not None:
+            self._minfluxprocessor.apply_filter(
+                "cfr", self.state.cfr_thresholds[0], self.state.cfr_thresholds[1]
+            )
 
         # Update the histograms
         self.plot()
 
         # Signal that the external viewers should be updated
         self.data_filters_changed.emit()
-
 
     @Slot(name="disable_buttons")
     def disable_buttons(self):

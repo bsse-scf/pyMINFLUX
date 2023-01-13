@@ -11,8 +11,6 @@ class State(metaclass=Singleton):
         "min_num_loc_per_trace",
         "efo_thresholds",
         "cfr_thresholds",
-        "enable_filter_efo",
-        "enable_filter_cfr",
         "enable_efo_lower_threshold",
         "enable_efo_upper_threshold",
         "enable_cfr_lower_threshold",
@@ -37,10 +35,6 @@ class State(metaclass=Singleton):
         self.efo_thresholds: Union[None, tuple] = None
         self.cfr_thresholds: Union[None, tuple] = None
 
-        # Flags for enabling disabling filtering using thresholds on EFO and CFR value (and global switch)
-        self.enable_filter_efo: bool = False
-        self.enable_filter_cfr: bool = False
-
         # Parameter bounds
         self.enable_efo_lower_threshold: bool = False
         self.enable_efo_upper_threshold: bool = True
@@ -60,15 +54,13 @@ class State(metaclass=Singleton):
             "min_num_loc_per_trace": self.min_num_loc_per_trace,
             "efo_thresholds": self.efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
-            "enable_filter_efo": self.enable_filter_efo,
-            "enable_filter_cfr": self.enable_filter_cfr,
             "enable_efo_lower_threshold": self.enable_efo_lower_threshold,
             "enable_efo_upper_threshold": self.enable_efo_upper_threshold,
             "enable_cfr_lower_threshold": self.enable_cfr_lower_threshold,
             "enable_cfr_upper_threshold": self.enable_cfr_upper_threshold,
             "min_efo_relative_peak_prominence": self.min_efo_relative_peak_prominence,
             "median_efo_filter_support": self.median_efo_filter_support,
-            "cfr_threshold_factor": self.cfr_threshold_factor
+            "cfr_threshold_factor": self.cfr_threshold_factor,
         }
 
     def reset(self):
@@ -83,8 +75,6 @@ class State(metaclass=Singleton):
         self.min_num_loc_per_trace = 1
         self.efo_thresholds = None
         self.cfr_thresholds = None
-        self.enable_filter_efo = False
-        self.enable_filter_cfr = False
         self.enable_efo_lower_threshold = False
         self.enable_efo_upper_threshold = True
         self.enable_cfr_lower_threshold = False

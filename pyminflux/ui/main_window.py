@@ -50,19 +50,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Keep a reference to the state machine
         self.state = State()
 
+        # Read the application settings and update the state
+        app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
+        self.last_selected_path = app_settings.value("io/last_selected_path", ".")
+        self.state.min_num_loc_per_trace = int(
+            app_settings.value("options/min_num_loc_per_trace", 1)
+        )
+
         # Dialogs and widgets
         self.data_viewer = None
         self.analyzer = None
         self.plotter = None
         self.plotter3D = None
         self.options = Options()
-
-        # Read the application settings
-        app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
-        self.last_selected_path = app_settings.value("io/last_selected_path", ".")
-        self.state.min_num_loc_per_trace = int(
-            app_settings.value("options/min_num_loc_per_trace", 1)
-        )
 
         # Initialize Plotter and DataViewer
         self.plotter = Plotter()
@@ -317,7 +317,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Filter the data by x and y range and show in the dataframe viewer."""
 
         # Get the filtered dataframe subset contained in the provided x and y ranges
-        df = self.minfluxprocessor.get_filtered_dataframe_subset_by_range(
+        df = self.minfluxprocessor.get_filtered_dataframe_subset_by_xy_range(
             x_range, y_range
         )
 

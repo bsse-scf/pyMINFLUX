@@ -14,6 +14,7 @@ class MinFluxProcessor:
         "state",
         "__filtered_dataframe",
         "__filtered_stats_dataframe",
+        "__stats_to_be_recomputed",
     ]
 
     def __init__(self, minfluxreader: MinFluxReader):
@@ -23,7 +24,7 @@ class MinFluxProcessor:
         ----------
 
         minfluxreader: pyminflux.reader.MinFluxReader
-            MinFluxReader.
+            MinFluxReader object.
         """
 
         # Store a reference to the MinFluxReader
@@ -36,29 +37,66 @@ class MinFluxProcessor:
         self.__filtered_dataframe = None
         self.__filtered_stats_dataframe = None
 
-        # Apply the parameter filters
-        self._apply_thresholds()
+        # Keep track whether the statistics need to be recomputed
+        self.__stats_to_be_recomputed = False
+
+        # Apply the global filters
+        self._apply_global_filters()
 
     @property
-    def is_3d(self):
-        """Return True if the acquisition is 3D."""
+    def is_3d(self) -> bool:
+        """Return True if the acquisition is 3D.
+
+        Returns
+        -------
+
+        is_3d: bool
+            True if the acquisition is 3D, False otherwise.
+        """
         return self.__minfluxreader.is_3d
 
     @property
-    def num_values(self):
-        """Return the number of values in the (filtered) dataframe."""
-        if self.__filtered_dataframe is None:
-            return 0
-        return len(self.__filtered_dataframe.index)
+    def num_values(self) -> int:
+        """Return the number of values in the (filtered) dataframe.
+
+        Returns
+        -------
+
+        n: int
+            Number of values in the dataframe after all filters have been applied.
+        """
+        if self.__filtered_dataframe is not None:
+            return len(self.__filtered_dataframe.index)
+
+        if self.__minfluxreader.processed_dataframe is not None:
+            return len(self.__minfluxreader.processed_dataframe.index)
+
+        return 0
 
     @property
     def filtered_dataframe(self) -> Union[None, pd.DataFrame]:
-        """Return dataframe with all filters applied."""
+        """Return dataframe with all filters applied.
+
+        Returns
+        -------
+
+        filtered_dataframe: Union[None, pd.DataFrame]
+            A Pandas dataframe or None if no file was loaded.
+        """
         return self.__filtered_dataframe
 
     @property
     def filtered_dataframe_stats(self) -> Union[None, pd.DataFrame]:
-        """Return dataframe stats with all filters applied."""
+        """Return dataframe stats with all filters applied.
+
+        Returns
+        -------
+
+        filtered_dataframe_stats: Union[None, pd.DataFrame]
+            A Pandas dataframe with all data statistics or None if no file was loaded.
+        """
+        if self.__stats_to_be_recomputed:
+            self._calculate_statistics()
         return self.__filtered_stats_dataframe
 
     @classmethod
@@ -66,12 +104,41 @@ class MinFluxProcessor:
         """Return the processed dataframe columns."""
         return MinFluxReader.processed_properties()
 
-    def get_filtered_dataframe_subset_by_indices(self, indices):
-        """Return the subset of the filtered dataset defined by the passed indices."""
+    def reset(self):
+        """Drops all dynamic filters and resets the data to the processed data frame with global filters."""
+        self.__filtered_dataframe = None
+        self._apply_global_filters()
+
+    def get_filtered_dataframe_subset_by_indices(
+        self, indices
+    ) -> Union[None, pd.DataFrame]:
+        """Return view on a subset of the filtered dataset defined by the passed indices.
+
+        The underlying dataframe is not modified.
+
+        Returns
+        -------
+
+        subset: Union[None, pd.DataFrame]
+            A view on a subset of the dataframe defined by the passed indices, or None if no file was loaded.
+        """
+        if self.__filtered_dataframe is None:
+            return None
         return self.__filtered_dataframe.iloc[indices]
 
-    def get_filtered_dataframe_subset_by_range(self, x_range, y_range):
-        """Return the subset of the filtered dataset defined by the passed x and y ranges."""
+    def get_filtered_dataframe_subset_by_xy_range(
+        self, x_range, y_range
+    ) -> Union[None, pd.DataFrame]:
+        """Return a view on a subset of the filtered dataset defined by the passed x and y ranges.
+
+        The underlying dataframe is not modified.
+
+        Returns
+        -------
+
+        subset: Union[None, pd.DataFrame]
+            A view on a subset of the dataframe defined by the passed x and y ranges, or None if no file was loaded.
+        """
 
         # Make sure that the ranges are increasing
         x_min = x_range[0]
@@ -91,15 +158,77 @@ class MinFluxProcessor:
             & (self.__filtered_dataframe["y"] < y_max)
         ]
 
-    def update_filters(self):
-        """Apply filters."""
-        self._apply_thresholds()
+    def _apply_global_filters(self):
+        """Apply filters that are defined in the global application configuration."""
+
+        # Start from the filtered dataframe if it already exists,
+        # otherwise from the processed_dataframe
+        if self.__filtered_dataframe is not None:
+            df = self.__filtered_dataframe.copy()
+        else:
+            df = self.__minfluxreader.processed_dataframe.copy()
+
+        # Remove all rows where the count of TIDs is lower than self._min_trace_num
+        counts = df["tid"].value_counts(normalize=False)
+        df = df.loc[
+            df["tid"].isin(counts[counts >= self.state.min_num_loc_per_trace].index), :
+        ]
+
+        # Update the filtered dataframe
+        self.__filtered_dataframe = df
+
+        # Make sure to flag the statistics to be recomputed
+        self.__stats_to_be_recomputed = True
+
+    def apply_filter(
+        self,
+        prop: str,
+        min_threshold: Union[int, float],
+        max_threshold: Union[int, float],
+    ):
+        """Apply min and max thresholding to the given property.
+
+        Parameters
+        ----------
+
+        prop: str
+            Name of the property (dataframe column) to filter.
+
+        min_threshold: Union[int, float]
+            Minimum value for prop to retain the row.
+
+        max_threshold: Union[int, float]
+            Maximum value for prop to retain the row.
+        """
+
+        # Make sure we have valid thresholds
+        if min_threshold is None or max_threshold is None:
+            return
+
+        # Make sure to always apply the global filters
+        self._apply_global_filters()
+
+        # Now we are guaranteed to have a filtered dataframe to work with
+        df = self.__filtered_dataframe.copy()
+
+        # Apply filter
+        df = df[(df[prop] > min_threshold) & (df[prop] < max_threshold)]
+
+        # Cache the result
+        self.__filtered_dataframe = df
+
+        # Make sure to flag the statistics to be recomputed
+        self.__stats_to_be_recomputed = True
 
     def _calculate_statistics(self):
         """Calculate per-trace statistics."""
 
         # Make sure we have processed dataframe to work on
         if self.__filtered_dataframe is None:
+            return
+
+        # Only recompute statistics if needed
+        if not self.__stats_to_be_recomputed:
             return
 
         # Calculate some statistics per TID on the processed dataframe
@@ -133,47 +262,5 @@ class MinFluxProcessor:
         # Store the results
         self.__filtered_stats_dataframe = df_tid
 
-    def _apply_thresholds(self):
-        """Apply the data thresholds."""
-
-        # Always start with a copy of the raw data from the reader
-        df = self.__minfluxreader.processed_dataframe.copy()
-
-        #
-        # First, drop TIDs that have less than the minimum number of rows in the original dataframe.
-        #
-
-        # Remove all rows where the count of TIDs is lower than self._min_trace_num
-        counts = df["tid"].value_counts(normalize=False)
-        df = df.loc[
-            df["tid"].isin(counts[counts >= self.state.min_num_loc_per_trace].index), :
-        ]
-
-        #
-        # Then apply the EFO and CFR thresholds
-        #
-
-        # Apply filters?
-        if self.state.enable_filter_efo:
-            if self.state.efo_thresholds is not None:
-                df = df[
-                    (df["efo"] > self.state.efo_thresholds[0])
-                    & (df["efo"] < self.state.efo_thresholds[1])
-                ]
-
-        if self.state.enable_filter_cfr:
-            if self.state.efo_thresholds is not None:
-                df = df[
-                    (df["cfr"] > self.state.cfr_thresholds[0])
-                    & (df["cfr"] < self.state.cfr_thresholds[1])
-                ]
-
-        # Cache the result
-        self.__filtered_dataframe = df
-
-        #
-        # Finally, update the statistics
-        #
-
-        # Calculate the statistics
-        self._calculate_statistics()
+        # Flag the statistics to be computed
+        self.__stats_to_be_recomputed = False
