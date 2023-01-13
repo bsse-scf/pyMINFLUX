@@ -103,7 +103,7 @@
        <x>10</x>
        <y>10</y>
        <width>16777215</width>
-       <height>100</height>
+       <height>175</height>
       </rect>
      </property>
      <property name="sizePolicy">

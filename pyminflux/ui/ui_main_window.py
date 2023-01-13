@@ -125,7 +125,7 @@ class Ui_MainWindow(object):
         self.dockWidgetContents.setMinimumSize(QSize(0, 200))
         self.txConsole = QTextEdit(self.dockWidgetContents)
         self.txConsole.setObjectName("txConsole")
-        self.txConsole.setGeometry(QRect(10, 10, 16777215, 100))
+        self.txConsole.setGeometry(QRect(10, 10, 16777215, 175))
         sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
