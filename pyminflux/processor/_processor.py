@@ -1,7 +1,10 @@
 from typing import Optional, Tuple, Union
 
+import numpy as np
 import pandas as pd
+from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 
+from pyminflux.analysis._analysis import select_by_bgmm_fitting
 from pyminflux.reader import MinFluxReader
 from pyminflux.state import State
 
@@ -180,7 +183,7 @@ class MinFluxProcessor:
         # Make sure to flag the statistics to be recomputed
         self.__stats_to_be_recomputed = True
 
-    def apply_filter(
+    def apply_range_filter(
         self,
         prop: str,
         min_threshold: Union[int, float],

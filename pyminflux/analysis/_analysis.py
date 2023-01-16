@@ -3,6 +3,7 @@ import numpy as np
 from scipy import stats
 from scipy.ndimage import median_filter
 from scipy.signal import find_peaks
+from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 
 
 def ideal_hist_bins(values, scott=False):
@@ -157,6 +158,109 @@ def prepare_histogram(values, normalize=True, scott=False):
     if normalize:
         n = n / n.sum()
     return n, bin_edges, bin_centers, bin_width
+
+
+def select_by_gmm_fitting(values: np.ndarray, num_test_components: int = 5):
+    """Finds the first subpopulation by Gaussian Mixture Model fitting and returns the selection (as logical array).
+
+    Parameters
+    ----------
+
+    values: np.ndarray
+        Array of values to be fit.
+
+    num_test_components: int
+        Maximum number of components to test. The model with the lowest Bayesian information criterion will be chosen
+        for prediction.
+
+    Returns
+    -------
+
+    selection: logical array with True for the values that correspond to the winning subpopulation.
+    """
+
+    # Prepare the data
+    x = values.reshape(-1, 1)
+
+    # Fit 'num_components' models
+    models = []
+    for n in range(1, num_test_components + 1):
+        models.append(
+            GaussianMixture(
+                n_components=n, init_params="k-means++", random_state=42
+            ).fit(x)
+        )
+
+    # Calculate the Bayesian information criterions for all models
+    bic = [m.bic(x) for m in models]
+
+    # Pick the GMM model with the lowest Akaike information criterion
+    best_model = models[np.argmin(bic)]
+
+    # Pick the model closest to the origin
+    model_index = np.argmin(best_model.means_)
+
+    # Predict with the selected model
+    y_pred = best_model.predict(x)
+
+    # Keep only the rows that are predicted to have y_pred = model_index
+    selected = y_pred == model_index
+
+    # Return the selection
+    return selected
+
+
+def select_by_bgmm_fitting(
+    values: np.ndarray, num_test_components: int = 5, refine_by_bayes: bool = True
+):
+    """Finds the first subpopulation by (Bayesian) Gaussian Mixture Model fitting and returns the selection
+    (as logical array).
+
+    Parameters
+    ----------
+
+    values: np.ndarray
+        Array of values to be fit.
+
+    num_test_components: int
+        Maximum number of components to test. The model with the lowest Bayesian information criterion will be chosen
+        for prediction.
+
+    refine_by_bayes: bool
+        If True, use Gaussian Mixture Model to find the best number of components for a subsequent Bayesian Gaussian
+        Mixture Model fit.
+
+    Returns
+    -------
+
+    selection: logical array with True for the values that correspond to the winning subpopulation.
+    """
+
+    # Prepare the data
+    x = values.reshape(-1, 1)
+
+    # Fit the Bayesian Gaussian Mixture Model
+    model = BayesianGaussianMixture(
+        n_components=num_test_components, n_init=5, random_state=42
+    ).fit(x)
+    weights = model.weights_
+    n_clusters = (np.round(weights, 2) > 0).sum()
+    print("Estimated number of clusters: " + str(n_clusters))
+
+    # Predict with the selected model
+    y_pred = model.predict(x)
+
+    # Find the model with the mean closest to the origin
+    model_indices = []
+    for y in np.unique(y_pred):
+        model_indices.append(x[y_pred == y].mean())
+    model_index = np.argmin(model_indices)
+
+    # Keep only the rows that are predicted to have y_pred = model_index
+    selected = y_pred == model_index
+
+    # Return the selection
+    return selected
 
 
 def find_first_peak_bounds(

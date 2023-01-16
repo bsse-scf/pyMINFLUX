@@ -4,8 +4,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-import pyminflux
-from pyminflux.analysis import find_first_peak_bounds, prepare_histogram, get_robust_threshold
+from pyminflux.analysis import (
+    find_first_peak_bounds,
+    get_robust_threshold,
+    prepare_histogram,
+)
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 from pyminflux.state import State
@@ -101,10 +104,10 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
         n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5, qc=False
     )
     assert (
-            pytest.approx(lower_bound, 1e-4) == 13823.70184744663
+        pytest.approx(lower_bound, 1e-4) == 13823.70184744663
     ), "The lower bound is wrong!"
     assert (
-            pytest.approx(upper_bound, 1e-4) == 48355.829889892586
+        pytest.approx(upper_bound, 1e-4) == 48355.829889892586
     ), "The upper bound is wrong!"
 
     #
@@ -119,16 +122,14 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
     # Get robust thresholds
     upper_bound, lower_bound, med, mad = get_robust_threshold(cfr, factor=2.0)
     assert (
-            pytest.approx(lower_bound, 1e-4) == -0.015163637960486809
+        pytest.approx(lower_bound, 1e-4) == -0.015163637960486809
     ), "The lower bound is wrong!"
     assert (
-            pytest.approx(upper_bound, 1e-4) == 0.2715112942104868
+        pytest.approx(upper_bound, 1e-4) == 0.2715112942104868
     ), "The median value is wrong!"
+    assert pytest.approx(med, 1e-4) == 0.128173828125, "The lower bound is wrong!"
     assert (
-            pytest.approx(med, 1e-4) == 0.128173828125
-    ), "The lower bound is wrong!"
-    assert (
-            pytest.approx(mad, 1e-4) == 0.0716687330427434
+        pytest.approx(mad, 1e-4) == 0.0716687330427434
     ), "The median absolute difference value is wrong!"
 
     #
@@ -150,10 +151,10 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
         n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5, qc=False
     )
     assert (
-            pytest.approx(lower_bound, 1e-4) == 12410.76051302978
+        pytest.approx(lower_bound, 1e-4) == 12410.76051302978
     ), "The lower bound is wrong!"
     assert (
-            pytest.approx(upper_bound, 1e-4) == 46457.65683676113
+        pytest.approx(upper_bound, 1e-4) == 46457.65683676113
     ), "The upper bound is wrong!"
 
     #
@@ -168,16 +169,14 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
     # Get robust thresholds
     upper_bound, lower_bound, med, mad = get_robust_threshold(cfr, factor=2.0)
     assert (
-            pytest.approx(lower_bound, 1e-4) == -0.0006192938657819114
+        pytest.approx(lower_bound, 1e-4) == -0.0006192938657819114
     ), "The lower bound is wrong!"
     assert (
-            pytest.approx(upper_bound, 1e-4) == 0.7052091376157819
+        pytest.approx(upper_bound, 1e-4) == 0.7052091376157819
     ), "The median value is wrong!"
+    assert pytest.approx(med, 1e-4) == 0.352294921875, "The lower bound is wrong!"
     assert (
-            pytest.approx(med, 1e-4) == 0.352294921875
-    ), "The lower bound is wrong!"
-    assert (
-            pytest.approx(mad, 1e-4) == 0.17645710787039096
+        pytest.approx(mad, 1e-4) == 0.17645710787039096
     ), "The median absolute difference value is wrong!"
 
     #
@@ -199,10 +198,10 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
         n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5, qc=False
     )
     assert (
-            pytest.approx(lower_bound, 1e-4) == 11600.761913082442
+        pytest.approx(lower_bound, 1e-4) == 11600.761913082442
     ), "The lower bound is wrong!"
     assert (
-            pytest.approx(upper_bound, 1e-4) == 44791.84027317494
+        pytest.approx(upper_bound, 1e-4) == 44791.84027317494
     ), "The upper bound is wrong!"
 
     #
@@ -217,16 +216,14 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
     # Get robust thresholds
     upper_bound, lower_bound, med, mad = get_robust_threshold(cfr, factor=2.0)
     assert (
-            pytest.approx(lower_bound, 1e-4) == 0.45367502494940626
+        pytest.approx(lower_bound, 1e-4) == 0.45367502494940626
     ), "The lower bound is wrong!"
     assert (
-            pytest.approx(upper_bound, 1e-4) == 0.8646843500505937
+        pytest.approx(upper_bound, 1e-4) == 0.8646843500505937
     ), "The median value is wrong!"
+    assert pytest.approx(med, 1e-4) == 0.6591796875, "The lower bound is wrong!"
     assert (
-            pytest.approx(med, 1e-4) == 0.6591796875
-    ), "The lower bound is wrong!"
-    assert (
-            pytest.approx(mad, 1e-4) == 0.10275233127529688
+        pytest.approx(mad, 1e-4) == 0.10275233127529688
     ), "The median absolute difference value is wrong!"
 
 
@@ -248,31 +245,51 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Check counts for totally unfiltered data
-    assert len(reader.processed_dataframe.index) == 12580, "Wrong total number of entries"
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 12580, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 12580, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 12580
+    ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_filter("efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586)
-    assert len(reader.processed_dataframe.index) == 12580, "Wrong total number of entries"
+    processor.apply_range_filter(
+        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 11064, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 11064, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 11064
+    ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.apply_filter("cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868)
-    assert len(reader.processed_dataframe.index) == 12580, "Wrong total number of entries"
+    processor.apply_range_filter(
+        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 9760, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 9760, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 9760
+    ), "Wrong number of filtered entries"
 
     # Reset all filters and confirm counts
     processor.reset()
-    assert len(reader.processed_dataframe.index) == 12580, "Wrong total number of entries"
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 12580, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 12580, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 12580
+    ), "Wrong number of filtered entries"
 
     #
     # 2D_ValidOnly.npy
@@ -288,31 +305,51 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Check counts for totally unfiltered data
-    assert len(reader.processed_dataframe.index) == 12580, "Wrong total number of entries"
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 11903, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 11903, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 11903
+    ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_filter("efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586)
-    assert len(reader.processed_dataframe.index) == 12580, "Wrong total number of entries"
+    processor.apply_range_filter(
+        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 10468, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 10468, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 10468
+    ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.apply_filter("cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868)
-    assert len(reader.processed_dataframe.index) == 12580, "Wrong total number of entries"
+    processor.apply_range_filter(
+        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 9346, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 9346, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 9346
+    ), "Wrong number of filtered entries"
 
     # Reset all filters and confirm counts
     processor.reset()
-    assert len(reader.processed_dataframe.index) == 12580, "Wrong total number of entries"
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 11903, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 11903, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 11903
+    ), "Wrong number of filtered entries"
 
     #
     # 3D_ValidOnly.npy
@@ -328,31 +365,51 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Check counts for totally unfiltered data
-    assert len(reader.processed_dataframe.index) == 5812, "Wrong total number of entries"
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 5812, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 5812, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 5812, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 5812
+    ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_filter("efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586)
-    assert len(reader.processed_dataframe.index) == 5812, "Wrong total number of entries"
+    processor.apply_range_filter(
+        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert processor.num_values == 4654, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 4654, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 4654
+    ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.apply_filter("cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868)
-    assert len(reader.processed_dataframe.index) == 5812, "Wrong total number of entries"
+    processor.apply_range_filter(
+        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert processor.num_values == 1589, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 1589, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 1589
+    ), "Wrong number of filtered entries"
 
     # Reset all filters and confirm counts
     processor.reset()
-    assert len(reader.processed_dataframe.index) == 5812, "Wrong total number of entries"
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 5812, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 5812, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 5812, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 5812
+    ), "Wrong number of filtered entries"
 
     #
     # 3D_ValidOnly.npy
@@ -368,28 +425,48 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Check counts for totally unfiltered data
-    assert len(reader.processed_dataframe.index) == 5812, "Wrong total number of entries"
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 5812, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 5492, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 5492, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 5492
+    ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_filter("efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586)
-    assert len(reader.processed_dataframe.index) == 5812, "Wrong total number of entries"
+    processor.apply_range_filter(
+        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert processor.num_values == 4391, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 4391, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 4391
+    ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.apply_filter("cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868)
-    assert len(reader.processed_dataframe.index) == 5812, "Wrong total number of entries"
+    processor.apply_range_filter(
+        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert processor.num_values == 1521, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 1521, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 1521
+    ), "Wrong number of filtered entries"
 
     # Reset all filters and confirm counts
     processor.reset()
-    assert len(reader.processed_dataframe.index) == 5812, "Wrong total number of entries"
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 5812, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 5492, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 5492, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 5492
+    ), "Wrong number of filtered entries"
