@@ -20,6 +20,7 @@ class MinFluxReader:
         "__reps",
         "__efo_index",
         "__cfr_index",
+        "__eco_index",
         "__dcr_index",
         "__loc_index",
         "__tid_index",
@@ -77,6 +78,7 @@ class MinFluxReader:
         self.__efo_index: int = -1
         self.__cfr_index: int = -1
         self.__dcr_index: int = -1
+        self.__eco_index: int = -1
         self.__loc_index: int = -1
 
         # Constant indices
@@ -138,12 +140,12 @@ class MinFluxReader:
     @classmethod
     def processed_properties(cls):
         """Returns the properties read from the file that correspond to the processed dataframe column names."""
-        return ["tid", "tim", "x", "y", "z", "efo", "cfr", "dcr"]
+        return ["tid", "tim", "x", "y", "z", "efo", "cfr", "eco", "dcr"]
 
     @classmethod
     def raw_properties(cls):
         """Returns the properties read from the file and dynamic that correspond to the raw dataframe column names."""
-        return ["tid", "aid", "vld", "tim", "x", "y", "z", "efo", "cfr", "dcr"]
+        return ["tid", "aid", "vld", "tim", "x", "y", "z", "efo", "cfr", "eco", "dcr"]
 
     def _load(self) -> bool:
         """Load the file."""
@@ -223,6 +225,9 @@ class MinFluxReader:
             # Extract CFR
             cfr = itr["cfr"]
 
+            # Extract ECO
+            eco = itr["eco"]
+
             # Extract DCR
             dcr = itr["dcr"]
 
@@ -236,6 +241,9 @@ class MinFluxReader:
 
             # Extract CFR
             cfr = itr[:, self.__cfr_index]["cfr"]
+
+            # Extract ECO
+            eco = itr[:, self.__eco_index]["eco"]
 
             # Extract DCR
             dcr = itr[:, self.__dcr_index]["dcr"]
@@ -254,6 +262,7 @@ class MinFluxReader:
         df["tim"] = tim
         df["efo"] = efo
         df["cfr"] = cfr
+        df["eco"] = eco
         df["dcr"] = dcr
 
         return df
@@ -302,6 +311,9 @@ class MinFluxReader:
         # Get all cfrs (reshaped to drop the first dimension)
         cfr = self.__data_array["itr"]["cfr"].reshape((n_rows, 1))
 
+        # Get all ecos (reshaped to drop the first dimension)
+        eco = self.__data_array["itr"]["eco"].reshape((n_rows, 1))
+
         # Get all dcrs (reshaped to drop the first dimension)
         dcr = self.__data_array["itr"]["dcr"].reshape((n_rows, 1))
 
@@ -315,6 +327,7 @@ class MinFluxReader:
         df["z"] = loc[:, 2]
         df["efo"] = efo
         df["cfr"] = cfr
+        df["eco"] = eco
         df["dcr"] = dcr
 
         return df
@@ -329,6 +342,7 @@ class MinFluxReader:
             self.__efo_index = -1  # Not used
             self.__cfr_index = -1  # Not used
             self.__dcr_index = -1  # Not used
+            self.__eco_index = -1  # Not used
             self.__loc_index = -1  # Not used
         else:
             if self.is_3d:
@@ -336,12 +350,14 @@ class MinFluxReader:
                 self.__efo_index = 9
                 self.__cfr_index = 6
                 self.__dcr_index = 9
+                self.__eco_index = 9
                 self.__loc_index = 9
             else:
                 self.__reps = 5
                 self.__efo_index = 4
                 self.__cfr_index = 3
                 self.__dcr_index = 4
+                self.__eco_index = 4
                 self.__loc_index = 4
 
     def __repr__(self):
