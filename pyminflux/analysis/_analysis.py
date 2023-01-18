@@ -161,7 +161,7 @@ def prepare_histogram(values, normalize=True, scott=False):
 
 
 def select_by_gmm_fitting(values: np.ndarray, num_test_components: int = 5):
-    """Finds the first subpopulation by Gaussian Mixture Model fitting and returns the selection (as logical array).
+    """Finds the first subpopulation by Gaussian Mixture Model fitting.
 
     Parameters
     ----------
@@ -176,7 +176,10 @@ def select_by_gmm_fitting(values: np.ndarray, num_test_components: int = 5):
     Returns
     -------
 
-    selection: logical array with True for the values that correspond to the winning subpopulation.
+    res: Tuple
+        selected: logical array with True for the values that correspond to the winning subpopulation,
+        labels: predicted array of labels
+        means: cluster means
     """
 
     # Prepare the data
@@ -187,7 +190,10 @@ def select_by_gmm_fitting(values: np.ndarray, num_test_components: int = 5):
     for n in range(1, num_test_components + 1):
         models.append(
             GaussianMixture(
-                n_components=n, init_params="k-means++", random_state=42
+                n_components=n,
+                init_params="k-means++",
+                covariance_type="full",
+                random_state=42,
             ).fit(x)
         )
 
@@ -207,14 +213,11 @@ def select_by_gmm_fitting(values: np.ndarray, num_test_components: int = 5):
     selected = y_pred == model_index
 
     # Return the selection
-    return selected
+    return selected, y_pred, best_model.means_
 
 
-def select_by_bgmm_fitting(
-    values: np.ndarray, num_test_components: int = 5, refine_by_bayes: bool = True
-):
-    """Finds the first subpopulation by (Bayesian) Gaussian Mixture Model fitting and returns the selection
-    (as logical array).
+def select_by_bgmm_fitting(values: np.ndarray, num_test_components: int = 5):
+    """Finds the first subpopulation by (Bayesian) Gaussian Mixture Model fitting.
 
     Parameters
     ----------
@@ -226,14 +229,13 @@ def select_by_bgmm_fitting(
         Maximum number of components to test. The model with the lowest Bayesian information criterion will be chosen
         for prediction.
 
-    refine_by_bayes: bool
-        If True, use Gaussian Mixture Model to find the best number of components for a subsequent Bayesian Gaussian
-        Mixture Model fit.
-
     Returns
     -------
 
-    selection: logical array with True for the values that correspond to the winning subpopulation.
+    res: Tuple
+        selected: logical array with True for the values that correspond to the winning subpopulation,
+        labels: predicted array of labels
+        means: cluster means
     """
 
     # Prepare the data
@@ -241,26 +243,30 @@ def select_by_bgmm_fitting(
 
     # Fit the Bayesian Gaussian Mixture Model
     model = BayesianGaussianMixture(
-        n_components=num_test_components, n_init=5, random_state=42
+        n_components=num_test_components,
+        n_init=1,
+        init_params="k-means++",
+        max_iter=1000,
+        covariance_type="full",
+        random_state=42,
     ).fit(x)
-    weights = model.weights_
-    n_clusters = (np.round(weights, 2) > 0).sum()
-    print("Estimated number of clusters: " + str(n_clusters))
 
     # Predict with the selected model
     y_pred = model.predict(x)
 
-    # Find the model with the mean closest to the origin
-    model_indices = []
+    # Build the means vector
+    means = []
     for y in np.unique(y_pred):
-        model_indices.append(x[y_pred == y].mean())
-    model_index = np.argmin(model_indices)
+        means.append(x[y_pred == y].mean())
+
+    # Find the model with the mean closest to the origin
+    model_index = np.argmin(means)
 
     # Keep only the rows that are predicted to have y_pred = model_index
     selected = y_pred == model_index
 
     # Return the selection
-    return selected
+    return selected, y_pred, means
 
 
 def find_first_peak_bounds(

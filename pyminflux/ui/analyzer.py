@@ -208,7 +208,7 @@ class Analyzer(QDialog, Ui_Analyzer):
     def persist_median_efo_filter_support(self, text):
         try:
             median_efo_filter_support = int(text)
-        except Exception as _:
+        except ValueError as _:
             return
         self.state.median_efo_filter_support = median_efo_filter_support
 
@@ -216,7 +216,7 @@ class Analyzer(QDialog, Ui_Analyzer):
     def persist_min_efo_relative_peak_prominence(self, text):
         try:
             min_efo_relative_peak_prominence = float(text)
-        except Exception as _:
+        except ValueError as _:
             return
         self.state.min_efo_relative_peak_prominence = min_efo_relative_peak_prominence
 
@@ -224,7 +224,7 @@ class Analyzer(QDialog, Ui_Analyzer):
     def persist_cfr_threshold_factor(self, text):
         try:
             cfr_threshold_factor = float(text)
-        except Exception as _:
+        except ValueError as _:
             return
         self.state.cfr_threshold_factor = cfr_threshold_factor
 
@@ -501,7 +501,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         else:
             x0 = bin_edges[0]
         plot.setXRange(
-            x0 - padding, bin_edges[-1] + padding, padding=0
+            x0 - padding, bin_edges[-1] + padding
         )  # setXRange()'s padding misbehaves
         plot.setYRange(0.0, n.max())
         plot.setMenuEnabled(False)
@@ -566,7 +566,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         y_val = np.nanmean(y)
         try:
             ratio = y_val / x_val
-        except:
+        except (ZeroDivisionError, TypeError):
             ratio = 1.0
         plot.getPlotItem().getViewBox().setAspectLocked(lock=True, ratio=ratio)
 

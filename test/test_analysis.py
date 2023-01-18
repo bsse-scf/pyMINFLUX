@@ -470,3 +470,33 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert (
         len(processor.filtered_dataframe.index) == 5492
     ), "Wrong number of filtered entries"
+
+
+def test_eco_value_extraction(extract_raw_npy_data_files):
+    #
+    # 2D_ValidOnly.npy
+    #
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+
+    # Test first 15 eco values
+    eco = reader.processed_dataframe["eco"].values
+    assert np.all(
+        eco[:15]
+        == np.array(
+            [199, 266, 371, 321, 234, 306, 274, 245, 218, 259, 290, 248, 189, 155, 236]
+        )
+    )
+
+    #
+    # 3D_ValidOnly.npy
+    #
+    reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
+
+    # Test first 15 eco values
+    eco = reader.processed_dataframe["eco"].values
+    assert np.all(
+        eco[:15]
+        == np.array(
+            [200, 294, 214, 287, 228, 172, 306, 292, 198, 197, 239, 288, 323, 371, 198]
+        )
+    )
