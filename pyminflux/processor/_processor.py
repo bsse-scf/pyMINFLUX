@@ -18,6 +18,8 @@ class MinFluxProcessor:
         "__filtered_dataframe",
         "__filtered_stats_dataframe",
         "__stats_to_be_recomputed",
+        "__weighed_localizations",
+        "__weighed_localizations_to_be_recomputed",
     ]
 
     def __init__(self, minfluxreader: MinFluxReader):
@@ -40,8 +42,12 @@ class MinFluxProcessor:
         self.__filtered_dataframe = None
         self.__filtered_stats_dataframe = None
 
-        # Keep track whether the statistics need to be recomputed
+        # Cache the weighed, averaged TID positions
+        self.__weighed_localizations = None
+
+        # Keep track whether the statistics and the weighed localizations need to be recomputed
         self.__stats_to_be_recomputed = False
+        self.__weighed_localizations_to_be_recomputed = False
 
         # Apply the global filters
         self._apply_global_filters()
@@ -101,6 +107,13 @@ class MinFluxProcessor:
         if self.__stats_to_be_recomputed:
             self._calculate_statistics()
         return self.__filtered_stats_dataframe
+
+    @property
+    def weighed_localizations(self) -> Union[None, pd.DataFrame]:
+        """Return the average (x, y, z) position per TID weighed by the relative photon count."""
+        if self.__weighed_localizations_to_be_recomputed:
+            self._calculate_weighed_positions()
+        return self.__weighed_localizations
 
     @classmethod
     def processed_properties(self):
@@ -180,8 +193,9 @@ class MinFluxProcessor:
         # Update the filtered dataframe
         self.__filtered_dataframe = df
 
-        # Make sure to flag the statistics to be recomputed
+        # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
+        self.__weighed_localizations_to_be_recomputed = True
 
     def apply_range_filter(
         self,
@@ -220,8 +234,9 @@ class MinFluxProcessor:
         # Cache the result
         self.__filtered_dataframe = df
 
-        # Make sure to flag the statistics to be recomputed
+        # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
+        self.__weighed_localizations_to_be_recomputed = True
 
     def _calculate_statistics(self):
         """Calculate per-trace statistics."""
@@ -267,3 +282,45 @@ class MinFluxProcessor:
 
         # Flag the statistics to be computed
         self.__stats_to_be_recomputed = False
+
+    def _calculate_weighed_positions(self):
+        """Calculate per-trace localization weighed by relative photon count."""
+
+        # Make sure we have processed dataframe to work on
+        if self.__filtered_dataframe is None:
+            return
+
+        # Only recompute weighed localizations if needed
+        if not self.__weighed_localizations_to_be_recomputed:
+            return
+
+        # Now we are guaranteed to have a filtered dataframe to work with
+        df = self.__filtered_dataframe.copy()
+
+        # Calculate weighing factors for TIDs
+        df["eco_rel"] = df["eco"].groupby(df["tid"]).transform(lambda x: x / x.sum())
+
+        # Calculate relative contributions of (x, y, z)_i for each TID
+        df["x_rel"] = df["x"] * df["eco_rel"]
+        df["y_rel"] = df["y"] * df["eco_rel"]
+        df["z_rel"] = df["z"] * df["eco_rel"]
+
+        # Calculate the weighed localizations
+        df_grouped = df.groupby("tid")
+        tid = df_grouped["tid"].first().values
+        x_w = df_grouped["x_rel"].sum().values
+        y_w = df_grouped["y_rel"].sum().values
+        z_w = df_grouped["z_rel"].sum().values
+
+        # Prepare a dataframe with the weighed localizations
+        df_loc = pd.DataFrame(columns=["tid", "x_weighed", "y_weighed", "z_weighed"])
+        df_loc["tid"] = tid
+        df_loc["x_weighed"] = x_w
+        df_loc["y_weighed"] = y_w
+        df_loc["z_weighed"] = z_w
+
+        # Store the results
+        self.__weighed_localizations = df_loc
+
+        # Make sure to flag the derived data to be recomputed
+        self.__weighed_localizations_to_be_recomputed = False

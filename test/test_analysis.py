@@ -500,3 +500,168 @@ def test_eco_value_extraction(extract_raw_npy_data_files):
             [200, 294, 214, 287, 228, 172, 306, 292, 198, 197, 239, 288, 323, 371, 198]
         )
     )
+
+
+def test_weighed_localizations(extract_raw_npy_data_files):
+    # Initialize state
+    state = State()
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 1
+    #
+
+    # Make sure to not filter anything
+    state.min_num_loc_per_trace = 1
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Get weighed localizations
+    df_loc = processor.weighed_localizations
+
+    # Get filtered dataframe
+    df_filt = processor.filtered_dataframe
+
+    # Make sure the TIDs match
+    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+
+    # Test extracted localizations
+    for tid, frame in df_filt.groupby("tid"):
+        eco_rel = frame["eco"] / frame["eco"].sum()
+        x_w = (frame["x"] * eco_rel).sum()
+        y_w = (frame["y"] * eco_rel).sum()
+        z_w = (frame["z"] * eco_rel).sum()
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x_weighed"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y_weighed"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z_weighed"].values)
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighed x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighed y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighed z localization is wrong!"
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 4
+    #
+
+    # This time filter anything short traces
+    state.min_num_loc_per_trace = 4
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Get weighed localizations
+    df_loc = processor.weighed_localizations
+
+    # Get filtered dataframe
+    df_filt = processor.filtered_dataframe
+
+    # Make sure the TIDs match
+    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+
+    # Test extracted localizations
+    for tid, frame in df_filt.groupby("tid"):
+        eco_rel = frame["eco"] / frame["eco"].sum()
+        x_w = (frame["x"] * eco_rel).sum()
+        y_w = (frame["y"] * eco_rel).sum()
+        z_w = (frame["z"] * eco_rel).sum()
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x_weighed"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y_weighed"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z_weighed"].values)
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighed x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighed y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighed z localization is wrong!"
+
+    #
+    # 3D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 1
+    #
+
+    # Make sure to not filter anything
+    state.min_num_loc_per_trace = 1
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Get weighed localizations
+    df_loc = processor.weighed_localizations
+
+    # Get filtered dataframe
+    df_filt = processor.filtered_dataframe
+
+    # Make sure the TIDs match
+    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+
+    # Test extracted localizations
+    for tid, frame in df_filt.groupby("tid"):
+        eco_rel = frame["eco"] / frame["eco"].sum()
+        x_w = (frame["x"] * eco_rel).sum()
+        y_w = (frame["y"] * eco_rel).sum()
+        z_w = (frame["z"] * eco_rel).sum()
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x_weighed"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y_weighed"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z_weighed"].values)
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighed x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighed y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighed z localization is wrong!"
+
+    #
+    # 3D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 4
+    #
+
+    # This time filter anything short traces
+    state.min_num_loc_per_trace = 1
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Get weighed localizations
+    df_loc = processor.weighed_localizations
+
+    # Get filtered dataframe
+    df_filt = processor.filtered_dataframe
+
+    # Make sure the TIDs match
+    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+
+    # Test extracted localizations
+    for tid, frame in df_filt.groupby("tid"):
+        eco_rel = frame["eco"] / frame["eco"].sum()
+        x_w = (frame["x"] * eco_rel).sum()
+        y_w = (frame["y"] * eco_rel).sum()
+        z_w = (frame["z"] * eco_rel).sum()
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x_weighed"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y_weighed"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z_weighed"].values)
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighed x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighed y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighed z localization is wrong!"
