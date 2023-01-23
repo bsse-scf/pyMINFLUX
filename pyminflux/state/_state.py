@@ -16,6 +16,7 @@ class State(metaclass=Singleton):
         "enable_cfr_lower_threshold",
         "enable_cfr_upper_threshold",
         "cfr_threshold_factor",
+        "gmm_efo_num_clusters",
         "min_efo_relative_peak_prominence",
         "median_efo_filter_support",
     ]
@@ -44,6 +45,9 @@ class State(metaclass=Singleton):
         # CFR thresholding parameters
         self.cfr_threshold_factor: float = 2.0
 
+        # EFO GMM fitting number of clusters
+        self.gmm_efo_num_clusters: int = 5
+
         # EFO peak detector parameters
         self.min_efo_relative_peak_prominence: float = 0.01
         self.median_efo_filter_support: int = 5
@@ -58,6 +62,7 @@ class State(metaclass=Singleton):
             "enable_efo_upper_threshold": self.enable_efo_upper_threshold,
             "enable_cfr_lower_threshold": self.enable_cfr_lower_threshold,
             "enable_cfr_upper_threshold": self.enable_cfr_upper_threshold,
+            "gmm_efo_num_clusters": self.gmm_efo_num_clusters,
             "min_efo_relative_peak_prominence": self.min_efo_relative_peak_prominence,
             "median_efo_filter_support": self.median_efo_filter_support,
             "cfr_threshold_factor": self.cfr_threshold_factor,
@@ -80,5 +85,6 @@ class State(metaclass=Singleton):
         self.enable_cfr_lower_threshold = False
         self.enable_cfr_upper_threshold = True
         self.min_efo_relative_peak_prominence = 0.01
+        self.gmm_efo_num_clusters = 5
         self.median_efo_filter_support = 5
         self.cfr_threshold_factor = 2.0

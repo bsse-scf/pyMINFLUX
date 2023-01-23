@@ -6,7 +6,6 @@ import pandas as pd
 
 
 class MinFluxReader:
-
     __slots__ = [
         "__filename",
         "__valid",
@@ -378,7 +377,10 @@ class MinFluxReader:
         str_acq = "3D" if self.is_3d else "2D"
         aggr_str = "aggregated" if self.is_aggregated else "normal"
 
-        return f"File: {self.__filename.name}: {str_acq} {aggr_str} acquisition with {len(self.__data_array)} entries ({str_valid})."
+        return (
+            f"File: {self.__filename.name}: "
+            f"{str_acq} {aggr_str} acquisition with {len(self.__data_array)} entries ({str_valid})."
+        )
 
     def __str__(self):
         """Human-friendly representation of the object."""

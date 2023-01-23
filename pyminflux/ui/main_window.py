@@ -64,6 +64,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter3D = None
         self.options = Options()
 
+        # Make sure to only show the console if requested
+        self.toggle_dock_console_visibility()
+
         # Initialize Plotter and DataViewer
         self.plotter = Plotter()
         self.data_viewer = DataViewer()

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.0
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -69,7 +69,7 @@ class Ui_MainWindow(object):
         self.actionConsole = QAction(MainWindow)
         self.actionConsole.setObjectName("actionConsole")
         self.actionConsole.setCheckable(True)
-        self.actionConsole.setChecked(True)
+        self.actionConsole.setChecked(False)
         self.actionData_viewer = QAction(MainWindow)
         self.actionData_viewer.setObjectName("actionData_viewer")
         self.actionData_viewer.setCheckable(True)

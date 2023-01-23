@@ -1,10 +1,7 @@
-from typing import Optional, Tuple, Union
+from typing import Union
 
-import numpy as np
 import pandas as pd
-from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 
-from pyminflux.analysis._analysis import select_by_bgmm_fitting
 from pyminflux.reader import MinFluxReader
 from pyminflux.state import State
 
@@ -116,7 +113,7 @@ class MinFluxProcessor:
         return self.__weighed_localizations
 
     @classmethod
-    def processed_properties(self):
+    def processed_properties(cls):
         """Return the processed dataframe columns."""
         return MinFluxReader.processed_properties()
 
