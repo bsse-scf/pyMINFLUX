@@ -7,6 +7,7 @@ class State(metaclass=Singleton):
     """State machine (singleton class)."""
 
     __SLOTS__ = [
+        "plot_average_localisations",
         "default_min_loc_per_trace",
         "min_num_loc_per_trace",
         "efo_thresholds",
@@ -28,6 +29,9 @@ class State(metaclass=Singleton):
         A singleton object of this dataclass acts as a state machine that allows various parts of the
         application to synchronize state among them.
         """
+
+        # Plotting options
+        self.plot_average_localisations: bool = False
 
         # Minimum number of localizations to consider a trace
         self.default_min_loc_per_trace: int = 1
@@ -58,6 +62,7 @@ class State(metaclass=Singleton):
         """Return class as dictionary."""
         return {
             "min_num_loc_per_trace": self.min_num_loc_per_trace,
+            "plot_average_localisations": self.plot_average_localisations,
             "efo_thresholds": self.efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
             "enable_efo_lower_threshold": self.enable_efo_lower_threshold,
@@ -81,6 +86,7 @@ class State(metaclass=Singleton):
         """Reset to defaults."""
 
         self.min_num_loc_per_trace = 1
+        self.plot_average_localisations = False
         self.efo_thresholds = None
         self.cfr_thresholds = None
         self.enable_efo_lower_threshold = False

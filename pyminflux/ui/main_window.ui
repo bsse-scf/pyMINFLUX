@@ -65,6 +65,8 @@
     <addaction name="actionAnalyzer"/>
     <addaction name="action3D_Plotter"/>
     <addaction name="separator"/>
+    <addaction name="actionPlotAverageLocalizations"/>
+    <addaction name="separator"/>
     <addaction name="actionState"/>
    </widget>
    <addaction name="menuFile"/>
@@ -202,6 +204,14 @@
   <action name="actionOptions">
    <property name="text">
     <string>Options</string>
+   </property>
+  </action>
+  <action name="actionPlotAverageLocalizations">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Plot average localizations</string>
    </property>
   </action>
  </widget>

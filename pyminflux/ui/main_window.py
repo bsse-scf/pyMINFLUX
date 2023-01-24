@@ -67,6 +67,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Make sure to only show the console if requested
         self.toggle_dock_console_visibility()
 
+        # Initialize menus
+        self.initialize_menu_state()
+
         # Initialize Plotter and DataViewer
         self.plotter = Plotter()
         self.data_viewer = DataViewer()
@@ -103,6 +106,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
+        self.ui.actionPlotAverageLocalizations.changed.connect(self.toggle_plot_average_localizations)
         self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Other connections
@@ -127,10 +131,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         :return:
         """
         self.plotter.clear()
-        dataframe = self.minfluxprocessor.filtered_dataframe
-        self.plot_localizations(dataframe)
+        self.plot_localizations()
         self.data_viewer.clear()
-        print(f"Retrieved {len(dataframe.index)} events.")
+        print(f"Retrieved {len(self.minfluxprocessor.filtered_dataframe.index)} events.")
 
     def update_plots(self):
         """
@@ -198,6 +201,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Quit the application."""
         self.close()
 
+    @Slot(name="initialize_menu_state")
+    def initialize_menu_state(self):
+        """Initialize state of menu based on state properties."""
+        self.ui.actionPlotAverageLocalizations.setChecked(self.state.plot_average_localisations)
+
     @Slot(bool, name="toggle_dock_console_visibility")
     def toggle_dock_console_visibility(self):
         """Toggle the visibility of the console dock widget."""
@@ -214,6 +222,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.data_viewer.show()
             else:
                 self.data_viewer.hide()
+
+    @Slot(bool, name="toggle_plot_average_localizations")
+    def toggle_plot_average_localizations(self):
+        """Toggle the state of plot_average_localizations."""
+        if self.ui.actionPlotAverageLocalizations.isChecked():
+            self.state.plot_average_localisations = True
+        else:
+            self.state.plot_average_localisations = False
+
+        # Trigger a re-plot
+        self.plot_localizations()
 
     @Slot(None, name="select_and_open_numpy_file")
     def select_and_open_numpy_file(self):
@@ -331,18 +350,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         point_str = "event" if len(df.index) == 1 else "events"
         print(f"Selected {len(df.index)} {point_str}.")
 
-    def plot_localizations(self, dataframe=None):
+    def plot_localizations(self):
         """Plot the localizations."""
-
-        if self.minfluxprocessor is None:
-            self.plotter.remove_points()
-            return
 
         # Remove the previous plots
         self.plotter.remove_points()
 
-        if dataframe is None:
-            # Get the (potentially filtered) dataframe
+        # If there is nothing to plot, return here
+        if self.minfluxprocessor is None:
+            return
+
+        if self.state.plot_average_localisations:
+            # Get the (potentially filtered) averaged dataframe
+            dataframe = self.minfluxprocessor.weighed_localizations
+        else:
+            # Get the (potentially filtered) full dataframe
             dataframe = self.minfluxprocessor.filtered_dataframe
 
         # Always plot the (x, y) coordinates in the 2D plotter
@@ -352,8 +374,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             y=dataframe["y"],
         )
 
-        # If the dataset is 3D, also plot the coordinates in the 3D plotter.
-        if self.minfluxprocessor.is_3d:
+        # If the 3D plotter is open, also plot the coordinates in the 3D plotter.
+        if self.plotter3D is not None:
             self.plot_localizations_3d(dataframe[["x", "y", "z"]].values)
 
     def plot_localizations_3d(self, coords=None):
@@ -389,9 +411,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.minfluxprocessor is not None
                 and self.minfluxprocessor.num_values > 0
             ):
-                self.plot_localizations_3d(
-                    self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
-                )
+                if self.state.plot_average_localisations:
+                    self.plot_localizations_3d(
+                        self.minfluxprocessor.weighed_localizations[["x", "y", "z"]].values
+                    )
+                else:
+                    self.plot_localizations_3d(
+                        self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
+                    )
         self.plotter3D.show()
         self.plotter3D.activateWindow()
 

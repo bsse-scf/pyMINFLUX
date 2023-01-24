@@ -310,11 +310,11 @@ class MinFluxProcessor:
         z_w = df_grouped["z_rel"].sum().values
 
         # Prepare a dataframe with the weighed localizations
-        df_loc = pd.DataFrame(columns=["tid", "x_weighed", "y_weighed", "z_weighed"])
+        df_loc = pd.DataFrame(columns=["tid", "x", "y", "z"])
         df_loc["tid"] = tid
-        df_loc["x_weighed"] = x_w
-        df_loc["y_weighed"] = y_w
-        df_loc["z_weighed"] = z_w
+        df_loc["x"] = x_w
+        df_loc["y"] = y_w
+        df_loc["z"] = z_w
 
         # Store the results
         self.__weighed_localizations = df_loc
