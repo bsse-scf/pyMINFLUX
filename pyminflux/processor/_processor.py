@@ -123,9 +123,9 @@ class MinFluxProcessor:
         self._apply_global_filters()
 
     def get_filtered_dataframe_subset_by_indices(
-        self, indices
+        self, indices, from_weighed_locs: bool = False
     ) -> Union[None, pd.DataFrame]:
-        """Return view on a subset of the filtered dataset defined by the passed indices.
+        """Return view on a subset of the filtered dataset or the weighed localisations defined by the passed indices.
 
         The underlying dataframe is not modified.
 
@@ -135,14 +135,20 @@ class MinFluxProcessor:
         subset: Union[None, pd.DataFrame]
             A view on a subset of the dataframe defined by the passed indices, or None if no file was loaded.
         """
-        if self.__filtered_dataframe is None:
-            return None
-        return self.__filtered_dataframe.iloc[indices]
+        if from_weighed_locs:
+            if self.__weighed_localizations is None:
+                return None
+            return self.__weighed_localizations.iloc[indices]
+        else:
+            if self.__filtered_dataframe is None:
+                return None
+            return self.__filtered_dataframe.iloc[indices]
 
     def get_filtered_dataframe_subset_by_xy_range(
-        self, x_range, y_range
+        self, x_range, y_range, from_weighed_locs: bool = False
     ) -> Union[None, pd.DataFrame]:
-        """Return a view on a subset of the filtered dataset defined by the passed x and y ranges.
+        """Return a view on a subset of the filtered dataset or the weighed localisations defined by the passed
+        x and y ranges.
 
         The underlying dataframe is not modified.
 
@@ -164,12 +170,20 @@ class MinFluxProcessor:
         if y_max < y_min:
             y_max, y_min = y_min, y_max
 
-        return self.__filtered_dataframe.loc[
-            (self.__filtered_dataframe["x"] >= x_min)
-            & (self.__filtered_dataframe["x"] < x_max)
-            & (self.__filtered_dataframe["y"] >= y_min)
-            & (self.__filtered_dataframe["y"] < y_max)
-        ]
+        if from_weighed_locs:
+            return self.__weighed_localizations.loc[
+                (self.__weighed_localizations["x"] >= x_min)
+                & (self.__weighed_localizations["x"] < x_max)
+                & (self.__weighed_localizations["y"] >= y_min)
+                & (self.__weighed_localizations["y"] < y_max)
+            ]
+        else:
+            return self.__filtered_dataframe.loc[
+                (self.__filtered_dataframe["x"] >= x_min)
+                & (self.__filtered_dataframe["x"] < x_max)
+                & (self.__filtered_dataframe["y"] >= y_min)
+                & (self.__filtered_dataframe["y"] < y_max)
+            ]
 
     def _apply_global_filters(self):
         """Apply filters that are defined in the global application configuration."""

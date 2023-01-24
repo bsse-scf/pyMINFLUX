@@ -324,7 +324,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Get the filtered dataframe subset corresponding to selected indices
         df = self.minfluxprocessor.get_filtered_dataframe_subset_by_indices(
-            indices=indices
+            indices=indices,
+            from_weighed_locs=self.state.plot_average_localisations
         )
 
         # Update the dataviewer
@@ -340,7 +341,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Get the filtered dataframe subset contained in the provided x and y ranges
         df = self.minfluxprocessor.get_filtered_dataframe_subset_by_xy_range(
-            x_range, y_range
+            x_range, y_range, from_weighed_locs=self.state.plot_average_localisations
         )
 
         # Update the dataviewer
