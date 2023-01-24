@@ -244,7 +244,7 @@ def select_by_bgmm_fitting(values: np.ndarray, num_test_components: int = 5):
     # Fit the Bayesian Gaussian Mixture Model
     model = BayesianGaussianMixture(
         n_components=num_test_components,
-        n_init=1,
+        n_init=num_test_components,
         init_params="k-means++",
         max_iter=1000,
         covariance_type="full",

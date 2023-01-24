@@ -77,7 +77,7 @@ class Ui_Analyzer(object):
             self.tabFilterOptions.sizePolicy().hasHeightForWidth()
         )
         self.tabFilterOptions.setSizePolicy(sizePolicy)
-        self.tabFilterOptions.setMaximumSize(QSize(16777215, 90))
+        self.tabFilterOptions.setMaximumSize(QSize(16777215, 16777215))
         self.tab_efo_peak_detection = QWidget()
         self.tab_efo_peak_detection.setObjectName("tab_efo_peak_detection")
         sizePolicy1 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
@@ -90,7 +90,7 @@ class Ui_Analyzer(object):
         self.horizontalLayout_3 = QHBoxLayout(self.tab_efo_peak_detection)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.horizontalSpacer_7 = QSpacerItem(
-            126, 143, QSizePolicy.Expanding, QSizePolicy.Minimum
+            126, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer_7)
@@ -200,6 +200,12 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout.addItem(self.horizontalSpacer_3)
 
+        self.cbEFOUseBGMM = QCheckBox(self.tab_efo_sub_population_detection)
+        self.cbEFOUseBGMM.setObjectName("cbEFOUseBGMM")
+        self.cbEFOUseBGMM.setEnabled(True)
+
+        self.horizontalLayout.addWidget(self.cbEFOUseBGMM)
+
         self.lbEFOGMMMaxClusters = QLabel(self.tab_efo_sub_population_detection)
         self.lbEFOGMMMaxClusters.setObjectName("lbEFOGMMMaxClusters")
         sizePolicy3.setHeightForWidth(
@@ -220,19 +226,11 @@ class Ui_Analyzer(object):
 
         self.pbEFOGMMRun = QPushButton(self.tab_efo_sub_population_detection)
         self.pbEFOGMMRun.setObjectName("pbEFOGMMRun")
-        self.pbEFOGMMRun.setEnabled(False)
+        self.pbEFOGMMRun.setEnabled(True)
         sizePolicy2.setHeightForWidth(self.pbEFOGMMRun.sizePolicy().hasHeightForWidth())
         self.pbEFOGMMRun.setSizePolicy(sizePolicy2)
 
         self.horizontalLayout.addWidget(self.pbEFOGMMRun)
-
-        self.lbEFOGMMDisclaimer = QLabel(self.tab_efo_sub_population_detection)
-        self.lbEFOGMMDisclaimer.setObjectName("lbEFOGMMDisclaimer")
-        font = QFont()
-        font.setItalic(True)
-        self.lbEFOGMMDisclaimer.setFont(font)
-
-        self.horizontalLayout.addWidget(self.lbEFOGMMDisclaimer)
 
         self.horizontalSpacer_4 = QSpacerItem(
             290, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
@@ -369,13 +367,13 @@ class Ui_Analyzer(object):
             self.tabFilterOptions.indexOf(self.tab_efo_peak_detection),
             QCoreApplication.translate("Analyzer", "EFO peak detection", None),
         )
+        self.cbEFOUseBGMM.setText(
+            QCoreApplication.translate("Analyzer", "Use BGMM", None)
+        )
         self.lbEFOGMMMaxClusters.setText(
             QCoreApplication.translate("Analyzer", "Maximum number of clusters", None)
         )
         self.pbEFOGMMRun.setText(QCoreApplication.translate("Analyzer", "Detect", None))
-        self.lbEFOGMMDisclaimer.setText(
-            QCoreApplication.translate("Analyzer", "Sorry, not ready yet.", None)
-        )
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_efo_sub_population_detection),
             QCoreApplication.translate(

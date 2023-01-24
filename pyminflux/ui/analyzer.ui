@@ -28,7 +28,7 @@
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>90</height>
+       <height>16777215</height>
       </size>
      </property>
      <property name="currentIndex">
@@ -62,7 +62,7 @@
          <property name="sizeHint" stdset="0">
           <size>
            <width>126</width>
-           <height>143</height>
+           <height>20</height>
           </size>
          </property>
         </spacer>
@@ -229,6 +229,16 @@
         </spacer>
        </item>
        <item>
+        <widget class="QCheckBox" name="cbEFOUseBGMM">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Use BGMM</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="lbEFOGMMMaxClusters">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -254,7 +264,7 @@
        <item>
         <widget class="QPushButton" name="pbEFOGMMRun">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -264,18 +274,6 @@
          </property>
          <property name="text">
           <string>Detect</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="lbEFOGMMDisclaimer">
-         <property name="font">
-          <font>
-           <italic>true</italic>
-          </font>
-         </property>
-         <property name="text">
-          <string>Sorry, not ready yet.</string>
          </property>
         </widget>
        </item>
