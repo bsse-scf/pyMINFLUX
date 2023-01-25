@@ -533,9 +533,9 @@ def test_weighed_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x_weighed"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y_weighed"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z_weighed"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighed x localization is wrong!"
@@ -573,9 +573,9 @@ def test_weighed_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x_weighed"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y_weighed"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z_weighed"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighed x localization is wrong!"
@@ -613,9 +613,9 @@ def test_weighed_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x_weighed"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y_weighed"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z_weighed"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighed x localization is wrong!"
@@ -653,9 +653,9 @@ def test_weighed_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x_weighed"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y_weighed"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z_weighed"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighed x localization is wrong!"
