@@ -88,6 +88,11 @@ class Ui_MainWindow(object):
         self.actionState.setObjectName("actionState")
         self.actionOptions = QAction(MainWindow)
         self.actionOptions.setObjectName("actionOptions")
+        self.actionPlotAverageLocalizations = QAction(MainWindow)
+        self.actionPlotAverageLocalizations.setObjectName(
+            "actionPlotAverageLocalizations"
+        )
+        self.actionPlotAverageLocalizations.setCheckable(True)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -149,6 +154,8 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionAnalyzer)
         self.menuView.addAction(self.action3D_Plotter)
         self.menuView.addSeparator()
+        self.menuView.addAction(self.actionPlotAverageLocalizations)
+        self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
 
         self.retranslateUi(MainWindow)
@@ -209,6 +216,14 @@ class Ui_MainWindow(object):
         self.actionOptions.setText(
             QCoreApplication.translate("MainWindow", "Options", None)
         )
+        self.actionPlotAverageLocalizations.setText(
+            QCoreApplication.translate("MainWindow", "Plot average localizations", None)
+        )
+        # if QT_CONFIG(shortcut)
+        self.actionPlotAverageLocalizations.setShortcut(
+            QCoreApplication.translate("MainWindow", "Ctrl+A", None)
+        )
+        # endif // QT_CONFIG(shortcut)
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
 
