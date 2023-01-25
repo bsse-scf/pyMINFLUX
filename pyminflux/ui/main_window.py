@@ -106,7 +106,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
-        self.ui.actionPlotAverageLocalizations.changed.connect(self.toggle_plot_average_localizations)
+        self.ui.actionPlotAverageLocalizations.changed.connect(
+            self.toggle_plot_average_localizations
+        )
         self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Other connections
@@ -133,15 +135,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter.clear()
         self.plot_localizations()
         self.data_viewer.clear()
-        print(f"Retrieved {len(self.minfluxprocessor.filtered_dataframe.index)} events.")
-
-    def update_plots(self):
-        """
-        Update the UI after a change.
-        :return:
-        """
-        self.plotter.clear()
-        self.plot_localizations()
+        print(
+            f"Retrieved {len(self.minfluxprocessor.filtered_dataframe.index)} events."
+        )
 
     def print_to_console(self, text):
         """
@@ -204,7 +200,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot(name="initialize_menu_state")
     def initialize_menu_state(self):
         """Initialize state of menu based on state properties."""
-        self.ui.actionPlotAverageLocalizations.setChecked(self.state.plot_average_localisations)
+        self.ui.actionPlotAverageLocalizations.setChecked(
+            self.state.plot_average_localisations
+        )
 
     @Slot(bool, name="toggle_dock_console_visibility")
     def toggle_dock_console_visibility(self):
@@ -232,7 +230,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.state.plot_average_localisations = False
 
         # Trigger a re-plot
-        self.plot_localizations()
+        self.full_update_ui()
 
     @Slot(None, name="select_and_open_numpy_file")
     def select_and_open_numpy_file(self):
@@ -324,8 +322,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Get the filtered dataframe subset corresponding to selected indices
         df = self.minfluxprocessor.get_filtered_dataframe_subset_by_indices(
-            indices=indices,
-            from_weighed_locs=self.state.plot_average_localisations
+            indices=indices, from_weighed_locs=self.state.plot_average_localisations
         )
 
         # Update the dataviewer
@@ -414,7 +411,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             ):
                 if self.state.plot_average_localisations:
                     self.plot_localizations_3d(
-                        self.minfluxprocessor.weighed_localizations[["x", "y", "z"]].values
+                        self.minfluxprocessor.weighed_localizations[
+                            ["x", "y", "z"]
+                        ].values
                     )
                 else:
                     self.plot_localizations_3d(

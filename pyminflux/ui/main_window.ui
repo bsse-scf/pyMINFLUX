@@ -213,6 +213,9 @@
    <property name="text">
     <string>Plot average localizations</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
   </action>
  </widget>
  <resources/>
