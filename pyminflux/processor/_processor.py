@@ -122,12 +122,21 @@ class MinFluxProcessor:
         self.__filtered_dataframe = None
         self._apply_global_filters()
 
-    def get_filtered_dataframe_subset_by_indices(
+    def select_dataframe_by_indices(
         self, indices, from_weighed_locs: bool = False
     ) -> Union[None, pd.DataFrame]:
         """Return view on a subset of the filtered dataset or the weighed localisations defined by the passed indices.
 
         The underlying dataframe is not modified.
+
+        Parameters
+        ----------
+
+        indices: array
+            Logical array for selecting the elements to be returned.
+
+        from_weighed_locs: bool
+            If True, select from the weighed_localizations dataframe; otherwise, from the filtered_dataframe.
 
         Returns
         -------
@@ -144,13 +153,25 @@ class MinFluxProcessor:
                 return None
             return self.__filtered_dataframe.iloc[indices]
 
-    def get_filtered_dataframe_subset_by_xy_range(
+    def select_dataframe_by_xy_range(
         self, x_range, y_range, from_weighed_locs: bool = False
     ) -> Union[None, pd.DataFrame]:
         """Return a view on a subset of the filtered dataset or the weighed localisations defined by the passed
         x and y ranges.
 
         The underlying dataframe is not modified.
+
+        Parameters
+        ----------
+
+        x_range: tuple
+            Tuple containing the minimum and maximum values for the x coordinates to be selected.
+
+        y_range: tuple
+            Tuple containing the minimum and maximum values for the y coordinates to be selected.
+
+        from_weighed_locs: bool
+            If True, select from the weighed_localizations dataframe; otherwise, from the filtered_dataframe.
 
         Returns
         -------
@@ -241,6 +262,32 @@ class MinFluxProcessor:
 
         # Apply filter
         df = df[(df[prop] > min_threshold) & (df[prop] < max_threshold)]
+
+        # Cache the result
+        self.__filtered_dataframe = df
+
+        # Make sure to flag the derived data to be recomputed
+        self.__stats_to_be_recomputed = True
+        self.__weighed_localizations_to_be_recomputed = True
+
+    def apply_filter_by_indices(self, indices):
+        """Apply filter by selected indices.
+
+        Parameters
+        ----------
+
+        indices: array
+            Logical array for selecting the elements to be returned.
+        """
+
+        # Make sure to always apply the global filters
+        self._apply_global_filters()
+
+        # Now we are guaranteed to have a filtered dataframe to work with
+        df = self.__filtered_dataframe.copy()
+
+        # Extract selected indices
+        df = df.iloc[indices]
 
         # Cache the result
         self.__filtered_dataframe = df

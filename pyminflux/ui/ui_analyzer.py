@@ -130,10 +130,10 @@ class Ui_Analyzer(object):
 
         self.leEFOMedianFilterSupport = QLineEdit(self.tab_efo_peak_detection)
         self.leEFOMedianFilterSupport.setObjectName("leEFOMedianFilterSupport")
-        sizePolicy.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.leEFOMedianFilterSupport.sizePolicy().hasHeightForWidth()
         )
-        self.leEFOMedianFilterSupport.setSizePolicy(sizePolicy)
+        self.leEFOMedianFilterSupport.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_3.addWidget(self.leEFOMedianFilterSupport)
 
@@ -148,32 +148,29 @@ class Ui_Analyzer(object):
 
         self.leEFOMinRelativeProminence = QLineEdit(self.tab_efo_peak_detection)
         self.leEFOMinRelativeProminence.setObjectName("leEFOMinRelativeProminence")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        sizePolicy4.setHorizontalStretch(0)
-        sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.leEFOMinRelativeProminence.sizePolicy().hasHeightForWidth()
         )
-        self.leEFOMinRelativeProminence.setSizePolicy(sizePolicy4)
+        self.leEFOMinRelativeProminence.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_3.addWidget(self.leEFOMinRelativeProminence)
 
         self.pbEFORunAutoPeakDetection = QPushButton(self.tab_efo_peak_detection)
         self.pbEFORunAutoPeakDetection.setObjectName("pbEFORunAutoPeakDetection")
-        sizePolicy2.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.pbEFORunAutoPeakDetection.sizePolicy().hasHeightForWidth()
         )
-        self.pbEFORunAutoPeakDetection.setSizePolicy(sizePolicy2)
+        self.pbEFORunAutoPeakDetection.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_3.addWidget(self.pbEFORunAutoPeakDetection)
 
         self.pbEFORunFilter = QPushButton(self.tab_efo_peak_detection)
         self.pbEFORunFilter.setObjectName("pbEFORunFilter")
         self.pbEFORunFilter.setEnabled(True)
-        sizePolicy4.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.pbEFORunFilter.sizePolicy().hasHeightForWidth()
         )
-        self.pbEFORunFilter.setSizePolicy(sizePolicy4)
+        self.pbEFORunFilter.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_3.addWidget(self.pbEFORunFilter)
 
@@ -217,20 +214,32 @@ class Ui_Analyzer(object):
 
         self.leEFOGMMMaxClusters = QLineEdit(self.tab_efo_sub_population_detection)
         self.leEFOGMMMaxClusters.setObjectName("leEFOGMMMaxClusters")
-        sizePolicy4.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.leEFOGMMMaxClusters.sizePolicy().hasHeightForWidth()
         )
-        self.leEFOGMMMaxClusters.setSizePolicy(sizePolicy4)
+        self.leEFOGMMMaxClusters.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout.addWidget(self.leEFOGMMMaxClusters)
 
-        self.pbEFOGMMRun = QPushButton(self.tab_efo_sub_population_detection)
-        self.pbEFOGMMRun.setObjectName("pbEFOGMMRun")
-        self.pbEFOGMMRun.setEnabled(True)
-        sizePolicy2.setHeightForWidth(self.pbEFOGMMRun.sizePolicy().hasHeightForWidth())
-        self.pbEFOGMMRun.setSizePolicy(sizePolicy2)
+        self.pbEFOGMMDetect = QPushButton(self.tab_efo_sub_population_detection)
+        self.pbEFOGMMDetect.setObjectName("pbEFOGMMDetect")
+        self.pbEFOGMMDetect.setEnabled(True)
+        sizePolicy3.setHeightForWidth(
+            self.pbEFOGMMDetect.sizePolicy().hasHeightForWidth()
+        )
+        self.pbEFOGMMDetect.setSizePolicy(sizePolicy3)
 
-        self.horizontalLayout.addWidget(self.pbEFOGMMRun)
+        self.horizontalLayout.addWidget(self.pbEFOGMMDetect)
+
+        self.pbEFOGMMFilter = QPushButton(self.tab_efo_sub_population_detection)
+        self.pbEFOGMMFilter.setObjectName("pbEFOGMMFilter")
+        self.pbEFOGMMFilter.setEnabled(True)
+        sizePolicy3.setHeightForWidth(
+            self.pbEFOGMMFilter.sizePolicy().hasHeightForWidth()
+        )
+        self.pbEFOGMMFilter.setSizePolicy(sizePolicy3)
+
+        self.horizontalLayout.addWidget(self.pbEFOGMMFilter)
 
         self.horizontalSpacer_4 = QSpacerItem(
             290, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
@@ -282,28 +291,28 @@ class Ui_Analyzer(object):
 
         self.leCFRFilterThreshFactor = QLineEdit(self.tab_cfr_thresholding)
         self.leCFRFilterThreshFactor.setObjectName("leCFRFilterThreshFactor")
-        sizePolicy4.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.leCFRFilterThreshFactor.sizePolicy().hasHeightForWidth()
         )
-        self.leCFRFilterThreshFactor.setSizePolicy(sizePolicy4)
+        self.leCFRFilterThreshFactor.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_4.addWidget(self.leCFRFilterThreshFactor)
 
         self.pbCFRRunAutoThreshold = QPushButton(self.tab_cfr_thresholding)
         self.pbCFRRunAutoThreshold.setObjectName("pbCFRRunAutoThreshold")
-        sizePolicy2.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.pbCFRRunAutoThreshold.sizePolicy().hasHeightForWidth()
         )
-        self.pbCFRRunAutoThreshold.setSizePolicy(sizePolicy2)
+        self.pbCFRRunAutoThreshold.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_4.addWidget(self.pbCFRRunAutoThreshold)
 
         self.pbCFRRunFilter = QPushButton(self.tab_cfr_thresholding)
         self.pbCFRRunFilter.setObjectName("pbCFRRunFilter")
-        sizePolicy2.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.pbCFRRunFilter.sizePolicy().hasHeightForWidth()
         )
-        self.pbCFRRunFilter.setSizePolicy(sizePolicy2)
+        self.pbCFRRunFilter.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_4.addWidget(self.pbCFRRunFilter)
 
@@ -373,11 +382,16 @@ class Ui_Analyzer(object):
         self.lbEFOGMMMaxClusters.setText(
             QCoreApplication.translate("Analyzer", "Maximum number of clusters", None)
         )
-        self.pbEFOGMMRun.setText(QCoreApplication.translate("Analyzer", "Detect", None))
+        self.pbEFOGMMDetect.setText(
+            QCoreApplication.translate("Analyzer", "Detect", None)
+        )
+        self.pbEFOGMMFilter.setText(
+            QCoreApplication.translate("Analyzer", "Filter", None)
+        )
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_efo_sub_population_detection),
             QCoreApplication.translate(
-                "Analyzer", "EFO sub-population detection (display only)", None
+                "Analyzer", "EFO sub-population detection", None
             ),
         )
         self.checkCFRLowerThreshold.setText(

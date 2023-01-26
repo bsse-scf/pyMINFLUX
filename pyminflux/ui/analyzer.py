@@ -104,8 +104,11 @@ class Analyzer(QDialog, Ui_Analyzer):
                 QLineEdit, "leEFOGMMMaxClusters"
             )
         )
-        self.ref_pbEFOGMMRun = self.ref_tab_efo_sub_population_detection.findChild(
-            QPushButton, "pbEFOGMMRun"
+        self.ref_pbEFOGMMDetect = self.ref_tab_efo_sub_population_detection.findChild(
+            QPushButton, "pbEFOGMMDetect"
+        )
+        self.ref_pbEFOGMMFilter = self.ref_tab_efo_sub_population_detection.findChild(
+            QPushButton, "pbEFOGMMFilter"
         )
 
         # CFR thresholding tab and children
@@ -195,7 +198,8 @@ class Analyzer(QDialog, Ui_Analyzer):
         )
 
         # EFO sub-population detection tab
-        self.ref_pbEFOGMMRun.clicked.connect(self.run_efo_gmm_sub_population_detection)
+        self.ref_pbEFOGMMDetect.clicked.connect(self.run_efo_gmm_detect_sub_population)
+        self.ref_pbEFOGMMFilter.clicked.connect(self.run_efo_gmm_filter_sub_population)
         self.ref_leEFOGMMMaxClusters.textChanged.connect(
             self.persist_gmm_efo_num_clusters
         )
@@ -227,8 +231,8 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.roi_ranges_dialog.close()
         super().closeEvent(ev)
 
-    @Slot(name="run_efo_gmm_sub_population_detection")
-    def run_efo_gmm_sub_population_detection(self):
+    @Slot(name="run_efo_gmm_detect_sub_population")
+    def run_efo_gmm_detect_sub_population(self):
         """Run EFO (B)GMM-based sub-population detection."""
 
         # Get the EFO data
@@ -258,6 +262,37 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Apply brushes (set color of non-selected values to black)
         self.efo_cfr_scatter.setBrush(brushes)
+
+    @Slot(name="run_efo_gmm_filter_sub_population")
+    def run_efo_gmm_filter_sub_population(self):
+        """Run EFO (B)GMM-based sub-population detection and filtering."""
+
+        # Get the EFO data
+        efo = self._minfluxprocessor.filtered_dataframe["efo"].values
+        if len(efo) == 0:
+            return
+
+        # Is there data already plotted
+        if self.efo_cfr_scatter is None:
+            return
+
+        if self.state.gmm_efo_use_bayesian:
+            sel, labels, means = select_by_bgmm_fitting(
+                efo, num_test_components=self.state.gmm_efo_num_clusters
+            )
+        else:
+            sel, labels, means = select_by_gmm_fitting(
+                efo, num_test_components=self.state.gmm_efo_num_clusters
+            )
+
+        # Filter the data by the selected indices
+        self._minfluxprocessor.apply_filter_by_indices(sel)
+
+        # Update the histograms
+        self.plot()
+
+        # Signal that the external viewers should be updated
+        self.data_filters_changed.emit()
 
     @Slot(name="run_efo_peak_detection")
     def run_efo_peak_detection(self):
@@ -435,7 +470,8 @@ class Analyzer(QDialog, Ui_Analyzer):
     def disable_buttons(self):
         self.ui.pbReset.setEnabled(False)
         self.ref_pbEFORunAutoPeakDetection.setEnabled(False)
-        self.ref_pbEFOGMMRun.setEnabled(False)
+        self.ref_pbEFOGMMDetect.setEnabled(False)
+        self.ref_pbEFOGMMFilter.setEnabled(False)
         self.ref_pbCFRRunAutoThreshold.setEnabled(False)
         self.ref_pbEFORunFilter.setEnabled(False)
         self.ref_pbCFRRunFilter.setEnabled(False)
@@ -444,7 +480,8 @@ class Analyzer(QDialog, Ui_Analyzer):
     def enable_buttons(self):
         self.ui.pbReset.setEnabled(True)
         self.ref_pbEFORunAutoPeakDetection.setEnabled(True)
-        self.ref_pbEFOGMMRun.setEnabled(True)
+        self.ref_pbEFOGMMDetect.setEnabled(True)
+        self.ref_pbEFOGMMFilter.setEnabled(True)
         self.ref_pbCFRRunAutoThreshold.setEnabled(True)
         self.ref_pbEFORunFilter.setEnabled(True)
         self.ref_pbCFRRunFilter.setEnabled(True)
