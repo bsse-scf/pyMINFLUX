@@ -1,4 +1,5 @@
 from ._analysis import (
+    calculate_density_map,
     find_first_peak_bounds,
     get_robust_threshold,
     ideal_hist_bins,
