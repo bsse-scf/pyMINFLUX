@@ -288,6 +288,15 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Filter the data by the selected indices
         self._minfluxprocessor.apply_filter_by_indices(sel)
 
+        # Update the EFO thresholds
+        self.state.efo_thresholds = (
+            self.state.efo_thresholds[0],
+            self._minfluxprocessor.filtered_dataframe["efo"].max(),
+        )
+
+        # Update plot
+        self.efo_region.setRegion(self.state.efo_thresholds)
+
         # Update the histograms
         self.plot()
 
