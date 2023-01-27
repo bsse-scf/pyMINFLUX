@@ -436,3 +436,54 @@ def calculate_density_map(
 
     # Return density map
     return density
+
+
+def calculate_2d_histogram(
+    x: np.ndarray,
+    y: np.ndarray,
+    x_bin_edges: Optional[np.ndarray] = None,
+    y_bin_edges: Optional[np.ndarray] = None,
+    scott: bool = False,
+) -> np.ndarray:
+    """Create density map for 2D data.
+
+    Parameters
+    ----------
+
+    x: np.ndarray
+        1D array of X values.
+
+    y: np.ndarray
+        1D array of Y values.
+
+    x_bin_edges: np.ndarray
+        1D array of bin edge values for the X array. If omitted, it will be calculated automatically
+        (see `pyminflux.analysis.prepare_histogram`.)
+
+    y_bin_edges: np.ndarray
+        1D array of bin edge values for the X array. If omitted, it will be calculated automatically
+        (see `pyminflux.analysis.prepare_histogram`.)
+
+    scott: bool
+        Whether to use Scott's normal reference rule (if the data is normally distributed).
+        This is only used if either `x_bin_edges` or `y_bin_edges` are None.
+
+    Returns
+    -------
+
+    density: np.ndarray
+        2D density maps.
+    """
+
+    # Calculate bin edges if needed
+    if x_bin_edges is None:
+        _, x_bin_edges, _, _ = prepare_histogram(x, scott=scott)
+
+    if y_bin_edges is None:
+        _, y_bin_edges, _, _ = prepare_histogram(y, scott=scott)
+
+    # Create 2D histogram
+    histogram = np.histogram2d(y, x, bins=(y_bin_edges, x_bin_edges))
+
+    # Return histogram
+    return histogram

@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import ROI, AxisItem, Point, ViewBox
-from PySide6 import QtGui
+from PySide6 import QtCore
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
 from PySide6.QtWidgets import (
@@ -13,11 +13,13 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMenu,
     QPushButton,
+    QSizePolicy,
     QStackedWidget,
     QWidget,
 )
 
 from ..analysis import (
+    calculate_2d_histogram,
     find_first_peak_bounds,
     get_robust_threshold,
     prepare_histogram,
@@ -61,6 +63,22 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.cfr_region = None
         self.efo_cfr_roi = None
         self.efo_cfr_scatter = None
+
+        # Keep track of whether we are plotting the EFO vs. CFR scatter plot or 2D histogram
+        self.plotting_efo_cfr_scatter_plot = True
+
+        # Store the data aspect ratio
+        self.efo_padding = 0.0
+        self.cfr_padding = 0.0
+        self.efo_range = None
+        self.cfr_range = None
+        self.efo_scale = 1.0
+        self.cfr_scale = 1.0
+        self.efo_cfr_data_aspect_ratio = 1.0
+
+        # Keep track of the axis ranges
+        self.efo_cfr_x_range = None
+        self.efo_cfr_y_range = None
 
         # Keep a reference to the singleton State class
         self.state = State()
@@ -230,6 +248,139 @@ class Analyzer(QDialog, Ui_Analyzer):
         if self.roi_ranges_dialog is not None:
             self.roi_ranges_dialog.close()
         super().closeEvent(ev)
+
+    def keyPressEvent(self, ev):
+        """Key press event."""
+
+        if ev.key() == QtCore.Qt.Key_S and ev.modifiers() == QtCore.Qt.ControlModifier:
+            # If the scatter plot is already active, return
+            if self.plotting_efo_cfr_scatter_plot:
+                return
+
+            # Toggle plotting scatter plot
+            self.plotting_efo_cfr_scatter_plot = True
+
+            # Remove previous widget if it exists
+            self.delete_efo_cfr_plot_widgets()
+
+            # Now plot the scatter plot
+            self.cfr_efo_plot = self._create_scatter_plot(
+                x=self._minfluxprocessor.filtered_dataframe["efo"],
+                y=self._minfluxprocessor.filtered_dataframe["cfr"],
+                efo_padding=self.efo_padding,
+                efo_axis_range=self.efo_range,
+                cfr_padding=self.cfr_padding,
+                cfr_axis_range=self.cfr_range,
+                force_efo_min_x_range_to_zero=True,
+                force_cfr_min_x_range_to_zero=False,
+                title="CFR vs. EFO (scatter plot)",
+                x_label="EFO",
+                y_label="CFR",
+                brush=pg.mkBrush(QColor(62, 175, 118, 128)),
+                roi_color=QColor(36, 60, 253, 255),
+                thresholds_efo=self.state.efo_thresholds,
+                thresholds_cfr=self.state.cfr_thresholds,
+            )
+            self.ui.parameters_layout.addWidget(self.cfr_efo_plot)
+            self.cfr_efo_plot.show()
+
+        elif (
+            ev.key() == QtCore.Qt.Key_H and ev.modifiers() == QtCore.Qt.ControlModifier
+        ):
+            # If the 2D histogram is already active, return
+            if not self.plotting_efo_cfr_scatter_plot:
+                return
+
+            # Toggle plotting 2D histogram
+            self.plotting_efo_cfr_scatter_plot = False
+
+            # Remove previous widget if it exists
+            self.delete_efo_cfr_plot_widgets()
+
+            # Extract the bin edges
+            _, efo_bin_edges, _, _ = prepare_histogram(
+                self._minfluxprocessor.filtered_dataframe["efo"].values
+            )
+            _, cfr_bin_edges, _, _ = prepare_histogram(
+                self._minfluxprocessor.filtered_dataframe["cfr"].values
+            )
+
+            # Not plot the 2D histogram
+            self.cfr_efo_plot = self._create_2d_histogram_plot(
+                x=self._minfluxprocessor.filtered_dataframe["efo"],
+                y=self._minfluxprocessor.filtered_dataframe["cfr"],
+                efo_bin_edges=efo_bin_edges,
+                cfr_bin_edges=cfr_bin_edges,
+                efo_padding=self.efo_padding,
+                efo_axis_range=self.efo_range,
+                cfr_padding=self.cfr_padding,
+                cfr_axis_range=self.cfr_range,
+                force_efo_min_x_range_to_zero=True,
+                force_cfr_min_x_range_to_zero=False,
+                title="CFR vs. EFO (2D histogram)",
+                x_label="EFO",
+                y_label="CFR",
+                roi_color=QColor(36, 60, 253, 255),
+                thresholds_efo=self.state.efo_thresholds,
+                thresholds_cfr=self.state.cfr_thresholds,
+            )
+            self.ui.parameters_layout.addWidget(self.cfr_efo_plot)
+            self.cfr_efo_plot.show()
+
+        else:
+            ev.ignore()
+
+    def delete_efo_cfr_plot_widgets(self):
+        """Checks if the scatter-plot/2D histogram plot exists in the parameters_layout
+        and deletes it if it does."""
+
+        # Are there items already?
+        n_items = self.ui.parameters_layout.count()
+        if n_items == 0:
+            return
+
+        # Get the last widget
+        widget = self.ui.parameters_layout.itemAt(n_items - 1).widget()
+
+        # Remove it from the layout
+        self.ui.parameters_layout.removeWidget(widget)
+
+        # Delete it
+        widget.deleteLater()
+
+        # Delete ROI
+        if self.efo_cfr_roi is not None:
+            # @TODO Remove!
+            self.efo_cfr_roi.deleteLater()
+        self.efo_cfr_roi = None
+
+        # Now also delete the references
+        self.cfr_efo_plot = None
+        self.efo_cfr_scatter = None
+
+    def calculate_efo_cfr_aspect_ratio(self, efo_bin_edges, cfr_bin_edges):
+
+        # Ratio of the bin widths: this will make sure that the 2D histogram will
+        # have properly scaled pixels.
+        self.efo_scale = (efo_bin_edges[-1] - efo_bin_edges[0]) / (
+            len(efo_bin_edges) - 1
+        )
+        self.cfr_scale = (cfr_bin_edges[-1] - cfr_bin_edges[0]) / (
+            len(cfr_bin_edges) - 1
+        )
+        self.efo_cfr_data_aspect_ratio = self.cfr_scale / self.efo_scale
+
+        # Store default x and y ranges for EFO and CFR
+        self.efo_padding = 1.0 * (efo_bin_edges[1] - efo_bin_edges[0])
+        self.efo_range = (
+            efo_bin_edges[0] - self.efo_padding,
+            efo_bin_edges[-1] + self.efo_padding,
+        )
+        self.cfr_padding = 1.0 * (cfr_bin_edges[1] - cfr_bin_edges[0])
+        self.cfr_range = (
+            cfr_bin_edges[0] - self.cfr_padding,
+            cfr_bin_edges[-1] + self.cfr_padding,
+        )
 
     @Slot(name="run_efo_gmm_detect_sub_population")
     def run_efo_gmm_detect_sub_population(self):
@@ -542,14 +693,20 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.plotting_completed.emit()
             return
 
+        # Calculate the proper aspect ratio and view ranges for the relevant plots
+        n_efo, efo_bin_edges, efo_bin_centers, efo_bin_width = prepare_histogram(
+            self._minfluxprocessor.filtered_dataframe["efo"].values
+        )
+        n_cfr, cfr_bin_edges, cfr_bin_centers, cfr_bin_width = prepare_histogram(
+            self._minfluxprocessor.filtered_dataframe["cfr"].values
+        )
+        self.calculate_efo_cfr_aspect_ratio(efo_bin_edges, cfr_bin_edges)
+
         #
         # Get "efo" and "cfr" measurements, and "sx", "sy" and "sz" localization jitter
         #
 
         # "efo"
-        n_efo, efo_bin_edges, efo_bin_centers, efo_bin_width = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe["efo"].values
-        )
         if self.state.efo_thresholds is None:
             self.state.efo_thresholds = (efo_bin_edges[0], efo_bin_edges[-1])
 
@@ -558,6 +715,8 @@ class Analyzer(QDialog, Ui_Analyzer):
             efo_bin_edges,
             efo_bin_centers,
             efo_bin_width,
+            padding=self.efo_padding,
+            axis_range=self.efo_range,
             title="EFO",
             brush="b",
             fmt="{value:.0f}",
@@ -568,9 +727,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.efo_plot.show()
 
         # cfr
-        n_cfr, cfr_bin_edges, cfr_bin_centers, cfr_bin_width = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe["cfr"].values
-        )
         if self.state.cfr_thresholds is None:
             self.state.cfr_thresholds = (cfr_bin_edges[0], cfr_bin_edges[-1])
 
@@ -579,6 +735,8 @@ class Analyzer(QDialog, Ui_Analyzer):
             cfr_bin_edges,
             cfr_bin_centers,
             cfr_bin_width,
+            padding=self.cfr_padding,
+            axis_range=self.cfr_range,
             title="CFR",
             brush="r",
             fmt="{value:.2f}",
@@ -590,17 +748,44 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.cfr_plot.show()
 
         # cfr vs. efo
-        self.cfr_efo_plot = self._create_scatter_plot(
-            x=self._minfluxprocessor.filtered_dataframe["efo"],
-            y=self._minfluxprocessor.filtered_dataframe["cfr"],
-            title="CFR vs. EFO",
-            x_label="EFO",
-            y_label="CFR",
-            brush=pg.mkBrush(QColor(62, 175, 118, 128)),
-            roi_color=QColor(36, 60, 253, 255),
-            thresholds_efo=self.state.efo_thresholds,
-            thresholds_cfr=self.state.cfr_thresholds,
-        )
+        if self.plotting_efo_cfr_scatter_plot:
+            self.cfr_efo_plot = self._create_scatter_plot(
+                x=self._minfluxprocessor.filtered_dataframe["efo"],
+                y=self._minfluxprocessor.filtered_dataframe["cfr"],
+                efo_padding=self.efo_padding,
+                efo_axis_range=self.efo_range,
+                cfr_padding=self.cfr_padding,
+                cfr_axis_range=self.cfr_range,
+                force_efo_min_x_range_to_zero=True,
+                force_cfr_min_x_range_to_zero=False,
+                title="CFR vs. EFO",
+                x_label="EFO",
+                y_label="CFR",
+                brush=pg.mkBrush(QColor(62, 175, 118, 128)),
+                roi_color=QColor(36, 60, 253, 255),
+                thresholds_efo=self.state.efo_thresholds,
+                thresholds_cfr=self.state.cfr_thresholds,
+            )
+        else:
+            self.cfr_efo_plot = self._create_2d_histogram_plot(
+                x=self._minfluxprocessor.filtered_dataframe["efo"],
+                y=self._minfluxprocessor.filtered_dataframe["cfr"],
+                efo_bin_edges=efo_bin_edges,
+                cfr_bin_edges=cfr_bin_edges,
+                efo_padding=self.efo_padding,
+                efo_axis_range=self.efo_range,
+                cfr_padding=self.cfr_padding,
+                cfr_axis_range=self.cfr_range,
+                force_efo_min_x_range_to_zero=True,
+                force_cfr_min_x_range_to_zero=False,
+                title="CFR vs. EFO (density plot)",
+                x_label="EFO",
+                y_label="CFR",
+                brush=pg.mkBrush(QColor(62, 175, 118, 128)),
+                roi_color=QColor(36, 60, 253, 255),
+                thresholds_efo=self.state.efo_thresholds,
+                thresholds_cfr=self.state.cfr_thresholds,
+            )
         self.ui.parameters_layout.addWidget(self.cfr_efo_plot)
         self.cfr_efo_plot.show()
 
@@ -673,6 +858,8 @@ class Analyzer(QDialog, Ui_Analyzer):
         bin_centers: np.ndarray,
         bin_width: np.ndarray,
         *,
+        padding: Optional[float] = None,
+        axis_range: Optional[tuple] = None,
         title: str = "",
         brush: str = "b",
         fmt: str = "{value:0.2f}",
@@ -697,15 +884,18 @@ class Analyzer(QDialog, Ui_Analyzer):
         )
         plot = pg.PlotWidget(parent=self, background="w", title=title)
         plot.setMouseEnabled(x=True, y=False)
-        padding = 1.0 * (bin_edges[1] - bin_edges[0])
+        if padding is None:
+            padding = 1.0 * (bin_edges[1] - bin_edges[0])
+        if axis_range is None:
+            axis_range = (bin_edges[0], bin_edges[-1])
 
         # Range values
         if force_min_x_range_to_zero:
             x0 = 0.0
         else:
-            x0 = bin_edges[0]
+            x0 = axis_range[0]
         plot.setXRange(
-            x0 - padding, bin_edges[-1] + padding
+            x0 - padding, axis_range[1] + padding
         )  # setXRange()'s padding misbehaves
         plot.setYRange(0.0, n.max())
         plot.setMenuEnabled(False)
@@ -745,11 +935,114 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         return plot, region
 
+    def _create_2d_histogram_plot(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        efo_bin_edges: np.ndarray,
+        cfr_bin_edges: np.ndarray,
+        *,
+        efo_padding: Optional[float] = None,
+        efo_axis_range: Optional[tuple] = None,
+        cfr_padding: Optional[float] = None,
+        cfr_axis_range: Optional[tuple] = None,
+        force_efo_min_x_range_to_zero: bool = True,
+        force_cfr_min_x_range_to_zero: bool = False,
+        title: str = "",
+        x_label: str = "",
+        y_label: str = "",
+        roi_color: str = "r",
+        thresholds_efo: tuple = None,
+        thresholds_cfr: tuple = None,
+    ):
+        # Create 2D histogram plot
+        density = calculate_2d_histogram(x, y, efo_bin_edges, cfr_bin_edges)[0]
+
+        # Create plot
+        self.efo_cfr_scatter = pg.PlotItem(
+            labels={"bottom": x_label, "left": y_label}, title=title
+        )
+        view = pg.ImageView(view=self.efo_cfr_scatter)
+        view.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        cm = pg.colormap.get("viridis")
+        view.setColorMap(cm)
+        view.ui.histogram.hide()
+        view.ui.roiBtn.hide()
+        view.ui.menuBtn.hide()
+        view.setImage(
+            density,
+            pos=[efo_bin_edges[0], cfr_bin_edges[0]],
+            scale=[self.efo_scale, self.cfr_scale],
+        )
+        self.efo_cfr_scatter.setAspectLocked(True, ratio=self.efo_cfr_data_aspect_ratio)
+        self.efo_cfr_scatter.invertY(False)
+
+        # Add ROI with thresholds
+        if thresholds_efo is not None and thresholds_cfr is not None:
+            self.efo_cfr_roi = ROI(
+                pos=Point(thresholds_efo[0], thresholds_cfr[0]),
+                size=Point(
+                    thresholds_efo[1] - thresholds_efo[0],
+                    thresholds_cfr[1] - thresholds_cfr[0],
+                ),
+                pen={"color": roi_color, "width": 3},
+                hoverPen={"color": roi_color, "width": 5},
+                movable=True,
+                rotatable=False,
+                resizable=True,
+                removable=False,
+            )
+            self.efo_cfr_roi.setAcceptedMouseButtons(Qt.MouseButton.RightButton)
+            self.efo_cfr_roi.sigClicked.connect(self.roi_mouse_click_event)
+            self.efo_cfr_roi.sigRegionChanged.connect(self.roi_changed)
+            self.efo_cfr_roi.sigRegionChangeFinished.connect(self.roi_changed_finished)
+            view.getView().addItem(self.efo_cfr_roi)
+
+        # Set the efo axis range
+        if efo_padding is None:
+            efo_padding = 1.0 * (efo_bin_edges[1] - efo_bin_edges[0])
+
+        if efo_axis_range is None:
+            efo_axis_range = (efo_bin_edges[0], efo_bin_edges[-1])
+
+        # Range values
+        if force_efo_min_x_range_to_zero:
+            efo_x0 = 0.0
+        else:
+            efo_x0 = efo_axis_range[0]
+        view.getView().setXRange(
+            min=efo_x0 - efo_padding, max=efo_axis_range[1] + efo_padding
+        )
+
+        # Set the cfr axis range
+        if cfr_padding is None:
+            cfr_padding = 1.0 * (cfr_bin_edges[1] - cfr_bin_edges[0])
+
+        if cfr_axis_range is None:
+            cfr_axis_range = (cfr_bin_edges[0], cfr_bin_edges[-1])
+
+        # Range values
+        if force_cfr_min_x_range_to_zero:
+            cfr_x0 = 0.0
+        else:
+            cfr_x0 = cfr_axis_range[0]
+        view.getView().setYRange(
+            min=cfr_x0 - cfr_padding, max=cfr_axis_range[1] + cfr_padding
+        )
+
+        return view
+
     def _create_scatter_plot(
         self,
         x: np.ndarray,
         y: np.ndarray,
         *,
+        efo_padding: Optional[float] = None,
+        efo_axis_range: Optional[tuple] = None,
+        cfr_padding: Optional[float] = None,
+        cfr_axis_range: Optional[tuple] = None,
+        force_efo_min_x_range_to_zero: bool = True,
+        force_cfr_min_x_range_to_zero: bool = False,
         title: str = "",
         x_label: str = "",
         y_label: str = "",
@@ -766,14 +1059,11 @@ class Analyzer(QDialog, Ui_Analyzer):
         plot.setMenuEnabled(False)
 
         # Fix plot ratio
-        x_val = np.nanmean(x)
-        y_val = np.nanmean(y)
-        try:
-            ratio = y_val / x_val
-        except (ZeroDivisionError, TypeError):
-            ratio = 1.0
-        plot.getPlotItem().getViewBox().setAspectLocked(lock=True, ratio=ratio)
+        plot.getPlotItem().getViewBox().setAspectLocked(
+            lock=True, ratio=self.efo_cfr_data_aspect_ratio
+        )
 
+        # Create scatter plot
         self.efo_cfr_scatter = pg.ScatterPlotItem(
             size=3,
             pen=None,
@@ -805,6 +1095,38 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.efo_cfr_roi.sigClicked.connect(self.roi_mouse_click_event)
             self.efo_cfr_roi.sigRegionChanged.connect(self.roi_changed)
             self.efo_cfr_roi.sigRegionChangeFinished.connect(self.roi_changed_finished)
+
+            # Set the efo axis range
+            if efo_padding is None:
+                efo_padding = 0.0
+
+            if efo_axis_range is None:
+                efo_axis_range = (x.min(), x.max())
+
+            # Range values
+            if force_efo_min_x_range_to_zero:
+                efo_x0 = 0.0
+            else:
+                efo_x0 = efo_axis_range[0]
+            plot.getPlotItem().getViewBox().setXRange(
+                min=efo_x0 - efo_padding, max=efo_axis_range[1] + efo_padding
+            )
+
+            # Set the cfr axis range
+            if cfr_padding is None:
+                cfr_padding = 0.0
+
+            if cfr_axis_range is None:
+                cfr_axis_range = (y.min(), y.max())
+
+            # Range values
+            if force_cfr_min_x_range_to_zero:
+                cfr_x0 = 0.0
+            else:
+                cfr_x0 = cfr_axis_range[0]
+            plot.getPlotItem().getViewBox().setYRange(
+                min=cfr_x0 - cfr_padding, max=cfr_axis_range[1] + cfr_padding
+            )
 
         return plot
 
