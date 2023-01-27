@@ -135,9 +135,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter.clear()
         self.plot_localizations()
         self.data_viewer.clear()
-        print(
-            f"Retrieved {len(self.minfluxprocessor.filtered_dataframe.index)} events."
-        )
+        if self.minfluxprocessor is not None and self.minfluxprocessor.filtered_dataframe is not None:
+            print(
+                f"Retrieved {len(self.minfluxprocessor.filtered_dataframe.index)} events."
+            )
 
     def print_to_console(self, text):
         """
