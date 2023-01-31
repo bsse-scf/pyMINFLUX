@@ -66,6 +66,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Keep track of whether we are plotting the EFO vs. CFR scatter plot or 2D histogram
         self.plotting_efo_cfr_scatter_plot = True
+        self.efo_cfr_histogram_log_scale = False
 
         # Store the data aspect ratio
         self.efo_padding = 0.0
@@ -249,16 +250,29 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.roi_ranges_dialog.close()
         super().closeEvent(ev)
 
-    def keyPressEvent(self, ev):
-        """Key press event."""
+    def update_efo_cfr_plot_type(self):
+        """Toggle the efo vs. cfr plot."""
 
-        if ev.key() == QtCore.Qt.Key_S and ev.modifiers() == QtCore.Qt.ControlModifier:
-            # If the scatter plot is already active, return
-            if self.plotting_efo_cfr_scatter_plot:
-                return
+        # Set the options
+        self.plotting_efo_cfr_scatter_plot = not self.plotting_efo_cfr_scatter_plot
 
-            # Toggle plotting scatter plot
-            self.plotting_efo_cfr_scatter_plot = True
+        # Plot
+        self.update_efo_cfr_plot()
+
+    def update_efo_cfr_plot_scale(self):
+        """Toggle the efo vs. cfr plot intensity scale."""
+
+        # Set the options
+        self.efo_cfr_histogram_log_scale = not self.efo_cfr_histogram_log_scale
+
+        # Plot
+        if not self.plotting_efo_cfr_scatter_plot:
+            self.update_efo_cfr_plot()
+
+    def update_efo_cfr_plot(self):
+        """Update the efo_cfr plot."""
+        # Create it
+        if self.plotting_efo_cfr_scatter_plot:
 
             # Remove previous widget if it exists
             self.delete_efo_cfr_plot_widgets()
@@ -273,7 +287,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 cfr_axis_range=self.cfr_range,
                 force_efo_min_x_range_to_zero=True,
                 force_cfr_min_x_range_to_zero=False,
-                title="CFR vs. EFO (scatter plot)",
+                title="CFR vs. EFO",
                 x_label="EFO",
                 y_label="CFR",
                 brush=pg.mkBrush(QColor(62, 175, 118, 128)),
@@ -284,12 +298,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.ui.parameters_layout.addWidget(self.cfr_efo_plot)
             self.cfr_efo_plot.show()
 
-        elif (
-            ev.key() == QtCore.Qt.Key_H and ev.modifiers() == QtCore.Qt.ControlModifier
-        ):
-            # If the 2D histogram is already active, return
-            if not self.plotting_efo_cfr_scatter_plot:
-                return
+        else:
 
             # Toggle plotting 2D histogram
             self.plotting_efo_cfr_scatter_plot = False
@@ -317,7 +326,8 @@ class Analyzer(QDialog, Ui_Analyzer):
                 cfr_axis_range=self.cfr_range,
                 force_efo_min_x_range_to_zero=True,
                 force_cfr_min_x_range_to_zero=False,
-                title="CFR vs. EFO (2D histogram)",
+                use_log_scale=self.efo_cfr_histogram_log_scale,
+                title="CFR vs. EFO",
                 x_label="EFO",
                 y_label="CFR",
                 roi_color=QColor(36, 60, 253, 255),
@@ -327,8 +337,11 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.ui.parameters_layout.addWidget(self.cfr_efo_plot)
             self.cfr_efo_plot.show()
 
-        else:
-            ev.ignore()
+    def keyPressEvent(self, ev):
+        """Key press event."""
+
+        # Do not capture key events for now
+        ev.ignore()
 
     def delete_efo_cfr_plot_widgets(self):
         """Checks if the scatter-plot/2D histogram plot exists in the parameters_layout
@@ -350,7 +363,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Delete ROI
         if self.efo_cfr_roi is not None:
-            # @TODO Remove!
+            self.ui.parameters_layout.removeWidget(widget)
             self.efo_cfr_roi.deleteLater()
         self.efo_cfr_roi = None
 
@@ -403,6 +416,11 @@ class Analyzer(QDialog, Ui_Analyzer):
             sel, labels, means = select_by_gmm_fitting(
                 efo, num_test_components=self.state.gmm_efo_num_clusters
             )
+
+        # Make sure we have a scatter plot to update
+        if not self.plotting_efo_cfr_scatter_plot:
+            self.plotting_efo_cfr_scatter_plot = True
+            self.update_efo_cfr_plot()
 
         # Create brushes lookup table
         brushes_table = [
@@ -778,10 +796,10 @@ class Analyzer(QDialog, Ui_Analyzer):
                 cfr_axis_range=self.cfr_range,
                 force_efo_min_x_range_to_zero=True,
                 force_cfr_min_x_range_to_zero=False,
-                title="CFR vs. EFO (density plot)",
+                use_log_scale=self.efo_cfr_histogram_log_scale,
+                title="CFR vs. EFO",
                 x_label="EFO",
                 y_label="CFR",
-                brush=pg.mkBrush(QColor(62, 175, 118, 128)),
                 roi_color=QColor(36, 60, 253, 255),
                 thresholds_efo=self.state.efo_thresholds,
                 thresholds_cfr=self.state.cfr_thresholds,
@@ -948,6 +966,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         cfr_axis_range: Optional[tuple] = None,
         force_efo_min_x_range_to_zero: bool = True,
         force_cfr_min_x_range_to_zero: bool = False,
+        use_log_scale: bool = False,
         title: str = "",
         x_label: str = "",
         y_label: str = "",
@@ -958,10 +977,17 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Create 2D histogram plot
         density = calculate_2d_histogram(x, y, efo_bin_edges, cfr_bin_edges)[0]
 
+        # Apply log scale to the intensities?
+        if use_log_scale:
+            density = np.log10(1.0 + density)
+
         # Create plot
         self.efo_cfr_scatter = pg.PlotItem(
             labels={"bottom": x_label, "left": y_label}, title=title
         )
+        self.efo_cfr_scatter.setMenuEnabled(False)
+
+        # Create an ImageView
         view = pg.ImageView(view=self.efo_cfr_scatter)
         view.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         cm = pg.colormap.get("viridis")
@@ -985,6 +1011,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                     thresholds_efo[1] - thresholds_efo[0],
                     thresholds_cfr[1] - thresholds_cfr[0],
                 ),
+                parent=self.efo_cfr_scatter,
                 pen={"color": roi_color, "width": 3},
                 hoverPen={"color": roi_color, "width": 5},
                 movable=True,
@@ -1029,6 +1056,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         view.getView().setYRange(
             min=cfr_x0 - cfr_padding, max=cfr_axis_range[1] + cfr_padding
         )
+
+        # Add context menu
+        view.scene.sigMouseClicked.connect(self.efo_cfr_plot_click_event)
 
         return view
 
@@ -1128,10 +1158,12 @@ class Analyzer(QDialog, Ui_Analyzer):
                 min=cfr_x0 - cfr_padding, max=cfr_axis_range[1] + cfr_padding
             )
 
+        plot.scene().sigMouseClicked.connect(self.efo_cfr_plot_click_event)
+
         return plot
 
     def histogram_raise_context_menu(self, ev):
-        """Create a context menu on the efo vs cfr scatterplot ROI."""
+        """Create a context menu on the efo vs cfr scatter/histogram plot ROI."""
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
             shift_action = QAction("Move x axis origin to 0")
@@ -1141,9 +1173,12 @@ class Analyzer(QDialog, Ui_Analyzer):
             menu.addAction(shift_action)
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
+            ev.accept()
+        else:
+            ev.ignore()
 
     def roi_mouse_click_event(self, roi, ev):
-        """Right-click event on the efo vs cfr scatterplot ROI."""
+        """Right-click event on the efo vs cfr scatter/histogram plot ROI."""
         if ev.button() == Qt.MouseButton.RightButton and self.efo_cfr_roi.isMoving:
             # Make sure the ROI is not moving
             self.efo_cfr_roi.isMoving = False
@@ -1156,12 +1191,46 @@ class Analyzer(QDialog, Ui_Analyzer):
         else:
             ev.ignore()
 
+    def efo_cfr_plot_click_event(self, ev):
+        """Right-click event on the efo vs. cfr scatter/histogram plot."""
+        if ev.button() == Qt.MouseButton.RightButton:
+            ev.accept()
+            self.efo_cfr_plot_raise_context_menu(ev)
+        else:
+            ev.ignore()
+
     def roi_raise_context_menu(self, ev):
-        """Create a context menu on the efo vs cfr scatterplot ROI."""
+        """Create a context menu on the efo vs. cfr scatter/histogram plot ROI."""
+        ev.accept()
+        # Open context menu
         menu = QMenu()
         ranges_action = QAction("Set ROI ranges")
         ranges_action.triggered.connect(self.roi_open_ranges_dialog)
         menu.addAction(ranges_action)
+        pos = ev.screenPos()
+        menu.exec(QPoint(int(pos.x()), int(pos.y())))
+
+    def efo_cfr_plot_raise_context_menu(self, ev):
+        """Create a context menu on the efo vs cfr scatterplot ROI."""
+        ev.accept()
+        # Open context menu
+        menu = QMenu()
+        if self.plotting_efo_cfr_scatter_plot:
+            toggle_plot_type_action = QAction("Change to 2D histogram")
+        else:
+            toggle_plot_type_action = QAction("Change to scatter plot")
+        toggle_plot_type_action.triggered.connect(self.update_efo_cfr_plot_type)
+        menu.addAction(toggle_plot_type_action)
+        if not self.plotting_efo_cfr_scatter_plot:
+            menu.addSeparator()
+            if self.efo_cfr_histogram_log_scale:
+                toggle_intensity_scale_action = QAction("Switch to linear scale")
+            else:
+                toggle_intensity_scale_action = QAction("Switch to logarithmic scale")
+            toggle_intensity_scale_action.triggered.connect(
+                self.update_efo_cfr_plot_scale
+            )
+            menu.addAction(toggle_intensity_scale_action)
         pos = ev.screenPos()
         menu.exec(QPoint(int(pos.x()), int(pos.y())))
 
