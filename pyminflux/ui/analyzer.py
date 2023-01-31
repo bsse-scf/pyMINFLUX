@@ -1192,6 +1192,10 @@ class Analyzer(QDialog, Ui_Analyzer):
             ev.ignore()
 
     def efo_cfr_plot_click_event(self, ev):
+        if ev.accepted:
+            "This propagated from the ROI mouse event."
+            return
+
         """Right-click event on the efo vs. cfr scatter/histogram plot."""
         if ev.button() == Qt.MouseButton.RightButton:
             ev.accept()
@@ -1201,7 +1205,6 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     def roi_raise_context_menu(self, ev):
         """Create a context menu on the efo vs. cfr scatter/histogram plot ROI."""
-        ev.accept()
         # Open context menu
         menu = QMenu()
         ranges_action = QAction("Set ROI ranges")
@@ -1212,7 +1215,6 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     def efo_cfr_plot_raise_context_menu(self, ev):
         """Create a context menu on the efo vs cfr scatterplot ROI."""
-        ev.accept()
         # Open context menu
         menu = QMenu()
         if self.plotting_efo_cfr_scatter_plot:
