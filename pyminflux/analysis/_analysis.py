@@ -5,6 +5,7 @@ import numpy as np
 from scipy import stats
 from scipy.ndimage import median_filter
 from scipy.signal import find_peaks
+from scipy.spatial.distance import cdist
 from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 
 
@@ -185,7 +186,10 @@ def select_by_gmm_fitting(values: np.ndarray, num_test_components: int = 5):
     """
 
     # Prepare the data
-    x = values.reshape(-1, 1)
+    if values.ndim == 1:
+        values = values.reshape(-1, 1)
+    if values.shape[0] == 1 and values.shape[1] > 1:
+        values = values.T
 
     # Fit 'num_components' models
     models = []
@@ -196,20 +200,23 @@ def select_by_gmm_fitting(values: np.ndarray, num_test_components: int = 5):
                 init_params="k-means++",
                 covariance_type="full",
                 random_state=42,
-            ).fit(x)
+            ).fit(values)
         )
 
     # Calculate the Bayesian information criterions for all models
-    bic = [m.bic(x) for m in models]
+    bic = [m.bic(values) for m in models]
 
     # Pick the GMM model with the lowest Akaike information criterion
     best_model = models[np.argmin(bic)]
 
+    # Origin
+    origin = np.min(values, axis=0).reshape(1, values.shape[1])
+
     # Pick the model closest to the origin
-    model_index = np.argmin(best_model.means_)
+    model_index = np.argmin(cdist(origin, best_model.means_))
 
     # Predict with the selected model
-    y_pred = best_model.predict(x)
+    y_pred = best_model.predict(values)
 
     # Keep only the rows that are predicted to have y_pred = model_index
     selected = y_pred == model_index
@@ -241,7 +248,10 @@ def select_by_bgmm_fitting(values: np.ndarray, num_test_components: int = 5):
     """
 
     # Prepare the data
-    x = values.reshape(-1, 1)
+    if values.ndim == 1:
+        values = values.reshape(-1, 1)
+    if values.shape[0] == 1 and values.shape[1] > 1:
+        values = values.T
 
     # Fit the Bayesian Gaussian Mixture Model
     model = BayesianGaussianMixture(
@@ -251,18 +261,22 @@ def select_by_bgmm_fitting(values: np.ndarray, num_test_components: int = 5):
         max_iter=1000,
         covariance_type="full",
         random_state=42,
-    ).fit(x)
+    ).fit(values)
 
     # Predict with the selected model
-    y_pred = model.predict(x)
+    y_pred = model.predict(values)
 
     # Build the means vector
-    means = []
-    for y in np.unique(y_pred):
-        means.append(x[y_pred == y].mean())
+    labels = np.unique(y_pred)
+    means = np.zeros((len(labels), values.shape[1]))
+    for i, y in enumerate(labels):
+        means[i, :] = values[y_pred == y, :].mean(axis=0)
 
-    # Find the model with the mean closest to the origin
-    model_index = np.argmin(means)
+    # Origin
+    origin = np.min(values, axis=0).reshape(1, values.shape[1])
+
+    # Pick the model closest to the origin
+    model_index = np.argmin(cdist(origin, means))
 
     # Keep only the rows that are predicted to have y_pred = model_index
     selected = y_pred == model_index

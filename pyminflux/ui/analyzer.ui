@@ -229,6 +229,13 @@
         </spacer>
        </item>
        <item>
+        <widget class="QCheckBox" name="cbEFOIncludeCFR">
+         <property name="text">
+          <string>Include CFR</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="cbEFOUseBGMM">
          <property name="enabled">
           <bool>true</bool>

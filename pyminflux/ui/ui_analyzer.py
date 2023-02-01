@@ -197,6 +197,11 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout.addItem(self.horizontalSpacer_3)
 
+        self.cbEFOIncludeCFR = QCheckBox(self.tab_efo_sub_population_detection)
+        self.cbEFOIncludeCFR.setObjectName("cbEFOIncludeCFR")
+
+        self.horizontalLayout.addWidget(self.cbEFOIncludeCFR)
+
         self.cbEFOUseBGMM = QCheckBox(self.tab_efo_sub_population_detection)
         self.cbEFOUseBGMM.setObjectName("cbEFOUseBGMM")
         self.cbEFOUseBGMM.setEnabled(True)
@@ -375,6 +380,9 @@ class Ui_Analyzer(object):
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_efo_peak_detection),
             QCoreApplication.translate("Analyzer", "EFO peak detection", None),
+        )
+        self.cbEFOIncludeCFR.setText(
+            QCoreApplication.translate("Analyzer", "Include CFR", None)
         )
         self.cbEFOUseBGMM.setText(
             QCoreApplication.translate("Analyzer", "Use BGMM", None)

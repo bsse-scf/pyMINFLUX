@@ -6,15 +6,10 @@ from pyqtgraph import ROI, AxisItem, Point, ViewBox
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
 from PySide6.QtWidgets import (
-    QCheckBox,
     QDialog,
     QLabel,
-    QLineEdit,
     QMenu,
-    QPushButton,
     QSizePolicy,
-    QStackedWidget,
-    QWidget,
 )
 
 from ..analysis import (
@@ -83,107 +78,34 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.state = State()
 
         #
-        # Store direct references to relevant widgets
-        #
-        tab_widget = self.ui.tabFilterOptions.findChild(
-            QStackedWidget, "qt_tabwidget_stackedwidget"
-        )
-
-        # EFO peak detection tab and children
-        self.ref_tab_efo_peak_detection = tab_widget.findChild(
-            QWidget, "tab_efo_peak_detection"
-        )
-        self.ref_checkEFOLowerThreshold = self.ref_tab_efo_peak_detection.findChild(
-            QCheckBox, "checkEFOLowerThreshold"
-        )
-        self.ref_checkEFOUpperThreshold = self.ref_tab_efo_peak_detection.findChild(
-            QCheckBox, "checkEFOUpperThreshold"
-        )
-        self.ref_leEFOMedianFilterSupport = self.ref_tab_efo_peak_detection.findChild(
-            QLineEdit, "leEFOMedianFilterSupport"
-        )
-        self.ref_leEFOMinRelativeProminence = self.ref_tab_efo_peak_detection.findChild(
-            QLineEdit, "leEFOMinRelativeProminence"
-        )
-        self.ref_pbEFORunAutoPeakDetection = self.ref_tab_efo_peak_detection.findChild(
-            QPushButton, "pbEFORunAutoPeakDetection"
-        )
-        self.ref_pbEFORunFilter = self.ref_tab_efo_peak_detection.findChild(
-            QPushButton, "pbEFORunFilter"
-        )
-
-        # EFO sub-population detection tab and children
-        self.ref_tab_efo_sub_population_detection = tab_widget.findChild(
-            QWidget, "tab_efo_sub_population_detection"
-        )
-        self.ref_leEFOGMMMaxClusters = (
-            self.ref_tab_efo_sub_population_detection.findChild(
-                QLineEdit, "leEFOGMMMaxClusters"
-            )
-        )
-        self.ref_pbEFOGMMDetect = self.ref_tab_efo_sub_population_detection.findChild(
-            QPushButton, "pbEFOGMMDetect"
-        )
-        self.ref_pbEFOGMMFilter = self.ref_tab_efo_sub_population_detection.findChild(
-            QPushButton, "pbEFOGMMFilter"
-        )
-
-        # CFR thresholding tab and children
-        self.ref_tab_cfr_thresholding = tab_widget.findChild(
-            QWidget, "tab_cfr_thresholding"
-        )
-        self.ref_checkCFRLowerThreshold = self.ref_tab_cfr_thresholding.findChild(
-            QCheckBox, "checkCFRLowerThreshold"
-        )
-        self.ref_checkCFRUpperThreshold = self.ref_tab_cfr_thresholding.findChild(
-            QCheckBox, "checkCFRUpperThreshold"
-        )
-        self.ref_leCFRFilterThreshFactor = self.ref_tab_cfr_thresholding.findChild(
-            QLineEdit, "leCFRFilterThreshFactor"
-        )
-        self.ref_pbCFRRunAutoThreshold = self.ref_tab_cfr_thresholding.findChild(
-            QPushButton, "pbCFRRunAutoThreshold"
-        )
-        self.ref_pbCFRRunFilter = self.ref_tab_cfr_thresholding.findChild(
-            QPushButton, "pbCFRRunFilter"
-        )
-
-        #
         # Set defaults
         #
 
         # EFO peak detection tab
-        self.ref_checkEFOLowerThreshold.setChecked(
-            self.state.enable_efo_lower_threshold
-        )
-        self.ref_checkEFOUpperThreshold.setChecked(
-            self.state.enable_efo_upper_threshold
-        )
-        self.ref_leEFOMedianFilterSupport.setText(
+        self.ui.checkEFOLowerThreshold.setChecked(self.state.enable_efo_lower_threshold)
+        self.ui.checkEFOUpperThreshold.setChecked(self.state.enable_efo_upper_threshold)
+        self.ui.leEFOMedianFilterSupport.setText(
             str(self.state.median_efo_filter_support)
         )
-        self.ref_leEFOMedianFilterSupport.setValidator(QIntValidator(bottom=0))
-        self.ref_leEFOMinRelativeProminence.setText(
+        self.ui.leEFOMedianFilterSupport.setValidator(QIntValidator(bottom=0))
+        self.ui.leEFOMinRelativeProminence.setText(
             str(self.state.min_efo_relative_peak_prominence)
         )
-        self.ref_leEFOMinRelativeProminence.setValidator(
+        self.ui.leEFOMinRelativeProminence.setValidator(
             QDoubleValidator(bottom=0.0, top=1.0, decimals=6)
         )
 
         # EFO sub-population detection tab
-        self.ref_leEFOGMMMaxClusters.setText(str(self.state.gmm_efo_num_clusters))
-        self.ref_leEFOGMMMaxClusters.setValidator(QIntValidator(bottom=1))
+        self.ui.leEFOGMMMaxClusters.setText(str(self.state.gmm_efo_num_clusters))
+        self.ui.leEFOGMMMaxClusters.setValidator(QIntValidator(bottom=1))
         self.ui.cbEFOUseBGMM.setChecked(self.state.gmm_efo_use_bayesian)
+        self.ui.cbEFOIncludeCFR.setChecked(self.state.gmm_include_cfr)
 
         # CFR filtering tab
-        self.ref_checkCFRLowerThreshold.setChecked(
-            self.state.enable_cfr_lower_threshold
-        )
-        self.ref_checkCFRUpperThreshold.setChecked(
-            self.state.enable_cfr_upper_threshold
-        )
-        self.ref_leCFRFilterThreshFactor.setText(str(self.state.cfr_threshold_factor))
-        self.ref_leCFRFilterThreshFactor.setValidator(
+        self.ui.checkCFRLowerThreshold.setChecked(self.state.enable_cfr_lower_threshold)
+        self.ui.checkCFRUpperThreshold.setChecked(self.state.enable_cfr_upper_threshold)
+        self.ui.leCFRFilterThreshFactor.setText(str(self.state.cfr_threshold_factor))
+        self.ui.leCFRFilterThreshFactor.setValidator(
             QDoubleValidator(bottom=0.0, top=5.0, decimals=2)
         )
 
@@ -197,43 +119,44 @@ class Analyzer(QDialog, Ui_Analyzer):
         """Set up signal-slot connections."""
 
         # EFO peak detection tab
-        self.ref_pbEFORunAutoPeakDetection.clicked.connect(self.run_efo_peak_detection)
-        self.ref_checkEFOLowerThreshold.stateChanged.connect(
+        self.ui.pbEFORunAutoPeakDetection.clicked.connect(self.run_efo_peak_detection)
+        self.ui.checkEFOLowerThreshold.stateChanged.connect(
             self.persist_efo_lower_threshold
         )
-        self.ref_checkEFOUpperThreshold.stateChanged.connect(
+        self.ui.checkEFOUpperThreshold.stateChanged.connect(
             self.persist_efo_upper_threshold
         )
-        self.ref_pbEFORunFilter.clicked.connect(
+        self.ui.pbEFORunFilter.clicked.connect(
             self.run_efo_filter_and_broadcast_viewers_update
         )
-        self.ref_leEFOMedianFilterSupport.textChanged.connect(
+        self.ui.leEFOMedianFilterSupport.textChanged.connect(
             self.persist_median_efo_filter_support
         )
-        self.ref_leEFOMinRelativeProminence.textChanged.connect(
+        self.ui.leEFOMinRelativeProminence.textChanged.connect(
             self.persist_min_efo_relative_peak_prominence
         )
 
         # EFO sub-population detection tab
-        self.ref_pbEFOGMMDetect.clicked.connect(self.run_efo_gmm_detect_sub_population)
-        self.ref_pbEFOGMMFilter.clicked.connect(self.run_efo_gmm_filter_sub_population)
-        self.ref_leEFOGMMMaxClusters.textChanged.connect(
+        self.ui.pbEFOGMMDetect.clicked.connect(self.run_efo_gmm_detect_sub_population)
+        self.ui.pbEFOGMMFilter.clicked.connect(self.run_efo_gmm_filter_sub_population)
+        self.ui.leEFOGMMMaxClusters.textChanged.connect(
             self.persist_gmm_efo_num_clusters
         )
         self.ui.cbEFOUseBGMM.stateChanged.connect(self.persist_gmm_efo_use_bayesian)
+        self.ui.cbEFOIncludeCFR.stateChanged.connect(self.persist_gmm_include_cfr)
 
         # CFR filtering tab
-        self.ref_pbCFRRunFilter.clicked.connect(
+        self.ui.pbCFRRunFilter.clicked.connect(
             self.run_cfr_filter_and_broadcast_viewers_update
         )
-        self.ref_checkCFRLowerThreshold.stateChanged.connect(
+        self.ui.checkCFRLowerThreshold.stateChanged.connect(
             self.persist_cfr_lower_threshold
         )
-        self.ref_checkCFRUpperThreshold.stateChanged.connect(
+        self.ui.checkCFRUpperThreshold.stateChanged.connect(
             self.persist_cfr_upper_threshold
         )
-        self.ref_pbCFRRunAutoThreshold.clicked.connect(self.run_cfr_auto_threshold)
-        self.ref_leCFRFilterThreshFactor.textChanged.connect(
+        self.ui.pbCFRRunAutoThreshold.clicked.connect(self.run_cfr_auto_threshold)
+        self.ui.leCFRFilterThreshFactor.textChanged.connect(
             self.persist_cfr_threshold_factor
         )
 
@@ -382,8 +305,11 @@ class Analyzer(QDialog, Ui_Analyzer):
     def run_efo_gmm_detect_sub_population(self):
         """Run EFO (B)GMM-based sub-population detection."""
 
-        # Get the EFO data
-        efo = self._minfluxprocessor.filtered_dataframe["efo"].values
+        # Get the data
+        if self.state.gmm_include_cfr:
+            efo = self._minfluxprocessor.filtered_dataframe[["efo", "cfr"]].values
+        else:
+            efo = self._minfluxprocessor.filtered_dataframe["efo"].values
         if len(efo) == 0:
             return
 
@@ -419,8 +345,11 @@ class Analyzer(QDialog, Ui_Analyzer):
     def run_efo_gmm_filter_sub_population(self):
         """Run EFO (B)GMM-based sub-population detection and filtering."""
 
-        # Get the EFO data
-        efo = self._minfluxprocessor.filtered_dataframe["efo"].values
+        # Get the data
+        if self.state.gmm_include_cfr:
+            efo = self._minfluxprocessor.filtered_dataframe[["efo", "cfr"]].values
+        else:
+            efo = self._minfluxprocessor.filtered_dataframe["efo"].values
         if len(efo) == 0:
             return
 
@@ -532,6 +461,10 @@ class Analyzer(QDialog, Ui_Analyzer):
     def persist_gmm_efo_use_bayesian(self, state):
         self.state.gmm_efo_use_bayesian = state != 0
 
+    @Slot(int, name="persist_gmm_include_cfr")
+    def persist_gmm_include_cfr(self, state):
+        self.state.gmm_include_cfr = state != 0
+
     @Slot(int, name="persist_cfr_lower_threshold")
     def persist_cfr_lower_threshold(self, state):
         self.state.enable_cfr_lower_threshold = state != 0
@@ -630,22 +563,22 @@ class Analyzer(QDialog, Ui_Analyzer):
     @Slot(name="disable_buttons")
     def disable_buttons(self):
         self.ui.pbReset.setEnabled(False)
-        self.ref_pbEFORunAutoPeakDetection.setEnabled(False)
-        self.ref_pbEFOGMMDetect.setEnabled(False)
-        self.ref_pbEFOGMMFilter.setEnabled(False)
-        self.ref_pbCFRRunAutoThreshold.setEnabled(False)
-        self.ref_pbEFORunFilter.setEnabled(False)
-        self.ref_pbCFRRunFilter.setEnabled(False)
+        self.ui.pbEFORunAutoPeakDetection.setEnabled(False)
+        self.ui.pbEFOGMMDetect.setEnabled(False)
+        self.ui.pbEFOGMMFilter.setEnabled(False)
+        self.ui.pbCFRRunAutoThreshold.setEnabled(False)
+        self.ui.pbEFORunFilter.setEnabled(False)
+        self.ui.pbCFRRunFilter.setEnabled(False)
 
     @Slot(name="enable_buttons")
     def enable_buttons(self):
         self.ui.pbReset.setEnabled(True)
-        self.ref_pbEFORunAutoPeakDetection.setEnabled(True)
-        self.ref_pbEFOGMMDetect.setEnabled(True)
-        self.ref_pbEFOGMMFilter.setEnabled(True)
-        self.ref_pbCFRRunAutoThreshold.setEnabled(True)
-        self.ref_pbEFORunFilter.setEnabled(True)
-        self.ref_pbCFRRunFilter.setEnabled(True)
+        self.ui.pbEFORunAutoPeakDetection.setEnabled(True)
+        self.ui.pbEFOGMMDetect.setEnabled(True)
+        self.ui.pbEFOGMMFilter.setEnabled(True)
+        self.ui.pbCFRRunAutoThreshold.setEnabled(True)
+        self.ui.pbEFORunFilter.setEnabled(True)
+        self.ui.pbCFRRunFilter.setEnabled(True)
 
     def plot(self):
         """Plot histograms."""
