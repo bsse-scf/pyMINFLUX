@@ -877,7 +877,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Apply log scale to the intensities?
         if use_log_scale:
-            density = np.log10(1.0 + density)
+            density = np.log(1.0 + density)
 
         # Create plot
         self.efo_cfr_scatter = pg.PlotItem(
@@ -888,7 +888,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Create an ImageView
         view = pg.ImageView(view=self.efo_cfr_scatter)
         view.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        cm = pg.colormap.get("viridis")
+        cm = pg.colormap.get("CET-L17")
         view.setColorMap(cm)
         view.ui.histogram.hide()
         view.ui.roiBtn.hide()
