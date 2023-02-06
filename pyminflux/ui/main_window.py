@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 
+from pyqtgraph import ViewBox
 from PySide6 import QtGui
 from PySide6.QtCore import QSettings, Slot
 from PySide6.QtGui import QIcon
@@ -15,6 +16,7 @@ __APP_NAME__ = "pyMinFlux"
 import pyminflux.resources
 from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
+from pyminflux.ui.data_inspector import DataInspector
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.options import Options
@@ -65,6 +67,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.analyzer = None
         self.plotter = None
         self.plotter3D = None
+        self.data_inspector = None
         self.options = Options()
 
         # Make sure to only show the console if requested
@@ -108,6 +111,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
+        self.ui.actionData_Inspector.triggered.connect(self.open_data_inspector)
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
         self.ui.actionPlotAverageLocalizations.changed.connect(
             self.toggle_plot_average_localizations
@@ -128,10 +132,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
         self.ui.actionAnalyzer.setEnabled(True)
+        self.ui.actionData_Inspector.setEnabled(True)
 
     def disable_ui_components_on_closed_data(self):
         """Disable UI components."""
         self.ui.actionAnalyzer.setEnabled(False)
+        self.ui.actionData_Inspector.setEnabled(False)
 
     def full_update_ui(self):
         """
@@ -187,6 +193,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.options is not None:
                 self.options.close()
                 self.options = None
+
+            if self.data_inspector is not None:
+                self.data_inspector.close()
+                self.data_inspector = None
 
             # Store the application settings
             if self.last_selected_path != "":
@@ -287,8 +297,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.plotter3D.close()
                 self.plotter3D = None
 
+            # Close the Data Inspactor
+            if self.data_inspector is not None:
+                self.data_inspector.close()
+                self.data_inspector = None
+
             # Update the ui
             self.full_update_ui()
+
+            # Make sure to autoupdate the axis (on load only)
+            self.plotter.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
 
             # Enable selected ui components
             self.enable_ui_components_on_loaded_data()
@@ -306,6 +324,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.analyzer is None:
             self.analyzer = Analyzer(self.minfluxprocessor)
             self.analyzer.data_filters_changed.connect(self.full_update_ui)
+            if self.data_inspector is not None:
+                self.analyzer.data_filters_changed.connect(
+                    self.data_inspector.plot_selected_params
+                )
             self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
@@ -431,6 +453,20 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                     )
         self.plotter3D.show()
         self.plotter3D.activateWindow()
+
+    @Slot(None, name="open_data_inspector")
+    def open_data_inspector(self):
+        """Open Data Inspector."""
+
+        """Initialize and open the analyzer."""
+        if self.data_inspector is None:
+            self.data_inspector = DataInspector(self.minfluxprocessor, parent=self)
+            if self.analyzer is not None:
+                self.analyzer.data_filters_changed.connect(
+                    self.data_inspector.plot_selected_params
+                )
+        self.data_inspector.show()
+        self.data_inspector.activateWindow()
 
     def show_processed_dataframe(self, dataframe=None):
         """
