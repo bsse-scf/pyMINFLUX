@@ -8,6 +8,7 @@ class State(metaclass=Singleton):
 
     __SLOTS__ = [
         "plot_average_localisations",
+        "color_code_locs_by_tid",
         "default_min_loc_per_trace",
         "min_num_loc_per_trace",
         "efo_thresholds",
@@ -33,6 +34,7 @@ class State(metaclass=Singleton):
 
         # Plotting options
         self.plot_average_localisations: bool = False
+        self.color_code_locs_by_tid: bool = False
 
         # Minimum number of localizations to consider a trace
         self.default_min_loc_per_trace: int = 1
@@ -65,6 +67,7 @@ class State(metaclass=Singleton):
         return {
             "min_num_loc_per_trace": self.min_num_loc_per_trace,
             "plot_average_localisations": self.plot_average_localisations,
+            "color_code_locs_by_tid": self.color_code_locs_by_tid,
             "efo_thresholds": self.efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
             "enable_efo_lower_threshold": self.enable_efo_lower_threshold,
@@ -90,6 +93,7 @@ class State(metaclass=Singleton):
 
         self.min_num_loc_per_trace = 1
         self.plot_average_localisations = False
+        self.color_code_locs_by_tid = False
         self.efo_thresholds = None
         self.cfr_thresholds = None
         self.enable_efo_lower_threshold = False

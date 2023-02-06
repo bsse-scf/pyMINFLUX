@@ -42,6 +42,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QDialog,
     QGridLayout,
     QHBoxLayout,
@@ -58,14 +59,9 @@ class Ui_Options(object):
     def setupUi(self, Options):
         if not Options.objectName():
             Options.setObjectName("Options")
-        Options.resize(419, 136)
+        Options.resize(419, 135)
         self.gridLayout = QGridLayout(Options)
         self.gridLayout.setObjectName("gridLayout")
-        self.pbSetDefault = QPushButton(Options)
-        self.pbSetDefault.setObjectName("pbSetDefault")
-
-        self.gridLayout.addWidget(self.pbSetDefault, 3, 0, 1, 1)
-
         self.lbInfo = QLabel(Options)
         self.lbInfo.setObjectName("lbInfo")
         font = QFont()
@@ -78,7 +74,12 @@ class Ui_Options(object):
             20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
         )
 
-        self.gridLayout.addItem(self.verticalSpacer, 2, 0, 1, 1)
+        self.gridLayout.addItem(self.verticalSpacer, 3, 0, 1, 1)
+
+        self.pbSetDefault = QPushButton(Options)
+        self.pbSetDefault.setObjectName("pbSetDefault")
+
+        self.gridLayout.addWidget(self.pbSetDefault, 4, 0, 1, 1)
 
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
@@ -100,6 +101,11 @@ class Ui_Options(object):
 
         self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 1)
 
+        self.cbColorLocsByTID = QCheckBox(Options)
+        self.cbColorLocsByTID.setObjectName("cbColorLocsByTID")
+
+        self.gridLayout.addWidget(self.cbColorLocsByTID, 2, 0, 1, 1)
+
         self.retranslateUi(Options)
 
         QMetaObject.connectSlotsByName(Options)
@@ -108,9 +114,6 @@ class Ui_Options(object):
 
     def retranslateUi(self, Options):
         Options.setWindowTitle(QCoreApplication.translate("Options", "Options", None))
-        self.pbSetDefault.setText(
-            QCoreApplication.translate("Options", "Set as new default", None)
-        )
         self.lbInfo.setText(
             QCoreApplication.translate(
                 "Options",
@@ -118,9 +121,17 @@ class Ui_Options(object):
                 None,
             )
         )
+        self.pbSetDefault.setText(
+            QCoreApplication.translate("Options", "Set as new default", None)
+        )
         self.lbMinTIDNum.setText(
             QCoreApplication.translate(
                 "Options", "Minimum number of trace localizations", None
+            )
+        )
+        self.cbColorLocsByTID.setText(
+            QCoreApplication.translate(
+                "Options", "Color-code localizations by TID in main plotter", None
             )
         )
 

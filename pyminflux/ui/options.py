@@ -10,7 +10,8 @@ from .ui_options import Ui_Options
 class Options(QDialog, Ui_Options):
 
     # Signal that the options have changed
-    options_changed = Signal(name="options_changed")
+    min_num_loc_per_trace_option_changed = Signal(name="min_num_loc_per_trace_option_changed")
+    color_code_locs_by_tid_option_changed = Signal(name="color_code_locs_by_tid_option_changed")
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -28,6 +29,7 @@ class Options(QDialog, Ui_Options):
         # Set defaults
         self.ui.leMinTIDNum.setText(str(self.state.min_num_loc_per_trace))
         self.ui.leMinTIDNum.setValidator(QIntValidator(bottom=0))
+        self.ui.cbColorLocsByTID.setChecked(self.state.color_code_locs_by_tid)
 
         # Set signal-slot connections
         self.setup_conn()
@@ -36,6 +38,7 @@ class Options(QDialog, Ui_Options):
         """Set up signal-slot connections."""
         self.ui.leMinTIDNum.textChanged.connect(self.persist_min_num_loc_per_trace)
         self.ui.pbSetDefault.clicked.connect(self.set_as_new_default)
+        self.ui.cbColorLocsByTID.stateChanged.connect(self.persist_color_code_locs_by_tid)
 
     @Slot(str, name="persist_thresh_factor")
     def persist_min_num_loc_per_trace(self, text):
@@ -45,6 +48,16 @@ class Options(QDialog, Ui_Options):
             return
         self.state.min_num_loc_per_trace = min_num_loc_per_trace
 
+        # Signal the change
+        self.min_num_loc_per_trace_option_changed.emit()
+
+    @Slot(str, name="persist_color_code_locs_by_tid")
+    def persist_color_code_locs_by_tid(self, state):
+        self.state.color_code_locs_by_tid = state != 0
+
+        # Signal the change
+        self.color_code_locs_by_tid_option_changed.emit()
+
     @Slot(str, name="set_as_new_default")
     def set_as_new_default(self, text):
         """Persist current selection as new default options."""
@@ -53,4 +66,7 @@ class Options(QDialog, Ui_Options):
         app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
         app_settings.setValue(
             "options/min_num_loc_per_trace", str(self.state.min_num_loc_per_trace)
+        )
+        app_settings.setValue(
+            "options/color_code_locs_by_tid", self.state.color_code_locs_by_tid
         )

@@ -5,12 +5,7 @@ import pyqtgraph as pg
 from pyqtgraph import ROI, AxisItem, Point, ViewBox
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
-from PySide6.QtWidgets import (
-    QDialog,
-    QLabel,
-    QMenu,
-    QSizePolicy,
-)
+from PySide6.QtWidgets import QDialog, QLabel, QMenu, QSizePolicy
 
 from ..analysis import (
     calculate_2d_histogram,

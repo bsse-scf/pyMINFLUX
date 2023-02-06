@@ -157,11 +157,15 @@ class Plotter(PlotWidget):
             hoverBrush=None,
         )
         self.scatter.sigClicked.connect(self.clicked)
+        if self.state.color_code_locs_by_tid:
+            brushes = self.set_colors_per_tid(tid.values)
+        else:
+            brushes = self.brush
         self.scatter.addPoints(
             x=coords["x"].values,
             y=coords["y"].values,
             data=tid.values,
-            brush=self.set_colors_per_tid(tid.values),
+            brush=brushes,
         )
         self.addItem(self.scatter)
         self.showAxis("bottom")

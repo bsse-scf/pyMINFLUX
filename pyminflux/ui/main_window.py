@@ -56,6 +56,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.state.min_num_loc_per_trace = int(
             app_settings.value("options/min_num_loc_per_trace", 1)
         )
+        self.state.color_code_locs_by_tid = bool(
+            app_settings.value("options/color_code_locs_by_tid", False)
+        )
 
         # Dialogs and widgets
         self.data_viewer = None
@@ -118,6 +121,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter.locations_selected_by_range.connect(
             self.show_selected_points_by_range_in_dataviewer
         )
+        self.options.color_code_locs_by_tid_option_changed.connect(self.plot_localizations)
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
