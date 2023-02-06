@@ -53,14 +53,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.state = State()
 
         # Read the application settings and update the state
-        app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
-        self.last_selected_path = app_settings.value("io/last_selected_path", ".")
-        self.state.min_num_loc_per_trace = int(
-            app_settings.value("options/min_num_loc_per_trace", 1)
-        )
-        value = app_settings.value("options/color_code_locs_by_tid", False)
-        color_code_locs_by_tid = value.lower() == 'true' if isinstance(value, str) else bool(value)
-        self.state.color_code_locs_by_tid = color_code_locs_by_tid
+        self.read_settings()
 
         # Dialogs and widgets
         self.data_viewer = None
@@ -100,6 +93,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Print a welcome message to the console
         print(f"Welcome to {__APP_NAME__}.")
+
+    def read_settings(self):
+        """Read the application settings and update the State."""
+        app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
+        self.last_selected_path = app_settings.value("io/last_selected_path", ".")
+        self.state.min_num_loc_per_trace = int(
+            app_settings.value("options/min_num_loc_per_trace", 1)
+        )
+        value = app_settings.value("options/color_code_locs_by_tid", False)
+        color_code_locs_by_tid = value.lower() == 'true' if isinstance(value, str) else bool(value)
+        self.state.color_code_locs_by_tid = color_code_locs_by_tid
 
     def setup_conn(self):
         """Set up signals and slots."""
