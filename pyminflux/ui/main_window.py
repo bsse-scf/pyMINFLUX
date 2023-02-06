@@ -58,9 +58,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.state.min_num_loc_per_trace = int(
             app_settings.value("options/min_num_loc_per_trace", 1)
         )
-        self.state.color_code_locs_by_tid = bool(
-            app_settings.value("options/color_code_locs_by_tid", False)
-        )
+        value = app_settings.value("options/color_code_locs_by_tid", False)
+        color_code_locs_by_tid = value.lower() == 'true' if isinstance(value, str) else bool(value)
+        self.state.color_code_locs_by_tid = color_code_locs_by_tid
 
         # Dialogs and widgets
         self.data_viewer = None
