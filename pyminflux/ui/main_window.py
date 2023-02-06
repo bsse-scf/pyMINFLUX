@@ -121,7 +121,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter.locations_selected_by_range.connect(
             self.show_selected_points_by_range_in_dataviewer
         )
-        self.options.color_code_locs_by_tid_option_changed.connect(self.plot_localizations)
+        self.options.color_code_locs_by_tid_option_changed.connect(
+            self.plot_localizations
+        )
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""

@@ -1,6 +1,6 @@
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph import ROI, PlotWidget
+from pyqtgraph import ROI, PlotCurveItem, PlotWidget, TextItem, mkPen
 from PySide6 import QtCore
 from PySide6.QtCore import Qt, Signal
 
@@ -37,8 +37,12 @@ class Plotter(PlotWidget):
 
         # ROI for localizations selection
         self.ROI = None
+        self.line = None
+        self.line_text = None
         self.__roi_start_point = None
         self.__roi_is_being_drawn = False
+        self.__line_start_point = None
+        self.__line_is_being_drawn = False
 
     def mousePressEvent(self, ev):
         """Override mouse press event."""
@@ -53,6 +57,7 @@ class Plotter(PlotWidget):
             # Remove previous ROI if it exists
             if self.ROI is not None:
                 self.removeItem(self.ROI)
+                self.ROI.deleteLater()
                 self.ROI = None
 
             # Create ROI and keep track of position
@@ -72,6 +77,41 @@ class Plotter(PlotWidget):
 
             # Make sure to react to ROI shifts
             self.ROI.sigRegionChangeFinished.connect(self.roi_moved)
+
+            # Accept the event
+            ev.accept()
+
+        elif (
+            self.scatter is not None
+            and ev.button() == Qt.MouseButton.LeftButton
+            and ev.modifiers() == QtCore.Qt.ControlModifier
+        ):
+
+            # Is the user trying to initiate drawing a line?
+
+            # Remove previous line if it exists
+            if self.line is not None:
+                self.removeItem(self.line)
+                self.line.deleteLater()
+                self.line = None
+
+            if self.line_text is not None:
+                self.removeItem(self.line_text)
+                self.line_text.deleteLater()
+                self.line_text = None
+
+            # Create ROI and keep track of position
+            self.__line_is_being_drawn = True
+            self.__line_start_point = (
+                self.getPlotItem().getViewBox().mapSceneToView(ev.position())
+            )
+            self.line = PlotCurveItem(
+                x=[self.__line_start_point.x(), self.__line_start_point.x()],
+                y=[self.__line_start_point.y(), self.__line_start_point.y()],
+                pen=mkPen(color=(255, 0, 0), width=2),
+            )
+            self.addItem(self.line)
+            self.line.show()
 
             # Accept the event
             ev.accept()
@@ -101,6 +141,25 @@ class Plotter(PlotWidget):
             # Accept the event
             ev.accept()
 
+        elif (
+            self.scatter is not None
+            and ev.buttons() == Qt.MouseButton.LeftButton
+            and ev.modifiers() == QtCore.Qt.ControlModifier
+            and self.__line_is_being_drawn
+        ):
+            # Is the user drawing a line?
+
+            # Resize the ROI
+            current_point = (
+                self.getPlotItem().getViewBox().mapSceneToView(ev.position())
+            )
+            self.line.setData(
+                x=[self.__line_start_point.x(), current_point.x()],
+                y=[self.__line_start_point.y(), current_point.y()],
+            )
+
+            # Accept the event
+            ev.accept()
         else:
 
             # Call the parent method
@@ -125,6 +184,44 @@ class Plotter(PlotWidget):
             # Reset flags
             self.__roi_start_point = None
             self.__roi_is_being_drawn = False
+
+            # Accept the event
+            ev.accept()
+
+        elif (
+            self.scatter is not None
+            and ev.button() == Qt.MouseButton.LeftButton
+            and ev.modifiers() == QtCore.Qt.ControlModifier
+            and self.__line_is_being_drawn
+        ):
+
+            # Display the measurement
+            x_data, y_data = self.line.getData()
+            center = np.array(
+                [0.5 * (x_data[0] + x_data[1]), 0.5 * (y_data[0] + y_data[1])]
+            )
+            delta_y = np.array(y_data[1] - y_data[0])
+            delta_x = np.array(x_data[1] - x_data[0])
+            v = np.array([-1.0 * delta_y, delta_x])
+            norm = np.linalg.norm(v)
+            if np.abs(norm) >= 1e-4:
+                v_norm = v / norm
+                length = np.sqrt(delta_x * delta_x + delta_y * delta_y)
+                pos = center + 1.0 * v_norm
+                self.line_text = TextItem(
+                    text=f"{length:.2f} nm", color=(255, 255, 255)
+                )
+                self.line_text.setPos(pos[0], pos[1])
+                self.addItem(self.line_text)
+            else:
+                if self.line is not None:
+                    self.removeItem(self.line)
+                    self.line.deleteLater()
+                    self.line = None
+
+            # Reset flags
+            self.__line_start_point = None
+            self.__line_is_being_drawn = False
 
             # Accept the event
             ev.accept()

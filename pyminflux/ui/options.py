@@ -10,8 +10,12 @@ from .ui_options import Ui_Options
 class Options(QDialog, Ui_Options):
 
     # Signal that the options have changed
-    min_num_loc_per_trace_option_changed = Signal(name="min_num_loc_per_trace_option_changed")
-    color_code_locs_by_tid_option_changed = Signal(name="color_code_locs_by_tid_option_changed")
+    min_num_loc_per_trace_option_changed = Signal(
+        name="min_num_loc_per_trace_option_changed"
+    )
+    color_code_locs_by_tid_option_changed = Signal(
+        name="color_code_locs_by_tid_option_changed"
+    )
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -38,7 +42,9 @@ class Options(QDialog, Ui_Options):
         """Set up signal-slot connections."""
         self.ui.leMinTIDNum.textChanged.connect(self.persist_min_num_loc_per_trace)
         self.ui.pbSetDefault.clicked.connect(self.set_as_new_default)
-        self.ui.cbColorLocsByTID.stateChanged.connect(self.persist_color_code_locs_by_tid)
+        self.ui.cbColorLocsByTID.stateChanged.connect(
+            self.persist_color_code_locs_by_tid
+        )
 
     @Slot(str, name="persist_thresh_factor")
     def persist_min_num_loc_per_trace(self, text):
