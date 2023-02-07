@@ -52,6 +52,7 @@ class DataInspector(QDialog, Ui_DataInspector):
             hoverBrush=None,
             enableAutoRange=True,
         )
+        self.customize_context_menu()
         self.plot_widget.addItem(self.scatter)
         self.plot_widget.showAxis("bottom")
         self.plot_widget.showAxis("left")
@@ -62,6 +63,15 @@ class DataInspector(QDialog, Ui_DataInspector):
 
         # Add connections
         self.ui.pbPlot.clicked.connect(self.plot_selected_params)
+
+    def customize_context_menu(self):
+        """Remove some default context menu actions.
+
+        See: https://stackoverflow.com/questions/44402399/how-to-disable-the-default-context-menu-of-pyqtgraph#44420152
+        """
+
+        # Hide the "Plot Options" menu
+        self.plot_widget.getPlotItem().ctrlMenu.menuAction().setVisible(False)
 
     @Slot(None, name="plot_selected_params")
     def plot_selected_params(self):
