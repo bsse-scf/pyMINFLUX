@@ -394,20 +394,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Filter the dataframe by the passed x and y ranges
         self.minfluxprocessor.filter_dataframe_by_xy_range(x_range, y_range)
 
-        # Close the Analyzer
+        # Update the Analyzer
         if self.analyzer is not None:
-            self.analyzer.close()
-            self.analyzer = None
+            self.analyzer.plot()
 
-        # Close the 3D plotter
-        if self.plotter3D is not None:
-            self.plotter3D.close()
-            self.plotter3D = None
-
-        # Close the Data Inspactor
+        # Update the Data Inspector
         if self.data_inspector is not None:
-            self.data_inspector.close()
-            self.data_inspector = None
+            self.data_inspector.plot_selected_params()
+
+        # Update the 3D plotter
+        if self.plotter3D is not None:
+            self.plotter3D.plot(
+                self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
+            )
 
         # Update the ui
         self.full_update_ui()
