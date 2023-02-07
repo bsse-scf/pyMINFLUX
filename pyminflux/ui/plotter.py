@@ -2,7 +2,9 @@ import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import ROI, PlotCurveItem, PlotWidget, TextItem, mkPen
 from PySide6 import QtCore
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QPoint, Qt, Signal
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QMenu
 
 from ..state import State
 
@@ -13,6 +15,7 @@ class Plotter(PlotWidget):
     locations_selected_by_range = Signal(
         tuple, tuple, name="locations_selected_by_range"
     )
+    crop_region_selected = Signal(tuple, tuple, name="crop_region_selected")
 
     def __init__(self):
         super().__init__()
@@ -72,6 +75,8 @@ class Plotter(PlotWidget):
                 rotatable=False,
                 pen=(255, 0, 0),
             )
+            self.ROI.setAcceptedMouseButtons(Qt.MouseButton.RightButton)
+            self.ROI.sigClicked.connect(self.roi_mouse_click_event)
             self.addItem(self.ROI)
             self.ROI.show()
 
@@ -277,6 +282,42 @@ class Plotter(PlotWidget):
 
         # Hide the "Plot Options" menu
         self.getPlotItem().ctrlMenu.menuAction().setVisible(False)
+
+    def roi_mouse_click_event(self, roi, ev):
+        """Right-click event on the ROI."""
+        if ev.button() == Qt.MouseButton.RightButton and self.ROI.isMoving:
+            # Make sure the ROI is not moving
+            self.ROI.isMoving = False
+            self.ROI.movePoint(self.ROI.startPos, finish=True)
+            ev.accept()
+        elif self.ROI.acceptedMouseButtons() & ev.button():
+            ev.accept()
+            if ev.button() == Qt.MouseButton.RightButton:
+                self.roi_raise_context_menu(ev)
+        else:
+            ev.ignore()
+
+    def roi_raise_context_menu(self, ev):
+        """Create a context menu on the ROI."""
+        # Open context menu
+        menu = QMenu()
+        crop_data_action = QAction("Crop data")
+        crop_data_action.triggered.connect(self.crop_data_by_roi_selection)
+        menu.addAction(crop_data_action)
+        pos = ev.screenPos()
+        menu.exec(QPoint(int(pos.x()), int(pos.y())))
+
+    def crop_data_by_roi_selection(self, item):
+        """Open dialog to manually set the filter ranges"""
+
+        # Get the ROI bounds
+        pos = self.ROI.pos()
+        size = self.ROI.size()
+
+        # Create the ranges
+        x_range = (pos[0], pos[0] + size[0])
+        y_range = (pos[1], pos[1] + size[1])
+        self.crop_region_selected.emit(x_range, y_range)
 
     def roi_moved(self):
         """Inform that the selection of localizations may have changed after the ROI was moved."""

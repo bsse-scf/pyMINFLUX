@@ -206,6 +206,51 @@ class MinFluxProcessor:
                 & (self.__filtered_dataframe["y"] < y_max)
             ]
 
+    def filter_dataframe_by_xy_range(self, x_range, y_range):
+        """Filter dataset by the passed x and y ranges.
+
+        Parameters
+        ----------
+
+        x_range: tuple
+            Tuple containing the minimum and maximum values for the x coordinates to be selected.
+
+        y_range: tuple
+            Tuple containing the minimum and maximum values for the y coordinates to be selected.
+        """
+
+        # Make sure to always apply the global filters
+        self._apply_global_filters()
+
+        # Now we are guaranteed to have a filtered dataframe to work with
+        df = self.__filtered_dataframe.copy()
+
+        # Make sure that the ranges are increasing
+        x_min = x_range[0]
+        x_max = x_range[1]
+        if x_max < x_min:
+            x_max, x_min = x_min, x_max
+
+        y_min = y_range[0]
+        y_max = y_range[1]
+        if y_max < y_min:
+            y_max, y_min = y_min, y_max
+
+        # Apply filter
+        df = df.loc[
+            (df["x"] >= x_min)
+            & (df["x"] < x_max)
+            & (df["y"] >= y_min)
+            & (df["y"] < y_max)
+        ]
+
+        # Cache the result
+        self.__filtered_dataframe = df
+
+        # Make sure to flag the derived data to be recomputed
+        self.__stats_to_be_recomputed = True
+        self.__weighed_localizations_to_be_recomputed = True
+
     def _apply_global_filters(self):
         """Apply filters that are defined in the global application configuration."""
 

@@ -102,7 +102,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             app_settings.value("options/min_num_loc_per_trace", 1)
         )
         value = app_settings.value("options/color_code_locs_by_tid", False)
-        color_code_locs_by_tid = value.lower() == 'true' if isinstance(value, str) else bool(value)
+        color_code_locs_by_tid = (
+            value.lower() == "true" if isinstance(value, str) else bool(value)
+        )
         self.state.color_code_locs_by_tid = color_code_locs_by_tid
 
     def setup_conn(self):
@@ -129,6 +131,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter.locations_selected_by_range.connect(
             self.show_selected_points_by_range_in_dataviewer
         )
+        self.plotter.crop_region_selected.connect(self.crop_data_by_range)
         self.options.color_code_locs_by_tid_option_changed.connect(
             self.plot_localizations
         )
@@ -370,7 +373,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     @Slot(tuple, tuple, name="show_selected_points_by_range_in_dataviewer")
     def show_selected_points_by_range_in_dataviewer(self, x_range, y_range):
-        """Filter the data by x and y range and show in the dataframe viewer."""
+        """Select the data by x and y range and show in the dataframe viewer."""
 
         # Get the filtered dataframe subset contained in the provided x and y ranges
         df = self.minfluxprocessor.select_dataframe_by_xy_range(
@@ -383,6 +386,34 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Inform
         point_str = "event" if len(df.index) == 1 else "events"
         print(f"Selected {len(df.index)} {point_str}.")
+
+    @Slot(tuple, tuple, name="crop_data_by_range")
+    def crop_data_by_range(self, x_range, y_range):
+        """Filter the data by x and y range and show in the dataframe viewer."""
+
+        # Filter the dataframe by the passed x and y ranges
+        self.minfluxprocessor.filter_dataframe_by_xy_range(x_range, y_range)
+
+        # Close the Analyzer
+        if self.analyzer is not None:
+            self.analyzer.close()
+            self.analyzer = None
+
+        # Close the 3D plotter
+        if self.plotter3D is not None:
+            self.plotter3D.close()
+            self.plotter3D = None
+
+        # Close the Data Inspactor
+        if self.data_inspector is not None:
+            self.data_inspector.close()
+            self.data_inspector = None
+
+        # Update the ui
+        self.full_update_ui()
+
+        # Make sure to autoupdate the axis (on load only)
+        self.plotter.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
 
     def plot_localizations(self):
         """Plot the localizations."""
