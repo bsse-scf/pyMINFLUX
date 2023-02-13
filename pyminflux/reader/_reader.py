@@ -139,7 +139,7 @@ class MinFluxReader:
     @classmethod
     def processed_properties(cls):
         """Returns the properties read from the file that correspond to the processed dataframe column names."""
-        return ["tid", "tim", "x", "y", "z", "efo", "cfr", "eco", "dcr"]
+        return ["tid", "tim", "x", "y", "z", "efo", "cfr", "eco", "dcr", "dwell"]
 
     @classmethod
     def raw_properties(cls):
@@ -230,6 +230,9 @@ class MinFluxReader:
             # Extract DCR
             dcr = itr["dcr"]
 
+            # Dwell
+            dwell = np.around(eco / (efo / 1000.0), decimals=0)
+
         else:
 
             # Extract the locations
@@ -247,6 +250,9 @@ class MinFluxReader:
             # Extract DCR
             dcr = itr[:, self.__dcr_index]["dcr"]
 
+            # Calculate dwell
+            dwell = np.around(eco / (efo / 1000.0), decimals=0)
+
         # Create a Pandas dataframe for the results
         df = pd.DataFrame(
             index=pd.RangeIndex(start=0, stop=len(tid)),
@@ -263,6 +269,7 @@ class MinFluxReader:
         df["cfr"] = cfr
         df["eco"] = eco
         df["dcr"] = dcr
+        df["dwell"] = dwell
 
         return df
 
