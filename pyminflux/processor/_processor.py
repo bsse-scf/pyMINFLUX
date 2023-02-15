@@ -274,6 +274,30 @@ class MinFluxProcessor:
         self.__stats_to_be_recomputed = True
         self.__weighed_localizations_to_be_recomputed = True
 
+    def apply_threshold(
+        self, prop: str, threshold: Union[int, float], larger_than: bool = True
+    ):
+        """Apply single threshold to filter values either lower or higher than threshold for given property."""
+
+        # Make sure to always apply the global filters
+        self._apply_global_filters()
+
+        # Now we are guaranteed to have a filtered dataframe to work with
+        df = self.__filtered_dataframe.copy()
+
+        # Apply filter
+        if larger_than:
+            df = df[df[prop] > threshold]
+        else:
+            df = df[df[prop] < threshold]
+
+        # Cache the result
+        self.__filtered_dataframe = df
+
+        # Make sure to flag the derived data to be recomputed
+        self.__stats_to_be_recomputed = True
+        self.__weighed_localizations_to_be_recomputed = True
+
     def apply_range_filter(
         self,
         prop: str,

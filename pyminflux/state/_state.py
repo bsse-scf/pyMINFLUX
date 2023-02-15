@@ -23,6 +23,8 @@ class State(metaclass=Singleton):
         "gmm_include_cfr",
         "min_efo_relative_peak_prominence",
         "median_efo_filter_support",
+        "dwell_time_threshold",
+        "dwell_time_larger_than_threshold",
     ]
 
     def __init__(self):
@@ -62,6 +64,10 @@ class State(metaclass=Singleton):
         self.min_efo_relative_peak_prominence: float = 0.01
         self.median_efo_filter_support: int = 5
 
+        # Dwell time thresholding
+        self.dwell_time_threshold: float = 0.0
+        self.dwell_time_larger_than_threshold: bool = True
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -80,6 +86,8 @@ class State(metaclass=Singleton):
             "min_efo_relative_peak_prominence": self.min_efo_relative_peak_prominence,
             "median_efo_filter_support": self.median_efo_filter_support,
             "cfr_threshold_factor": self.cfr_threshold_factor,
+            "self.dwell_time_threshold": self.dwell_time_threshold,
+            "self.dwell_time_larger_than_threshold": self.dwell_time_larger_than_threshold,
         }
 
     def reset(self):
@@ -106,3 +114,5 @@ class State(metaclass=Singleton):
         self.gmm_include_cfr = False
         self.median_efo_filter_support = 5
         self.cfr_threshold_factor = 2.0
+        self.dwell_time_threshold: float = 0.0
+        self.dwell_time_larger_than_threshold: bool = True

@@ -104,6 +104,14 @@ class Analyzer(QDialog, Ui_Analyzer):
             QDoubleValidator(bottom=0.0, top=5.0, decimals=2)
         )
 
+        # Dwell time filtering
+        self.ui.leDwellTime.setText(str(self.state.dwell_time_threshold))
+        self.ui.leDwellTime.setValidator(QDoubleValidator(bottom=0.0, decimals=2))
+        if self.state.dwell_time_larger_than_threshold:
+            self.ui.cxDwellOption.setCurrentIndex(0)
+        else:
+            self.ui.cxDwellOption.setCurrentIndex(0)
+
         # Keep a reference to the ROIRanges dialog
         self.roi_ranges_dialog = None
 
@@ -154,6 +162,11 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.leCFRFilterThreshFactor.textChanged.connect(
             self.persist_cfr_threshold_factor
         )
+
+        # Dwell time filtering
+        self.ui.leDwellTime.textChanged.connect(self.persist_dwell_time_threshold)
+        self.ui.cxDwellOption.currentIndexChanged.connect(self.dwell_option_changed)
+        self.ui.pbDwellFilter.clicked.connect(self.run_dwell_time_threshold)
 
         # Others
         self.ui.pbReset.clicked.connect(self.reset_filters)
@@ -452,6 +465,23 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Update plot
         self.cfr_region.setRegion(self.state.cfr_thresholds)
 
+    @Slot(name="run_dwell_time_threshold")
+    def run_dwell_time_threshold(self):
+        """Apply the dwell time threshold."""
+
+        # Get threshold and operation
+        threshold = float(self.ui.leDwellTime.text())
+        larger_than = self.ui.cxDwellOption.currentIndex() == 0
+
+        # Apply the threshold
+        self._minfluxprocessor.apply_threshold("dwell", threshold, larger_than)
+
+        # Update the histograms
+        self.plot()
+
+        # Signal that the external viewers should be updated
+        self.data_filters_changed.emit()
+
     @Slot(int, name="persist_gmm_efo_use_bayesian")
     def persist_gmm_efo_use_bayesian(self, state):
         self.state.gmm_efo_use_bayesian = state != 0
@@ -507,6 +537,21 @@ class Analyzer(QDialog, Ui_Analyzer):
         except ValueError as _:
             return
         self.state.cfr_threshold_factor = cfr_threshold_factor
+
+    @Slot(name="persist_dwell_time_threshold")
+    def persist_dwell_time_threshold(self, text):
+        try:
+            dwell_time_threshold = float(text)
+        except ValueError as _:
+            return
+        self.state.dwell_time_threshold = dwell_time_threshold
+
+    @Slot(int, name="dwell_option_changed")
+    def dwell_option_changed(self, index):
+        if index == 0:
+            self.state.dwell_time_larger_than_threshold = True
+        else:
+            self.state.dwell_time_larger_than_threshold = False
 
     @Slot(name="reset_filters")
     def reset_filters(self):
