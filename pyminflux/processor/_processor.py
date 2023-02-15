@@ -251,8 +251,8 @@ class MinFluxProcessor:
         self.__stats_to_be_recomputed = True
         self.__weighed_localizations_to_be_recomputed = True
 
-    def _apply_global_filters(self):
-        """Apply filters that are defined in the global application configuration."""
+    def _get_copy_of_filtered_dataframe(self):
+        """Get a copy of current filtered dataframe."""
 
         # Start from the filtered dataframe if it already exists,
         # otherwise from the processed_dataframe
@@ -260,6 +260,13 @@ class MinFluxProcessor:
             df = self.__filtered_dataframe.copy()
         else:
             df = self.__minfluxreader.processed_dataframe.copy()
+        return df
+
+    def _apply_global_filters(self):
+        """Apply filters that are defined in the global application configuration."""
+
+        # Get a copy of current filtered dataframe
+        df = self._get_copy_of_filtered_dataframe()
 
         # Remove all rows where the count of TIDs is lower than self._min_trace_num
         counts = df["tid"].value_counts(normalize=False)
@@ -279,11 +286,8 @@ class MinFluxProcessor:
     ):
         """Apply single threshold to filter values either lower or higher than threshold for given property."""
 
-        # Make sure to always apply the global filters
-        self._apply_global_filters()
-
-        # Now we are guaranteed to have a filtered dataframe to work with
-        df = self.__filtered_dataframe.copy()
+        # Get a copy of current filtered dataframe
+        df = self._get_copy_of_filtered_dataframe()
 
         # Apply filter
         if larger_than:
@@ -293,6 +297,9 @@ class MinFluxProcessor:
 
         # Cache the result
         self.__filtered_dataframe = df
+
+        # Apply the global filters
+        self._apply_global_filters()
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
@@ -323,17 +330,17 @@ class MinFluxProcessor:
         if min_threshold is None or max_threshold is None:
             return
 
-        # Make sure to always apply the global filters
-        self._apply_global_filters()
-
-        # Now we are guaranteed to have a filtered dataframe to work with
-        df = self.__filtered_dataframe.copy()
+        # Get a copy of current filtered dataframe
+        df = self._get_copy_of_filtered_dataframe()
 
         # Apply filter
         df = df[(df[prop] > min_threshold) & (df[prop] < max_threshold)]
 
         # Cache the result
         self.__filtered_dataframe = df
+
+        # Apply the global filters
+        self._apply_global_filters()
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
@@ -349,17 +356,17 @@ class MinFluxProcessor:
             Logical array for selecting the elements to be returned.
         """
 
-        # Make sure to always apply the global filters
-        self._apply_global_filters()
-
-        # Now we are guaranteed to have a filtered dataframe to work with
-        df = self.__filtered_dataframe.copy()
+        # Get a copy of current filtered dataframe
+        df = self._get_copy_of_filtered_dataframe()
 
         # Extract selected indices
         df = df.iloc[indices]
 
         # Cache the result
         self.__filtered_dataframe = df
+
+        # Apply the global filters
+        self._apply_global_filters()
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
