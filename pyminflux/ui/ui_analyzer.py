@@ -475,18 +475,16 @@ class Ui_Analyzer(object):
             QCoreApplication.translate("Analyzer", "CFR thresholding", None),
         )
         self.lbDwellTime.setText(
-            QCoreApplication.translate("Analyzer", "Keep dwell time", None)
+            QCoreApplication.translate("Analyzer", "Discard dwell time", None)
         )
         self.cxDwellOption.setItemText(
-            0, QCoreApplication.translate("Analyzer", "larger than", None)
+            0, QCoreApplication.translate("Analyzer", "smaller than", None)
         )
         self.cxDwellOption.setItemText(
-            1, QCoreApplication.translate("Analyzer", "smaller than", None)
+            1, QCoreApplication.translate("Analyzer", "larger than", None)
         )
 
-        self.lbDwellTimeUnit.setText(
-            QCoreApplication.translate("Analyzer", "kHz", None)
-        )
+        self.lbDwellTimeUnit.setText(QCoreApplication.translate("Analyzer", "ms", None))
         self.pbDwellPreview.setText(
             QCoreApplication.translate("Analyzer", "Preview", None)
         )

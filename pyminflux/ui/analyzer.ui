@@ -468,7 +468,7 @@
        <item>
         <widget class="QLabel" name="lbDwellTime">
          <property name="text">
-          <string>Keep dwell time</string>
+          <string>Discard dwell time</string>
          </property>
         </widget>
        </item>
@@ -476,12 +476,12 @@
         <widget class="QComboBox" name="cxDwellOption">
          <item>
           <property name="text">
-           <string>larger than</string>
+           <string>smaller than</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>smaller than</string>
+           <string>larger than</string>
           </property>
          </item>
         </widget>
@@ -499,7 +499,7 @@
        <item>
         <widget class="QLabel" name="lbDwellTimeUnit">
          <property name="text">
-          <string>kHz</string>
+          <string>ms</string>
          </property>
         </widget>
        </item>
