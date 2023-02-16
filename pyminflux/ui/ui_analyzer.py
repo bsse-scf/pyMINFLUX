@@ -493,7 +493,7 @@ class Ui_Analyzer(object):
         )
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_dwell_filtering),
-            QCoreApplication.translate("Analyzer", "Dwell filtering", None),
+            QCoreApplication.translate("Analyzer", "Dwell time filtering", None),
         )
         self.pbReset.setText(QCoreApplication.translate("Analyzer", "Reset", None))
 

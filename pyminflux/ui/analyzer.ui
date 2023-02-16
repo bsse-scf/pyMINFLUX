@@ -449,7 +449,7 @@
      </widget>
      <widget class="QWidget" name="tab_dwell_filtering">
       <attribute name="title">
-       <string>Dwell filtering</string>
+       <string>Dwell time filtering</string>
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout_5">
        <item>
