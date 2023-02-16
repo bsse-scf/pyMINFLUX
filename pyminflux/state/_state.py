@@ -23,6 +23,7 @@ class State(metaclass=Singleton):
         "gmm_include_cfr",
         "min_efo_relative_peak_prominence",
         "median_efo_filter_support",
+        "efo_bin_size_khz"
     ]
 
     def __init__(self):
@@ -39,6 +40,9 @@ class State(metaclass=Singleton):
         # Minimum number of localizations to consider a trace
         self.default_min_loc_per_trace: int = 1
         self.min_num_loc_per_trace: int = 1
+
+        # EFO bin size in KHz (if 0, the bin size will be automatically estimated)
+        self.efo_bin_size_khz: float = 0.0
 
         # Lower and upper (absolute) thresholds for the EFO and CFR values
         self.efo_thresholds: Union[None, tuple] = None
@@ -62,6 +66,9 @@ class State(metaclass=Singleton):
         self.min_efo_relative_peak_prominence: float = 0.01
         self.median_efo_filter_support: int = 5
 
+        # EFO bin size in kHz
+        self.efo_bin_size_khz: float = 0.0
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -80,6 +87,7 @@ class State(metaclass=Singleton):
             "min_efo_relative_peak_prominence": self.min_efo_relative_peak_prominence,
             "median_efo_filter_support": self.median_efo_filter_support,
             "cfr_threshold_factor": self.cfr_threshold_factor,
+            "efo_bin_size_khz": self.efo_bin_size_khz,
         }
 
     def reset(self):
@@ -106,3 +114,4 @@ class State(metaclass=Singleton):
         self.gmm_include_cfr = False
         self.median_efo_filter_support = 5
         self.cfr_threshold_factor = 2.0
+        self.efo_bin_size_khz = 0.0

@@ -96,16 +96,29 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     def read_settings(self):
         """Read the application settings and update the State."""
+
+        # Open settings file
         app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
+
+        # Read and set 'last_selected_path' option
         self.last_selected_path = app_settings.value("io/last_selected_path", ".")
+
+        # Read and set 'min_num_loc_per_trace' option
         self.state.min_num_loc_per_trace = int(
-            app_settings.value("options/min_num_loc_per_trace", 1)
+            app_settings.value("options/min_num_loc_per_trace", self.state.min_num_loc_per_trace)
         )
-        value = app_settings.value("options/color_code_locs_by_tid", False)
+
+        # Read and set 'color_code_locs_by_tid' option
+        value = app_settings.value("options/color_code_locs_by_tid", self.state.color_code_locs_by_tid)
         color_code_locs_by_tid = (
             value.lower() == "true" if isinstance(value, str) else bool(value)
         )
         self.state.color_code_locs_by_tid = color_code_locs_by_tid
+
+        # Read and set 'efo_bin_size_khz' option
+        self.state.efo_bin_size_khz = float(
+            app_settings.value("options/efo_bin_size_khz", self.state.efo_bin_size_khz)
+        )
 
     def setup_conn(self):
         """Set up signals and slots."""
