@@ -1,3 +1,4 @@
+import math
 from typing import Optional
 
 import matplotlib.pyplot as plt
@@ -9,7 +10,58 @@ from scipy.spatial.distance import cdist
 from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 
 
-def ideal_hist_bins(values, scott=False):
+def hist_bins(values: np.ndarray, bin_size: float) -> tuple:
+    """Return the bins to be used for the passed values and bin size.
+
+    Parameters
+    ----------
+
+    values: np.ndarray
+        One-dimensional array of values for which to determine the ideal histogram bins.
+
+    bin_size: float
+        Bin size to use.
+
+    Returns
+    -------
+
+    bin_edges: np.ndarray
+        Array of bin edges (to use with np.histogram()).
+
+    bin_centers: np.ndarray
+        Array of bin centers.
+
+    bin_width:
+        Bin width.
+    """
+
+    if len(values) == 0:
+        raise ValueError("No data.")
+
+    # Find an appropriate min value that keeps the bins nicely centered
+    min_value = bin_size * int(np.min(values) / bin_size)
+
+    # Max value
+    max_value = np.max(values)
+
+    # Pathological case where bin_width is 0.0
+    if bin_size <= 0.0:
+        raise ValueError("`bin_size` must be a positive number!")
+
+    # Calculate number of bins
+    num_bins = math.floor((max_value - min_value) / bin_size) + 1
+
+    # Center the first bin around the min value
+    half_width = bin_size / 2
+    bin_edges = np.arange(
+        min_value - half_width, min_value + num_bins * bin_size, bin_size
+    )
+    bin_centers = (bin_edges[0:-1] + bin_edges[1:]) / 2
+
+    return bin_edges, bin_centers, bin_size
+
+
+def ideal_hist_bins(values: np.ndarray, scott: bool = False):
     """Calculate the ideal histogram bins using the Freedman-Diaconis rule.
 
     See: https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
@@ -32,7 +84,7 @@ def ideal_hist_bins(values, scott=False):
     bin_centers: np.ndarray
         Array of bin centers.
 
-    bin_width:
+    bin_size:
         Bin width.
     """
 
@@ -43,8 +95,8 @@ def ideal_hist_bins(values, scott=False):
     if np.all(np.diff(values) == 0):
         bin_edges = (values[0] - 5e-7, values[0] + 5e-7)
         bin_centers = (values[0],)
-        bin_width = 1e-6
-        return bin_edges, bin_centers, bin_width
+        bin_size = 1e-6
+        return bin_edges, bin_centers, bin_size
 
     # Calculate bin width
     factor = 2.0
@@ -53,27 +105,29 @@ def ideal_hist_bins(values, scott=False):
     iqr = stats.iqr(values, rng=(25, 75), scale=1.0, nan_policy="omit")
     num_values = np.sum(np.logical_not(np.isnan(values)))
     crn = np.power(num_values, 1 / 3)
-    bin_width = (factor * iqr) / crn
+    bin_size = (factor * iqr) / crn
 
     # Get min and max values
     min_value = np.min(values)
     max_value = np.max(values)
 
-    # Pathological case where bin_width is 0.0
-    if bin_width == 0.0:
-        bin_width = 0.5 * (min_value + max_value)
+    # Pathological case where bin_size is 0.0
+    if bin_size == 0.0:
+        bin_size = 0.5 * (min_value + max_value)
 
     # Calculate number of bins
-    num_bins = int(np.round((max_value - min_value) / bin_width))
+    num_bins = math.floor((max_value - min_value) / bin_size) + 1
 
-    half_width = bin_width / 2
-
-    bin_edges = np.linspace(min_value - half_width, max_value, num_bins)
+    # Center the first bin around the min value
+    half_width = bin_size / 2
+    bin_edges = np.arange(
+        min_value - half_width, min_value + num_bins * bin_size, bin_size
+    )
     bin_centers = (bin_edges[0:-1] + bin_edges[1:]) / 2
     if len(bin_edges) >= 2:
-        bin_width = bin_edges[1] - bin_edges[0]
+        bin_size = bin_edges[1] - bin_edges[0]
 
-    return bin_edges, bin_centers, bin_width
+    return bin_edges, bin_centers, bin_size
 
 
 def get_robust_threshold(values: np.ndarray, factor: float = 2.0):
@@ -125,7 +179,13 @@ def get_robust_threshold(values: np.ndarray, factor: float = 2.0):
     return upper_threshold, lower_threshold, med, mad
 
 
-def prepare_histogram(values, normalize=True, scott=False):
+def prepare_histogram(
+    values: np.ndarray,
+    normalize: bool = True,
+    auto_bins: bool = True,
+    scott: bool = False,
+    bin_size: float = 0.0,
+):
     """Return histogram counts and bins for given values with ideal bin number.
 
     Parameters
@@ -137,8 +197,15 @@ def prepare_histogram(values, normalize=True, scott=False):
     normalize: bool
         Whether to normalize the histogram to a probability mass function (PMF). The integral of the PMF is 1.0.
 
+    auto_bins: bool
+        Whether to automatically calculate the bin size from the data.
+
     scott: bool
-        Whether to use Scott's normal reference rule (if the data is normally distributed).
+        Whether to use Scott's normal reference rule (the data should be normally distributed). This is used only
+        if `auto_bins` is True.
+
+    bin_size: float
+        Bin size to use if `auto_bins` is False. It will be ignored if `auto_bins` is True.
 
     Returns
     -------
@@ -156,7 +223,15 @@ def prepare_histogram(values, normalize=True, scott=False):
         Bin width.
 
     """
-    bin_edges, bin_centers, bin_width = ideal_hist_bins(values, scott=scott)
+    if auto_bins:
+        bin_edges, bin_centers, bin_width = ideal_hist_bins(values, scott=scott)
+    else:
+        if bin_size == 0.0:
+            raise Exception(
+                f"Please provide a valid value for `bin_size` if `auto_bins` is False."
+            )
+        bin_edges, bin_centers, bin_width = hist_bins(values, bin_size=bin_size)
+
     n, _ = np.histogram(values, bins=bin_edges, density=False)
     if normalize:
         n = n / n.sum()
@@ -402,7 +477,9 @@ def calculate_density_map(
     y: np.ndarray,
     x_bin_edges: Optional[np.ndarray] = None,
     y_bin_edges: Optional[np.ndarray] = None,
+    auto_bins: bool = True,
     scott: bool = False,
+    bin_size: Optional[float] = None,
 ) -> np.ndarray:
     """Create density map for 2D data.
 
@@ -423,9 +500,17 @@ def calculate_density_map(
         1D array of bin edge values for the X array. If omitted, it will be calculated automatically
         (see `pyminflux.analysis.prepare_histogram`.)
 
+    auto_bins: bool
+        Whether to automatically calculate the bin size from the data. Only used if either `x_bin_edges`
+        or `y_bin_edges` are None.
+
     scott: bool
-        Whether to use Scott's normal reference rule (if the data is normally distributed).
-        This is only used if either `x_bin_edges` or `y_bin_edges` are None.
+        Whether to use Scott's normal reference rule (the data should be normally distributed).
+        This is only used if either `x_bin_edges` or `y_bin_edges` are None and `auto_bins` is True.
+
+    bin_size: float
+        Bin size to use if either `x_bin_edges` or `y_bin_edges` are None and `auto_bins` is False.
+        It will be ignored if `auto_bins` is True.
 
     Returns
     -------
@@ -436,10 +521,14 @@ def calculate_density_map(
 
     # Calculate bin edges if needed
     if x_bin_edges is None:
-        _, x_bin_edges, _, _ = prepare_histogram(x, scott=scott)
+        _, x_bin_edges, _, _ = prepare_histogram(
+            x, auto_bins=auto_bins, scott=scott, bin_size=bin_size
+        )
 
     if y_bin_edges is None:
-        _, y_bin_edges, _, _ = prepare_histogram(y, scott=scott)
+        _, y_bin_edges, _, _ = prepare_histogram(
+            y, auto_bins=auto_bins, scott=scott, bin_size=bin_size
+        )
 
     # Create density map
     xx, yy = np.meshgrid(x_bin_edges, y_bin_edges)
@@ -457,7 +546,11 @@ def calculate_2d_histogram(
     y: np.ndarray,
     x_bin_edges: Optional[np.ndarray] = None,
     y_bin_edges: Optional[np.ndarray] = None,
+    x_auto_bins: bool = True,
+    y_auto_bins: bool = True,
     scott: bool = False,
+    x_bin_size: float = 0.0,
+    y_bin_size: float = 0.0,
 ) -> np.ndarray:
     """Create density map for 2D data.
 
@@ -478,9 +571,25 @@ def calculate_2d_histogram(
         1D array of bin edge values for the X array. If omitted, it will be calculated automatically
         (see `pyminflux.analysis.prepare_histogram`.)
 
+    x_auto_bins: bool
+        Whether to automatically calculate the bin size for `x` from the data. Only used if `x_bin_edges`
+        is None.
+
+    y_auto_bins: bool
+        Whether to automatically calculate the bin size for `y` from the data. Only used if `y_bin_edges`
+        is None.
+
     scott: bool
-        Whether to use Scott's normal reference rule (if the data is normally distributed).
-        This is only used if either `x_bin_edges` or `y_bin_edges` are None.
+        Whether to use Scott's normal reference rule (the data should be normally distributed).
+        This is only used if either `x_bin_edges` or `y_bin_edges` are None and `auto_bins` is True.
+
+    x_bin_size: float
+        Bin size to use for `x` if `x_bin_edges` is None and `x_auto_bins` is False.
+        It will be ignored if `x_auto_bins` is True.
+
+    y_bin_size: float
+        Bin size to use for `y` if `y_bin_edges` is None and `y_auto_bins` is False.
+        It will be ignored if `y_auto_bins` is True.
 
     Returns
     -------
@@ -491,10 +600,14 @@ def calculate_2d_histogram(
 
     # Calculate bin edges if needed
     if x_bin_edges is None:
-        _, x_bin_edges, _, _ = prepare_histogram(x, scott=scott)
+        _, x_bin_edges, _, _ = prepare_histogram(
+            x, auto_bins=x_auto_bins, scott=scott, bin_size=x_bin_size
+        )
 
     if y_bin_edges is None:
-        _, y_bin_edges, _, _ = prepare_histogram(y, scott=scott)
+        _, y_bin_edges, _, _ = prepare_histogram(
+            y, auto_bins=y_auto_bins, scott=scott, bin_size=y_bin_size
+        )
 
     # Create 2D histogram
     histogram = np.histogram2d(y, x, bins=(y_bin_edges, x_bin_edges))

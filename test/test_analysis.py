@@ -85,6 +85,7 @@ def extract_bounds_extraction_data_archive(tmpdir):
 
 
 def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
+
     #
     # 2D_only_efo.npy
     #
@@ -95,8 +96,21 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
     assert len(efo) == 11903, "Wrong dimensions for 2d_only_efo."
 
     # Calculate the normalized histogram
+
+    # Use 1kHz bins
+    n_efo, _, b_efo, _ = prepare_histogram(efo, auto_bins=False, bin_size=1000.0)
+    assert len(n_efo) == 420
+    assert b_efo[1] - b_efo[0] == 1000.0
+    assert pytest.approx(n_efo.sum(), 1e-4) == 1.0, "The histogram is not normalized!"
+
+    # Use automatic bin_size determination
+    n_efo, _, b_efo, _ = prepare_histogram(efo, auto_bins=True)
+    assert len(n_efo) == 377
+    assert pytest.approx(n_efo.sum(), 1e-4) == 1.0, "The histogram is not normalized!"
+
+    # Check defaults
     n_efo, _, b_efo, _ = prepare_histogram(efo)
-    assert len(n_efo) == 376
+    assert len(n_efo) == 377
     assert pytest.approx(n_efo.sum(), 1e-4) == 1.0, "The histogram is not normalized!"
 
     # Find the first peak bounds
@@ -104,10 +118,10 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
         n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5, qc=False
     )
     assert (
-        pytest.approx(lower_bound, 1e-4) == 13823.70184744663
+        pytest.approx(lower_bound, 1e-4) == 13821.63722748869
     ), "The lower bound is wrong!"
     assert (
-        pytest.approx(upper_bound, 1e-4) == 48355.829889892586
+        pytest.approx(upper_bound, 1e-4) == 48225.758832542466
     ), "The upper bound is wrong!"
 
     #
@@ -142,20 +156,23 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
     assert len(efo) == 5492, "Wrong dimensions for 3d_only_efo."
 
     # Calculate the normalized histogram
-    n_efo, _, b_efo, _ = prepare_histogram(efo)
-    assert len(n_efo) == 125
+
+    # Use 1kHz bins
+    n_efo, _, b_efo, _ = prepare_histogram(efo, auto_bins=True)
+    assert len(n_efo) == 126
+    assert pytest.approx(n_efo.sum(), 1e-4) == 1.0, "The histogram is not normalized!"
+
+    # Use automatic bin_size determination
+    n_efo, _, b_efo, _ = prepare_histogram(efo, auto_bins=False, bin_size=1000.0)
+    assert len(n_efo) == 284
     assert pytest.approx(n_efo.sum(), 1e-4) == 1.0, "The histogram is not normalized!"
 
     # Find the first peak bounds
     lower_bound, upper_bound = find_first_peak_bounds(
         n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5, qc=False
     )
-    assert (
-        pytest.approx(lower_bound, 1e-4) == 12410.76051302978
-    ), "The lower bound is wrong!"
-    assert (
-        pytest.approx(upper_bound, 1e-4) == 46457.65683676113
-    ), "The upper bound is wrong!"
+    assert pytest.approx(lower_bound, 1e-4) == 12000.0, "The lower bound is wrong!"
+    assert pytest.approx(upper_bound, 1e-4) == 23000.0, "The upper bound is wrong!"
 
     #
     # 3D_only_cfr.npy
@@ -189,19 +206,24 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
     assert len(efo) == 81888, "Wrong dimensions for 3d_only_overlabeled_efo."
 
     # Calculate the normalized histogram
-    n_efo, _, b_efo, _ = prepare_histogram(efo)
-    assert len(n_efo) == 1280
+
+    # Use 1kHz bins
+    n_efo, _, b_efo, _ = prepare_histogram(efo, auto_bins=False, bin_size=1000.0)
+    assert len(n_efo) == 2125
+    assert pytest.approx(n_efo.sum(), 1e-4) == 1.0, "The histogram is not normalized!"
+
+    # Use automatic bin_size determination
+    n_efo, _, b_efo, _ = prepare_histogram(efo, auto_bins=True)
+    assert len(n_efo) == 1281
     assert pytest.approx(n_efo.sum(), 1e-4) == 1.0, "The histogram is not normalized!"
 
     # Find the first peak bounds
     lower_bound, upper_bound = find_first_peak_bounds(
         n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5, qc=False
     )
+    assert pytest.approx(lower_bound, 1e-4) == 11600, "The lower bound is wrong!"
     assert (
-        pytest.approx(lower_bound, 1e-4) == 11600.761913082442
-    ), "The lower bound is wrong!"
-    assert (
-        pytest.approx(upper_bound, 1e-4) == 44791.84027317494
+        pytest.approx(upper_bound, 1e-4) == 44760.60183679485
     ), "The upper bound is wrong!"
 
     #

@@ -105,19 +105,23 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Read and set 'min_num_loc_per_trace' option
         self.state.min_num_loc_per_trace = int(
-            app_settings.value("options/min_num_loc_per_trace", self.state.min_num_loc_per_trace)
+            app_settings.value(
+                "options/min_num_loc_per_trace", self.state.min_num_loc_per_trace
+            )
         )
 
         # Read and set 'color_code_locs_by_tid' option
-        value = app_settings.value("options/color_code_locs_by_tid", self.state.color_code_locs_by_tid)
+        value = app_settings.value(
+            "options/color_code_locs_by_tid", self.state.color_code_locs_by_tid
+        )
         color_code_locs_by_tid = (
             value.lower() == "true" if isinstance(value, str) else bool(value)
         )
         self.state.color_code_locs_by_tid = color_code_locs_by_tid
 
-        # Read and set 'efo_bin_size_khz' option
-        self.state.efo_bin_size_khz = float(
-            app_settings.value("options/efo_bin_size_khz", self.state.efo_bin_size_khz)
+        # Read and set 'efo_bin_size_hz' option
+        self.state.efo_bin_size_hz = float(
+            app_settings.value("options/efo_bin_size_hz", self.state.efo_bin_size_hz)
         )
 
     def setup_conn(self):

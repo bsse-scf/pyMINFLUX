@@ -1,5 +1,5 @@
 from PySide6.QtCore import QSettings, Signal, Slot
-from PySide6.QtGui import QIntValidator, QDoubleValidator
+from PySide6.QtGui import QDoubleValidator, QIntValidator
 from PySide6.QtWidgets import QDialog
 
 from pyminflux.state import State
@@ -16,9 +16,7 @@ class Options(QDialog, Ui_Options):
     color_code_locs_by_tid_option_changed = Signal(
         name="color_code_locs_by_tid_option_changed"
     )
-    efo_bin_size_khz_option_changed = Signal(
-        name="efo_bin_size_khz_option_changed"
-    )
+    efo_bin_size_hz_option_changed = Signal(name="efo_bin_size_hz_option_changed")
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -37,7 +35,7 @@ class Options(QDialog, Ui_Options):
         self.ui.leMinTIDNum.setText(str(self.state.min_num_loc_per_trace))
         self.ui.leMinTIDNum.setValidator(QIntValidator(bottom=0))
         self.ui.cbColorLocsByTID.setChecked(self.state.color_code_locs_by_tid)
-        self.ui.leEFOBinSize.setText(str(self.state.efo_bin_size_khz))
+        self.ui.leEFOBinSize.setText(str(self.state.efo_bin_size_hz))
         self.ui.leEFOBinSize.setValidator(QDoubleValidator(bottom=0.0))
 
         # Set signal-slot connections
@@ -50,7 +48,7 @@ class Options(QDialog, Ui_Options):
         self.ui.cbColorLocsByTID.stateChanged.connect(
             self.persist_color_code_locs_by_tid
         )
-        self.ui.leEFOBinSize.textChanged.connect(self.persist_efo_bin_size_khz)
+        self.ui.leEFOBinSize.textChanged.connect(self.persist_efo_bin_size_hz)
 
     @Slot(str, name="persist_thresh_factor")
     def persist_min_num_loc_per_trace(self, text):
@@ -70,16 +68,16 @@ class Options(QDialog, Ui_Options):
         # Signal the change
         self.color_code_locs_by_tid_option_changed.emit()
 
-    @Slot(str, name="persist_efo_bin_size_khz")
-    def persist_efo_bin_size_khz(self, text):
+    @Slot(str, name="persist_efo_bin_size_hz")
+    def persist_efo_bin_size_hz(self, text):
         try:
-            efo_bin_size_khz = float(text)
+            efo_bin_size_hz = float(text)
         except Exception as _:
             return
-        self.state.efo_bin_size_khz = efo_bin_size_khz
+        self.state.efo_bin_size_hz = efo_bin_size_hz
 
         # Signal the change
-        self.efo_bin_size_khz_option_changed.emit()
+        self.efo_bin_size_hz_option_changed.emit()
 
     @Slot(str, name="set_as_new_default")
     def set_as_new_default(self, text):
@@ -93,6 +91,4 @@ class Options(QDialog, Ui_Options):
         app_settings.setValue(
             "options/color_code_locs_by_tid", self.state.color_code_locs_by_tid
         )
-        app_settings.setValue(
-            "options/efo_bin_size_khz", self.state.efo_bin_size_khz
-        )
+        app_settings.setValue("options/efo_bin_size_hz", self.state.efo_bin_size_hz)
