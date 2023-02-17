@@ -124,6 +124,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             app_settings.value("options/efo_bin_size_hz", self.state.efo_bin_size_hz)
         )
 
+        # Read and set 'weigh_avg_localization_by_eco' option
+        value = app_settings.value(
+            "options/weigh_avg_localization_by_eco",
+            self.state.weigh_avg_localization_by_eco,
+        )
+        weigh_avg_localization_by_eco = (
+            value.lower() == "true" if isinstance(value, str) else bool(value)
+        )
+        self.state.weigh_avg_localization_by_eco = weigh_avg_localization_by_eco
+
     def setup_conn(self):
         """Set up signals and slots."""
 
@@ -151,6 +161,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter.crop_region_selected.connect(self.crop_data_by_range)
         self.options.color_code_locs_by_tid_option_changed.connect(
             self.plot_localizations
+        )
+        self.options.weigh_avg_localization_by_eco_option_changed.connect(
+            self.update_weighted_average_localization_option_and_plot
         )
 
     def enable_ui_components_on_loaded_data(self):
@@ -306,6 +319,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Add initialize the processor with the reader
             self.minfluxprocessor = MinFluxProcessor(minfluxreader)
 
+            # Make sure to set current value of use_weighted_localizations
+            self.minfluxprocessor.use_weighted_localizations = (
+                self.state.weigh_avg_localization_by_eco
+            )
+
             # Show the filename on the main window
             self.setWindowTitle(
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
@@ -378,7 +396,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Get the filtered dataframe subset corresponding to selected indices
         df = self.minfluxprocessor.select_dataframe_by_indices(
-            indices=indices, from_weighed_locs=self.state.plot_average_localisations
+            indices=indices, from_weighted_locs=self.state.plot_average_localisations
         )
 
         # Update the dataviewer
@@ -394,7 +412,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Get the filtered dataframe subset contained in the provided x and y ranges
         df = self.minfluxprocessor.select_dataframe_by_xy_range(
-            x_range, y_range, from_weighed_locs=self.state.plot_average_localisations
+            x_range, y_range, from_weighted_locs=self.state.plot_average_localisations
         )
 
         # Update the dataviewer
@@ -431,6 +449,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Make sure to autoupdate the axis (on load only)
         self.plotter.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
 
+    def update_weighted_average_localization_option_and_plot(self):
+        """Update the weighted average localization option in the Processor and re-plot."""
+        if self.minfluxprocessor is not None:
+            self.minfluxprocessor.use_weighted_localizations = (
+                self.state.weigh_avg_localization_by_eco
+            )
+        self.plot_localizations()
+
     def plot_localizations(self):
         """Plot the localizations."""
 
@@ -443,7 +469,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         if self.state.plot_average_localisations:
             # Get the (potentially filtered) averaged dataframe
-            dataframe = self.minfluxprocessor.weighed_localizations
+            dataframe = self.minfluxprocessor.weighted_localizations
         else:
             # Get the (potentially filtered) full dataframe
             dataframe = self.minfluxprocessor.filtered_dataframe
@@ -494,7 +520,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             ):
                 if self.state.plot_average_localisations:
                     self.plot_localizations_3d(
-                        self.minfluxprocessor.weighed_localizations[
+                        self.minfluxprocessor.weighted_localizations[
                             ["x", "y", "z"]
                         ].values
                     )

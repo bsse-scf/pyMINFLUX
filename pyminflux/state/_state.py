@@ -26,6 +26,7 @@ class State(metaclass=Singleton):
         "efo_bin_size_hz",
         "dwell_time_threshold",
         "dwell_time_smaller_than_threshold",
+        "weigh_avg_localization_by_eco",
     ]
 
     def __init__(self):
@@ -75,6 +76,9 @@ class State(metaclass=Singleton):
         self.dwell_time_threshold: float = 0.0
         self.dwell_time_smaller_than_threshold: bool = True
 
+        # Weigh average localization by ECO
+        self.weigh_avg_localization_by_eco: bool = False
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -96,6 +100,7 @@ class State(metaclass=Singleton):
             "efo_bin_size_hz": self.efo_bin_size_hz,
             "self.dwell_time_threshold": self.dwell_time_threshold,
             "self.dwell_time_smaller_than_threshold": self.dwell_time_smaller_than_threshold,
+            "weigh_avg_localization_by_eco": self.weigh_avg_localization_by_eco,
         }
 
     def reset(self):
@@ -123,5 +128,6 @@ class State(metaclass=Singleton):
         self.median_efo_filter_support = 5
         self.cfr_threshold_factor = 2.0
         self.efo_bin_size_hz = 0.0
-        self.dwell_time_threshold: float = 0.0
-        self.dwell_time_smaller_than_threshold: bool = True
+        self.dwell_time_threshold = 0.0
+        self.dwell_time_smaller_than_threshold = True
+        self.weigh_avg_localization_by_eco = False

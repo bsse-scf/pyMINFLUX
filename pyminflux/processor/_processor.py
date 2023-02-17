@@ -15,8 +15,9 @@ class MinFluxProcessor:
         "__filtered_dataframe",
         "__filtered_stats_dataframe",
         "__stats_to_be_recomputed",
-        "__weighed_localizations",
-        "__weighed_localizations_to_be_recomputed",
+        "__weighted_localizations",
+        "__weighted_localizations_to_be_recomputed",
+        "__use_weighted_localizations",
     ]
 
     def __init__(self, minfluxreader: MinFluxReader):
@@ -39,12 +40,15 @@ class MinFluxProcessor:
         self.__filtered_dataframe = None
         self.__filtered_stats_dataframe = None
 
-        # Cache the weighed, averaged TID positions
-        self.__weighed_localizations = None
+        # Cache the weighted, averaged TID positions
+        self.__weighted_localizations = None
 
-        # Keep track whether the statistics and the weighed localizations need to be recomputed
+        # Keep track whether the statistics and the weighted localizations need to be recomputed
         self.__stats_to_be_recomputed = False
-        self.__weighed_localizations_to_be_recomputed = False
+        self.__weighted_localizations_to_be_recomputed = False
+
+        # Whether to use weighted average for localizations
+        self.__use_weighted_localizations = False
 
         # Apply the global filters
         self._apply_global_filters()
@@ -106,11 +110,22 @@ class MinFluxProcessor:
         return self.__filtered_stats_dataframe
 
     @property
-    def weighed_localizations(self) -> Union[None, pd.DataFrame]:
-        """Return the average (x, y, z) position per TID weighed by the relative photon count."""
-        if self.__weighed_localizations_to_be_recomputed:
-            self._calculate_weighed_positions()
-        return self.__weighed_localizations
+    def weighted_localizations(self) -> Union[None, pd.DataFrame]:
+        """Return the average (x, y, z) position per TID weighted by the relative photon count."""
+        if self.__weighted_localizations_to_be_recomputed:
+            self._calculate_weighted_positions()
+        return self.__weighted_localizations
+
+    @property
+    def use_weighted_localizations(self) -> bool:
+        """Whether to use weighted average to calculate the mean localization per TID."""
+        return self.__use_weighted_localizations
+
+    @use_weighted_localizations.setter
+    def use_weighted_localizations(self, value: bool):
+        """Whether to use weighted average to calculate the mean localization per TID."""
+        self.__use_weighted_localizations = value
+        self.__weighted_localizations_to_be_recomputed = True
 
     @classmethod
     def processed_properties(cls):
@@ -123,9 +138,9 @@ class MinFluxProcessor:
         self._apply_global_filters()
 
     def select_dataframe_by_indices(
-        self, indices, from_weighed_locs: bool = False
+        self, indices, from_weighted_locs: bool = False
     ) -> Union[None, pd.DataFrame]:
-        """Return view on a subset of the filtered dataset or the weighed localisations defined by the passed indices.
+        """Return view on a subset of the filtered dataset or the weighted localisations defined by the passed indices.
 
         The underlying dataframe is not modified.
 
@@ -135,8 +150,8 @@ class MinFluxProcessor:
         indices: array
             Logical array for selecting the elements to be returned.
 
-        from_weighed_locs: bool
-            If True, select from the weighed_localizations dataframe; otherwise, from the filtered_dataframe.
+        from_weighted_locs: bool
+            If True, select from the weighted_localizations dataframe; otherwise, from the filtered_dataframe.
 
         Returns
         -------
@@ -144,19 +159,19 @@ class MinFluxProcessor:
         subset: Union[None, pd.DataFrame]
             A view on a subset of the dataframe defined by the passed indices, or None if no file was loaded.
         """
-        if from_weighed_locs:
-            if self.__weighed_localizations is None:
+        if from_weighted_locs:
+            if self.__weighted_localizations is None:
                 return None
-            return self.__weighed_localizations.iloc[indices]
+            return self.__weighted_localizations.iloc[indices]
         else:
             if self.__filtered_dataframe is None:
                 return None
             return self.__filtered_dataframe.iloc[indices]
 
     def select_dataframe_by_xy_range(
-        self, x_range, y_range, from_weighed_locs: bool = False
+        self, x_range, y_range, from_weighted_locs: bool = False
     ) -> Union[None, pd.DataFrame]:
-        """Return a view on a subset of the filtered dataset or the weighed localisations defined by the passed
+        """Return a view on a subset of the filtered dataset or the weighted localisations defined by the passed
         x and y ranges.
 
         The underlying dataframe is not modified.
@@ -170,8 +185,8 @@ class MinFluxProcessor:
         y_range: tuple
             Tuple containing the minimum and maximum values for the y coordinates to be selected.
 
-        from_weighed_locs: bool
-            If True, select from the weighed_localizations dataframe; otherwise, from the filtered_dataframe.
+        from_weighted_locs: bool
+            If True, select from the weighted_localizations dataframe; otherwise, from the filtered_dataframe.
 
         Returns
         -------
@@ -191,12 +206,12 @@ class MinFluxProcessor:
         if y_max < y_min:
             y_max, y_min = y_min, y_max
 
-        if from_weighed_locs:
-            return self.__weighed_localizations.loc[
-                (self.__weighed_localizations["x"] >= x_min)
-                & (self.__weighed_localizations["x"] < x_max)
-                & (self.__weighed_localizations["y"] >= y_min)
-                & (self.__weighed_localizations["y"] < y_max)
+        if from_weighted_locs:
+            return self.__weighted_localizations.loc[
+                (self.__weighted_localizations["x"] >= x_min)
+                & (self.__weighted_localizations["x"] < x_max)
+                & (self.__weighted_localizations["y"] >= y_min)
+                & (self.__weighted_localizations["y"] < y_max)
             ]
         else:
             return self.__filtered_dataframe.loc[
@@ -249,7 +264,7 @@ class MinFluxProcessor:
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
-        self.__weighed_localizations_to_be_recomputed = True
+        self.__weighted_localizations_to_be_recomputed = True
 
     def _get_copy_of_filtered_dataframe(self):
         """Get a copy of current filtered dataframe."""
@@ -279,7 +294,7 @@ class MinFluxProcessor:
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
-        self.__weighed_localizations_to_be_recomputed = True
+        self.__weighted_localizations_to_be_recomputed = True
 
     def apply_threshold(
         self, prop: str, threshold: Union[int, float], larger_than: bool = True
@@ -303,7 +318,7 @@ class MinFluxProcessor:
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
-        self.__weighed_localizations_to_be_recomputed = True
+        self.__weighted_localizations_to_be_recomputed = True
 
     def apply_range_filter(
         self,
@@ -344,7 +359,7 @@ class MinFluxProcessor:
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
-        self.__weighed_localizations_to_be_recomputed = True
+        self.__weighted_localizations_to_be_recomputed = True
 
     def apply_filter_by_indices(self, indices):
         """Apply filter by selected indices.
@@ -370,7 +385,7 @@ class MinFluxProcessor:
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
-        self.__weighed_localizations_to_be_recomputed = True
+        self.__weighted_localizations_to_be_recomputed = True
 
     def _calculate_statistics(self):
         """Calculate per-trace statistics."""
@@ -417,36 +432,49 @@ class MinFluxProcessor:
         # Flag the statistics to be computed
         self.__stats_to_be_recomputed = False
 
-    def _calculate_weighed_positions(self):
-        """Calculate per-trace localization weighed by relative photon count."""
+    def _calculate_weighted_positions(self):
+        """Calculate per-trace localization weighted by relative photon count."""
 
         # Make sure we have processed dataframe to work on
         if self.__filtered_dataframe is None:
             return
 
-        # Only recompute weighed localizations if needed
-        if not self.__weighed_localizations_to_be_recomputed:
+        # Only recompute weighted localizations if needed
+        if not self.__weighted_localizations_to_be_recomputed:
             return
 
         # Now we are guaranteed to have a filtered dataframe to work with
         df = self.__filtered_dataframe.copy()
 
-        # Calculate weighing factors for TIDs
-        df["eco_rel"] = df["eco"].groupby(df["tid"]).transform(lambda x: x / x.sum())
+        # Normal or weighted averaging?
+        if self.__use_weighted_localizations:
+            # Calculate weighing factors for TIDs
+            df["eco_rel"] = (
+                df["eco"].groupby(df["tid"]).transform(lambda x: x / x.sum())
+            )
 
-        # Calculate relative contributions of (x, y, z)_i for each TID
-        df["x_rel"] = df["x"] * df["eco_rel"]
-        df["y_rel"] = df["y"] * df["eco_rel"]
-        df["z_rel"] = df["z"] * df["eco_rel"]
+            # Calculate relative contributions of (x, y, z)_i for each TID
+            df["x_rel"] = df["x"] * df["eco_rel"]
+            df["y_rel"] = df["y"] * df["eco_rel"]
+            df["z_rel"] = df["z"] * df["eco_rel"]
 
-        # Calculate the weighed localizations
-        df_grouped = df.groupby("tid")
-        tid = df_grouped["tid"].first().values
-        x_w = df_grouped["x_rel"].sum().values
-        y_w = df_grouped["y_rel"].sum().values
-        z_w = df_grouped["z_rel"].sum().values
+            # Calculate the weighted localizations
+            df_grouped = df.groupby("tid")
+            tid = df_grouped["tid"].first().values
+            x_w = df_grouped["x_rel"].sum().values
+            y_w = df_grouped["y_rel"].sum().values
+            z_w = df_grouped["z_rel"].sum().values
 
-        # Prepare a dataframe with the weighed localizations
+        else:
+
+            # Calculate simple avarage of localizations by TID
+            df_grouped = df.groupby(df["tid"])
+            tid = df_grouped["tid"].first().values
+            x_w = df_grouped["x"].mean().values
+            y_w = df_grouped["y"].mean().values
+            z_w = df_grouped["z"].mean().values
+
+        # Prepare a dataframe with the weighted localizations
         df_loc = pd.DataFrame(columns=["tid", "x", "y", "z"])
         df_loc["tid"] = tid
         df_loc["x"] = x_w
@@ -454,7 +482,7 @@ class MinFluxProcessor:
         df_loc["z"] = z_w
 
         # Store the results
-        self.__weighed_localizations = df_loc
+        self.__weighted_localizations = df_loc
 
         # Make sure to flag the derived data to be recomputed
-        self.__weighed_localizations_to_be_recomputed = False
+        self.__weighted_localizations_to_be_recomputed = False

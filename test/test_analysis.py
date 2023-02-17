@@ -525,6 +525,14 @@ def test_eco_value_extraction(extract_raw_npy_data_files):
         )
     )
 
+    # Test last 15 eco values
+    assert np.all(
+        eco[-15:]
+        == np.array(
+            [173, 177, 157, 151, 150, 150, 181, 156, 167, 175, 161, 166, 150, 200, 162]
+        )
+    )
+
     #
     # 3D_ValidOnly.npy
     #
@@ -535,12 +543,18 @@ def test_eco_value_extraction(extract_raw_npy_data_files):
     assert np.all(
         eco[:15]
         == np.array(
-            [200, 294, 214, 287, 228, 172, 306, 292, 198, 197, 239, 288, 323, 371, 198]
+            [93, 108, 101, 87, 113, 58, 159, 110, 84, 90, 70, 152, 187, 215, 70]
         )
     )
 
+    # Test last 15 eco values
+    assert np.all(
+        eco[-15:]
+        == np.array([60, 68, 66, 52, 60, 58, 79, 55, 50, 63, 61, 55, 62, 61, 54])
+    )
 
-def test_weighed_localizations(extract_raw_npy_data_files):
+
+def test_weighted_localizations(extract_raw_npy_data_files):
     # Initialize state
     state = State()
 
@@ -556,8 +570,11 @@ def test_weighed_localizations(extract_raw_npy_data_files):
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
     processor = MinFluxProcessor(reader)
 
-    # Get weighed localizations
-    df_loc = processor.weighed_localizations
+    # Turn on weighted localization calculation
+    processor.use_weighted_localizations = True
+
+    # Get weighted localizations
+    df_loc = processor.weighted_localizations
 
     # Get filtered dataframe
     df_filt = processor.filtered_dataframe
@@ -576,13 +593,47 @@ def test_weighed_localizations(extract_raw_npy_data_files):
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
-        ), "The weighed x localization is wrong!"
+        ), "The weighted x localization is wrong!"
         assert (
             pytest.approx(y_w, 1e-4) == exp_y_w
-        ), "The weighed y localization is wrong!"
+        ), "The weighted y localization is wrong!"
         assert (
             pytest.approx(z_w, 1e-4) == exp_z_w
-        ), "The weighed z localization is wrong!"
+        ), "The weighted z localization is wrong!"
+
+    #
+    #
+    #
+
+    # Turn off weighted localization calculation
+    processor.use_weighted_localizations = False
+
+    # Get weighted localizations
+    df_loc = processor.weighted_localizations
+
+    # Get filtered dataframe
+    df_filt = processor.filtered_dataframe
+
+    # Make sure the TIDs match
+    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+
+    # Test extracted localizations
+    for tid, frame in df_filt.groupby("tid"):
+        x_w = frame["x"].mean()
+        y_w = frame["y"].mean()
+        z_w = frame["z"].mean()
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
     #
     # 2D_ValidOnly.npy
@@ -596,8 +647,11 @@ def test_weighed_localizations(extract_raw_npy_data_files):
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
     processor = MinFluxProcessor(reader)
 
-    # Get weighed localizations
-    df_loc = processor.weighed_localizations
+    # Turn on weighted localization calculation
+    processor.use_weighted_localizations = True
+
+    # Get weighted localizations
+    df_loc = processor.weighted_localizations
 
     # Get filtered dataframe
     df_filt = processor.filtered_dataframe
@@ -616,13 +670,47 @@ def test_weighed_localizations(extract_raw_npy_data_files):
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
-        ), "The weighed x localization is wrong!"
+        ), "The weighted x localization is wrong!"
         assert (
             pytest.approx(y_w, 1e-4) == exp_y_w
-        ), "The weighed y localization is wrong!"
+        ), "The weighted y localization is wrong!"
         assert (
             pytest.approx(z_w, 1e-4) == exp_z_w
-        ), "The weighed z localization is wrong!"
+        ), "The weighted z localization is wrong!"
+
+    #
+    #
+    #
+
+    # Turn off weighted localization calculation
+    processor.use_weighted_localizations = False
+
+    # Get weighted localizations
+    df_loc = processor.weighted_localizations
+
+    # Get filtered dataframe
+    df_filt = processor.filtered_dataframe
+
+    # Make sure the TIDs match
+    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+
+    # Test extracted localizations
+    for tid, frame in df_filt.groupby("tid"):
+        x_w = frame["x"].mean()
+        y_w = frame["y"].mean()
+        z_w = frame["z"].mean()
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
     #
     # 3D_ValidOnly.npy
@@ -636,8 +724,11 @@ def test_weighed_localizations(extract_raw_npy_data_files):
     reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
     processor = MinFluxProcessor(reader)
 
-    # Get weighed localizations
-    df_loc = processor.weighed_localizations
+    # Turn on weighted localization calculation
+    processor.use_weighted_localizations = True
+
+    # Get weighted localizations
+    df_loc = processor.weighted_localizations
 
     # Get filtered dataframe
     df_filt = processor.filtered_dataframe
@@ -656,13 +747,47 @@ def test_weighed_localizations(extract_raw_npy_data_files):
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
-        ), "The weighed x localization is wrong!"
+        ), "The weighted x localization is wrong!"
         assert (
             pytest.approx(y_w, 1e-4) == exp_y_w
-        ), "The weighed y localization is wrong!"
+        ), "The weighted y localization is wrong!"
         assert (
             pytest.approx(z_w, 1e-4) == exp_z_w
-        ), "The weighed z localization is wrong!"
+        ), "The weighted z localization is wrong!"
+
+    #
+    #
+    #
+
+    # Turn off weighted localization calculation
+    processor.use_weighted_localizations = False
+
+    # Get weighted localizations
+    df_loc = processor.weighted_localizations
+
+    # Get filtered dataframe
+    df_filt = processor.filtered_dataframe
+
+    # Make sure the TIDs match
+    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+
+    # Test extracted localizations
+    for tid, frame in df_filt.groupby("tid"):
+        x_w = frame["x"].mean()
+        y_w = frame["y"].mean()
+        z_w = frame["z"].mean()
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
     #
     # 3D_ValidOnly.npy
@@ -676,8 +801,11 @@ def test_weighed_localizations(extract_raw_npy_data_files):
     reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
     processor = MinFluxProcessor(reader)
 
-    # Get weighed localizations
-    df_loc = processor.weighed_localizations
+    # Turn on weighted localization calculation
+    processor.use_weighted_localizations = True
+
+    # Get weighted localizations
+    df_loc = processor.weighted_localizations
 
     # Get filtered dataframe
     df_filt = processor.filtered_dataframe
@@ -696,13 +824,47 @@ def test_weighed_localizations(extract_raw_npy_data_files):
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
-        ), "The weighed x localization is wrong!"
+        ), "The weighted x localization is wrong!"
         assert (
             pytest.approx(y_w, 1e-4) == exp_y_w
-        ), "The weighed y localization is wrong!"
+        ), "The weighted y localization is wrong!"
         assert (
             pytest.approx(z_w, 1e-4) == exp_z_w
-        ), "The weighed z localization is wrong!"
+        ), "The weighted z localization is wrong!"
+
+    #
+    #
+    #
+
+    # Turn off weighted localization calculation
+    processor.use_weighted_localizations = False
+
+    # Get weighted localizations
+    df_loc = processor.weighted_localizations
+
+    # Get filtered dataframe
+    df_filt = processor.filtered_dataframe
+
+    # Make sure the TIDs match
+    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+
+    # Test extracted localizations
+    for tid, frame in df_filt.groupby("tid"):
+        x_w = frame["x"].mean()
+        y_w = frame["y"].mean()
+        z_w = frame["z"].mean()
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
 
 def test_apply_filter_by_indices(extract_raw_npy_data_files):

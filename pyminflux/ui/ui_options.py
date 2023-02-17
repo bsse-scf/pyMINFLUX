@@ -63,46 +63,36 @@ class Ui_Options(object):
         Options.resize(489, 199)
         self.gridLayout = QGridLayout(Options)
         self.gridLayout.setObjectName("gridLayout")
-        self.pbSetDefault = QPushButton(Options)
-        self.pbSetDefault.setObjectName("pbSetDefault")
+        self.line = QFrame(Options)
+        self.line.setObjectName("line")
+        self.line.setFrameShape(QFrame.HLine)
+        self.line.setFrameShadow(QFrame.Sunken)
 
-        self.gridLayout.addWidget(self.pbSetDefault, 8, 0, 1, 1)
+        self.gridLayout.addWidget(self.line, 4, 0, 1, 1)
 
         self.cbColorLocsByTID = QCheckBox(Options)
         self.cbColorLocsByTID.setObjectName("cbColorLocsByTID")
 
         self.gridLayout.addWidget(self.cbColorLocsByTID, 6, 0, 1, 1)
 
-        self.hlEFOBinSize = QHBoxLayout()
-        self.hlEFOBinSize.setObjectName("hlEFOBinSize")
-        self.lbEFOBinSize = QLabel(Options)
-        self.lbEFOBinSize.setObjectName("lbEFOBinSize")
-
-        self.hlEFOBinSize.addWidget(self.lbEFOBinSize)
-
-        self.horizontalSpacer_2 = QSpacerItem(
-            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
-        )
-
-        self.hlEFOBinSize.addItem(self.horizontalSpacer_2)
-
-        self.leEFOBinSize = QLineEdit(Options)
-        self.leEFOBinSize.setObjectName("leEFOBinSize")
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.leEFOBinSize.sizePolicy().hasHeightForWidth())
-        self.leEFOBinSize.setSizePolicy(sizePolicy)
-
-        self.hlEFOBinSize.addWidget(self.leEFOBinSize)
-
-        self.gridLayout.addLayout(self.hlEFOBinSize, 1, 0, 1, 1)
-
         self.verticalSpacer = QSpacerItem(
             20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
         )
 
-        self.gridLayout.addItem(self.verticalSpacer, 7, 0, 1, 1)
+        self.gridLayout.addItem(self.verticalSpacer, 8, 0, 1, 1)
+
+        self.pbSetDefault = QPushButton(Options)
+        self.pbSetDefault.setObjectName("pbSetDefault")
+
+        self.gridLayout.addWidget(self.pbSetDefault, 9, 0, 1, 1)
+
+        self.lbInfoImmediate = QLabel(Options)
+        self.lbInfoImmediate.setObjectName("lbInfoImmediate")
+        font = QFont()
+        font.setItalic(True)
+        self.lbInfoImmediate.setFont(font)
+
+        self.gridLayout.addWidget(self.lbInfoImmediate, 5, 0, 1, 1)
 
         self.hlMinNumTraces = QHBoxLayout()
         self.hlMinNumTraces.setObjectName("hlMinNumTraces")
@@ -119,6 +109,9 @@ class Ui_Options(object):
 
         self.leMinTIDNum = QLineEdit(Options)
         self.leMinTIDNum.setObjectName("leMinTIDNum")
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.leMinTIDNum.sizePolicy().hasHeightForWidth())
         self.leMinTIDNum.setSizePolicy(sizePolicy)
 
@@ -126,26 +119,38 @@ class Ui_Options(object):
 
         self.gridLayout.addLayout(self.hlMinNumTraces, 0, 0, 1, 1)
 
-        self.line = QFrame(Options)
-        self.line.setObjectName("line")
-        self.line.setFrameShape(QFrame.HLine)
-        self.line.setFrameShadow(QFrame.Sunken)
+        self.hlEFOBinSize = QHBoxLayout()
+        self.hlEFOBinSize.setObjectName("hlEFOBinSize")
+        self.lbEFOBinSize = QLabel(Options)
+        self.lbEFOBinSize.setObjectName("lbEFOBinSize")
 
-        self.gridLayout.addWidget(self.line, 4, 0, 1, 1)
+        self.hlEFOBinSize.addWidget(self.lbEFOBinSize)
+
+        self.horizontalSpacer_2 = QSpacerItem(
+            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.hlEFOBinSize.addItem(self.horizontalSpacer_2)
+
+        self.leEFOBinSize = QLineEdit(Options)
+        self.leEFOBinSize.setObjectName("leEFOBinSize")
+        sizePolicy.setHeightForWidth(self.leEFOBinSize.sizePolicy().hasHeightForWidth())
+        self.leEFOBinSize.setSizePolicy(sizePolicy)
+
+        self.hlEFOBinSize.addWidget(self.leEFOBinSize)
+
+        self.gridLayout.addLayout(self.hlEFOBinSize, 1, 0, 1, 1)
 
         self.lbInfo = QLabel(Options)
         self.lbInfo.setObjectName("lbInfo")
-        font = QFont()
-        font.setItalic(True)
         self.lbInfo.setFont(font)
 
         self.gridLayout.addWidget(self.lbInfo, 3, 0, 1, 1)
 
-        self.lbInfoImmediate = QLabel(Options)
-        self.lbInfoImmediate.setObjectName("lbInfoImmediate")
-        self.lbInfoImmediate.setFont(font)
+        self.cbWeightAvgLocByECO = QCheckBox(Options)
+        self.cbWeightAvgLocByECO.setObjectName("cbWeightAvgLocByECO")
 
-        self.gridLayout.addWidget(self.lbInfoImmediate, 5, 0, 1, 1)
+        self.gridLayout.addWidget(self.cbWeightAvgLocByECO, 7, 0, 1, 1)
 
         self.retranslateUi(Options)
 
@@ -155,22 +160,29 @@ class Ui_Options(object):
 
     def retranslateUi(self, Options):
         Options.setWindowTitle(QCoreApplication.translate("Options", "Options", None))
-        self.pbSetDefault.setText(
-            QCoreApplication.translate("Options", "Set as new default", None)
-        )
         self.cbColorLocsByTID.setText(
             QCoreApplication.translate(
                 "Options", "Color-code localizations by TID in main plotter", None
             )
         )
-        self.lbEFOBinSize.setText(
+        self.pbSetDefault.setText(
+            QCoreApplication.translate("Options", "Set as new default", None)
+        )
+        self.lbInfoImmediate.setText(
             QCoreApplication.translate(
-                "Options", "EFO bin size (Hz): set to 0 for automatic estimation", None
+                "Options",
+                "Changes below will be applied immediately to all open views.",
+                None,
             )
         )
         self.lbMinTIDNum.setText(
             QCoreApplication.translate(
                 "Options", "Minimum number of trace localizations", None
+            )
+        )
+        self.lbEFOBinSize.setText(
+            QCoreApplication.translate(
+                "Options", "EFO bin size (Hz): set to 0 for automatic estimation", None
             )
         )
         self.lbInfo.setText(
@@ -180,10 +192,10 @@ class Ui_Options(object):
                 None,
             )
         )
-        self.lbInfoImmediate.setText(
+        self.cbWeightAvgLocByECO.setText(
             QCoreApplication.translate(
                 "Options",
-                "Changes below will be applied immediately to all open views.",
+                "Use relative ECO count for weighted average localization calculation",
                 None,
             )
         )
