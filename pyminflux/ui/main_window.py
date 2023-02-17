@@ -18,7 +18,7 @@ from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.data_inspector import DataInspector
 from pyminflux.ui.dataviewer import DataViewer
-from pyminflux.ui.emittingstream import EmittingStream
+#from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
@@ -87,9 +87,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Keep a reference to the MinFluxProcessor
         self.minfluxprocessor = None
 
-        # Install the custom output stream
-        sys.stdout = EmittingStream()
-        sys.stdout.signal_textWritten.connect(self.print_to_console)
+        # # Install the custom output stream
+        # sys.stdout = EmittingStream()
+        # sys.stdout.signal_textWritten.connect(self.print_to_console)
 
         # Print a welcome message to the console
         print(f"Welcome to {__APP_NAME__}.")
@@ -242,9 +242,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                     "io/last_selected_path", str(self.last_selected_path)
                 )
 
-            # Restore sys.stdout
-            sys.stdout = sys.__stdout__
-            sys.stdout.flush()
+            # # Restore sys.stdout
+            # sys.stdout = sys.__stdout__
+            # sys.stdout.flush()
 
             # Now exit
             event.accept()
