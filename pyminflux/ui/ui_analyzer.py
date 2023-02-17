@@ -363,12 +363,6 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_5.addWidget(self.lbDwellTimeUnit)
 
-        self.pbDwellPreview = QPushButton(self.tab_dwell_filtering)
-        self.pbDwellPreview.setObjectName("pbDwellPreview")
-        self.pbDwellPreview.setEnabled(False)
-
-        self.horizontalLayout_5.addWidget(self.pbDwellPreview)
-
         self.pbDwellFilter = QPushButton(self.tab_dwell_filtering)
         self.pbDwellFilter.setObjectName("pbDwellFilter")
 
@@ -485,9 +479,6 @@ class Ui_Analyzer(object):
         )
 
         self.lbDwellTimeUnit.setText(QCoreApplication.translate("Analyzer", "ms", None))
-        self.pbDwellPreview.setText(
-            QCoreApplication.translate("Analyzer", "Preview", None)
-        )
         self.pbDwellFilter.setText(
             QCoreApplication.translate("Analyzer", "Filter", None)
         )

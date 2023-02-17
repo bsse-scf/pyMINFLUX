@@ -504,16 +504,6 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pbDwellPreview">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Preview</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QPushButton" name="pbDwellFilter">
          <property name="text">
           <string>Filter</string>
