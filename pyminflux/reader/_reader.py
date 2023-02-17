@@ -77,7 +77,7 @@ class MinFluxReader:
         self.__efo_index: int = -1
         self.__cfr_index: int = -1
         self.__dcr_index: int = -1
-        self.__eco_index: np.arange(-1, 0)  # Last entry using a valid range object
+        self.__eco_index: int = -1
         self.__loc_index: int = -1
 
         # Constant indices
@@ -245,7 +245,7 @@ class MinFluxReader:
             cfr = itr[:, self.__cfr_index]["cfr"]
 
             # Extract ECO
-            eco = itr[:, self.__eco_index]["eco"].sum(axis=1)
+            eco = itr[:, self.__eco_index]["eco"]
 
             # Extract DCR
             dcr = itr[:, self.__dcr_index]["dcr"]
@@ -356,18 +356,14 @@ class MinFluxReader:
                 self.__efo_index = 9
                 self.__cfr_index = 6
                 self.__dcr_index = 9
-                self.__eco_index = np.arange(
-                    8, 10
-                )  # For 3D data, sum ECO values for iterations 8 and 9
+                self.__eco_index = 9
                 self.__loc_index = 9
             else:
                 self.__reps = 5
                 self.__efo_index = 4
                 self.__cfr_index = 3
                 self.__dcr_index = 4
-                self.__eco_index = np.arange(
-                    4, 5
-                )  # For 2D data, only consider ECO value at iteration 4
+                self.__eco_index = 4
                 self.__loc_index = 4
 
     def __repr__(self):
