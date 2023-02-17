@@ -344,10 +344,14 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
-    assert processor.num_values == 10468, "Wrong number of filtered entries"
+    assert processor.num_values == 10385, "Wrong number of filtered entries"
     assert (
-        len(processor.filtered_dataframe.index) == 10468
+        len(processor.filtered_dataframe.index) == 10385
     ), "Wrong number of filtered entries"
+
+    # Make sure the global filters were applied
+    counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
+    assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Apply CFR filter and check counts
     processor.apply_range_filter(
@@ -356,10 +360,14 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
-    assert processor.num_values == 9346, "Wrong number of filtered entries"
+    assert processor.num_values == 9133, "Wrong number of filtered entries"
     assert (
-        len(processor.filtered_dataframe.index) == 9346
+        len(processor.filtered_dataframe.index) == 9133
     ), "Wrong number of filtered entries"
+
+    # Make sure the global filters were applied
+    counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
+    assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Reset all filters and confirm counts
     processor.reset()
@@ -464,10 +472,14 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert (
         len(reader.processed_dataframe.index) == 5812
     ), "Wrong total number of entries"
-    assert processor.num_values == 4391, "Wrong number of filtered entries"
+    assert processor.num_values == 4334, "Wrong number of filtered entries"
     assert (
-        len(processor.filtered_dataframe.index) == 4391
+        len(processor.filtered_dataframe.index) == 4334
     ), "Wrong number of filtered entries"
+
+    # Make sure the global filters were applied
+    counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
+    assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Apply CFR filter and check counts
     processor.apply_range_filter(
@@ -476,10 +488,14 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert (
         len(reader.processed_dataframe.index) == 5812
     ), "Wrong total number of entries"
-    assert processor.num_values == 1521, "Wrong number of filtered entries"
+    assert processor.num_values == 1280, "Wrong number of filtered entries"
     assert (
-        len(processor.filtered_dataframe.index) == 1521
+        len(processor.filtered_dataframe.index) == 1280
     ), "Wrong number of filtered entries"
+
+    # Make sure the global filters were applied
+    counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
+    assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Reset all filters and confirm counts
     processor.reset()

@@ -43,6 +43,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
+    QComboBox,
     QDialog,
     QGridLayout,
     QHBoxLayout,
@@ -60,7 +61,7 @@ class Ui_Analyzer(object):
     def setupUi(self, Analyzer):
         if not Analyzer.objectName():
             Analyzer.setObjectName("Analyzer")
-        Analyzer.resize(1364, 1087)
+        Analyzer.resize(1421, 1087)
         self.gridLayout = QGridLayout(Analyzer)
         self.gridLayout.setObjectName("gridLayout")
         self.localizations_layout = QHBoxLayout()
@@ -89,11 +90,11 @@ class Ui_Analyzer(object):
         self.tab_efo_peak_detection.setSizePolicy(sizePolicy1)
         self.horizontalLayout_3 = QHBoxLayout(self.tab_efo_peak_detection)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.horizontalSpacer_7 = QSpacerItem(
+        self.hsEFOPeakBefore = QSpacerItem(
             126, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
-        self.horizontalLayout_3.addItem(self.horizontalSpacer_7)
+        self.horizontalLayout_3.addItem(self.hsEFOPeakBefore)
 
         self.checkEFOLowerThreshold = QCheckBox(self.tab_efo_peak_detection)
         self.checkEFOLowerThreshold.setObjectName("checkEFOLowerThreshold")
@@ -174,11 +175,11 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_3.addWidget(self.pbEFORunFilter)
 
-        self.horizontalSpacer_8 = QSpacerItem(
+        self.hshsEFOPeakAfter = QSpacerItem(
             126, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
-        self.horizontalLayout_3.addItem(self.horizontalSpacer_8)
+        self.horizontalLayout_3.addItem(self.hshsEFOPeakAfter)
 
         self.tabFilterOptions.addTab(self.tab_efo_peak_detection, "")
         self.tab_efo_sub_population_detection = QWidget()
@@ -191,11 +192,11 @@ class Ui_Analyzer(object):
         self.tab_efo_sub_population_detection.setSizePolicy(sizePolicy1)
         self.horizontalLayout = QHBoxLayout(self.tab_efo_sub_population_detection)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.horizontalSpacer_3 = QSpacerItem(
+        self.hsEFOBefore = QSpacerItem(
             290, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
-        self.horizontalLayout.addItem(self.horizontalSpacer_3)
+        self.horizontalLayout.addItem(self.hsEFOBefore)
 
         self.cbEFOIncludeCFR = QCheckBox(self.tab_efo_sub_population_detection)
         self.cbEFOIncludeCFR.setObjectName("cbEFOIncludeCFR")
@@ -246,11 +247,11 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout.addWidget(self.pbEFOGMMFilter)
 
-        self.horizontalSpacer_4 = QSpacerItem(
+        self.hsEFOAfter = QSpacerItem(
             290, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
-        self.horizontalLayout.addItem(self.horizontalSpacer_4)
+        self.horizontalLayout.addItem(self.hsEFOAfter)
 
         self.tabFilterOptions.addTab(self.tab_efo_sub_population_detection, "")
         self.tab_cfr_thresholding = QWidget()
@@ -261,11 +262,11 @@ class Ui_Analyzer(object):
         self.tab_cfr_thresholding.setSizePolicy(sizePolicy1)
         self.horizontalLayout_4 = QHBoxLayout(self.tab_cfr_thresholding)
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
-        self.horizontalSpacer_5 = QSpacerItem(
+        self.hsCFRFilterBefore = QSpacerItem(
             414, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
-        self.horizontalLayout_4.addItem(self.horizontalSpacer_5)
+        self.horizontalLayout_4.addItem(self.hsCFRFilterBefore)
 
         self.checkCFRLowerThreshold = QCheckBox(self.tab_cfr_thresholding)
         self.checkCFRLowerThreshold.setObjectName("checkCFRLowerThreshold")
@@ -321,13 +322,65 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_4.addWidget(self.pbCFRRunFilter)
 
-        self.horizontalSpacer_6 = QSpacerItem(
+        self.hsCFRFilterAfter = QSpacerItem(
             306, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
-        self.horizontalLayout_4.addItem(self.horizontalSpacer_6)
+        self.horizontalLayout_4.addItem(self.hsCFRFilterAfter)
 
         self.tabFilterOptions.addTab(self.tab_cfr_thresholding, "")
+        self.tab_dwell_filtering = QWidget()
+        self.tab_dwell_filtering.setObjectName("tab_dwell_filtering")
+        self.horizontalLayout_5 = QHBoxLayout(self.tab_dwell_filtering)
+        self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        self.hSDwellTimeBefore = QSpacerItem(
+            319, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout_5.addItem(self.hSDwellTimeBefore)
+
+        self.lbDwellTime = QLabel(self.tab_dwell_filtering)
+        self.lbDwellTime.setObjectName("lbDwellTime")
+
+        self.horizontalLayout_5.addWidget(self.lbDwellTime)
+
+        self.cxDwellOption = QComboBox(self.tab_dwell_filtering)
+        self.cxDwellOption.addItem("")
+        self.cxDwellOption.addItem("")
+        self.cxDwellOption.setObjectName("cxDwellOption")
+
+        self.horizontalLayout_5.addWidget(self.cxDwellOption)
+
+        self.leDwellTime = QLineEdit(self.tab_dwell_filtering)
+        self.leDwellTime.setObjectName("leDwellTime")
+        sizePolicy3.setHeightForWidth(self.leDwellTime.sizePolicy().hasHeightForWidth())
+        self.leDwellTime.setSizePolicy(sizePolicy3)
+
+        self.horizontalLayout_5.addWidget(self.leDwellTime)
+
+        self.lbDwellTimeUnit = QLabel(self.tab_dwell_filtering)
+        self.lbDwellTimeUnit.setObjectName("lbDwellTimeUnit")
+
+        self.horizontalLayout_5.addWidget(self.lbDwellTimeUnit)
+
+        self.pbDwellPreview = QPushButton(self.tab_dwell_filtering)
+        self.pbDwellPreview.setObjectName("pbDwellPreview")
+        self.pbDwellPreview.setEnabled(False)
+
+        self.horizontalLayout_5.addWidget(self.pbDwellPreview)
+
+        self.pbDwellFilter = QPushButton(self.tab_dwell_filtering)
+        self.pbDwellFilter.setObjectName("pbDwellFilter")
+
+        self.horizontalLayout_5.addWidget(self.pbDwellFilter)
+
+        self.hSDwellTimeAfter = QSpacerItem(
+            319, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout_5.addItem(self.hSDwellTimeAfter)
+
+        self.tabFilterOptions.addTab(self.tab_dwell_filtering, "")
 
         self.gridLayout.addWidget(self.tabFilterOptions, 0, 0, 1, 1)
 
@@ -420,6 +473,27 @@ class Ui_Analyzer(object):
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_cfr_thresholding),
             QCoreApplication.translate("Analyzer", "CFR thresholding", None),
+        )
+        self.lbDwellTime.setText(
+            QCoreApplication.translate("Analyzer", "Discard dwell time", None)
+        )
+        self.cxDwellOption.setItemText(
+            0, QCoreApplication.translate("Analyzer", "smaller than", None)
+        )
+        self.cxDwellOption.setItemText(
+            1, QCoreApplication.translate("Analyzer", "larger than", None)
+        )
+
+        self.lbDwellTimeUnit.setText(QCoreApplication.translate("Analyzer", "ms", None))
+        self.pbDwellPreview.setText(
+            QCoreApplication.translate("Analyzer", "Preview", None)
+        )
+        self.pbDwellFilter.setText(
+            QCoreApplication.translate("Analyzer", "Filter", None)
+        )
+        self.tabFilterOptions.setTabText(
+            self.tabFilterOptions.indexOf(self.tab_dwell_filtering),
+            QCoreApplication.translate("Analyzer", "Dwell time filtering", None),
         )
         self.pbReset.setText(QCoreApplication.translate("Analyzer", "Reset", None))
 

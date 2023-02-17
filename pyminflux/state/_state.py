@@ -24,6 +24,8 @@ class State(metaclass=Singleton):
         "min_efo_relative_peak_prominence",
         "median_efo_filter_support",
         "efo_bin_size_hz",
+        "dwell_time_threshold",
+        "dwell_time_smaller_than_threshold",
     ]
 
     def __init__(self):
@@ -69,6 +71,10 @@ class State(metaclass=Singleton):
         # EFO bin size in Hz
         self.efo_bin_size_hz: float = 0.0
 
+        # Dwell time thresholding
+        self.dwell_time_threshold: float = 0.0
+        self.dwell_time_smaller_than_threshold: bool = True
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -88,6 +94,8 @@ class State(metaclass=Singleton):
             "median_efo_filter_support": self.median_efo_filter_support,
             "cfr_threshold_factor": self.cfr_threshold_factor,
             "efo_bin_size_hz": self.efo_bin_size_hz,
+            "self.dwell_time_threshold": self.dwell_time_threshold,
+            "self.dwell_time_smaller_than_threshold": self.dwell_time_smaller_than_threshold,
         }
 
     def reset(self):
@@ -115,3 +123,5 @@ class State(metaclass=Singleton):
         self.median_efo_filter_support = 5
         self.cfr_threshold_factor = 2.0
         self.efo_bin_size_hz = 0.0
+        self.dwell_time_threshold: float = 0.0
+        self.dwell_time_smaller_than_threshold: bool = True
