@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>460</width>
+    <width>489</width>
     <height>199</height>
    </rect>
   </property>
@@ -124,7 +124,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Changes above will be applied to new data and when hitting Filter in the Analyzer.</string>
+      <string>Changes above will be applied when loading new data or when filtering in the Analyzer.</string>
      </property>
     </widget>
    </item>
