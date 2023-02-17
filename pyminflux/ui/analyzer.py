@@ -3,6 +3,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import ROI, AxisItem, Point, ViewBox
+from PySide6 import QtCore
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu, QSizePolicy
@@ -231,12 +232,19 @@ class Analyzer(QDialog, Ui_Analyzer):
             # Remove previous widget if it exists
             self.delete_efo_cfr_plot_widgets()
 
+            # Histogram bin settings
+            efo_auto_bins = self.state.efo_bin_size_hz == 0
+
             # Extract the bin edges
             _, efo_bin_edges, _, _ = prepare_histogram(
-                self._minfluxprocessor.filtered_dataframe["efo"].values
+                self._minfluxprocessor.filtered_dataframe["efo"].values,
+                auto_bins=efo_auto_bins,
+                bin_size=self.state.efo_bin_size_hz,
             )
             _, cfr_bin_edges, _, _ = prepare_histogram(
-                self._minfluxprocessor.filtered_dataframe["cfr"].values
+                self._minfluxprocessor.filtered_dataframe["cfr"].values,
+                auto_bins=True,
+                bin_size=0.0,
             )
 
             # Not plot the 2D histogram
@@ -247,6 +255,10 @@ class Analyzer(QDialog, Ui_Analyzer):
                 cfr_bin_edges=cfr_bin_edges,
                 efo_axis_range=self.efo_range,
                 cfr_axis_range=self.cfr_range,
+                efo_auto_bins=efo_auto_bins,
+                cfr_auto_bins=True,
+                efo_bin_size=self.state.efo_bin_size_hz,
+                cfr_bin_size=0.0,
                 use_log_scale=self.efo_cfr_histogram_log_scale,
                 title="CFR vs. EFO",
                 x_label="EFO",
@@ -412,9 +424,14 @@ class Analyzer(QDialog, Ui_Analyzer):
             min_efo = self.state.efo_thresholds[0]
             max_efo = self.state.efo_thresholds[1]
 
+        # Histogram bin settings
+        efo_auto_bins = self.state.efo_bin_size_hz == 0
+
         # Calculate thresholds for EFO
         n_efo, _, b_efo, _ = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe["efo"].values
+            self._minfluxprocessor.filtered_dataframe["efo"].values,
+            auto_bins=efo_auto_bins,
+            bin_size=self.state.efo_bin_size_hz,
         )
         lower_thresh_efo, upper_thresh_efo = find_first_peak_bounds(
             counts=n_efo,
@@ -662,6 +679,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Is there data to plot?
         if not is_data:
             label = QLabel("Sorry, no data.")
+            label.setAlignment(QtCore.Qt.AlignCenter)
             font = label.font()
             font.setPointSize(16)
             label.setFont(font)
@@ -669,12 +687,19 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.plotting_completed.emit()
             return
 
+        # Histogram bin settings
+        efo_auto_bins = self.state.efo_bin_size_hz == 0
+
         # Calculate the proper aspect ratio and view ranges for the relevant plots
         n_efo, efo_bin_edges, efo_bin_centers, efo_bin_width = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe["efo"].values
+            self._minfluxprocessor.filtered_dataframe["efo"].values,
+            auto_bins=efo_auto_bins,
+            bin_size=self.state.efo_bin_size_hz,
         )
         n_cfr, cfr_bin_edges, cfr_bin_centers, cfr_bin_width = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe["cfr"].values
+            self._minfluxprocessor.filtered_dataframe["cfr"].values,
+            auto_bins=True,
+            bin_size=0.0,
         )
         self.calculate_efo_cfr_aspect_ratio(efo_bin_edges, cfr_bin_edges)
 
@@ -757,7 +782,9 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # sx
         n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe_stats["sx"].values
+            self._minfluxprocessor.filtered_dataframe_stats["sx"].values,
+            auto_bins=True,
+            bin_size=0.0,
         )
         self.sx_plot, _ = self._create_histogram_plot(
             n_sx,
@@ -776,7 +803,9 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # sy
         n_sy, sy_bin_edges, sy_bin_centers, sy_bin_width = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe_stats["sy"].values
+            self._minfluxprocessor.filtered_dataframe_stats["sy"].values,
+            auto_bins=True,
+            bin_size=0.0,
         )
         self.sy_plot, _ = self._create_histogram_plot(
             n_sy,
@@ -796,7 +825,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         # sz
         if self._minfluxprocessor.is_3d:
             n_sz, sz_bin_edges, sz_bin_centers, sz_bin_width = prepare_histogram(
-                self._minfluxprocessor.filtered_dataframe_stats["sz"].values
+                self._minfluxprocessor.filtered_dataframe_stats["sz"].values,
+                auto_bins=True,
+                bin_size=0.0,
             )
             self.sz_plot, _ = self._create_histogram_plot(
                 n_sz,
@@ -906,6 +937,10 @@ class Analyzer(QDialog, Ui_Analyzer):
         *,
         efo_axis_range: Optional[tuple] = None,
         cfr_axis_range: Optional[tuple] = None,
+        efo_auto_bins: bool = True,
+        cfr_auto_bins: bool = True,
+        efo_bin_size: float = 0.0,
+        cfr_bin_size: float = 0.0,
         use_log_scale: bool = False,
         title: str = "",
         x_label: str = "",
@@ -914,8 +949,18 @@ class Analyzer(QDialog, Ui_Analyzer):
         thresholds_efo: tuple = None,
         thresholds_cfr: tuple = None,
     ):
+
         # Create 2D histogram plot
-        density = calculate_2d_histogram(x, y, efo_bin_edges, cfr_bin_edges)[0]
+        density = calculate_2d_histogram(
+            x,
+            y,
+            efo_bin_edges,
+            cfr_bin_edges,
+            efo_auto_bins,
+            cfr_auto_bins,
+            efo_bin_size,
+            cfr_bin_size,
+        )[0]
 
         # Apply log scale to the intensities?
         if use_log_scale:
