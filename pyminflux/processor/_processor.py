@@ -306,7 +306,7 @@ class MinFluxProcessor:
 
         # Apply filter
         if larger_than:
-            df = df[df[prop] > threshold]
+            df = df[df[prop] >= threshold]
         else:
             df = df[df[prop] < threshold]
 
@@ -349,7 +349,7 @@ class MinFluxProcessor:
         df = self._get_copy_of_filtered_dataframe()
 
         # Apply filter
-        df = df[(df[prop] > min_threshold) & (df[prop] < max_threshold)]
+        df = df[(df[prop] >= min_threshold) & (df[prop] < max_threshold)]
 
         # Cache the result
         self.__filtered_dataframe = df
