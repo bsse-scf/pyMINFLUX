@@ -387,7 +387,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             )
 
         # Filter the data by the selected indices
-        self._minfluxprocessor.apply_filter_by_indices(sel)
+        self._minfluxprocessor.apply_filter_by_logical_indexing(sel)
 
         # Update the EFO thresholds
         self.state.efo_thresholds = (

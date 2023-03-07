@@ -1,5 +1,6 @@
 from typing import Union
 
+import numpy as np
 import pandas as pd
 
 from pyminflux.reader import MinFluxReader
@@ -12,8 +13,8 @@ class MinFluxProcessor:
     __slots__ = [
         "__minfluxreader",
         "state",
-        "__filtered_dataframe",
         "__filtered_stats_dataframe",
+        "__selected_rows",
         "__stats_to_be_recomputed",
         "__weighted_localizations",
         "__weighted_localizations_to_be_recomputed",
@@ -36,9 +37,14 @@ class MinFluxProcessor:
         # Keep a reference to the state machine
         self.state = State()
 
-        # Cache the filtered dataframes
-        self.__filtered_dataframe = None
+        # Cache the filtered stats dataframe
         self.__filtered_stats_dataframe = None
+
+        # Keep a separate array of booleans to cache selection state
+        self.__selected_rows = pd.Series(
+            data=np.ones(self.__minfluxreader.num_entries, dtype=bool),
+            index=self.__minfluxreader.processed_dataframe.index,
+        )
 
         # Cache the weighted, averaged TID positions
         self.__weighted_localizations = None
@@ -75,11 +81,8 @@ class MinFluxProcessor:
         n: int
             Number of values in the dataframe after all filters have been applied.
         """
-        if self.__filtered_dataframe is not None:
-            return len(self.__filtered_dataframe.index)
-
-        if self.__minfluxreader.processed_dataframe is not None:
-            return len(self.__minfluxreader.processed_dataframe.index)
+        if self.filtered_dataframe is not None:
+            return len(self.filtered_dataframe.index)
 
         return 0
 
@@ -93,7 +96,9 @@ class MinFluxProcessor:
         filtered_dataframe: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
-        return self.__filtered_dataframe
+        if self.__minfluxreader.processed_dataframe is None:
+            return None
+        return self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
 
     @property
     def filtered_dataframe_stats(self) -> Union[None, pd.DataFrame]:
@@ -134,7 +139,10 @@ class MinFluxProcessor:
 
     def reset(self):
         """Drops all dynamic filters and resets the data to the processed data frame with global filters."""
-        self.__filtered_dataframe = None
+        self.__selected_rows = pd.Series(
+            data=np.ones(self.__minfluxreader.num_entries, dtype=bool),
+            index=self.__minfluxreader.processed_dataframe.index,
+        )
         self._apply_global_filters()
 
     def select_dataframe_by_indices(
@@ -164,9 +172,9 @@ class MinFluxProcessor:
                 return None
             return self.__weighted_localizations.iloc[indices]
         else:
-            if self.__filtered_dataframe is None:
+            if self.filtered_dataframe is None:
                 return None
-            return self.__filtered_dataframe.iloc[indices]
+            return self.filtered_dataframe.iloc[indices]
 
     def select_dataframe_by_xy_range(
         self, x_range, y_range, from_weighted_locs: bool = False
@@ -214,11 +222,15 @@ class MinFluxProcessor:
                 & (self.__weighted_localizations["y"] < y_max)
             ]
         else:
-            return self.__filtered_dataframe.loc[
-                (self.__filtered_dataframe["x"] >= x_min)
-                & (self.__filtered_dataframe["x"] < x_max)
-                & (self.__filtered_dataframe["y"] >= y_min)
-                & (self.__filtered_dataframe["y"] < y_max)
+
+            # Work with currently selected rows
+            df = self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
+
+            return df.loc[
+                (df["x"] >= x_min)
+                & (df["x"] < x_max)
+                & (df["y"] >= y_min)
+                & (df["y"] < y_max)
             ]
 
     def filter_dataframe_by_xy_range(self, x_range, y_range):
@@ -237,8 +249,8 @@ class MinFluxProcessor:
         # Make sure to always apply the global filters
         self._apply_global_filters()
 
-        # Now we are guaranteed to have a filtered dataframe to work with
-        df = self.__filtered_dataframe.copy()
+        # Alias
+        df = self.__minfluxreader.processed_dataframe
 
         # Make sure that the ranges are increasing
         x_min = x_range[0]
@@ -252,45 +264,30 @@ class MinFluxProcessor:
             y_max, y_min = y_min, y_max
 
         # Apply filter
-        df = df.loc[
-            (df["x"] >= x_min)
+        self.__selected_rows = (
+            self.__selected_rows
+            & (df["x"] >= x_min)
             & (df["x"] < x_max)
             & (df["y"] >= y_min)
             & (df["y"] < y_max)
-        ]
-
-        # Cache the result
-        self.__filtered_dataframe = df
+        )
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
         self.__weighted_localizations_to_be_recomputed = True
 
-    def _get_copy_of_filtered_dataframe(self):
-        """Get a copy of current filtered dataframe."""
-
-        # Start from the filtered dataframe if it already exists,
-        # otherwise from the processed_dataframe
-        if self.__filtered_dataframe is not None:
-            df = self.__filtered_dataframe.copy()
-        else:
-            df = self.__minfluxreader.processed_dataframe.copy()
-        return df
-
     def _apply_global_filters(self):
         """Apply filters that are defined in the global application configuration."""
 
-        # Get a copy of current filtered dataframe
-        df = self._get_copy_of_filtered_dataframe()
+        # Make sure to count only currently selected rows
+        df = self.__minfluxreader.processed_dataframe.copy()
+        df.loc[np.invert(self.__selected_rows), "tid"] = np.nan
 
-        # Remove all rows where the count of TIDs is lower than self._min_trace_num
+        # Select all rows where the count of TIDs is larger than self._min_trace_num
         counts = df["tid"].value_counts(normalize=False)
-        df = df.loc[
-            df["tid"].isin(counts[counts >= self.state.min_num_loc_per_trace].index), :
-        ]
-
-        # Update the filtered dataframe
-        self.__filtered_dataframe = df
+        self.__selected_rows = df["tid"].isin(
+            counts[counts >= self.state.min_num_loc_per_trace].index
+        )
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
@@ -299,19 +296,16 @@ class MinFluxProcessor:
     def apply_threshold(
         self, prop: str, threshold: Union[int, float], larger_than: bool = True
     ):
-        """Apply single threshold to filter values either lower or higher than threshold for given property."""
+        """Apply single threshold to filter values either lower or higher (equal) than threshold for given property."""
 
-        # Get a copy of current filtered dataframe
-        df = self._get_copy_of_filtered_dataframe()
+        # Alias
+        df = self.__minfluxreader.processed_dataframe
 
         # Apply filter
         if larger_than:
-            df = df[df[prop] >= threshold]
+            self.__selected_rows = self.__selected_rows & (df[prop] >= threshold)
         else:
-            df = df[df[prop] < threshold]
-
-        # Cache the result
-        self.__filtered_dataframe = df
+            self.__selected_rows = self.__selected_rows & (df[prop] < threshold)
 
         # Apply the global filters
         self._apply_global_filters()
@@ -345,14 +339,15 @@ class MinFluxProcessor:
         if min_threshold is None or max_threshold is None:
             return
 
-        # Get a copy of current filtered dataframe
-        df = self._get_copy_of_filtered_dataframe()
+        # Alias
+        df = self.__minfluxreader.processed_dataframe
 
         # Apply filter
-        df = df[(df[prop] >= min_threshold) & (df[prop] < max_threshold)]
-
-        # Cache the result
-        self.__filtered_dataframe = df
+        self.__selected_rows = (
+            self.__selected_rows
+            & (df[prop] >= min_threshold)
+            & (df[prop] < max_threshold)
+        )
 
         # Apply the global filters
         self._apply_global_filters()
@@ -361,7 +356,7 @@ class MinFluxProcessor:
         self.__stats_to_be_recomputed = True
         self.__weighted_localizations_to_be_recomputed = True
 
-    def apply_filter_by_indices(self, indices):
+    def apply_filter_by_logical_indexing(self, indices):
         """Apply filter by selected indices.
 
         Parameters
@@ -371,14 +366,13 @@ class MinFluxProcessor:
             Logical array for selecting the elements to be returned.
         """
 
-        # Get a copy of current filtered dataframe
-        df = self._get_copy_of_filtered_dataframe()
-
-        # Extract selected indices
-        df = df.iloc[indices]
-
-        # Cache the result
-        self.__filtered_dataframe = df
+        # Filter by selected indices
+        current_selection_index = self.__selected_rows.index[self.__selected_rows].tolist()
+        self.__selected_rows = pd.Series(
+            data=np.ones(self.__minfluxreader.num_entries, dtype=bool),
+            index=self.__minfluxreader.processed_dataframe.index,
+        )
+        self.__selected_rows.loc[current_selection_index] = indices
 
         # Apply the global filters
         self._apply_global_filters()
@@ -391,15 +385,18 @@ class MinFluxProcessor:
         """Calculate per-trace statistics."""
 
         # Make sure we have processed dataframe to work on
-        if self.__filtered_dataframe is None:
+        if self.__minfluxreader.processed_dataframe is None:
             return
 
         # Only recompute statistics if needed
         if not self.__stats_to_be_recomputed:
             return
 
+        # Work with currently selected rows
+        df = self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
+
         # Calculate some statistics per TID on the processed dataframe
-        df_grouped = self.__filtered_dataframe.groupby("tid")
+        df_grouped = df.groupby("tid")
 
         tid = df_grouped["tid"].first().values
         n = df_grouped["tid"].count().values
@@ -436,15 +433,15 @@ class MinFluxProcessor:
         """Calculate per-trace localization weighted by relative photon count."""
 
         # Make sure we have processed dataframe to work on
-        if self.__filtered_dataframe is None:
+        if self.__minfluxreader.processed_dataframe is None:
             return
 
         # Only recompute weighted localizations if needed
         if not self.__weighted_localizations_to_be_recomputed:
             return
 
-        # Now we are guaranteed to have a filtered dataframe to work with
-        df = self.__filtered_dataframe.copy()
+        # Work with currently selected rows
+        df = self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
 
         # Normal or weighted averaging?
         if self.__use_weighted_localizations:
