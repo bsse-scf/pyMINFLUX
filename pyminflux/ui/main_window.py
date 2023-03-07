@@ -18,7 +18,8 @@ from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.data_inspector import DataInspector
 from pyminflux.ui.dataviewer import DataViewer
-#from pyminflux.ui.emittingstream import EmittingStream
+
+# from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
@@ -324,6 +325,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.state.weigh_avg_localization_by_eco
             )
 
+            # Set state properties from data
+            self.set_state_from_data()
+
             # Show the filename on the main window
             self.setWindowTitle(
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
@@ -448,6 +452,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Make sure to autoupdate the axis (on load only)
         self.plotter.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
+
+    def set_state_from_data(self):
+        """Set state properties that depend on data."""
+        if self.minfluxprocessor.filtered_dataframe is not None:
+            self.state.gmm_efo_num_clusters = int(
+                self.minfluxprocessor.filtered_dataframe["dwell"].max()
+            )
 
     def update_weighted_average_localization_option_and_plot(self):
         """Update the weighted average localization option in the Processor and re-plot."""
