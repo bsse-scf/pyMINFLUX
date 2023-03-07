@@ -446,9 +446,7 @@ class MinFluxProcessor:
         # Normal or weighted averaging?
         if self.__use_weighted_localizations:
             # Calculate weighing factors for TIDs
-            df["eco_rel"] = (
-                df["eco"].groupby(df["tid"]).transform(lambda x: x / x.sum())
-            )
+            df = df.assign(eco_rel=df["eco"].groupby(df["tid"]).transform(lambda x: x / x.sum()))
 
             # Calculate relative contributions of (x, y, z)_i for each TID
             df["x_rel"] = df["x"] * df["eco_rel"]
@@ -464,7 +462,7 @@ class MinFluxProcessor:
 
         else:
 
-            # Calculate simple avarage of localizations by TID
+            # Calculate simple average of localizations by TID
             df_grouped = df.groupby(df["tid"])
             tid = df_grouped["tid"].first().values
             x_w = df_grouped["x"].mean().values

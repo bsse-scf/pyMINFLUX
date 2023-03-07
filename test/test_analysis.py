@@ -640,7 +640,7 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     # state.min_num_loc_per_trace = 4
     #
 
-    # This time filter short traces
+    # Now set a minimum number of localization per trace (global filter)
     state.min_num_loc_per_trace = 4
 
     # Read and process file
@@ -1025,3 +1025,42 @@ def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     assert (processor.filtered_dataframe["x"] >= 3000).sum() == 0, "Failed filtering."
     assert (processor.filtered_dataframe["y"] < -13000).sum() == 0, "Failed filtering."
     assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
+
+
+def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
+    # Initialize state
+    state = State()
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 4
+    #
+
+    # Now set a minimum number of localization per trace (global filter)
+    state.min_num_loc_per_trace = 4
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Select (that is, get a view) by range
+    df = processor.select_dataframe_by_xy_range(x_range=(2000, 3000), y_range=(-13000, -12000))
+
+    assert len(df.index) == 1099, "Wrong total number of filtered entries"
+    assert (df["x"] < 2000).sum() == 0, "Failed filtering."
+    assert (df["x"] >= 3000).sum() == 0, "Failed filtering."
+    assert (df["y"] < -13000).sum() == 0, "Failed filtering."
+    assert (df["y"] >= -12000).sum() == 0, "Failed filtering."
+
+    # Now compare with the filter by the same range
+    processor.filter_dataframe_by_xy_range(
+        x_range=(2000, 3000), y_range=(-13000, -12000)
+    )
+    assert processor.num_values == 1099, "Wrong total number of filtered entries"
+    assert (processor.filtered_dataframe["x"] < 2000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["x"] >= 3000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["y"] < -13000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
+
+    # Make sure all entries are the same
+    assert (df == processor.filtered_dataframe).all().all(), "The selected and filtered set are not identical."
