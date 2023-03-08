@@ -387,7 +387,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             )
 
         # Filter the data by the selected indices
-        self._minfluxprocessor.apply_filter_by_logical_indexing(sel)
+        self._minfluxprocessor.filter_dataframe_by_logical_indexing(sel)
 
         # Update the EFO thresholds
         self.state.efo_thresholds = (
@@ -493,7 +493,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Apply the threshold. Since we want to "discard" the selected set, we can run
         # the equivalent operation of "keeping" the complement (and viceversa) in
         # MinFluxProcessor.applyThreshold().
-        self._minfluxprocessor.apply_threshold("dwell", threshold, smaller_than)
+        self._minfluxprocessor.filter_by_single_threshold("dwell", threshold, smaller_than)
 
         # Update the histograms
         self.plot()
@@ -593,7 +593,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Apply the EFO filter if needed
         if self.state.efo_thresholds is not None:
-            self._minfluxprocessor.apply_range_filter(
+            self._minfluxprocessor.filter_dataframe_by_1d_range(
                 "efo", self.state.efo_thresholds[0], self.state.efo_thresholds[1]
             )
 
@@ -609,7 +609,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Apply the CFR filter if needed
         if self.state.cfr_thresholds is not None:
-            self._minfluxprocessor.apply_range_filter(
+            self._minfluxprocessor.filter_dataframe_by_1d_range(
                 "cfr", self.state.cfr_thresholds[0], self.state.cfr_thresholds[1]
             )
 

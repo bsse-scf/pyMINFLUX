@@ -176,16 +176,22 @@ class MinFluxProcessor:
                 return None
             return self.filtered_dataframe.iloc[indices]
 
-    def select_dataframe_by_xy_range(
-        self, x_range, y_range, from_weighted_locs: bool = False
+    def select_dataframe_by_2d_range(
+        self, x_prop, y_prop, x_range, y_range, from_weighted_locs: bool = False
     ) -> Union[None, pd.DataFrame]:
         """Return a view on a subset of the filtered dataset or the weighted localisations defined by the passed
-        x and y ranges.
+        parameters and corresponding ranges.
 
         The underlying dataframe is not modified.
 
         Parameters
         ----------
+
+        x_prop: str
+            First property to be filtered by corresponding x_range.
+
+        y_prop: str
+            Second property to be filtered by corresponding y_range.
 
         x_range: tuple
             Tuple containing the minimum and maximum values for the x coordinates to be selected.
@@ -216,10 +222,10 @@ class MinFluxProcessor:
 
         if from_weighted_locs:
             return self.__weighted_localizations.loc[
-                (self.__weighted_localizations["x"] >= x_min)
-                & (self.__weighted_localizations["x"] < x_max)
-                & (self.__weighted_localizations["y"] >= y_min)
-                & (self.__weighted_localizations["y"] < y_max)
+                (self.__weighted_localizations[x_prop] >= x_min)
+                & (self.__weighted_localizations[x_prop] < x_max)
+                & (self.__weighted_localizations[y_prop] >= y_min)
+                & (self.__weighted_localizations[y_prop] < y_max)
             ]
         else:
 
@@ -227,17 +233,23 @@ class MinFluxProcessor:
             df = self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
 
             return df.loc[
-                (df["x"] >= x_min)
-                & (df["x"] < x_max)
-                & (df["y"] >= y_min)
-                & (df["y"] < y_max)
+                (df[x_prop] >= x_min)
+                & (df[x_prop] < x_max)
+                & (df[y_prop] >= y_min)
+                & (df[y_prop] < y_max)
             ]
 
-    def filter_dataframe_by_xy_range(self, x_range, y_range):
-        """Filter dataset by the passed x and y ranges.
+    def filter_dataframe_by_2d_range(self, x_prop, y_prop, x_range, y_range):
+        """Filter dataset by the extracting a rectangular ROI over two parameters and two ranges.
 
         Parameters
         ----------
+
+        x_prop: str
+            First property to be filtered by corresponding x_range.
+
+        y_prop: str
+            Second property to be filtered by corresponding y_range.
 
         x_range: tuple
             Tuple containing the minimum and maximum values for the x coordinates to be selected.
@@ -266,10 +278,10 @@ class MinFluxProcessor:
         # Apply filter
         self.__selected_rows = (
             self.__selected_rows
-            & (df["x"] >= x_min)
-            & (df["x"] < x_max)
-            & (df["y"] >= y_min)
-            & (df["y"] < y_max)
+            & (df[x_prop] >= x_min)
+            & (df[x_prop] < x_max)
+            & (df[y_prop] >= y_min)
+            & (df[y_prop] < y_max)
         )
 
         # Make sure to flag the derived data to be recomputed
@@ -293,7 +305,7 @@ class MinFluxProcessor:
         self.__stats_to_be_recomputed = True
         self.__weighted_localizations_to_be_recomputed = True
 
-    def apply_threshold(
+    def filter_by_single_threshold(
         self, prop: str, threshold: Union[int, float], larger_than: bool = True
     ):
         """Apply single threshold to filter values either lower or higher (equal) than threshold for given property."""
@@ -314,7 +326,7 @@ class MinFluxProcessor:
         self.__stats_to_be_recomputed = True
         self.__weighted_localizations_to_be_recomputed = True
 
-    def apply_range_filter(
+    def filter_dataframe_by_1d_range(
         self,
         prop: str,
         min_threshold: Union[int, float],
@@ -356,8 +368,8 @@ class MinFluxProcessor:
         self.__stats_to_be_recomputed = True
         self.__weighted_localizations_to_be_recomputed = True
 
-    def apply_filter_by_logical_indexing(self, indices):
-        """Apply filter by selected indices.
+    def filter_dataframe_by_logical_indexing(self, indices):
+        """Apply filter by logical indexing.
 
         Parameters
         ----------

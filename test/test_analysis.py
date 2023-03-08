@@ -278,7 +278,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
     )
     assert (
@@ -290,7 +290,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
     )
     assert (
@@ -338,7 +338,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
     )
     assert (
@@ -354,7 +354,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Apply CFR filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
     )
     assert (
@@ -406,7 +406,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
     )
     assert (
@@ -418,7 +418,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
     )
     assert (
@@ -466,7 +466,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
     )
     assert (
@@ -482,7 +482,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Apply CFR filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
     )
     assert (
@@ -892,7 +892,7 @@ def test_apply_filter_by_indices(extract_raw_npy_data_files):
     # Select every second entry
     flags = np.zeros(len(df.index), dtype=bool)
     flags[::2] = True
-    processor.apply_filter_by_logical_indexing(flags)
+    processor.filter_dataframe_by_logical_indexing(flags)
 
     # Check the result
     assert len(processor.filtered_dataframe) == 6290, "Wrong total number of entries"
@@ -921,7 +921,7 @@ def test_apply_threshold(extract_raw_npy_data_files):
     num_values = processor.num_values
     assert processor.num_values == 12580, "Wrong total number of entries"
 
-    processor.apply_threshold(prop="dwell", threshold=7, larger_than=True)
+    processor.filter_by_single_threshold(prop="dwell", threshold=7, larger_than=True)
 
     num_values_larger = processor.num_values
     assert processor.num_values == 2428, "Wrong total number of filtered entries"
@@ -930,7 +930,7 @@ def test_apply_threshold(extract_raw_npy_data_files):
     processor.reset()
     assert processor.num_values == 12580, "Failed processor reset."
 
-    processor.apply_threshold(prop="dwell", threshold=7, larger_than=False)
+    processor.filter_by_single_threshold(prop="dwell", threshold=7, larger_than=False)
 
     num_values_smaller = processor.num_values
     assert processor.num_values == 10152, "Wrong total number of filtered entries"
@@ -952,7 +952,7 @@ def test_apply_threshold(extract_raw_npy_data_files):
     num_values = processor.num_values
     assert processor.num_values == 11903, "Wrong total number of entries"
 
-    processor.apply_threshold(prop="dwell", threshold=7, larger_than=True)
+    processor.filter_by_single_threshold(prop="dwell", threshold=7, larger_than=True)
 
     num_values_larger = processor.num_values
     assert processor.num_values == 1757, "Wrong total number of filtered entries"
@@ -961,11 +961,11 @@ def test_apply_threshold(extract_raw_npy_data_files):
     processor.reset()
     assert processor.num_values == 11903, "Failed processor reset."
 
-    processor.apply_threshold(prop="dwell", threshold=7, larger_than=False)
+    processor.filter_by_single_threshold(prop="dwell", threshold=7, larger_than=False)
 
     num_values_smaller = processor.num_values
     assert processor.num_values == 9355, "Wrong total number of filtered entries"
-    # Notice that the global filtering after apply_threshold() makes the sum
+    # Notice that the global filtering after filter_by_single_threshold() makes the sum
     # num_values_smaller + num_values_larger < num_values!
     assert num_values_smaller + num_values_larger == 11112, "Failed partition."
     assert num_values_smaller + num_values_larger < num_values, "Failed partition."
@@ -991,8 +991,8 @@ def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     assert processor.num_values == 12580, "Wrong total number of entries"
 
     # Filter by range
-    processor.filter_dataframe_by_xy_range(
-        x_range=(2000, 3000), y_range=(-12000, -13000)
+    processor.filter_dataframe_by_2d_range(
+        "x", "y", x_range=(2000, 3000), y_range=(-12000, -13000)
     )  # y range will be flipped
 
     assert processor.num_values == 1165, "Wrong total number of filtered entries"
@@ -1016,8 +1016,8 @@ def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     assert processor.num_values == 11903, "Wrong total number of entries"
 
     # Filter by range
-    processor.filter_dataframe_by_xy_range(
-        x_range=(2000, 3000), y_range=(-12000, -13000)
+    processor.filter_dataframe_by_2d_range(
+        "x", "y", x_range=(2000, 3000), y_range=(-12000, -13000)
     )  # y range will be flipped
 
     assert processor.num_values == 1099, "Wrong total number of filtered entries"
@@ -1027,7 +1027,7 @@ def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
 
 
-def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
+def test_select_and_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     # Initialize state
     state = State()
 
@@ -1044,7 +1044,7 @@ def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Select (that is, get a view) by range
-    df = processor.select_dataframe_by_xy_range(x_range=(2000, 3000), y_range=(-13000, -12000))
+    df = processor.select_dataframe_by_2d_range("x", "y", x_range=(2000, 3000), y_range=(-13000, -12000))
 
     assert len(df.index) == 1099, "Wrong total number of filtered entries"
     assert (df["x"] < 2000).sum() == 0, "Failed filtering."
@@ -1053,8 +1053,8 @@ def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     assert (df["y"] >= -12000).sum() == 0, "Failed filtering."
 
     # Now compare with the filter by the same range
-    processor.filter_dataframe_by_xy_range(
-        x_range=(2000, 3000), y_range=(-13000, -12000)
+    processor.filter_dataframe_by_2d_range(
+        "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
     )
     assert processor.num_values == 1099, "Wrong total number of filtered entries"
     assert (processor.filtered_dataframe["x"] < 2000).sum() == 0, "Failed filtering."
