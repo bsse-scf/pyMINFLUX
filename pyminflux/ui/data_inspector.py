@@ -10,7 +10,7 @@ from pyminflux.ui.ui_data_inspector import Ui_DataInspector
 
 class DataInspector(QDialog, Ui_DataInspector):
     """
-    A QTableWidget to display track data.
+    A QDialog to display scatter plot of all possible pairs of measurements.
     """
 
     def __init__(self, processor, parent):

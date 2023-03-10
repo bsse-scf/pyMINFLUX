@@ -278,7 +278,7 @@ def select_by_gmm_fitting(values: np.ndarray, num_test_components: int = 5):
             ).fit(values)
         )
 
-    # Calculate the Bayesian information criterions for all models
+    # Calculate the Bayesian information criteria for all models
     bic = [m.bic(values) for m in models]
 
     # Pick the GMM model with the lowest Akaike information criterion
@@ -613,4 +613,4 @@ def calculate_2d_histogram(
     histogram = np.histogram2d(y, x, bins=(y_bin_edges, x_bin_edges))
 
     # Return histogram
-    return histogram
+    return histogram[0]

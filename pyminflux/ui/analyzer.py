@@ -491,7 +491,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         smaller_than = self.ui.cxDwellOption.currentIndex() == 0
 
         # Apply the threshold. Since we want to "discard" the selected set, we can run
-        # the equivalent operation of "keeping" the complement (and viceversa) in
+        # the equivalent operation of "keeping" the complement (and vice versa) in
         # MinFluxProcessor.applyThreshold().
         self._minfluxprocessor.filter_by_single_threshold(
             "dwell", threshold, smaller_than
