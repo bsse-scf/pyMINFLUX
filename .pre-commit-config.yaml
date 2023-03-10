@@ -5,15 +5,14 @@ repos:
       name: Run isort
       entry: isort
       language: system
-      exclude: \.ui|\.txt|\.zip|\.npy|\.png|\.cmd|\.icns|\.whl|\.toml|\.lock|\.md|\.qrc|\.sh|.gitignore|/gitattributes
-      args: ["--profile", "black", "pyminflux"]
+      exclude: \.ui|\.txt|\.zip|\.npy|\.png|\.cmd|\.icns|\.whl|\.toml|\.lock|\.md|\.qrc|\.sh|\.yaml|.gitignore|.gitattributes
+      args: ["--profile", "black"]
 -   repo: local
     hooks:
     - id: black
       name: Run black
       entry: black
       language: system
-      args: ["pyminflux"]
       pass_filenames: true
-      exclude: \.ui|\.txt|\.zip|\.npy|\.png|\.cmd|\.icns|\.whl|\.toml|\.lock|\.md|\.qrc|\.sh|.gitignore|.gitattributes
+      exclude: \.ui|\.txt|\.zip|\.npy|\.png|\.cmd|\.icns|\.whl|\.toml|\.lock|\.md|\.qrc|\.sh|\.yaml|.gitignore|.gitattributes
 
