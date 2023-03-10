@@ -954,15 +954,15 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Create 2D histogram plot
         density = calculate_2d_histogram(
-            x,
-            y,
-            efo_bin_edges,
-            cfr_bin_edges,
-            efo_auto_bins,
-            cfr_auto_bins,
-            efo_bin_size,
-            cfr_bin_size,
-        )[0]
+            x=x,
+            y=y,
+            x_bin_edges=efo_bin_edges,
+            y_bin_edges=cfr_bin_edges,
+            x_auto_bins=efo_auto_bins,
+            y_auto_bins=cfr_auto_bins,
+            x_bin_size=efo_bin_size,
+            y_bin_size=cfr_bin_size,
+        )
 
         # Apply log scale to the intensities?
         if use_log_scale:
