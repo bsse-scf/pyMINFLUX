@@ -42,7 +42,7 @@ class MinFluxProcessor:
 
         # Keep a separate array of booleans to cache selection state
         self.__selected_rows = pd.Series(
-            data=np.ones(self.__minfluxreader.num_entries, dtype=bool),
+            data=np.ones(self.__minfluxreader.num_valid_entries, dtype=bool),
             index=self.__minfluxreader.processed_dataframe.index,
         )
 
@@ -140,7 +140,7 @@ class MinFluxProcessor:
     def reset(self):
         """Drops all dynamic filters and resets the data to the processed data frame with global filters."""
         self.__selected_rows = pd.Series(
-            data=np.ones(self.__minfluxreader.num_entries, dtype=bool),
+            data=np.ones(self.__minfluxreader.num_valid_entries, dtype=bool),
             index=self.__minfluxreader.processed_dataframe.index,
         )
         self._apply_global_filters()
@@ -383,7 +383,7 @@ class MinFluxProcessor:
             self.__selected_rows
         ].tolist()
         self.__selected_rows = pd.Series(
-            data=np.ones(self.__minfluxreader.num_entries, dtype=bool),
+            data=np.ones(self.__minfluxreader.num_valid_entries, dtype=bool),
             index=self.__minfluxreader.processed_dataframe.index,
         )
         self.__selected_rows.loc[current_selection_index] = indices

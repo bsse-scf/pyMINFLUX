@@ -99,13 +99,6 @@ class MinFluxReader:
         return self.__is_aggregated
 
     @property
-    def num_entries(self):
-        """Total number of entries."""
-        if self.__data_array is None:
-            return 0
-        return len(self.__data_array)
-
-    @property
     def num_valid_entries(self):
         """Number of valid entries."""
         if self.__data_array is None:

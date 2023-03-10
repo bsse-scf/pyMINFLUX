@@ -77,7 +77,7 @@ class DataInspector(QDialog, Ui_DataInspector):
     def plot_selected_params(self):
         """Plot the requested parameters."""
 
-        # Do we havbe something to plot?
+        # Do we have something to plot?
         if self.__minfluxprocessor is None or self.__minfluxprocessor.num_values == 0:
             return
 
