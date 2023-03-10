@@ -493,7 +493,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Apply the threshold. Since we want to "discard" the selected set, we can run
         # the equivalent operation of "keeping" the complement (and viceversa) in
         # MinFluxProcessor.applyThreshold().
-        self._minfluxprocessor.filter_by_single_threshold("dwell", threshold, smaller_than)
+        self._minfluxprocessor.filter_by_single_threshold(
+            "dwell", threshold, smaller_than
+        )
 
         # Update the histograms
         self.plot()

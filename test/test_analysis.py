@@ -1044,7 +1044,9 @@ def test_select_and_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Select (that is, get a view) by range
-    df = processor.select_dataframe_by_2d_range("x", "y", x_range=(2000, 3000), y_range=(-13000, -12000))
+    df = processor.select_dataframe_by_2d_range(
+        "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
+    )
 
     assert len(df.index) == 1099, "Wrong total number of filtered entries"
     assert (df["x"] < 2000).sum() == 0, "Failed filtering."
@@ -1063,4 +1065,6 @@ def test_select_and_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
 
     # Make sure all entries are the same
-    assert (df == processor.filtered_dataframe).all().all(), "The selected and filtered set are not identical."
+    assert (
+        (df == processor.filtered_dataframe).all().all()
+    ), "The selected and filtered set are not identical."

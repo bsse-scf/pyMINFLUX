@@ -61,7 +61,8 @@ class Ui_Analyzer(object):
     def setupUi(self, Analyzer):
         if not Analyzer.objectName():
             Analyzer.setObjectName("Analyzer")
-        Analyzer.resize(1421, 1087)
+        Analyzer.resize(1050, 800)
+        Analyzer.setMinimumSize(QSize(800, 600))
         self.gridLayout = QGridLayout(Analyzer)
         self.gridLayout.setObjectName("gridLayout")
         self.localizations_layout = QHBoxLayout()
@@ -91,7 +92,7 @@ class Ui_Analyzer(object):
         self.horizontalLayout_3 = QHBoxLayout(self.tab_efo_peak_detection)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.hsEFOPeakBefore = QSpacerItem(
-            126, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout_3.addItem(self.hsEFOPeakBefore)
@@ -176,7 +177,7 @@ class Ui_Analyzer(object):
         self.horizontalLayout_3.addWidget(self.pbEFORunFilter)
 
         self.hshsEFOPeakAfter = QSpacerItem(
-            126, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout_3.addItem(self.hshsEFOPeakAfter)
@@ -193,7 +194,7 @@ class Ui_Analyzer(object):
         self.horizontalLayout = QHBoxLayout(self.tab_efo_sub_population_detection)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.hsEFOBefore = QSpacerItem(
-            290, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout.addItem(self.hsEFOBefore)
@@ -248,7 +249,7 @@ class Ui_Analyzer(object):
         self.horizontalLayout.addWidget(self.pbEFOGMMFilter)
 
         self.hsEFOAfter = QSpacerItem(
-            290, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout.addItem(self.hsEFOAfter)
@@ -263,7 +264,7 @@ class Ui_Analyzer(object):
         self.horizontalLayout_4 = QHBoxLayout(self.tab_cfr_thresholding)
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
         self.hsCFRFilterBefore = QSpacerItem(
-            414, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout_4.addItem(self.hsCFRFilterBefore)
@@ -323,7 +324,7 @@ class Ui_Analyzer(object):
         self.horizontalLayout_4.addWidget(self.pbCFRRunFilter)
 
         self.hsCFRFilterAfter = QSpacerItem(
-            306, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout_4.addItem(self.hsCFRFilterAfter)
@@ -334,7 +335,7 @@ class Ui_Analyzer(object):
         self.horizontalLayout_5 = QHBoxLayout(self.tab_dwell_filtering)
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
         self.hSDwellTimeBefore = QSpacerItem(
-            319, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout_5.addItem(self.hSDwellTimeBefore)
@@ -369,7 +370,7 @@ class Ui_Analyzer(object):
         self.horizontalLayout_5.addWidget(self.pbDwellFilter)
 
         self.hSDwellTimeAfter = QSpacerItem(
-            319, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout_5.addItem(self.hSDwellTimeAfter)
@@ -394,7 +395,7 @@ class Ui_Analyzer(object):
 
         self.retranslateUi(Analyzer)
 
-        self.tabFilterOptions.setCurrentIndex(0)
+        self.tabFilterOptions.setCurrentIndex(1)
 
         QMetaObject.connectSlotsByName(Analyzer)
 

@@ -379,7 +379,9 @@ class MinFluxProcessor:
         """
 
         # Filter by selected indices
-        current_selection_index = self.__selected_rows.index[self.__selected_rows].tolist()
+        current_selection_index = self.__selected_rows.index[
+            self.__selected_rows
+        ].tolist()
         self.__selected_rows = pd.Series(
             data=np.ones(self.__minfluxreader.num_entries, dtype=bool),
             index=self.__minfluxreader.processed_dataframe.index,
@@ -458,7 +460,9 @@ class MinFluxProcessor:
         # Normal or weighted averaging?
         if self.__use_weighted_localizations:
             # Calculate weighing factors for TIDs
-            df = df.assign(eco_rel=df["eco"].groupby(df["tid"]).transform(lambda x: x / x.sum()))
+            df = df.assign(
+                eco_rel=df["eco"].groupby(df["tid"]).transform(lambda x: x / x.sum())
+            )
 
             # Calculate relative contributions of (x, y, z)_i for each TID
             df["x_rel"] = df["x"] * df["eco_rel"]

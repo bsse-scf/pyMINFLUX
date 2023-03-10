@@ -19,7 +19,6 @@ class Plotter(PlotWidget):
 
     def __init__(self):
         super().__init__()
-        self.setMinimumWidth(600)
         self.setBackground("w")
         self.brush = pg.mkBrush(255, 255, 255, 128)
         self.pen = pg.mkPen(None)
