@@ -278,7 +278,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
     )
     assert (
@@ -290,7 +290,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
     )
     assert (
@@ -338,7 +338,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
     )
     assert (
@@ -354,7 +354,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Apply CFR filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
     )
     assert (
@@ -406,7 +406,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
     )
     assert (
@@ -418,7 +418,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
     )
     assert (
@@ -466,7 +466,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
     )
     assert (
@@ -482,7 +482,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Apply CFR filter and check counts
-    processor.apply_range_filter(
+    processor.filter_dataframe_by_1d_range(
         "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
     )
     assert (
@@ -640,7 +640,7 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     # state.min_num_loc_per_trace = 4
     #
 
-    # This time filter anything short traces
+    # Now set a minimum number of localization per trace (global filter)
     state.min_num_loc_per_trace = 4
 
     # Read and process file
@@ -791,10 +791,10 @@ def test_weighted_localizations(extract_raw_npy_data_files):
 
     #
     # 3D_ValidOnly.npy
-    # state.min_num_loc_per_trace = 4
+    # state.min_num_loc_per_trace = 1
     #
 
-    # This time filter anything short traces
+    # Make sure not to filter anything
     state.min_num_loc_per_trace = 1
 
     # Read and process file
@@ -890,8 +890,9 @@ def test_apply_filter_by_indices(extract_raw_npy_data_files):
     assert len(df.index) == 12580, "Wrong total number of entries"
 
     # Select every second entry
-    indices = np.arange(start=0, stop=len(df.index), step=2)
-    processor.apply_filter_by_indices(indices)
+    flags = np.zeros(len(df.index), dtype=bool)
+    flags[::2] = True
+    processor.filter_dataframe_by_logical_indexing(flags)
 
     # Check the result
     assert len(processor.filtered_dataframe) == 6290, "Wrong total number of entries"
@@ -899,3 +900,167 @@ def test_apply_filter_by_indices(extract_raw_npy_data_files):
         assert np.all(
             processor.filtered_dataframe.iloc[i] == df.iloc[i * 2]
         ), "Unexpected filtering result!"
+
+
+def test_apply_threshold(extract_raw_npy_data_files):
+    # Initialize state
+    state = State()
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 1
+    #
+
+    # Make sure to not filter anything
+    state.min_num_loc_per_trace = 1
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    num_values = processor.num_values
+    assert processor.num_values == 12580, "Wrong total number of entries"
+
+    processor.filter_by_single_threshold(prop="dwell", threshold=7, larger_than=True)
+
+    num_values_larger = processor.num_values
+    assert processor.num_values == 2428, "Wrong total number of filtered entries"
+    assert (processor.filtered_dataframe["dwell"] < 7).sum() == 0, "Failed filtering."
+
+    processor.reset()
+    assert processor.num_values == 12580, "Failed processor reset."
+
+    processor.filter_by_single_threshold(prop="dwell", threshold=7, larger_than=False)
+
+    num_values_smaller = processor.num_values
+    assert processor.num_values == 10152, "Wrong total number of filtered entries"
+    assert num_values_smaller + num_values_larger == num_values, "Failed partition."
+    assert (processor.filtered_dataframe["dwell"] >= 7).sum() == 0, "Failed filtering."
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 4
+    #
+
+    # This time filter short traces
+    state.min_num_loc_per_trace = 4
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    num_values = processor.num_values
+    assert processor.num_values == 11903, "Wrong total number of entries"
+
+    processor.filter_by_single_threshold(prop="dwell", threshold=7, larger_than=True)
+
+    num_values_larger = processor.num_values
+    assert processor.num_values == 1757, "Wrong total number of filtered entries"
+    assert (processor.filtered_dataframe["dwell"] < 7).sum() == 0, "Failed filtering."
+
+    processor.reset()
+    assert processor.num_values == 11903, "Failed processor reset."
+
+    processor.filter_by_single_threshold(prop="dwell", threshold=7, larger_than=False)
+
+    num_values_smaller = processor.num_values
+    assert processor.num_values == 9355, "Wrong total number of filtered entries"
+    # Notice that the global filtering after filter_by_single_threshold() makes the sum
+    # num_values_smaller + num_values_larger < num_values!
+    assert num_values_smaller + num_values_larger == 11112, "Failed partition."
+    assert num_values_smaller + num_values_larger < num_values, "Failed partition."
+    assert (processor.filtered_dataframe["dwell"] >= 7).sum() == 0, "Failed filtering."
+
+
+def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
+    # Initialize state
+    state = State()
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 1
+    #
+
+    # Make sure to not filter anything
+    state.min_num_loc_per_trace = 1
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    assert processor.num_values == 12580, "Wrong total number of entries"
+
+    # Filter by range
+    processor.filter_dataframe_by_2d_range(
+        "x", "y", x_range=(2000, 3000), y_range=(-12000, -13000)
+    )  # y range will be flipped
+
+    assert processor.num_values == 1165, "Wrong total number of filtered entries"
+    assert (processor.filtered_dataframe["x"] < 2000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["x"] >= 3000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["y"] < -13000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 4
+    #
+
+    # This time filter short traces
+    state.min_num_loc_per_trace = 4
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    assert processor.num_values == 11903, "Wrong total number of entries"
+
+    # Filter by range
+    processor.filter_dataframe_by_2d_range(
+        "x", "y", x_range=(2000, 3000), y_range=(-12000, -13000)
+    )  # y range will be flipped
+
+    assert processor.num_values == 1099, "Wrong total number of filtered entries"
+    assert (processor.filtered_dataframe["x"] < 2000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["x"] >= 3000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["y"] < -13000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
+
+
+def test_select_and_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
+    # Initialize state
+    state = State()
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 4
+    #
+
+    # Now set a minimum number of localization per trace (global filter)
+    state.min_num_loc_per_trace = 4
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Select (that is, get a view) by range
+    df = processor.select_dataframe_by_2d_range("x", "y", x_range=(2000, 3000), y_range=(-13000, -12000))
+
+    assert len(df.index) == 1099, "Wrong total number of filtered entries"
+    assert (df["x"] < 2000).sum() == 0, "Failed filtering."
+    assert (df["x"] >= 3000).sum() == 0, "Failed filtering."
+    assert (df["y"] < -13000).sum() == 0, "Failed filtering."
+    assert (df["y"] >= -12000).sum() == 0, "Failed filtering."
+
+    # Now compare with the filter by the same range
+    processor.filter_dataframe_by_2d_range(
+        "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
+    )
+    assert processor.num_values == 1099, "Wrong total number of filtered entries"
+    assert (processor.filtered_dataframe["x"] < 2000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["x"] >= 3000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["y"] < -13000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
+
+    # Make sure all entries are the same
+    assert (df == processor.filtered_dataframe).all().all(), "The selected and filtered set are not identical."

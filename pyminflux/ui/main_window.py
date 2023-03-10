@@ -415,8 +415,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Select the data by x and y range and show in the dataframe viewer."""
 
         # Get the filtered dataframe subset contained in the provided x and y ranges
-        df = self.minfluxprocessor.select_dataframe_by_xy_range(
-            x_range, y_range, from_weighted_locs=self.state.plot_average_localisations
+        df = self.minfluxprocessor.select_dataframe_by_2d_range(
+            "x", "y", x_range, y_range, from_weighted_locs=self.state.plot_average_localisations
         )
 
         # Update the dataviewer
