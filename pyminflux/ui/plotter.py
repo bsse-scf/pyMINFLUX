@@ -14,7 +14,7 @@ class Plotter(PlotWidget):
     # Signals
     locations_selected = Signal(list, name="locations_selected")
     locations_selected_by_range = Signal(
-        tuple, tuple, name="locations_selected_by_range"
+        str, str, tuple, tuple, name="locations_selected_by_range"
     )
     crop_region_selected = Signal(str, str, tuple, tuple, name="crop_region_selected")
 
@@ -186,9 +186,15 @@ class Plotter(PlotWidget):
             # Extract the ranges
             x_range, y_range = self._get_ranges_from_roi()
 
+            # Get current parameters
+            x_param = self.state.x_param
+            y_param = self.state.y_param
+
             # Update the DataViewer with current selection
             if x_range is not None and y_range is not None:
-                self.locations_selected_by_range.emit(x_range, y_range)
+                self.locations_selected_by_range.emit(
+                    x_param, y_param, x_range, y_range
+                )
 
             # Reset flags
             self.__roi_start_point = None
@@ -356,9 +362,13 @@ class Plotter(PlotWidget):
         # Extract the ranges
         x_range, y_range = self._get_ranges_from_roi()
 
+        # Get current parameters
+        x_param = self.state.x_param
+        y_param = self.state.y_param
+
         # Update the DataViewer with current selection
         if x_range is not None and y_range is not None:
-            self.locations_selected_by_range.emit(x_range, y_range)
+            self.locations_selected_by_range.emit(x_param, y_param, x_range, y_range)
 
     def clicked(self, _, points):
         """Emit 'signal_selected_locations' when points are selected in the plot."""

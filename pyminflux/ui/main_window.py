@@ -401,13 +401,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print(f"Selected {len(indices)} {point_str}.")
 
     @Slot(tuple, tuple, name="show_selected_points_by_range_in_dataviewer")
-    def show_selected_points_by_range_in_dataviewer(self, x_range, y_range):
+    def show_selected_points_by_range_in_dataviewer(
+        self, x_param, y_param, x_range, y_range
+    ):
         """Select the data by x and y range and show in the dataframe viewer."""
 
         # Get the filtered dataframe subset contained in the provided x and y ranges
         df = self.minfluxprocessor.select_dataframe_by_2d_range(
-            "x",
-            "y",
+            x_param,
+            y_param,
             x_range,
             y_range,
             from_weighted_locs=self.state.plot_average_localisations,
