@@ -1,6 +1,6 @@
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph import ROI, PlotCurveItem, PlotWidget, TextItem, mkPen
+from pyqtgraph import ROI, PlotCurveItem, PlotWidget, TextItem, ViewBox, mkPen
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QAction
@@ -11,11 +11,12 @@ from ..state import State
 
 class Plotter(PlotWidget):
 
+    # Signals
     locations_selected = Signal(list, name="locations_selected")
     locations_selected_by_range = Signal(
         tuple, tuple, name="locations_selected_by_range"
     )
-    crop_region_selected = Signal(tuple, tuple, name="crop_region_selected")
+    crop_region_selected = Signal(str, str, tuple, tuple, name="crop_region_selected")
 
     def __init__(self):
         super().__init__()
@@ -45,6 +46,10 @@ class Plotter(PlotWidget):
         self.__roi_is_being_drawn = False
         self.__line_start_point = None
         self.__line_is_being_drawn = False
+
+        # Keep track of last plot
+        self.__last_x_param = None
+        self.__last_y_param = None
 
     def mousePressEvent(self, ev):
         """Override mouse press event."""
@@ -240,11 +245,8 @@ class Plotter(PlotWidget):
         self.setBackground("w")
         self.clear()
 
-    def plot_localizations(self, tid, **coords):
+    def plot_parameters(self, x, y, x_param, y_param, tid):
         """Plot localizations in a 2D scatter plot."""
-
-        if "z" in coords:
-            print("3D scatter plot support will follow soon.")
 
         # Create the scatter plot
         self.scatter = pg.ScatterPlotItem(
@@ -259,19 +261,40 @@ class Plotter(PlotWidget):
         )
         self.scatter.sigClicked.connect(self.clicked)
         if self.state.color_code_locs_by_tid:
-            brushes = self.set_colors_per_tid(tid.values)
+            brushes = self.set_colors_per_tid(tid)
         else:
             brushes = self.brush
         self.scatter.addPoints(
-            x=coords["x"].values,
-            y=coords["y"].values,
-            data=tid.values,
+            x=x,
+            y=y,
+            data=tid,
             brush=brushes,
         )
         self.addItem(self.scatter)
+        self.setLabel("bottom", text=x_param)
+        self.setLabel("left", text=y_param)
         self.showAxis("bottom")
         self.showAxis("left")
         self.setBackground("k")
+
+        if (self.__last_x_param is None or self.__last_x_param != x_param) or (
+            self.__last_y_param is None or self.__last_y_param != y_param
+        ):
+
+            # Update range
+            self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
+
+            # Fix aspect ratio
+            x_scale = (x.max() - x.min()) / (len(x) - 1)
+            y_scale = (y.max() - y.min()) / (len(y) - 1)
+            aspect_ratio = y_scale / x_scale
+            self.getPlotItem().getViewBox().setAspectLocked(
+                lock=True, ratio=aspect_ratio
+            )
+
+        # Update last plotted parameters
+        self.__last_x_param = x_param
+        self.__last_y_param = y_param
 
     def customize_context_menu(self):
         """Remove some default context menu actions.
@@ -316,7 +339,12 @@ class Plotter(PlotWidget):
         # Create the ranges
         x_range = (pos[0], pos[0] + size[0])
         y_range = (pos[1], pos[1] + size[1])
-        self.crop_region_selected.emit(x_range, y_range)
+
+        # Get the parameter names
+        x_param = self.state.x_param
+        y_param = self.state.y_param
+
+        self.crop_region_selected.emit(x_param, y_param, x_range, y_range)
 
     def roi_moved(self):
         """Inform that the selection of localizations may have changed after the ROI was moved."""
