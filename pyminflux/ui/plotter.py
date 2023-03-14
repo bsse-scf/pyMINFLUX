@@ -51,6 +51,10 @@ class Plotter(PlotWidget):
         self.__last_x_param = None
         self.__last_y_param = None
 
+    def enableAutoRange(self, enable: bool):
+        """Enable/disable axes autorange."""
+        self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=enable)
+
     def mousePressEvent(self, ev):
         """Override mouse press event."""
 

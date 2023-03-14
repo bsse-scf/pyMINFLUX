@@ -348,6 +348,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Update the ui
             self.full_update_ui()
 
+            # Make sure to autoupdate the axis on load
+            self.plotter.enableAutoRange(enable=True)
+
             # Enable selected ui components
             self.enable_ui_components_on_loaded_data()
 
