@@ -230,7 +230,7 @@ class MinFluxProcessor:
         else:
 
             # Work with currently selected rows
-            df = self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
+            df = self.filtered_dataframe
 
             return df.loc[
                 (df[x_prop] >= x_min)
@@ -407,7 +407,7 @@ class MinFluxProcessor:
             return
 
         # Work with currently selected rows
-        df = self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
+        df = self.filtered_dataframe
 
         # Calculate some statistics per TID on the processed dataframe
         df_grouped = df.groupby("tid")
@@ -455,7 +455,7 @@ class MinFluxProcessor:
             return
 
         # Work with currently selected rows
-        df = self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
+        df = self.filtered_dataframe
 
         # Normal or weighted averaging?
         if self.__use_weighted_localizations:
