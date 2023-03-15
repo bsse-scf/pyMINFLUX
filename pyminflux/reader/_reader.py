@@ -361,7 +361,7 @@ class MinFluxReader:
             else:
                 self.__reps = 5
                 self.__efo_index = 4
-                self.__cfr_index = 3
+                self.__cfr_index = 4
                 self.__dcr_index = 4
                 self.__eco_index = 4
                 self.__loc_index = 4
