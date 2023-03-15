@@ -27,6 +27,8 @@ class State(metaclass=Singleton):
         "dwell_time_threshold",
         "dwell_time_smaller_than_threshold",
         "weigh_avg_localization_by_eco",
+        "x_param",
+        "y_param",
     ]
 
     def __init__(self):
@@ -79,6 +81,10 @@ class State(metaclass=Singleton):
         # Weigh average localization by ECO
         self.weigh_avg_localization_by_eco: bool = False
 
+        # Current parameter selection
+        self.x_param: str = "x"
+        self.y_param: str = "y"
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -101,6 +107,8 @@ class State(metaclass=Singleton):
             "self.dwell_time_threshold": self.dwell_time_threshold,
             "self.dwell_time_smaller_than_threshold": self.dwell_time_smaller_than_threshold,
             "weigh_avg_localization_by_eco": self.weigh_avg_localization_by_eco,
+            "x_param": self.x_param,
+            "y_param": self.y_param,
         }
 
     def reset(self):
@@ -131,3 +139,5 @@ class State(metaclass=Singleton):
         self.dwell_time_threshold = 0.0
         self.dwell_time_smaller_than_threshold = True
         self.weigh_avg_localization_by_eco = False
+        self.x_param = "x"
+        self.y_param = "y"

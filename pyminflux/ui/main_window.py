@@ -16,13 +16,13 @@ __APP_NAME__ = "pyMinFlux"
 import pyminflux.resources
 from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
-from pyminflux.ui.data_inspector import DataInspector
 from pyminflux.ui.dataviewer import DataViewer
 
 # from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
+from pyminflux.ui.plotter_toolbar import PlotterToolbar
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 
 
@@ -61,7 +61,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.analyzer = None
         self.plotter = None
         self.plotter3D = None
-        self.data_inspector = None
         self.options = Options()
 
         # Make sure to only show the console if requested
@@ -72,14 +71,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Initialize Plotter and DataViewer
         self.plotter = Plotter()
+        self.plotter_toolbar = PlotterToolbar()
         self.data_viewer = DataViewer()
 
         # Add them to the splitter
         self.ui.splitter_layout.addWidget(self.plotter)
+        self.ui.splitter_layout.addWidget(self.plotter_toolbar)
         self.ui.splitter_layout.addWidget(self.data_viewer)
 
-        # Show them
+        # Set initial visibiliy
         self.plotter.show()
+        self.plotter_toolbar.hide()
         self.data_viewer.show()
 
         # Set up signals and slots
@@ -145,12 +147,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
-        self.ui.actionData_Inspector.triggered.connect(self.open_data_inspector)
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
         self.ui.actionPlotAverageLocalizations.changed.connect(
             self.toggle_plot_average_localizations
         )
         self.ui.actionState.triggered.connect(self.print_current_state)
+
+        # Plotter toolbar
+        self.plotter_toolbar.plot_requested_parameters.connect(
+            self.plot_selected_parameters
+        )
 
         # Other connections
         self.plotter.locations_selected.connect(
@@ -161,7 +167,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         self.plotter.crop_region_selected.connect(self.crop_data_by_range)
         self.options.color_code_locs_by_tid_option_changed.connect(
-            self.plot_localizations
+            self.plot_selected_parameters
         )
         self.options.weigh_avg_localization_by_eco_option_changed.connect(
             self.update_weighted_average_localization_option_and_plot
@@ -170,12 +176,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
         self.ui.actionAnalyzer.setEnabled(True)
-        self.ui.actionData_Inspector.setEnabled(True)
+        self.plotter_toolbar.show()
 
     def disable_ui_components_on_closed_data(self):
         """Disable UI components."""
         self.ui.actionAnalyzer.setEnabled(False)
-        self.ui.actionData_Inspector.setEnabled(False)
+        self.plotter_toolbar.hide()
 
     def full_update_ui(self):
         """
@@ -183,7 +189,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         :return:
         """
         self.plotter.clear()
-        self.plot_localizations()
+        self.plot_selected_parameters()
         self.data_viewer.clear()
         if (
             self.minfluxprocessor is not None
@@ -231,10 +237,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.options is not None:
                 self.options.close()
                 self.options = None
-
-            if self.data_inspector is not None:
-                self.data_inspector.close()
-                self.data_inspector = None
 
             # Store the application settings
             if self.last_selected_path != "":
@@ -343,16 +345,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.plotter3D.close()
                 self.plotter3D = None
 
-            # Close the Data Inspactor
-            if self.data_inspector is not None:
-                self.data_inspector.close()
-                self.data_inspector = None
-
             # Update the ui
             self.full_update_ui()
 
-            # Make sure to autoupdate the axis (on load only)
-            self.plotter.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
+            # Make sure to autoupdate the axis on load
+            self.plotter.enableAutoRange(enable=True)
 
             # Enable selected ui components
             self.enable_ui_components_on_loaded_data()
@@ -370,10 +367,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.analyzer is None:
             self.analyzer = Analyzer(self.minfluxprocessor)
             self.analyzer.data_filters_changed.connect(self.full_update_ui)
-            if self.data_inspector is not None:
-                self.analyzer.data_filters_changed.connect(
-                    self.data_inspector.plot_selected_params
-                )
             self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
@@ -411,13 +404,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print(f"Selected {len(indices)} {point_str}.")
 
     @Slot(tuple, tuple, name="show_selected_points_by_range_in_dataviewer")
-    def show_selected_points_by_range_in_dataviewer(self, x_range, y_range):
+    def show_selected_points_by_range_in_dataviewer(
+        self, x_param, y_param, x_range, y_range
+    ):
         """Select the data by x and y range and show in the dataframe viewer."""
 
         # Get the filtered dataframe subset contained in the provided x and y ranges
         df = self.minfluxprocessor.select_dataframe_by_2d_range(
-            "x",
-            "y",
+            x_param,
+            y_param,
             x_range,
             y_range,
             from_weighted_locs=self.state.plot_average_localisations,
@@ -431,19 +426,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print(f"Selected {len(df.index)} {point_str}.")
 
     @Slot(tuple, tuple, name="crop_data_by_range")
-    def crop_data_by_range(self, x_range, y_range):
+    def crop_data_by_range(self, x_param, y_param, x_range, y_range):
         """Filter the data by x and y range and show in the dataframe viewer."""
 
         # Filter the dataframe by the passed x and y ranges
-        self.minfluxprocessor.filter_dataframe_by_xy_range(x_range, y_range)
+        self.minfluxprocessor.filter_dataframe_by_2d_range(
+            x_param, y_param, x_range, y_range
+        )
 
         # Update the Analyzer
         if self.analyzer is not None:
             self.analyzer.plot()
-
-        # Update the Data Inspector
-        if self.data_inspector is not None:
-            self.data_inspector.plot_selected_params()
 
         # Update the 3D plotter
         if self.plotter3D is not None:
@@ -470,9 +463,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.minfluxprocessor.use_weighted_localizations = (
                 self.state.weigh_avg_localization_by_eco
             )
-        self.plot_localizations()
+        self.plot_selected_parameters()
 
-    def plot_localizations(self):
+    def plot_selected_parameters(self):
         """Plot the localizations."""
 
         # Remove the previous plots
@@ -482,23 +475,39 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.minfluxprocessor is None:
             return
 
-        if self.state.plot_average_localisations:
-            # Get the (potentially filtered) averaged dataframe
-            dataframe = self.minfluxprocessor.weighted_localizations
+        # If an only if the requested parameters are "x" and "y" (in any order),
+        # we consider the State.plot_average_localisations property.
+        if (self.state.x_param == "x" and self.state.y_param == "y") or (
+            self.state.x_param == "y" and self.state.y_param == "x"
+        ):
+            if self.state.plot_average_localisations:
+                # Get the (potentially filtered) averaged dataframe
+                dataframe = self.minfluxprocessor.weighted_localizations
+            else:
+                # Get the (potentially filtered) full dataframe
+                dataframe = self.minfluxprocessor.filtered_dataframe
+
+            # If the 3D plotter is open, also plot the coordinates in the 3D plotter.
+            if self.plotter3D is not None:
+                self.plot_localizations_3d(dataframe[["x", "y", "z"]].values)
+
         else:
             # Get the (potentially filtered) full dataframe
             dataframe = self.minfluxprocessor.filtered_dataframe
 
-        # Always plot the (x, y) coordinates in the 2D plotter
-        self.plotter.plot_localizations(
-            tid=dataframe["tid"],
-            x=dataframe["x"],
-            y=dataframe["y"],
-        )
+        # Extract values
+        x = dataframe[self.state.x_param].values
+        y = dataframe[self.state.y_param].values
+        tid = dataframe["tid"].values
 
-        # If the 3D plotter is open, also plot the coordinates in the 3D plotter.
-        if self.plotter3D is not None:
-            self.plot_localizations_3d(dataframe[["x", "y", "z"]].values)
+        # Always plot the (x, y) coordinates in the 2D plotter
+        self.plotter.plot_parameters(
+            tid=tid,
+            x=x,
+            y=y,
+            x_param=self.state.x_param,
+            y_param=self.state.y_param,
+        )
 
     def plot_localizations_3d(self, coords=None):
         """If the acquisition is 3D and the Show Plotter menu is checked, show the 3D plotter.
@@ -545,20 +554,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                     )
         self.plotter3D.show()
         self.plotter3D.activateWindow()
-
-    @Slot(None, name="open_data_inspector")
-    def open_data_inspector(self):
-        """Open Data Inspector."""
-
-        """Initialize and open the analyzer."""
-        if self.data_inspector is None:
-            self.data_inspector = DataInspector(self.minfluxprocessor, parent=self)
-            if self.analyzer is not None:
-                self.analyzer.data_filters_changed.connect(
-                    self.data_inspector.plot_selected_params
-                )
-        self.data_inspector.show()
-        self.data_inspector.activateWindow()
 
     def show_processed_dataframe(self, dataframe=None):
         """

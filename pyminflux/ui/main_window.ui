@@ -42,7 +42,7 @@
      <x>0</x>
      <y>0</y>
      <width>1000</width>
-     <height>37</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -63,7 +63,6 @@
     <addaction name="actionConsole"/>
     <addaction name="separator"/>
     <addaction name="actionAnalyzer"/>
-    <addaction name="actionData_Inspector"/>
     <addaction name="action3D_Plotter"/>
     <addaction name="separator"/>
     <addaction name="actionPlotAverageLocalizations"/>
