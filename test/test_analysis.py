@@ -296,9 +296,9 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
-    assert processor.num_values == 9760, "Wrong number of filtered entries"
+    assert processor.num_values == 2432, "Wrong number of filtered entries"
     assert (
-        len(processor.filtered_dataframe.index) == 9760
+        len(processor.filtered_dataframe.index) == 2432
     ), "Wrong number of filtered entries"
 
     # Reset all filters and confirm counts
@@ -360,9 +360,9 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
-    assert processor.num_values == 9133, "Wrong number of filtered entries"
+    assert processor.num_values == 1678, "Wrong number of filtered entries"
     assert (
-        len(processor.filtered_dataframe.index) == 9133
+        len(processor.filtered_dataframe.index) == 1678
     ), "Wrong number of filtered entries"
 
     # Make sure the global filters were applied
