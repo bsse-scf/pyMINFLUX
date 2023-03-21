@@ -11,9 +11,11 @@ class MinFluxProcessor:
     """Processor of MINFLUX data."""
 
     __slots__ = [
-        "__minfluxreader",
         "state",
+        "__minfluxreader",
+        "__current_fluorophore_id",
         "__filtered_stats_dataframe",
+        "__fluorophore_ids",
         "__selected_rows",
         "__stats_to_be_recomputed",
         "__weighted_localizations",
@@ -45,6 +47,15 @@ class MinFluxProcessor:
             data=np.ones(self.__minfluxreader.num_valid_entries, dtype=bool),
             index=self.__minfluxreader.processed_dataframe.index,
         )
+
+        # Keep a separate array of integers to store the mapping to the corresponding fluorophore
+        self.__fluorophore_ids = pd.Series(
+            data=np.ones(self.__minfluxreader.num_valid_entries, dtype=int),
+            index=self.__minfluxreader.processed_dataframe.index,
+        )
+
+        # Keep track of the selected fluorophore
+        self.__current_fluorophore_id = 0
 
         # Cache the weighted, averaged TID positions
         self.__weighted_localizations = None
@@ -87,6 +98,30 @@ class MinFluxProcessor:
         return 0
 
     @property
+    def current_fluorophore_id(self) -> int:
+        """Return current fluorophore ID (0 for all)."""
+        return self.__current_fluorophore_id
+
+    @current_fluorophore_id.setter
+    def current_fluorophore_id(self, fluorophore_id: int) -> None:
+        """Set current fluorophore ID (0 for all)."""
+
+        # If fluorophore_id is 0, the selection is removed
+        if fluorophore_id == 0:
+            self.__current_fluorophore_id = fluorophore_id
+        else:
+            # Check that the passed fluorophore_id is valid
+            valid_ids = np.unique(self.__fluorophore_ids.values)
+            if fluorophore_id not in valid_ids:
+                raise ValueError(f"Only {valid_ids} are valid IDs.")
+
+            # Set the new fluorophore_id
+            self.__current_fluorophore_id = fluorophore_id
+
+        # Flag stats to be recomputed
+        self.__stats_to_be_recomputed = True
+
+    @property
     def filtered_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return dataframe with all filters applied.
 
@@ -98,7 +133,12 @@ class MinFluxProcessor:
         """
         if self.__minfluxreader.processed_dataframe is None:
             return None
-        return self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
+        if self.current_fluorophore_id == 0:
+            return self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
+        df = self.__minfluxreader.processed_dataframe.loc[
+            self.__fluorophore_ids == self.current_fluorophore_id
+        ]
+        return df.loc[self.__selected_rows]
 
     @property
     def filtered_dataframe_stats(self) -> Union[None, pd.DataFrame]:
@@ -139,11 +179,26 @@ class MinFluxProcessor:
 
     def reset(self):
         """Drops all dynamic filters and resets the data to the processed data frame with global filters."""
+
+        # All rows are selected
         self.__selected_rows = pd.Series(
             data=np.ones(self.__minfluxreader.num_valid_entries, dtype=bool),
             index=self.__minfluxreader.processed_dataframe.index,
         )
+
+        # Default fluorophore is 0 (no selection)
+        self.current_fluorophore_id = 0
+
+        # Apply global filters
         self._apply_global_filters()
+
+    def set_fluorophore_ids(self, fluorophore_ids: np.ndarray[int]):
+        """Assign the fluorophore IDs."""
+        if len(fluorophore_ids) != len(self.__selected_rows.index):
+            raise ValueError(
+                "The number of fluorophore IDs does not match the number of entries in the dataframe."
+            )
+        self.__fluorophore_ids[:] = fluorophore_ids
 
     def select_dataframe_by_indices(
         self, indices, from_weighted_locs: bool = False
