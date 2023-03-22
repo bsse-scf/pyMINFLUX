@@ -160,6 +160,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plot_selected_parameters
         )
         self.plotter_toolbar.ui.pbUnmixColors.clicked.connect(self.open_color_unmixer)
+        self.plotter_toolbar.ui.pbOpenAnalyzer.clicked.connect(self.open_analyzer)
 
         # Other connections
         self.plotter.locations_selected.connect(
