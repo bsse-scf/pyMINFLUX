@@ -805,8 +805,9 @@ def test_statistics_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_file
         assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
         assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
 
+
 def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
-    
+
     # Initialize State
     state = State()
 
@@ -833,7 +834,9 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     # this should return an empty stats dataframe
     x_range = (35.0, 45.0)
     y_range = (38.0, 48.0)
-    select_df = processor.select_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+    select_df = processor.select_dataframe_by_2d_range(
+        "x", "y", x_range=x_range, y_range=y_range
+    )
 
     # The dataframe should be empty
     assert len(select_df.index) == 0, "The stats dataframe should be empty!"
@@ -852,7 +855,9 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     # this should return an empty stats dataframe
     x_range = (5.0, 15.0)
     y_range = (8.0, 18.0)
-    select_df = processor.select_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+    select_df = processor.select_dataframe_by_2d_range(
+        "x", "y", x_range=x_range, y_range=y_range
+    )
 
     # The dataframe should be empty
     assert len(select_df.index) == 0, "The stats dataframe should be empty!"
@@ -880,7 +885,9 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     # this should return an empty stats dataframe
     x_range = (35.0, 45.0)
     y_range = (38.0, 48.0)
-    select_df = processor.select_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+    select_df = processor.select_dataframe_by_2d_range(
+        "x", "y", x_range=x_range, y_range=y_range
+    )
 
     # The dataframe should be empty
     assert len(select_df.index) == 0, "The stats dataframe should be empty!"
@@ -899,9 +906,9 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     # this should return an empty stats dataframe
     x_range = (5.0, 15.0)
     y_range = (8.0, 18.0)
-    select_df = processor.select_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+    select_df = processor.select_dataframe_by_2d_range(
+        "x", "y", x_range=x_range, y_range=y_range
+    )
 
     # The dataframe should be empty
     assert len(select_df.index) == 0, "The stats dataframe should be empty!"
-
-

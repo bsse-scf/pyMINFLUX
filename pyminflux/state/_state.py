@@ -29,6 +29,7 @@ class State(metaclass=Singleton):
         "weigh_avg_localization_by_eco",
         "x_param",
         "y_param",
+        "num_fluorophores",
     ]
 
     def __init__(self):
@@ -85,6 +86,9 @@ class State(metaclass=Singleton):
         self.x_param: str = "x"
         self.y_param: str = "y"
 
+        # Number of fluorophores in the sample
+        self.num_fluorophores: int = 1
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -109,6 +113,7 @@ class State(metaclass=Singleton):
             "weigh_avg_localization_by_eco": self.weigh_avg_localization_by_eco,
             "x_param": self.x_param,
             "y_param": self.y_param,
+            "num_fluorophores": self.num_fluorophores,
         }
 
     def reset(self):
@@ -141,3 +146,4 @@ class State(metaclass=Singleton):
         self.weigh_avg_localization_by_eco = False
         self.x_param = "x"
         self.y_param = "y"
+        self.num_fluorophores = 1

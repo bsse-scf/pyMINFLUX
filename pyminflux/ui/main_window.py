@@ -17,6 +17,7 @@ import pyminflux.resources
 from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.dataviewer import DataViewer
+from pyminflux.ui.fluorophore_detector import FluorophoreDetector
 
 # from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.options import Options
@@ -61,6 +62,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.analyzer = None
         self.plotter = None
         self.plotter3D = None
+        self.fluorophore_detector = None
         self.options = Options()
 
         # Make sure to only show the console if requested
@@ -157,6 +159,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter_toolbar.plot_requested_parameters.connect(
             self.plot_selected_parameters
         )
+        self.plotter_toolbar.ui.pbDetectFluorophores.clicked.connect(
+            self.open_fluorophore_detector
+        )
 
         # Other connections
         self.plotter.locations_selected.connect(
@@ -233,6 +238,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.analyzer is not None:
                 self.analyzer.close()
                 self.analyzer = None
+
+            if self.fluorophore_detector is not None:
+                self.fluorophore_detector.close()
+                self.fluorophore_detector = None
 
             if self.options is not None:
                 self.options.close()
@@ -340,6 +349,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.analyzer.close()
                 self.analyzer = None
 
+            # Close the Fluorophore Detector
+            if self.fluorophore_detector is not None:
+                self.fluorophore_detector.close()
+                self.fluorophore_detector = None
+
             # Close the 3D plotter
             if self.plotter3D is not None:
                 self.plotter3D.close()
@@ -361,7 +375,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         for s in state_dict:
             print(f"{s}: {state_dict[s]}")
 
-    @Slot(None, name="self.open_analyzer")
+    @Slot(None, name="open_analyzer")
     def open_analyzer(self):
         """Initialize and open the analyzer."""
         if self.analyzer is None:
@@ -370,6 +384,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
+
+    @Slot(None, name="open_fluorophore_detector")
+    def open_fluorophore_detector(self):
+        """Initialize and open the fluorophore detector."""
+        if self.fluorophore_detector is None:
+            self.fluorophore_detector = FluorophoreDetector(
+                self.minfluxprocessor, parent=self
+            )
+            # self.fluorophore_detector.<signal_na,e>.connect(self.<slot>)
+        self.fluorophore_detector.show()
+        self.fluorophore_detector.activateWindow()
 
     @Slot(None, name="open_options_dialog")
     def open_options_dialog(self):
@@ -437,6 +462,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Update the Analyzer
         if self.analyzer is not None:
             self.analyzer.plot()
+
+        # Update the Fluorophore Detector?
+        if self.fluorophore_detector is not None:
+            # @TODO: Need to update?
+            pass
 
         # Update the 3D plotter
         if self.plotter3D is not None:

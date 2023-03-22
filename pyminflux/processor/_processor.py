@@ -44,14 +44,14 @@ class MinFluxProcessor:
 
         # Keep a separate array of booleans to cache selection state
         self.__selected_rows = pd.Series(
-            data=np.ones(self.__minfluxreader.num_valid_entries, dtype=bool),
-            index=self.__minfluxreader.processed_dataframe.index,
+            data=np.ones(len(self.full_dataframe.index), dtype=bool),
+            index=self.full_dataframe.index,
         )
 
         # Keep a separate array of integers to store the mapping to the corresponding fluorophore
         self.__fluorophore_ids = pd.Series(
-            data=np.ones(self.__minfluxreader.num_valid_entries, dtype=int),
-            index=self.__minfluxreader.processed_dataframe.index,
+            data=np.ones(len(self.full_dataframe.index), dtype=int),
+            index=self.full_dataframe.index,
         )
 
         # Keep track of the selected fluorophore
@@ -122,6 +122,18 @@ class MinFluxProcessor:
         self.__stats_to_be_recomputed = True
 
     @property
+    def full_dataframe(self) -> Union[None, pd.DataFrame]:
+        """Return the full dataframe (with valid entries only), with no selections or filters.
+
+        Returns
+        -------
+
+        full_dataframe: Union[None, pd.DataFrame]
+            A Pandas dataframe or None if no file was loaded.
+        """
+        return self.__minfluxreader.processed_dataframe
+
+    @property
     def filtered_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return dataframe with all filters applied.
 
@@ -131,11 +143,11 @@ class MinFluxProcessor:
         filtered_dataframe: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
-        if self.__minfluxreader.processed_dataframe is None:
+        if self.full_dataframe is None:
             return None
         if self.current_fluorophore_id == 0:
-            return self.__minfluxreader.processed_dataframe.loc[self.__selected_rows]
-        df = self.__minfluxreader.processed_dataframe.loc[
+            return self.full_dataframe.loc[self.__selected_rows]
+        df = self.full_dataframe.loc[
             self.__fluorophore_ids == self.current_fluorophore_id
         ]
         return df.loc[self.__selected_rows]
@@ -182,14 +194,14 @@ class MinFluxProcessor:
 
         # All rows are selected
         self.__selected_rows = pd.Series(
-            data=np.ones(self.__minfluxreader.num_valid_entries, dtype=bool),
-            index=self.__minfluxreader.processed_dataframe.index,
+            data=np.ones(len(self.full_dataframe.index), dtype=bool),
+            index=self.full_dataframe.index,
         )
 
         # Reset the mapping to the corresponding fluorophore
         self.__fluorophore_ids = pd.Series(
-            data=np.ones(self.__minfluxreader.num_valid_entries, dtype=int),
-            index=self.__minfluxreader.processed_dataframe.index,
+            data=np.ones(len(self.full_dataframe.index), dtype=int),
+            index=self.full_dataframe.index,
         )
 
         # Default fluorophore is 0 (no selection)
@@ -323,7 +335,7 @@ class MinFluxProcessor:
         self._apply_global_filters()
 
         # Alias
-        df = self.__minfluxreader.processed_dataframe
+        df = self.full_dataframe
 
         # Make sure that the ranges are increasing
         x_min = x_range[0]
@@ -353,7 +365,7 @@ class MinFluxProcessor:
         """Apply filters that are defined in the global application configuration."""
 
         # Make sure to count only currently selected rows
-        df = self.__minfluxreader.processed_dataframe.copy()
+        df = self.full_dataframe.copy()
         df.loc[np.invert(self.__selected_rows), "tid"] = np.nan
 
         # Select all rows where the count of TIDs is larger than self._min_trace_num
@@ -372,7 +384,7 @@ class MinFluxProcessor:
         """Apply single threshold to filter values either lower or higher (equal) than threshold for given property."""
 
         # Alias
-        df = self.__minfluxreader.processed_dataframe
+        df = self.full_dataframe
 
         # Apply filter
         if larger_than:
@@ -413,7 +425,7 @@ class MinFluxProcessor:
             return
 
         # Alias
-        df = self.__minfluxreader.processed_dataframe
+        df = self.full_dataframe
 
         # Apply filter
         self.__selected_rows = (
@@ -444,8 +456,8 @@ class MinFluxProcessor:
             self.__selected_rows
         ].tolist()
         self.__selected_rows = pd.Series(
-            data=np.ones(self.__minfluxreader.num_valid_entries, dtype=bool),
-            index=self.__minfluxreader.processed_dataframe.index,
+            data=np.ones(len(self.full_dataframe.index), dtype=bool),
+            index=self.full_dataframe.index,
         )
         self.__selected_rows.loc[current_selection_index] = indices
 
@@ -460,7 +472,7 @@ class MinFluxProcessor:
         """Calculate per-trace statistics."""
 
         # Make sure we have processed dataframe to work on
-        if self.__minfluxreader.processed_dataframe is None:
+        if self.full_dataframe is None:
             return
 
         # Only recompute statistics if needed
@@ -508,7 +520,7 @@ class MinFluxProcessor:
         """Calculate per-trace localization weighted by relative photon count."""
 
         # Make sure we have processed dataframe to work on
-        if self.__minfluxreader.processed_dataframe is None:
+        if self.full_dataframe is None:
             return
 
         # Only recompute weighted localizations if needed

@@ -49,15 +49,15 @@
      </property>
      <item>
       <property name="text">
-       <string>1</string>
+       <string>All</string>
       </property>
      </item>
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="pbAssignFluorophores">
+    <widget class="QPushButton" name="pbDetectFluorophores">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -66,7 +66,7 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>Assign</string>
+      <string>Detect</string>
      </property>
     </widget>
    </item>
