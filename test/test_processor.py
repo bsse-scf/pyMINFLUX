@@ -18,6 +18,12 @@ def extract_raw_npy_data_files(tmpdir):
     #
 
     # Make sure to extract the test data if it is not already there
+    npy_file_name = Path(__file__).parent / "data" / "2D_All.npy"
+    zip_file_name = Path(__file__).parent / "data" / "2D_All.npy.zip"
+    if not npy_file_name.is_file():
+        with zipfile.ZipFile(zip_file_name, "r") as zip_ref:
+            zip_ref.extractall(Path(__file__).parent / "data")
+
     npy_file_name = Path(__file__).parent / "data" / "2D_ValidOnly.npy"
     zip_file_name = Path(__file__).parent / "data" / "2D_ValidOnly.npy.zip"
     if not npy_file_name.is_file():
@@ -43,6 +49,134 @@ def extract_raw_npy_data_files(tmpdir):
 def test_filter_raw_dataframes(extract_raw_npy_data_files):
     # Initialize State
     state = State()
+
+    #
+    # 2D_All.npy
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
+
+    # 2D_ValidOnly.npy
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_All.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Check counts for totally unfiltered data
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
+    assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
+    assert reader.num_invalid_entries == 687394, "Wrong number of invalid entries"
+    assert processor.num_values == 12580, "Wrong number of processed entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 12580
+    ), "Wrong number of filtered entries"
+
+    # Apply EFO filter and check counts
+    processor.filter_dataframe_by_1d_range(
+        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
+    assert processor.num_values == 11064, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 11064
+    ), "Wrong number of filtered entries"
+
+    # Apply CFR filter and check counts
+    processor.filter_dataframe_by_1d_range(
+        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
+    assert processor.num_values == 2432, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 2432
+    ), "Wrong number of filtered entries"
+
+    # Reset all filters and confirm counts
+    processor.reset()
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
+    assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
+    assert reader.num_invalid_entries == 687394, "Wrong number of invalid entries"
+    assert processor.num_values == 12580, "Wrong number of processed entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 12580
+    ), "Wrong number of filtered entries"
+
+    #
+    # 2D_All.npy
+    #
+    # min_num_loc_per_trace = 4
+    #
+
+    # Now set a minimum number of localization per trace (global filter)
+    state.min_num_loc_per_trace = 4
+
+    # 2D_ValidOnly.npy
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_All.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Check counts for totally unfiltered data
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
+    assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
+    assert reader.num_invalid_entries == 687394, "Wrong number of invalid entries"
+    assert processor.num_values == 11903, "Wrong number of processed entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 11903
+    ), "Wrong number of filtered entries"
+
+    # Apply EFO filter and check counts
+    processor.filter_dataframe_by_1d_range(
+        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
+    assert processor.num_values == 10385, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 10385
+    ), "Wrong number of filtered entries"
+
+    # Make sure the global filters were applied
+    counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
+    assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
+
+    # Apply CFR filter and check counts
+    processor.filter_dataframe_by_1d_range(
+        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
+    assert processor.num_values == 1678, "Wrong number of filtered entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 1678
+    ), "Wrong number of filtered entries"
+
+    # Make sure the global filters were applied
+    counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
+    assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
+
+    # Reset all filters and confirm counts
+    processor.reset()
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
+    assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
+    assert reader.num_invalid_entries == 687394, "Wrong number of invalid entries"
+    assert processor.num_values == 11903, "Wrong number of processed entries"
+    assert (
+        len(processor.filtered_dataframe.index) == 11903
+    ), "Wrong number of filtered entries"
 
     #
     # 2D_ValidOnly.npy
