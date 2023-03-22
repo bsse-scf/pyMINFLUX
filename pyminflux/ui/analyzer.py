@@ -111,7 +111,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         if self.state.dwell_time_smaller_than_threshold:
             self.ui.cxDwellOption.setCurrentIndex(0)
         else:
-            self.ui.cxDwellOption.setCurrentIndex(0)
+            self.ui.cxDwellOption.setCurrentIndex(1)
 
         # Keep a reference to the ROIRanges dialog
         self.roi_ranges_dialog = None

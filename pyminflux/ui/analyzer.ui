@@ -487,7 +487,7 @@
          </item>
          <item>
           <property name="text">
-           <string>larger than</string>
+           <string>larger equal than</string>
           </property>
          </item>
         </widget>

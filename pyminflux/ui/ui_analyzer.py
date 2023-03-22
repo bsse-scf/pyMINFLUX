@@ -395,7 +395,7 @@ class Ui_Analyzer(object):
 
         self.retranslateUi(Analyzer)
 
-        self.tabFilterOptions.setCurrentIndex(0)
+        self.tabFilterOptions.setCurrentIndex(3)
 
         QMetaObject.connectSlotsByName(Analyzer)
 
@@ -476,7 +476,7 @@ class Ui_Analyzer(object):
             0, QCoreApplication.translate("Analyzer", "smaller than", None)
         )
         self.cxDwellOption.setItemText(
-            1, QCoreApplication.translate("Analyzer", "larger than", None)
+            1, QCoreApplication.translate("Analyzer", "larger equal than", None)
         )
 
         self.lbDwellTimeUnit.setText(QCoreApplication.translate("Analyzer", "ms", None))
