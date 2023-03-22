@@ -65,6 +65,30 @@ class Ui_PlotterToolbar(object):
         self.horizontalLayout = QHBoxLayout(PlotterToolbar)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.horizontalLayout.setContentsMargins(-1, 3, -1, 3)
+        self.horizontalSpacer_2 = QSpacerItem(
+            10, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_2)
+
+        self.pbOpenAnalyzer = QPushButton(PlotterToolbar)
+        self.pbOpenAnalyzer.setObjectName("pbOpenAnalyzer")
+        sizePolicy1 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(
+            self.pbOpenAnalyzer.sizePolicy().hasHeightForWidth()
+        )
+        self.pbOpenAnalyzer.setSizePolicy(sizePolicy1)
+
+        self.horizontalLayout.addWidget(self.pbOpenAnalyzer)
+
+        self.horizontalSpacer = QSpacerItem(
+            60, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout.addItem(self.horizontalSpacer)
+
         self.lbFluorophoreIndex = QLabel(PlotterToolbar)
         self.lbFluorophoreIndex.setObjectName("lbFluorophoreIndex")
         self.lbFluorophoreIndex.setEnabled(True)
@@ -77,9 +101,6 @@ class Ui_PlotterToolbar(object):
         self.cbFluorophoreIndex = QComboBox(PlotterToolbar)
         self.cbFluorophoreIndex.addItem("")
         self.cbFluorophoreIndex.setObjectName("cbFluorophoreIndex")
-        sizePolicy1 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(
             self.cbFluorophoreIndex.sizePolicy().hasHeightForWidth()
         )
@@ -128,6 +149,12 @@ class Ui_PlotterToolbar(object):
 
         self.horizontalLayout.addWidget(self.pbPlot)
 
+        self.horizontalSpacer_4 = QSpacerItem(
+            10, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_4)
+
         self.retranslateUi(PlotterToolbar)
 
         QMetaObject.connectSlotsByName(PlotterToolbar)
@@ -137,6 +164,9 @@ class Ui_PlotterToolbar(object):
     def retranslateUi(self, PlotterToolbar):
         PlotterToolbar.setWindowTitle(
             QCoreApplication.translate("PlotterToolbar", "Form", None)
+        )
+        self.pbOpenAnalyzer.setText(
+            QCoreApplication.translate("PlotterToolbar", "Analyze", None)
         )
         self.lbFluorophoreIndex.setText(
             QCoreApplication.translate("PlotterToolbar", "Fluorophore", None)

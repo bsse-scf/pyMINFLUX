@@ -213,4 +213,3 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
     assert (
         pytest.approx(mad, 1e-4) == 0.10275233127529688
     ), "The median absolute difference value is wrong!"
-
