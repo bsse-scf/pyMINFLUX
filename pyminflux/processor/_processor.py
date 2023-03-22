@@ -186,6 +186,12 @@ class MinFluxProcessor:
             index=self.__minfluxreader.processed_dataframe.index,
         )
 
+        # Reset the mapping to the corresponding fluorophore
+        self.__fluorophore_ids = pd.Series(
+            data=np.ones(self.__minfluxreader.num_valid_entries, dtype=int),
+            index=self.__minfluxreader.processed_dataframe.index,
+        )
+
         # Default fluorophore is 0 (no selection)
         self.current_fluorophore_id = 0
 

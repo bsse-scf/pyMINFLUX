@@ -65,8 +65,58 @@ class MockMinFluxReader:
             176,
             176,
         ]
-        self.__df = pd.DataFrame(columns=["tid"])
+
+        x = np.array(
+            [
+                7.4184994,  # 51
+                15.54597418,  # 54
+                17.0187548,
+                10.75712379,
+                5.28072338,
+                6.08383931,
+                13.95264325,
+                41.34898337,  # 70
+                38.92833729,
+                39.98092342,
+                37.70430848,
+                43.23700451,
+                5.62333476,  # 97
+                7.92581688,
+                17.27103707,
+                9.43949113,
+                17.75681099,
+                2.15371129,
+                17.18905948,
+                39.50438874,  # 102
+                39.24657456,  # 151
+                41.2052434,
+                44.24509408,
+                36.59157864,  # 171
+                43.32636097,
+                37.86035951,
+                39.18906052,
+                33.62707418,
+                42.12852769,
+                39.489917,
+                40.78712421,
+                40.11585099,
+                28.20309915,  # 176
+                13.17710337,
+                6.60185162,
+                7.24951093,
+                9.10716601,
+                18.22542178,
+                6.11708764,
+                5.59437818,
+            ]
+        )
+        y = x + 3.0
+        z = 0.0 * x
+        self.__df = pd.DataFrame(columns=["tid", "x", "y", "z"])
         self.__df["tid"] = tids
+        self.__df["x"] = x
+        self.__df["y"] = y
+        self.__df["z"] = z
 
     @property
     def processed_dataframe(self):
@@ -376,3 +426,381 @@ def test_process_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     # Check that no traces are shorter than state.min_num_loc_per_trace
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
     assert len(counts[counts < state.min_num_loc_per_trace].values) == 0
+
+
+def test_statistics_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
+
+    # Initialize State
+    state = State()
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Check that no fluorophore is selected
+    assert (
+        processor.current_fluorophore_id == 0
+    ), "Default fluorophore must be 0 (none selected)."
+
+    # Get statistics
+    stats = processor.filtered_dataframe_stats
+
+    assert np.all(
+        stats["tid"].values == np.array([51, 54, 70, 97, 102, 151, 171, 176])
+    ), "Unexpected TID grouping."
+    assert np.all(
+        stats["n"].values == np.array([1, 6, 5, 7, 1, 3, 9, 8])
+    ), "Unexpected TID grouping."
+    assert np.sum(stats["n"].values) == len(
+        processor.filtered_dataframe.index
+    ), "Unexpected total number of entries in the stats dataframe."
+
+    for tid in stats["tid"].values:
+        rows = processor.filtered_dataframe.loc[
+            processor.filtered_dataframe["tid"] == tid
+        ]
+        mx = rows["x"].values.mean()
+        my = rows["y"].values.mean()
+        mz = rows["z"].values.mean()
+        sx = rows["x"].values.std(ddof=1)
+        sy = rows["y"].values.std(ddof=1)
+        sz = rows["z"].values.std(ddof=1)
+        if np.isnan(sx):
+            sx = 0.0
+        if np.isnan(sy):
+            sy = 0.0
+        if np.isnan(sz):
+            sz = 0.0
+        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
+        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
+        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
+        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
+        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
+        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+
+    # Reset the processor
+    processor.reset()
+
+    # Check that no fluorophore is selected
+    assert (
+        processor.current_fluorophore_id == 0
+    ), "Default fluorophore must be 0 (none selected)."
+
+    # Reassign the fluorphore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # Get statistics
+    stats = processor.filtered_dataframe_stats
+
+    assert np.all(
+        stats["tid"].values == np.array([51, 54, 97, 176])
+    ), "Unexpected TID grouping."
+    assert np.all(
+        stats["n"].values == np.array([1, 6, 7, 8])
+    ), "Unexpected TID grouping."
+    assert np.sum(stats["n"].values) == len(
+        processor.filtered_dataframe.index
+    ), "Unexpected total number of entries in the stats dataframe."
+
+    for tid in stats["tid"].values:
+        rows = processor.filtered_dataframe.loc[
+            processor.filtered_dataframe["tid"] == tid
+        ]
+        mx = rows["x"].values.mean()
+        my = rows["y"].values.mean()
+        mz = rows["z"].values.mean()
+        sx = rows["x"].values.std(ddof=1)
+        sy = rows["y"].values.std(ddof=1)
+        sz = rows["z"].values.std(ddof=1)
+        if np.isnan(sx):
+            sx = 0.0
+        if np.isnan(sy):
+            sy = 0.0
+        if np.isnan(sz):
+            sz = 0.0
+        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
+        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
+        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
+        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
+        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
+        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+
+    # Reset the processor
+    processor.reset()
+
+    # Check that no fluorophore is selected
+    assert (
+        processor.current_fluorophore_id == 0
+    ), "Default fluorophore must be 0 (none selected)."
+
+    # Reassign the fluorphore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # Reassign the fluorphore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Get statistics
+    stats = processor.filtered_dataframe_stats
+
+    assert np.all(
+        stats["tid"].values == np.array([70, 102, 151, 171])
+    ), "Unexpected TID grouping."
+    assert np.all(
+        stats["n"].values == np.array([5, 1, 3, 9])
+    ), "Unexpected TID grouping."
+    assert np.sum(stats["n"].values) == len(
+        processor.filtered_dataframe.index
+    ), "Unexpected total number of entries in the stats dataframe."
+
+    for tid in stats["tid"].values:
+        rows = processor.filtered_dataframe.loc[
+            processor.filtered_dataframe["tid"] == tid
+        ]
+        mx = rows["x"].values.mean()
+        my = rows["y"].values.mean()
+        mz = rows["z"].values.mean()
+        sx = rows["x"].values.std(ddof=1)
+        sy = rows["y"].values.std(ddof=1)
+        sz = rows["z"].values.std(ddof=1)
+        if np.isnan(sx):
+            sx = 0.0
+        if np.isnan(sy):
+            sy = 0.0
+        if np.isnan(sz):
+            sz = 0.0
+        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
+        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
+        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
+        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
+        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
+        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+
+    #
+    # Check filtering by x and y range
+    #
+
+    # Reset the processor
+    processor.reset()
+
+    # Check that no fluorophore is selected
+    assert (
+        processor.current_fluorophore_id == 0
+    ), "Default fluorophore must be 0 (none selected)."
+
+    # Reassign the fluorphore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # Reassign the fluorphore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe
+    x_range = (35.0, 45.0)
+    y_range = (38.0, 48.0)
+    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+
+    # Now collect the stats
+    stats = processor.filtered_dataframe_stats
+
+    # The dataframe should be empty
+    assert len(stats.index) == 0, "The stats dataframe should be empty!"
+
+    # Reset the processor
+    processor.reset()
+
+    # Check that no fluorophore is selected
+    assert (
+        processor.current_fluorophore_id == 0
+    ), "Default fluorophore must be 0 (none selected)."
+
+    # Reassign the fluorphore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # Reassign the fluorphore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe
+    x_range = (5.0, 15.0)
+    y_range = (8.0, 18.0)
+    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+
+    # Now collect the stats
+    stats = processor.filtered_dataframe_stats
+
+    # The dataframe should be empty
+    assert len(stats.index) == 0, "The stats dataframe should be empty!"
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 4
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 4
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Check that no fluorophore is selected
+    assert (
+        processor.current_fluorophore_id == 0
+    ), "Default fluorophore must be 0 (none selected)."
+
+    # Get statistics
+    stats = processor.filtered_dataframe_stats
+
+    assert np.all(
+        stats["tid"].values == np.array([54, 70, 97, 171, 176])
+    ), "Unexpected TID grouping."
+    assert np.all(
+        stats["n"].values == np.array([6, 5, 7, 9, 8])
+    ), "Unexpected TID grouping."
+    assert np.sum(stats["n"].values) == len(
+        processor.filtered_dataframe.index
+    ), "Unexpected total number of entries in the stats dataframe."
+
+    for tid in stats["tid"].values:
+        rows = processor.filtered_dataframe.loc[
+            processor.filtered_dataframe["tid"] == tid
+        ]
+        mx = rows["x"].values.mean()
+        my = rows["y"].values.mean()
+        mz = rows["z"].values.mean()
+        sx = rows["x"].values.std(ddof=1)
+        sy = rows["y"].values.std(ddof=1)
+        sz = rows["z"].values.std(ddof=1)
+        if np.isnan(sx):
+            sx = 0.0
+        if np.isnan(sy):
+            sy = 0.0
+        if np.isnan(sz):
+            sz = 0.0
+        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
+        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
+        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
+        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
+        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
+        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+
+    # Reset the processor
+    processor.reset()
+
+    # Check that no fluorophore is selected
+    assert (
+        processor.current_fluorophore_id == 0
+    ), "Default fluorophore must be 0 (none selected)."
+
+    # Reassign the fluorphore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # Get statistics
+    stats = processor.filtered_dataframe_stats
+
+    assert np.all(
+        stats["tid"].values == np.array([54, 97, 176])
+    ), "Unexpected TID grouping."
+    assert np.all(stats["n"].values == np.array([6, 7, 8])), "Unexpected TID grouping."
+    assert np.sum(stats["n"].values) == len(
+        processor.filtered_dataframe.index
+    ), "Unexpected total number of entries in the stats dataframe."
+
+    for tid in stats["tid"].values:
+        rows = processor.filtered_dataframe.loc[
+            processor.filtered_dataframe["tid"] == tid
+        ]
+        mx = rows["x"].values.mean()
+        my = rows["y"].values.mean()
+        mz = rows["z"].values.mean()
+        sx = rows["x"].values.std(ddof=1)
+        sy = rows["y"].values.std(ddof=1)
+        sz = rows["z"].values.std(ddof=1)
+        if np.isnan(sx):
+            sx = 0.0
+        if np.isnan(sy):
+            sy = 0.0
+        if np.isnan(sz):
+            sz = 0.0
+        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
+        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
+        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
+        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
+        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
+        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+
+    # Reset the processor
+    processor.reset()
+
+    # Check that no fluorophore is selected
+    assert (
+        processor.current_fluorophore_id == 0
+    ), "Default fluorophore must be 0 (none selected)."
+
+    # Reassign the fluorphore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 2
+
+    # Reassign the fluorphore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Get statistics
+    stats = processor.filtered_dataframe_stats
+
+    assert np.all(
+        stats["tid"].values == np.array([70, 171])
+    ), "Unexpected TID grouping."
+    assert np.all(stats["n"].values == np.array([5, 9])), "Unexpected TID grouping."
+    assert np.sum(stats["n"].values) == len(
+        processor.filtered_dataframe.index
+    ), "Unexpected total number of entries in the stats dataframe."
+
+    for tid in stats["tid"].values:
+        rows = processor.filtered_dataframe.loc[
+            processor.filtered_dataframe["tid"] == tid
+        ]
+        mx = rows["x"].values.mean()
+        my = rows["y"].values.mean()
+        mz = rows["z"].values.mean()
+        sx = rows["x"].values.std(ddof=1)
+        sy = rows["y"].values.std(ddof=1)
+        sz = rows["z"].values.std(ddof=1)
+        if np.isnan(sx):
+            sx = 0.0
+        if np.isnan(sy):
+            sy = 0.0
+        if np.isnan(sz):
+            sz = 0.0
+        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
+        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
+        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
+        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
+        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
+        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
