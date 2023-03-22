@@ -495,7 +495,7 @@ def test_statistics_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_file
         processor.current_fluorophore_id == 0
     ), "Default fluorophore must be 0 (none selected)."
 
-    # Reassign the fluorphore IDs
+    # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
@@ -545,13 +545,13 @@ def test_statistics_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_file
         processor.current_fluorophore_id == 0
     ), "Default fluorophore must be 0 (none selected)."
 
-    # Reassign the fluorphore IDs
+    # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 2
     processor.current_fluorophore_id = 2
 
-    # Reassign the fluorphore IDs
+    # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Get statistics
@@ -602,13 +602,13 @@ def test_statistics_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_file
         processor.current_fluorophore_id == 0
     ), "Default fluorophore must be 0 (none selected)."
 
-    # Reassign the fluorphore IDs
+    # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
 
-    # Reassign the fluorphore IDs
+    # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     # We filter with a range that only contains traces of fluorophore 2:
@@ -631,13 +631,13 @@ def test_statistics_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_file
         processor.current_fluorophore_id == 0
     ), "Default fluorophore must be 0 (none selected)."
 
-    # Reassign the fluorphore IDs
+    # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 2
     processor.current_fluorophore_id = 2
 
-    # Reassign the fluorphore IDs
+    # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     # We filter with a range that only contains traces of fluorophore 2:
@@ -714,7 +714,7 @@ def test_statistics_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_file
         processor.current_fluorophore_id == 0
     ), "Default fluorophore must be 0 (none selected)."
 
-    # Reassign the fluorphore IDs
+    # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
@@ -762,13 +762,13 @@ def test_statistics_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_file
         processor.current_fluorophore_id == 0
     ), "Default fluorophore must be 0 (none selected)."
 
-    # Reassign the fluorphore IDs
+    # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 2
 
-    # Reassign the fluorphore IDs
+    # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Get statistics
@@ -804,3 +804,104 @@ def test_statistics_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_file
         assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
         assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
         assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+
+def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
+    
+    # Initialize State
+    state = State()
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe
+    x_range = (35.0, 45.0)
+    y_range = (38.0, 48.0)
+    select_df = processor.select_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+
+    # The dataframe should be empty
+    assert len(select_df.index) == 0, "The stats dataframe should be empty!"
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe
+    x_range = (5.0, 15.0)
+    y_range = (8.0, 18.0)
+    select_df = processor.select_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+
+    # The dataframe should be empty
+    assert len(select_df.index) == 0, "The stats dataframe should be empty!"
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 4
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 4
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe
+    x_range = (35.0, 45.0)
+    y_range = (38.0, 48.0)
+    select_df = processor.select_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+
+    # The dataframe should be empty
+    assert len(select_df.index) == 0, "The stats dataframe should be empty!"
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe
+    x_range = (5.0, 15.0)
+    y_range = (8.0, 18.0)
+    select_df = processor.select_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+
+    # The dataframe should be empty
+    assert len(select_df.index) == 0, "The stats dataframe should be empty!"
+
+
