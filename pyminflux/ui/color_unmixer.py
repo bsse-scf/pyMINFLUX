@@ -8,10 +8,10 @@ from sklearn.mixture import GaussianMixture
 
 from pyminflux.analysis import prepare_histogram
 from pyminflux.state import State
-from pyminflux.ui.ui_fluorophore_detector import Ui_FluorophoreDetector
+from pyminflux.ui.ui_color_unmixer import Ui_ColorUnmixer
 
 
-class FluorophoreDetector(QDialog, Ui_FluorophoreDetector):
+class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     """
     A QDialog to display the dcr histogram and to assigning the fluorophore ids.
     """
@@ -25,7 +25,7 @@ class FluorophoreDetector(QDialog, Ui_FluorophoreDetector):
         super().__init__(parent=parent)
 
         # Initialize the dialog
-        self.ui = Ui_FluorophoreDetector()
+        self.ui = Ui_ColorUnmixer()
         self.ui.setupUi(self)
 
         # Initialize state

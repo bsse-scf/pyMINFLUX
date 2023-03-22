@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'fluorophore_detector.ui'
+## Form generated from reading UI file 'color_unmixer.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.4.2
 ##
@@ -54,12 +54,12 @@ from PySide6.QtWidgets import (
 )
 
 
-class Ui_FluorophoreDetector(object):
-    def setupUi(self, FluorophoreDetector):
-        if not FluorophoreDetector.objectName():
-            FluorophoreDetector.setObjectName("FluorophoreDetector")
-        FluorophoreDetector.resize(800, 600)
-        self.verticalLayout_2 = QVBoxLayout(FluorophoreDetector)
+class Ui_ColorUnmixer(object):
+    def setupUi(self, ColorUnmixer):
+        if not ColorUnmixer.objectName():
+            ColorUnmixer.setObjectName("ColorUnmixer")
+        ColorUnmixer.resize(800, 600)
+        self.verticalLayout_2 = QVBoxLayout(ColorUnmixer)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.main_layout = QVBoxLayout()
         self.main_layout.setObjectName("main_layout")
@@ -71,13 +71,13 @@ class Ui_FluorophoreDetector(object):
 
         self.commands_layout.addItem(self.horizontalSpacer)
 
-        self.lbNumFluorophores = QLabel(FluorophoreDetector)
+        self.lbNumFluorophores = QLabel(ColorUnmixer)
         self.lbNumFluorophores.setObjectName("lbNumFluorophores")
         self.lbNumFluorophores.setAlignment(Qt.AlignCenter)
 
         self.commands_layout.addWidget(self.lbNumFluorophores)
 
-        self.leNumFluorophores = QLineEdit(FluorophoreDetector)
+        self.leNumFluorophores = QLineEdit(ColorUnmixer)
         self.leNumFluorophores.setObjectName("leNumFluorophores")
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -89,24 +89,24 @@ class Ui_FluorophoreDetector(object):
 
         self.commands_layout.addWidget(self.leNumFluorophores)
 
-        self.lbBinSize = QLabel(FluorophoreDetector)
+        self.lbBinSize = QLabel(ColorUnmixer)
         self.lbBinSize.setObjectName("lbBinSize")
 
         self.commands_layout.addWidget(self.lbBinSize)
 
-        self.leBinSize = QLineEdit(FluorophoreDetector)
+        self.leBinSize = QLineEdit(ColorUnmixer)
         self.leBinSize.setObjectName("leBinSize")
 
         self.commands_layout.addWidget(self.leBinSize)
 
-        self.pbDetect = QPushButton(FluorophoreDetector)
+        self.pbDetect = QPushButton(ColorUnmixer)
         self.pbDetect.setObjectName("pbDetect")
         sizePolicy.setHeightForWidth(self.pbDetect.sizePolicy().hasHeightForWidth())
         self.pbDetect.setSizePolicy(sizePolicy)
 
         self.commands_layout.addWidget(self.pbDetect)
 
-        self.pbAssign = QPushButton(FluorophoreDetector)
+        self.pbAssign = QPushButton(ColorUnmixer)
         self.pbAssign.setObjectName("pbAssign")
 
         self.commands_layout.addWidget(self.pbAssign)
@@ -121,33 +121,29 @@ class Ui_FluorophoreDetector(object):
 
         self.verticalLayout_2.addLayout(self.main_layout)
 
-        self.retranslateUi(FluorophoreDetector)
+        self.retranslateUi(ColorUnmixer)
 
-        QMetaObject.connectSlotsByName(FluorophoreDetector)
+        QMetaObject.connectSlotsByName(ColorUnmixer)
 
     # setupUi
 
-    def retranslateUi(self, FluorophoreDetector):
-        FluorophoreDetector.setWindowTitle(
-            QCoreApplication.translate(
-                "FluorophoreDetector", "Fluorophore Detector", None
-            )
+    def retranslateUi(self, ColorUnmixer):
+        ColorUnmixer.setWindowTitle(
+            QCoreApplication.translate("ColorUnmixer", "Color Unmixer", None)
         )
         self.lbNumFluorophores.setText(
-            QCoreApplication.translate(
-                "FluorophoreDetector", "Number of fluorophores", None
-            )
+            QCoreApplication.translate("ColorUnmixer", "Number of fluorophores", None)
         )
         self.lbBinSize.setText(
             QCoreApplication.translate(
-                "FluorophoreDetector", "Bin size (set to 0 for auto)", None
+                "ColorUnmixer", "Bin size (set to 0 for auto)", None
             )
         )
         self.pbDetect.setText(
-            QCoreApplication.translate("FluorophoreDetector", "Detect", None)
+            QCoreApplication.translate("ColorUnmixer", "Detect", None)
         )
         self.pbAssign.setText(
-            QCoreApplication.translate("FluorophoreDetector", "Assign", None)
+            QCoreApplication.translate("ColorUnmixer", "Assign", None)
         )
 
     # retranslateUi

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>FluorophoreDetector</class>
- <widget class="QDialog" name="FluorophoreDetector">
+ <class>ColorUnmixer</class>
+ <widget class="QDialog" name="ColorUnmixer">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Fluorophore Detector</string>
+   <string>Color Unmixer</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
