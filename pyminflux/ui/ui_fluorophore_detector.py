@@ -89,6 +89,16 @@ class Ui_FluorophoreDetector(object):
 
         self.commands_layout.addWidget(self.leNumFluorophores)
 
+        self.lbBinSize = QLabel(FluorophoreDetector)
+        self.lbBinSize.setObjectName("lbBinSize")
+
+        self.commands_layout.addWidget(self.lbBinSize)
+
+        self.leBinSize = QLineEdit(FluorophoreDetector)
+        self.leBinSize.setObjectName("leBinSize")
+
+        self.commands_layout.addWidget(self.leBinSize)
+
         self.pbDetect = QPushButton(FluorophoreDetector)
         self.pbDetect.setObjectName("pbDetect")
         sizePolicy.setHeightForWidth(self.pbDetect.sizePolicy().hasHeightForWidth())
@@ -126,6 +136,11 @@ class Ui_FluorophoreDetector(object):
         self.lbNumFluorophores.setText(
             QCoreApplication.translate(
                 "FluorophoreDetector", "Number of fluorophores", None
+            )
+        )
+        self.lbBinSize.setText(
+            QCoreApplication.translate(
+                "FluorophoreDetector", "Bin size (set to 0 for auto)", None
             )
         )
         self.pbDetect.setText(

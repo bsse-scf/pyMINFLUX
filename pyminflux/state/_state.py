@@ -30,6 +30,7 @@ class State(metaclass=Singleton):
         "x_param",
         "y_param",
         "num_fluorophores",
+        "dcr_bin_size",
     ]
 
     def __init__(self):
@@ -88,6 +89,7 @@ class State(metaclass=Singleton):
 
         # Number of fluorophores in the sample
         self.num_fluorophores: int = 1
+        self.dcr_bin_size: float = 0.0
 
     def asdict(self) -> dict:
         """Return class as dictionary."""
@@ -114,6 +116,7 @@ class State(metaclass=Singleton):
             "x_param": self.x_param,
             "y_param": self.y_param,
             "num_fluorophores": self.num_fluorophores,
+            "dcr_bin_size": self.dcr_bin_size,
         }
 
     def reset(self):
@@ -147,3 +150,4 @@ class State(metaclass=Singleton):
         self.x_param = "x"
         self.y_param = "y"
         self.num_fluorophores = 1
+        self.dcr_bin_size = 0.0

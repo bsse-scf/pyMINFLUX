@@ -52,6 +52,16 @@
         </widget>
        </item>
        <item>
+        <widget class="QLabel" name="lbBinSize">
+         <property name="text">
+          <string>Bin size (set to 0 for auto)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="leBinSize"/>
+       </item>
+       <item>
         <widget class="QPushButton" name="pbDetect">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
