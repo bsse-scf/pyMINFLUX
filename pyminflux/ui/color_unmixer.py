@@ -17,7 +17,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     """
 
     # Signal that the fluorophore IDs have been assigned
-    fluorophore_ids_assigned = Signal(name="fluorophore_ids_assigned")
+    fluorophore_ids_assigned = Signal(int, name="fluorophore_ids_assigned")
 
     def __init__(self, processor, parent):
 
@@ -98,6 +98,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         except ValueError as _:
             return
         self.state.num_fluorophores = num_fluorophores
+        self.ui.pbAssign.setEnabled(False)
 
     @Slot(None, name="plot_dcr_histogram")
     def plot_dcr_histogram(self):
@@ -175,6 +176,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             n_components=self.state.num_fluorophores,
             init_params="k-means++",
             covariance_type="full",
+            max_iter=1000,
             random_state=42,
         ).fit(values)
 
@@ -235,4 +237,4 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.__minfluxprocessor.set_fluorophore_ids(self.assigned_fluorophore_ids)
 
         # Inform that the fluorophore IDs have been assigned
-        self.fluorophore_ids_assigned.emit()
+        self.fluorophore_ids_assigned.emit(len(np.unique(self.assigned_fluorophore_ids)))

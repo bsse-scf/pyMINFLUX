@@ -8,7 +8,7 @@ from .ui_plotter_toolbar import Ui_PlotterToolbar
 
 class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
-    plot_requested_parameters = Signal(name="plot_requested_parameters")
+    plot_requested_parameters = Signal(int, name="plot_requested_parameters")
 
     def __init__(self):
         """Constructor."""
@@ -63,3 +63,17 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
         # Emit signal
         self.plot_requested_parameters.emit()
+
+    @Slot(int, name="set_fluorophore_list")
+    def set_fluorophore_list(self, num_fluorophores):
+        """Update the fluorophores pull-down menu."""
+
+        # Remove old items
+        self.ui.cbFluorophoreIndex.clear()
+
+        # Add new items
+
+        self.ui.cbFluorophoreIndex.addItems(["All"] + list([str(i + 1) for i in range(num_fluorophores)]))
+
+        # Fall back to no fluorophore id selected
+        self.ui.cbFluorophoreIndex.setCurrentIndex(0)

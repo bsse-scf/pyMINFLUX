@@ -389,8 +389,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Initialize and open the color unmixer."""
         if self.color_unmixer is None:
             self.color_unmixer = ColorUnmixer(self.minfluxprocessor, parent=self)
-            # @TODO
-            # self.color_unmixer.fluorophore_ids_assigned.connect(self.<slot>)
+            self.color_unmixer.fluorophore_ids_assigned.connect(self.plotter_toolbar.set_fluorophore_list)
         self.color_unmixer.show()
         self.color_unmixer.activateWindow()
 
