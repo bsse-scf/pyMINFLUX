@@ -4,7 +4,7 @@ from pyqtgraph import PlotWidget
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 from PySide6.QtWidgets import QDialog
-from sklearn.mixture import GaussianMixture
+from sklearn.mixture import BayesianGaussianMixture
 
 from pyminflux.analysis import prepare_histogram
 from pyminflux.state import State
@@ -170,8 +170,8 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Keep track of the total number of elements for normalisation
         n_total = len(values)
 
-        # Fit a Gaussian Mixture Model with self.state.num_fluorophores components
-        model = GaussianMixture(
+        # Fit a Bayesian Gaussian Mixture Model with self.state.num_fluorophores components
+        model = BayesianGaussianMixture(
             n_components=self.state.num_fluorophores,
             init_params="k-means++",
             covariance_type="full",
