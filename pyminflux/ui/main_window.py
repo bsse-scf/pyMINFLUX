@@ -161,6 +161,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         self.plotter_toolbar.ui.pbUnmixColors.clicked.connect(self.open_color_unmixer)
         self.plotter_toolbar.ui.pbOpenAnalyzer.clicked.connect(self.open_analyzer)
+        self.plotter_toolbar.fluorophore_id_changed.connect(
+            self.update_fluorophore_id_in_processor_and_broadcast
+        )
 
         # Other connections
         self.plotter.locations_selected.connect(
@@ -389,7 +392,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Initialize and open the color unmixer."""
         if self.color_unmixer is None:
             self.color_unmixer = ColorUnmixer(self.minfluxprocessor, parent=self)
-            self.color_unmixer.fluorophore_ids_assigned.connect(self.plotter_toolbar.set_fluorophore_list)
+            self.color_unmixer.fluorophore_ids_assigned.connect(
+                self.plotter_toolbar.set_fluorophore_list
+            )
         self.color_unmixer.show()
         self.color_unmixer.activateWindow()
 
@@ -598,3 +603,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Pass the dataframe to the pdDataViewer
         self.data_viewer.set_data(dataframe)
+
+    @Slot(int, name="update_fluorophore_id_in_processor_and_broadcast")
+    def update_fluorophore_id_in_processor_and_broadcast(self, index):
+        """Update the fluorophore ID in the processor and broadcast the change to all parties."""
+
+        # Update the processor
+        self.minfluxprocessor.current_fluorophore_id = index
+
+        # Update all views
+        self.full_update_ui()

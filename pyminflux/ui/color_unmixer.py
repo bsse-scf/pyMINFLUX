@@ -237,4 +237,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.__minfluxprocessor.set_fluorophore_ids(self.assigned_fluorophore_ids)
 
         # Inform that the fluorophore IDs have been assigned
-        self.fluorophore_ids_assigned.emit(len(np.unique(self.assigned_fluorophore_ids)))
+        self.fluorophore_ids_assigned.emit(
+            len(np.unique(self.assigned_fluorophore_ids))
+        )
