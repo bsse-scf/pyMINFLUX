@@ -44,27 +44,12 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.sx_plot = None
         self.sy_plot = None
         self.sz_plot = None
-        self.cfr_efo_plot = None
         self.efo_region = None
         self.cfr_region = None
-        self.efo_cfr_roi = None
-        self.efo_cfr_scatter = None
-        self.efo_cfr_plot_view = None
-
-        # Keep track of whether we are plotting the EFO vs. CFR scatter plot or 2D histogram
-        self.plotting_efo_cfr_scatter_plot = True
-        self.efo_cfr_histogram_log_scale = False
 
         # Store the data aspect ratio
         self.efo_range = None
         self.cfr_range = None
-        self.efo_scale = 1.0
-        self.cfr_scale = 1.0
-        self.efo_cfr_data_aspect_ratio = 1.0
-
-        # Keep track of the axis ranges
-        self.efo_cfr_x_range = None
-        self.efo_cfr_y_range = None
 
         # Keep a reference to the singleton State class
         self.state = State()
@@ -162,6 +147,49 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.communication_label.setFont(font)
         self.ui.communication_layout.addWidget(self.communication_label)
         self.communication_label.hide()
+
+        # Parameters Layout
+        self.efo_plot = pg.PlotWidget(parent=self, background="w", title="EFO")
+        self.efo_plot.setMouseEnabled(x=True, y=False)
+        self.efo_plot.setMenuEnabled(False)
+        self.efo_plot.scene().sigMouseClicked.connect(
+            self.histogram_raise_context_menu_with_filtering
+        )
+
+        self.cfr_plot = pg.PlotWidget(parent=self, background="w", title="CFR")
+        self.cfr_plot.setMouseEnabled(x=True, y=False)
+        self.cfr_plot.setMenuEnabled(False)
+        self.cfr_plot.scene().sigMouseClicked.connect(
+            self.histogram_raise_context_menu_with_filtering
+        )
+
+        self.ui.parameters_layout.addWidget(self.efo_plot)
+        self.efo_plot.hide()
+        self.ui.parameters_layout.addWidget(self.cfr_plot)
+        self.cfr_plot.hide()
+
+        # Localizations layout
+        self.sx_plot = pg.PlotWidget(parent=self, background="w", title="σx")
+        self.sx_plot.setMouseEnabled(x=True, y=False)
+        self.sx_plot.setMenuEnabled(False)
+        self.sx_plot.scene().sigMouseClicked.connect(self.histogram_raise_context_menu)
+
+        self.sy_plot = pg.PlotWidget(parent=self, background="w", title="σy")
+        self.sy_plot.setMouseEnabled(x=True, y=False)
+        self.sy_plot.setMenuEnabled(False)
+        self.sy_plot.scene().sigMouseClicked.connect(self.histogram_raise_context_menu)
+
+        self.sz_plot = pg.PlotWidget(parent=self, background="w", title="σz")
+        self.sz_plot.setMouseEnabled(x=True, y=False)
+        self.sz_plot.setMenuEnabled(False)
+        self.sz_plot.scene().sigMouseClicked.connect(self.histogram_raise_context_menu)
+
+        self.ui.localizations_layout.addWidget(self.sx_plot)
+        self.sx_plot.hide()
+        self.ui.localizations_layout.addWidget(self.sy_plot)
+        self.sy_plot.hide()
+        self.ui.localizations_layout.addWidget(self.sz_plot)
+        self.sz_plot.hide()
 
     def keyPressEvent(self, ev):
         """Key press event."""
@@ -370,25 +398,16 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Announce that the plotting has started
         self.plotting_started.emit()
 
-        # Remove previous plots quickly, if they exist
-        param_widgets = []
-        for i in reversed(range(self.ui.parameters_layout.count())):
-            widget = self.ui.parameters_layout.itemAt(i).widget()
-            param_widgets.append(widget)
-            self.ui.parameters_layout.removeWidget(widget)
-
-        localization_widgets = []
-        for i in reversed(range(self.ui.localizations_layout.count())):
-            widget = self.ui.localizations_layout.itemAt(i).widget()
-            localization_widgets.append(widget)
-            self.ui.localizations_layout.removeWidget(widget)
-
-        # Now properly delete them (slow)
-        for widget in param_widgets:
-            widget.deleteLater()
-
-        for widget in localization_widgets:
-            widget.deleteLater()
+        for item in self.efo_plot.allChildItems():
+            self.efo_plot.removeItem(item)
+        for item in self.cfr_plot.allChildItems():
+            self.cfr_plot.removeItem(item)
+        for item in self.sx_plot.allChildItems():
+            self.sx_plot.removeItem(item)
+        for item in self.sy_plot.allChildItems():
+            self.sy_plot.removeItem(item)
+        for item in self.sz_plot.allChildItems():
+            self.sz_plot.removeItem(item)
 
         # Is there data to plot?
         if not is_data:
@@ -424,39 +443,39 @@ class Analyzer(QDialog, Ui_Analyzer):
         if self.state.efo_thresholds is None:
             self.state.efo_thresholds = (efo_bin_edges[0], efo_bin_edges[-1])
 
-        self.efo_plot, self.efo_region = self._create_histogram_plot(
+        self.efo_region = self._create_histogram_plot(
+            "efo",
+            self.efo_plot,
             n_efo,
             efo_bin_edges,
             efo_bin_centers,
             efo_bin_width,
             axis_range=self.efo_range,
-            title="EFO",
             brush="b",
             fmt="{value:.0f}",
             support_thresholding=True,
             thresholds=self.state.efo_thresholds,
         )
-        self.ui.parameters_layout.addWidget(self.efo_plot)
         self.efo_plot.show()
 
         # cfr
         if self.state.cfr_thresholds is None:
             self.state.cfr_thresholds = (cfr_bin_edges[0], cfr_bin_edges[-1])
 
-        self.cfr_plot, self.cfr_region = self._create_histogram_plot(
+        self.cfr_region = self._create_histogram_plot(
+            "cfr",
+            self.cfr_plot,
             n_cfr,
             cfr_bin_edges,
             cfr_bin_centers,
             cfr_bin_width,
             axis_range=self.cfr_range,
-            title="CFR",
             brush="r",
             fmt="{value:.2f}",
             support_thresholding=True,
             thresholds=self.state.cfr_thresholds,
             force_min_x_range_to_zero=False,
         )
-        self.ui.parameters_layout.addWidget(self.cfr_plot)
         self.cfr_plot.show()
 
         # sx
@@ -465,19 +484,19 @@ class Analyzer(QDialog, Ui_Analyzer):
             auto_bins=True,
             bin_size=0.0,
         )
-        self.sx_plot, _ = self._create_histogram_plot(
+        _ = self._create_histogram_plot(
+            "sx",
+            self.sx_plot,
             n_sx,
             sx_bin_edges,
             sx_bin_centers,
             sx_bin_width,
-            title="σx",
             brush="k",
             support_thresholding=False,
         )
         self._add_median_line(
             self.sx_plot, self._minfluxprocessor.filtered_dataframe_stats["sx"].values
         )
-        self.ui.localizations_layout.addWidget(self.sx_plot)
         self.sx_plot.show()
 
         # sy
@@ -486,19 +505,19 @@ class Analyzer(QDialog, Ui_Analyzer):
             auto_bins=True,
             bin_size=0.0,
         )
-        self.sy_plot, _ = self._create_histogram_plot(
+        _ = self._create_histogram_plot(
+            "sy",
+            self.sy_plot,
             n_sy,
             sy_bin_edges,
             sy_bin_centers,
             sy_bin_width,
-            title="σy",
             brush="k",
             support_thresholding=False,
         )
         self._add_median_line(
             self.sy_plot, self._minfluxprocessor.filtered_dataframe_stats["sy"].values
         )
-        self.ui.localizations_layout.addWidget(self.sy_plot)
         self.sy_plot.show()
 
         # sz
@@ -508,12 +527,13 @@ class Analyzer(QDialog, Ui_Analyzer):
                 auto_bins=True,
                 bin_size=0.0,
             )
-            self.sz_plot, _ = self._create_histogram_plot(
+            _ = self._create_histogram_plot(
+                "sz",
+                self.sz_plot,
                 n_sz,
                 sz_bin_edges,
                 sz_bin_centers,
                 sz_bin_width,
-                title="σz",
                 brush="k",
                 support_thresholding=False,
             )
@@ -521,7 +541,6 @@ class Analyzer(QDialog, Ui_Analyzer):
                 self.sz_plot,
                 self._minfluxprocessor.filtered_dataframe_stats["sz"].values,
             )
-            self.ui.localizations_layout.addWidget(self.sz_plot)
             self.sz_plot.show()
 
         # Announce that the plotting has completed
@@ -529,13 +548,14 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     def _create_histogram_plot(
         self,
+        plot_id,
+        plot_widget,
         n: np.ndarray,
         bin_edges: np.ndarray,
         bin_centers: np.ndarray,
         bin_width: np.ndarray,
         *,
         axis_range: Optional[tuple] = None,
-        title: str = "",
         brush: str = "b",
         fmt: str = "{value:0.2f}",
         support_thresholding: bool = False,
@@ -557,8 +577,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         chart = pg.BarGraphItem(
             x=bin_centers, height=n, width=0.9 * bin_width, brush=brush
         )
-        plot = pg.PlotWidget(parent=self, background="w", title=title)
-        plot.setMouseEnabled(x=True, y=False)
 
         if axis_range is None:
             axis_range = (bin_edges[0], bin_edges[-1])
@@ -568,11 +586,9 @@ class Analyzer(QDialog, Ui_Analyzer):
             x0 = 0.0
         else:
             x0 = axis_range[0]
-        plot.setXRange(x0, axis_range[1])  # setXRange()'s padding misbehaves
-        plot.setYRange(0.0, n.max())
-        plot.setMenuEnabled(False)
-        plot.scene().sigMouseClicked.connect(self.histogram_raise_context_menu)
-        plot.addItem(chart)
+        plot_widget.setXRange(x0, axis_range[1])  # setXRange()'s padding misbehaves
+        plot_widget.setYRange(0.0, n.max())
+        plot_widget.addItem(chart)
 
         region = None
         if support_thresholding:
@@ -584,19 +600,19 @@ class Analyzer(QDialog, Ui_Analyzer):
             )
 
             # Mark region with data label for callbacks
-            region.data_label = title.lower().replace(" ", "_")
+            region.data_label = plot_id
 
             # Add to plot
-            plot.addItem(region)
+            plot_widget.addItem(region)
 
             # Add labels with current values of lower and upper thresholds. Attach them
             # to the region to be able to access them from callbacks.
             region.low_thresh_label = pg.InfLineLabel(
-                region.lines[0], fmt, position=0.90
+                region.lines[0], fmt, position=0.95
             )
             self._change_region_label_font(region.low_thresh_label)
             region.high_thresh_label = pg.InfLineLabel(
-                region.lines[1], fmt, position=0.95
+                region.lines[1], fmt, position=0.90
             )
             self._change_region_label_font(region.high_thresh_label)
 
@@ -605,25 +621,43 @@ class Analyzer(QDialog, Ui_Analyzer):
             region.sigRegionChangeFinished.connect(self.region_pos_changed_finished)
 
         # Make sure the viewbox remembers its own y range
-        viewbox = plot.getPlotItem().getViewBox()
+        viewbox = plot_widget.getPlotItem().getViewBox()
         viewbox.y_min = 0.0
         viewbox.y_max = n.max()
         viewbox.sigXRangeChanged.connect(self.fix_viewbox_y_range)
 
-        return plot, region
+        # Mark viewbox with data label for callbacks
+        viewbox.data_label = plot_id
+
+        return region
 
     def histogram_raise_context_menu(self, ev):
+        """Create a context menu on the efo vs cfr scatter/histogram plot ROI."""
+        if ev.button() == Qt.MouseButton.RightButton:
+            menu = QMenu()
+            shift_action = QAction("Move x axis origin to 0")
+            shift_action.triggered.connect(
+                lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
+            )
+            menu.addAction(shift_action)
+            pos = ev.screenPos()
+            menu.exec(QPoint(int(pos.x()), int(pos.y())))
+            ev.accept()
+        else:
+            ev.ignore()
+
+    def histogram_raise_context_menu_with_filtering(self, ev):
         """Create a context menu on the efo vs cfr scatter/histogram plot ROI."""
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
             ranges_action = QAction("Set ROI ranges")
             ranges_action.triggered.connect(self.roi_open_ranges_dialog)
             menu.addAction(ranges_action)
-            # filter_action = QAction("Filter")
-            # filter_action.triggered.connect(
-            #     lambda checked: self.trigger_filter_action(ev.currentItem)
-            # )
-            # menu.addAction(filter_action)
+            filter_action = QAction("Filter")
+            filter_action.triggered.connect(
+                lambda checked: self.trigger_filter_action(ev.currentItem)
+            )
+            menu.addAction(filter_action)
             menu.addSeparator()
             shift_action = QAction("Move x axis origin to 0")
             shift_action.triggered.connect(
@@ -677,6 +711,22 @@ class Analyzer(QDialog, Ui_Analyzer):
         view_range = view_box.viewRange()
         view_box.setRange(xRange=(0.0, view_range[0][1]))
 
+    def trigger_filter_action(self, item):
+        """Set the lower range of the x axis of the passed viewbox to 0."""
+        if isinstance(item, ViewBox):
+            view_box = item
+        elif isinstance(item, AxisItem):
+            view_box = item.getViewBox()
+        else:
+            return
+        plot_id = view_box.data_label
+        if plot_id == "efo":
+            self.run_efo_filter_and_broadcast_viewers_update()
+        elif plot_id == "cfr":
+            self.run_cfr_filter_and_broadcast_viewers_update()
+        else:
+            raise ValueError(f"Unexpected `plot_id` {plot_id}.")
+
     def region_pos_changed(self, item):
         """Called when the line region on one of the histogram plots is changing."""
 
@@ -705,12 +755,11 @@ class Analyzer(QDialog, Ui_Analyzer):
         cfr_plot_blocker.reblock()
         efo_plot_blocker.reblock()
 
-        # Update the thresholds in the EFO and CFR histograms. This will automatically
-        # update the ROI, that won't need to change and will not trigger another update.
+        # Update the thresholds in the EFO and CFR histograms.
         self.efo_region.setRegion(self.state.efo_thresholds)
         self.cfr_region.setRegion(self.state.cfr_thresholds)
 
-        # Unblock the self.efo_cfr_roi, self.efo_plot and self.cfr_plot signals
+        # Unblock the self.efo_plot and self.cfr_plot signals
         cfr_plot_blocker.unblock()
         efo_plot_blocker.unblock()
 
