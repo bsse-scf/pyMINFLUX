@@ -21,7 +21,7 @@ class Plotter(PlotWidget):
     def __init__(self):
         super().__init__()
         self.setBackground("w")
-        self.brush = pg.mkBrush(0, 0, 0, 128)
+        self.brush = pg.mkBrush(255, 255, 255, 128)
         self.pen = pg.mkPen(None)
         self.remove_points()
         self.customize_context_menu()
@@ -266,7 +266,7 @@ class Plotter(PlotWidget):
             hoverable=True,
             hoverSymbol="s",
             hoverSize=5,
-            hoverPen=pg.mkPen("y", width=2),
+            hoverPen=pg.mkPen("w", width=2),
             hoverBrush=None,
         )
         self.scatter.sigClicked.connect(self.clicked)
@@ -285,7 +285,7 @@ class Plotter(PlotWidget):
         self.setLabel("left", text=y_param)
         self.showAxis("bottom")
         self.showAxis("left")
-        self.setBackground("w")
+        self.setBackground("k")
 
         if (self.__last_x_param is None or self.__last_x_param != x_param) or (
             self.__last_y_param is None or self.__last_y_param != y_param
