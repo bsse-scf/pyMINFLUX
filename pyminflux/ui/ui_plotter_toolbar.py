@@ -108,15 +108,15 @@ class Ui_PlotterToolbar(object):
 
         self.horizontalLayout.addWidget(self.cbFluorophoreIndex)
 
-        self.pbAssignFluorophores = QPushButton(PlotterToolbar)
-        self.pbAssignFluorophores.setObjectName("pbAssignFluorophores")
-        self.pbAssignFluorophores.setEnabled(False)
+        self.pbUnmixColors = QPushButton(PlotterToolbar)
+        self.pbUnmixColors.setObjectName("pbUnmixColors")
+        self.pbUnmixColors.setEnabled(True)
         sizePolicy1.setHeightForWidth(
-            self.pbAssignFluorophores.sizePolicy().hasHeightForWidth()
+            self.pbUnmixColors.sizePolicy().hasHeightForWidth()
         )
-        self.pbAssignFluorophores.setSizePolicy(sizePolicy1)
+        self.pbUnmixColors.setSizePolicy(sizePolicy1)
 
-        self.horizontalLayout.addWidget(self.pbAssignFluorophores)
+        self.horizontalLayout.addWidget(self.pbUnmixColors)
 
         self.horizontalSpacer_3 = QSpacerItem(
             60, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
@@ -172,11 +172,11 @@ class Ui_PlotterToolbar(object):
             QCoreApplication.translate("PlotterToolbar", "Fluorophore", None)
         )
         self.cbFluorophoreIndex.setItemText(
-            0, QCoreApplication.translate("PlotterToolbar", "1", None)
+            0, QCoreApplication.translate("PlotterToolbar", "All", None)
         )
 
-        self.pbAssignFluorophores.setText(
-            QCoreApplication.translate("PlotterToolbar", "Assign", None)
+        self.pbUnmixColors.setText(
+            QCoreApplication.translate("PlotterToolbar", "Unmix", None)
         )
         self.pbPlot.setText(QCoreApplication.translate("PlotterToolbar", "Plot", None))
 

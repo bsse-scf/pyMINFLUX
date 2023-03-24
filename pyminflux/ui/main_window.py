@@ -16,6 +16,7 @@ __APP_NAME__ = "pyMinFlux"
 import pyminflux.resources
 from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
+from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.dataviewer import DataViewer
 
 # from pyminflux.ui.emittingstream import EmittingStream
@@ -61,6 +62,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.analyzer = None
         self.plotter = None
         self.plotter3D = None
+        self.color_unmixer = None
         self.options = Options()
 
         # Make sure to only show the console if requested
@@ -158,6 +160,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plot_selected_parameters
         )
         self.plotter_toolbar.ui.pbOpenAnalyzer.clicked.connect(self.open_analyzer)
+        self.plotter_toolbar.ui.pbUnmixColors.clicked.connect(self.open_color_unmixer)
+        self.plotter_toolbar.ui.pbOpenAnalyzer.clicked.connect(self.open_analyzer)
+        self.plotter_toolbar.fluorophore_id_changed.connect(
+            self.update_fluorophore_id_in_processor_and_broadcast
+        )
 
         # Other connections
         self.plotter.locations_selected.connect(
@@ -234,6 +241,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.analyzer is not None:
                 self.analyzer.close()
                 self.analyzer = None
+
+            if self.color_unmixer is not None:
+                self.color_unmixer.close()
+                self.color_unmixer = None
 
             if self.options is not None:
                 self.options.close()
@@ -336,10 +347,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
 
-            # Close the Analyzer
-            if self.analyzer is not None:
-                self.analyzer.close()
-                self.analyzer = None
+            # Close the Color Unmixer
+            if self.color_unmixer is not None:
+                self.color_unmixer.close()
+                self.color_unmixer = None
 
             # Close the 3D plotter
             if self.plotter3D is not None:
@@ -355,6 +366,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Enable selected ui components
             self.enable_ui_components_on_loaded_data()
 
+            # Update the Analyzer
+            if self.analyzer is not None:
+                self.analyzer.set_processor(self.minfluxprocessor)
+                self.analyzer.plot()
+
     @Slot(None, name="print_current_state")
     def print_current_state(self):
         """Print current contents of the state machine (DEBUG)."""
@@ -362,7 +378,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         for s in state_dict:
             print(f"{s}: {state_dict[s]}")
 
-    @Slot(None, name="self.open_analyzer")
+    @Slot(None, name="open_analyzer")
     def open_analyzer(self):
         """Initialize and open the analyzer."""
         if self.analyzer is None:
@@ -371,6 +387,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
+
+    @Slot(None, name="open_color_unmixer")
+    def open_color_unmixer(self):
+        """Initialize and open the color unmixer."""
+        if self.color_unmixer is None:
+            self.color_unmixer = ColorUnmixer(self.minfluxprocessor, parent=self)
+            self.color_unmixer.fluorophore_ids_assigned.connect(
+                self.plotter_toolbar.set_fluorophore_list
+            )
+        self.color_unmixer.show()
+        self.color_unmixer.activateWindow()
 
     @Slot(None, name="open_options_dialog")
     def open_options_dialog(self):
@@ -438,6 +465,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Update the Analyzer
         if self.analyzer is not None:
             self.analyzer.plot()
+
+        # Update the Fluorophore Detector?
+        if self.color_unmixer is not None:
+            # @TODO: Need to update?
+            pass
 
         # Update the 3D plotter
         if self.plotter3D is not None:
@@ -572,3 +604,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Pass the dataframe to the pdDataViewer
         self.data_viewer.set_data(dataframe)
+
+    @Slot(int, name="update_fluorophore_id_in_processor_and_broadcast")
+    def update_fluorophore_id_in_processor_and_broadcast(self, index):
+        """Update the fluorophore ID in the processor and broadcast the change to all parties."""
+
+        # Update the processor
+        self.minfluxprocessor.current_fluorophore_id = index
+
+        # Update all views
+        self.full_update_ui()
+
+        # Update the analyzer as well
+        if self.analyzer is not None:
+            self.analyzer.plot()
