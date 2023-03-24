@@ -56,7 +56,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
         # Create the plot elements
         self.plot_widget = PlotWidget(parent=self, background="w", title="dcr")
-        self.charts = []
 
         # Plot the dcr histogram
         self.plot_dcr_histogram()
@@ -136,11 +135,8 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.leBinSize.setText(f"{self.dcr_bin_width:.5f}")
 
         # It one or more charts already exists, remove them
-        if len(self.charts) > 0:
-            for chart in self.charts:
-                self.plot_widget.removeItem(chart)
-                chart.deleteLater()
-            self.charts = []
+        for item in self.plot_widget.allChildItems():
+            self.plot_widget.removeItem(item)
 
         # Create the bar chart
         chart = pg.BarGraphItem(
@@ -154,7 +150,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.plot_widget.setYRange(0.0, self.n_dcr_max)
         self.plot_widget.setMenuEnabled(False)
         self.plot_widget.addItem(chart)
-        self.charts.append(chart)
 
     @Slot(None, name="detect_fluorophores")
     def detect_fluorophores(self):
@@ -184,11 +179,8 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         y_pred = model.predict(values)
 
         # It one or more charts already exists, remove them
-        if len(self.charts) > 0:
-            for chart in self.charts:
-                self.plot_widget.removeItem(chart)
-                chart.deleteLater()
-            self.charts = []
+        for item in self.plot_widget.allChildItems():
+            self.plot_widget.removeItem(item)
 
         # Prepare some colors
         brushes = ["r", "b", "g", "m", "c"]
@@ -218,7 +210,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
                 alpha=0.5,
             )
             self.plot_widget.addItem(chart)
-            self.charts.append(chart)
 
         # Store the predictions (1-shifted)
         self.assigned_fluorophore_ids = y_pred + 1
@@ -240,3 +231,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.fluorophore_ids_assigned.emit(
             len(np.unique(self.assigned_fluorophore_ids))
         )
+
+        # Disable the button until the new detection is run
+        self.ui.pbAssign.setEnabled(False)
