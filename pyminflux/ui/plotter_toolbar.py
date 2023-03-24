@@ -1,4 +1,4 @@
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import QSignalBlocker, Signal, Slot
 from PySide6.QtWidgets import QWidget
 
 from ..reader import MinFluxReader
@@ -74,16 +74,28 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
     def set_fluorophore_list(self, num_fluorophores):
         """Update the fluorophores pull-down menu."""
 
+        # Signal blocker on self.efo_cfr_roi
+        blocker = QSignalBlocker(self.ui.cbFluorophoreIndex)
+
+        # Block signals from the combo box
+        blocker.reblock()
+
         # Remove old items
         self.ui.cbFluorophoreIndex.clear()
 
         # Add new items
+        if num_fluorophores < 2:
+            self.ui.cbFluorophoreIndex.addItems(["All"])
+        else:
+            self.ui.cbFluorophoreIndex.addItems(
+                ["All"] + list([str(i + 1) for i in range(num_fluorophores)])
+            )
 
-        self.ui.cbFluorophoreIndex.addItems(
-            ["All"] + list([str(i + 1) for i in range(num_fluorophores)])
-        )
+        # Release the blocker
+        blocker.unblock()
 
-        # Fall back to no fluorophore id selected
+        # Fall back to no fluorophore id selected.
+        # This is allowed to signal.
         self.ui.cbFluorophoreIndex.setCurrentIndex(0)
 
     @Slot(int, name="fluorophore_index_changed")

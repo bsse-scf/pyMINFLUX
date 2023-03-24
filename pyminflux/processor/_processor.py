@@ -122,6 +122,11 @@ class MinFluxProcessor:
         self.__stats_to_be_recomputed = True
 
     @property
+    def num_fluorophorses(self) -> int:
+        """Return the number of fluorophores."""
+        return len(np.unique(self.__fluorophore_ids.values))
+
+    @property
     def full_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return the full dataframe (with valid entries only), with no selections or filters.
 

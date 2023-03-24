@@ -363,6 +363,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Make sure to autoupdate the axis on load
             self.plotter.enableAutoRange(enable=True)
 
+            # Reset the fluorophore list in the Plotter Toolbar
+            self.plotter_toolbar.set_fluorophore_list(
+                self.minfluxprocessor.num_fluorophorses
+            )
+
             # Enable selected ui components
             self.enable_ui_components_on_loaded_data()
 
