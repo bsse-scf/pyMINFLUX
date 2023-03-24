@@ -6,7 +6,7 @@ from pyqtgraph import AxisItem, ViewBox
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
-from PySide6.QtWidgets import QDialog, QLabel, QMenu
+from PySide6.QtWidgets import QDialog, QGraphicsRectItem, QLabel, QMenu
 
 from ..analysis import find_first_peak_bounds, get_robust_threshold, prepare_histogram
 from ..processor import MinFluxProcessor
@@ -47,7 +47,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.efo_region = None
         self.cfr_region = None
 
-        # Store the data aspect ratio
+        # Remember the data ranges
         self.efo_range = None
         self.cfr_range = None
 
@@ -196,6 +196,14 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Do not capture key events for now
         ev.ignore()
+
+    def set_processor(self, minfluxprocessor: MinFluxProcessor):
+        """Reset the internal state."""
+        self._minfluxprocessor = minfluxprocessor
+        self.efo_region = None
+        self.cfr_region = None
+        self.efo_range = None
+        self.cfr_range = None
 
     @Slot(name="run_efo_peak_detection")
     def run_efo_peak_detection(self):
@@ -542,6 +550,8 @@ class Analyzer(QDialog, Ui_Analyzer):
                 self._minfluxprocessor.filtered_dataframe_stats["sz"].values,
             )
             self.sz_plot.show()
+        else:
+            self.sz_plot.hide()
 
         # Announce that the plotting has completed
         self.plotting_completed.emit()

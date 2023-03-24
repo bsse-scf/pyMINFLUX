@@ -346,11 +346,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
 
-            # Close the Analyzer
-            if self.analyzer is not None:
-                self.analyzer.close()
-                self.analyzer = None
-
             # Close the Color Unmixer
             if self.color_unmixer is not None:
                 self.color_unmixer.close()
@@ -369,6 +364,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Enable selected ui components
             self.enable_ui_components_on_loaded_data()
+
+            # Update the Analyzer
+            if self.analyzer is not None:
+                self.analyzer.set_processor(self.minfluxprocessor)
+                self.analyzer.plot()
 
     @Slot(None, name="print_current_state")
     def print_current_state(self):
@@ -613,3 +613,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Update all views
         self.full_update_ui()
+
+        # Update the analyzer as well
+        if self.analyzer is not None:
+            self.analyzer.plot()
