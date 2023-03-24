@@ -2,20 +2,13 @@ from typing import Optional, Tuple
 
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph import ROI, AxisItem, Point, ViewBox
+from pyqtgraph import AxisItem, ViewBox
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
-from PySide6.QtWidgets import QDialog, QLabel, QMenu, QSizePolicy
+from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
-from ..analysis import (
-    calculate_2d_histogram,
-    find_first_peak_bounds,
-    get_robust_threshold,
-    prepare_histogram,
-    select_by_bgmm_fitting,
-    select_by_gmm_fitting,
-)
+from ..analysis import find_first_peak_bounds, get_robust_threshold, prepare_histogram
 from ..processor import MinFluxProcessor
 from ..state import State
 from .roi_ranges import ROIRanges
@@ -41,6 +34,9 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Store the reference to the reader
         self._minfluxprocessor = minfluxprocessor
+
+        # Reference to the communications label
+        self.communication_label = None
 
         # Keep references to the plots
         self.efo_plot = None
@@ -73,6 +69,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Keep a reference to the singleton State class
         self.state = State()
 
+        # Create widgets
+        self.create_widgets()
+
         #
         # Set defaults
         #
@@ -91,12 +90,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             QDoubleValidator(bottom=0.0, top=1.0, decimals=6)
         )
 
-        # EFO sub-population detection tab
-        self.ui.leEFOGMMMaxClusters.setText(str(self.state.gmm_efo_num_clusters))
-        self.ui.leEFOGMMMaxClusters.setValidator(QIntValidator(bottom=1))
-        self.ui.cbEFOUseBGMM.setChecked(self.state.gmm_efo_use_bayesian)
-        self.ui.cbEFOIncludeCFR.setChecked(self.state.gmm_include_cfr)
-
         # CFR filtering tab
         self.ui.checkCFRLowerThreshold.setChecked(self.state.enable_cfr_lower_threshold)
         self.ui.checkCFRUpperThreshold.setChecked(self.state.enable_cfr_upper_threshold)
@@ -104,14 +97,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.leCFRFilterThreshFactor.setValidator(
             QDoubleValidator(bottom=0.0, top=5.0, decimals=2)
         )
-
-        # Dwell time filtering
-        self.ui.leDwellTime.setText(str(self.state.dwell_time_threshold))
-        self.ui.leDwellTime.setValidator(QDoubleValidator(bottom=0.0, decimals=2))
-        if self.state.dwell_time_smaller_than_threshold:
-            self.ui.cxDwellOption.setCurrentIndex(0)
-        else:
-            self.ui.cxDwellOption.setCurrentIndex(1)
 
         # Keep a reference to the ROIRanges dialog
         self.roi_ranges_dialog = None
@@ -140,15 +125,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.persist_min_efo_relative_peak_prominence
         )
 
-        # EFO sub-population detection tab
-        self.ui.pbEFOGMMDetect.clicked.connect(self.run_efo_gmm_detect_sub_population)
-        self.ui.pbEFOGMMFilter.clicked.connect(self.run_efo_gmm_filter_sub_population)
-        self.ui.leEFOGMMMaxClusters.textChanged.connect(
-            self.persist_gmm_efo_num_clusters
-        )
-        self.ui.cbEFOUseBGMM.stateChanged.connect(self.persist_gmm_efo_use_bayesian)
-        self.ui.cbEFOIncludeCFR.stateChanged.connect(self.persist_gmm_include_cfr)
-
         # CFR filtering tab
         self.ui.pbCFRRunFilter.clicked.connect(
             self.run_cfr_filter_and_broadcast_viewers_update
@@ -164,11 +140,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.persist_cfr_threshold_factor
         )
 
-        # Dwell time filtering
-        self.ui.leDwellTime.textChanged.connect(self.persist_dwell_time_threshold)
-        self.ui.cxDwellOption.currentIndexChanged.connect(self.dwell_option_changed)
-        self.ui.pbDwellFilter.clicked.connect(self.run_dwell_time_threshold)
-
         # Others
         self.ui.pbReset.clicked.connect(self.reset_filters)
         self.plotting_started.connect(self.disable_buttons)
@@ -180,229 +151,23 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.roi_ranges_dialog.close()
         super().closeEvent(ev)
 
-    def update_efo_cfr_plot_type(self):
-        """Toggle the efo vs. cfr plot."""
+    def create_widgets(self):
+        """Create widgets."""
 
-        # Set the options
-        self.plotting_efo_cfr_scatter_plot = not self.plotting_efo_cfr_scatter_plot
-
-        # Plot
-        self.update_efo_cfr_plot()
-
-    def update_efo_cfr_plot_scale(self):
-        """Toggle the efo vs. cfr plot intensity scale."""
-
-        # Set the options
-        self.efo_cfr_histogram_log_scale = not self.efo_cfr_histogram_log_scale
-
-        # Plot
-        if not self.plotting_efo_cfr_scatter_plot:
-            self.update_efo_cfr_plot()
-
-    def update_efo_cfr_plot(self):
-        """Update the efo_cfr plot."""
-
-        # Create it
-        if self.plotting_efo_cfr_scatter_plot:
-
-            # Remove previous widget if it exists
-            self.delete_efo_cfr_plot_widgets()
-
-            # Now plot the scatter plot
-            self.cfr_efo_plot = self._create_scatter_plot(
-                x=self._minfluxprocessor.filtered_dataframe["efo"],
-                y=self._minfluxprocessor.filtered_dataframe["cfr"],
-                efo_axis_range=self.efo_range,
-                cfr_axis_range=self.cfr_range,
-                title="CFR vs. EFO",
-                x_label="EFO",
-                y_label="CFR",
-                brush=pg.mkBrush(QColor(62, 175, 118, 128)),
-                roi_color=QColor(36, 60, 253, 255),
-                thresholds_efo=self.state.efo_thresholds,
-                thresholds_cfr=self.state.cfr_thresholds,
-            )
-            self.ui.parameters_layout.addWidget(self.cfr_efo_plot)
-
-        else:
-
-            # Toggle plotting 2D histogram
-            self.plotting_efo_cfr_scatter_plot = False
-
-            # Remove previous widget if it exists
-            self.delete_efo_cfr_plot_widgets()
-
-            # Histogram bin settings
-            efo_auto_bins = self.state.efo_bin_size_hz == 0
-
-            # Extract the bin edges
-            _, efo_bin_edges, _, _ = prepare_histogram(
-                self._minfluxprocessor.filtered_dataframe["efo"].values,
-                auto_bins=efo_auto_bins,
-                bin_size=self.state.efo_bin_size_hz,
-            )
-            _, cfr_bin_edges, _, _ = prepare_histogram(
-                self._minfluxprocessor.filtered_dataframe["cfr"].values,
-                auto_bins=True,
-                bin_size=0.0,
-            )
-
-            # Not plot the 2D histogram
-            self.cfr_efo_plot = self._create_2d_histogram_plot(
-                x=self._minfluxprocessor.filtered_dataframe["efo"],
-                y=self._minfluxprocessor.filtered_dataframe["cfr"],
-                efo_bin_edges=efo_bin_edges,
-                cfr_bin_edges=cfr_bin_edges,
-                efo_axis_range=self.efo_range,
-                cfr_axis_range=self.cfr_range,
-                efo_auto_bins=efo_auto_bins,
-                cfr_auto_bins=True,
-                efo_bin_size=self.state.efo_bin_size_hz,
-                cfr_bin_size=0.0,
-                use_log_scale=self.efo_cfr_histogram_log_scale,
-                title="CFR vs. EFO",
-                x_label="EFO",
-                y_label="CFR",
-                roi_color=QColor(36, 60, 253, 255),
-                thresholds_efo=self.state.efo_thresholds,
-                thresholds_cfr=self.state.cfr_thresholds,
-            )
-            self.ui.parameters_layout.addWidget(self.cfr_efo_plot)
-
-        self.cfr_efo_plot.show()
+        # Communications layout
+        self.communication_label = QLabel("Sorry, no data.")
+        self.communication_label.setAlignment(QtCore.Qt.AlignCenter)
+        font = self.communication_label.font()
+        font.setPointSize(16)
+        self.communication_label.setFont(font)
+        self.ui.communication_layout.addWidget(self.communication_label)
+        self.communication_label.hide()
 
     def keyPressEvent(self, ev):
         """Key press event."""
 
         # Do not capture key events for now
         ev.ignore()
-
-    def delete_efo_cfr_plot_widgets(self):
-        """Checks if the scatter-plot/2D histogram plot exists in the parameters_layout
-        and deletes it if it does."""
-
-        # Are there items already?
-        n_items = self.ui.parameters_layout.count()
-        if n_items == 0:
-            return
-
-        # Get the last widget
-        widget = self.ui.parameters_layout.itemAt(n_items - 1).widget()
-
-        # Remove it from the layout
-        self.ui.parameters_layout.removeWidget(widget)
-
-        # Delete it
-        widget.deleteLater()
-
-        # Delete ROI
-        if self.efo_cfr_roi is not None:
-            self.ui.parameters_layout.removeWidget(widget)
-            self.efo_cfr_roi.deleteLater()
-        self.efo_cfr_roi = None
-
-        # Now also delete the references
-        self.cfr_efo_plot = None
-        self.efo_cfr_scatter = None
-
-    def calculate_efo_cfr_aspect_ratio(self, efo_bin_edges, cfr_bin_edges):
-
-        # Ratio of the bin widths: this will make sure that the 2D histogram will
-        # have properly scaled pixels.
-        self.efo_scale = (efo_bin_edges[-1] - efo_bin_edges[0]) / (
-            len(efo_bin_edges) - 1
-        )
-        self.cfr_scale = (cfr_bin_edges[-1] - cfr_bin_edges[0]) / (
-            len(cfr_bin_edges) - 1
-        )
-        self.efo_cfr_data_aspect_ratio = self.cfr_scale / self.efo_scale
-
-        # Store default x and y ranges for EFO and CFR
-        self.efo_range = (efo_bin_edges[0], efo_bin_edges[-1])
-        self.cfr_range = (cfr_bin_edges[0], cfr_bin_edges[-1])
-
-    @Slot(name="run_efo_gmm_detect_sub_population")
-    def run_efo_gmm_detect_sub_population(self):
-        """Run EFO (B)GMM-based sub-population detection."""
-
-        # Get the data
-        if self.state.gmm_include_cfr:
-            efo = self._minfluxprocessor.filtered_dataframe[["efo", "cfr"]].values
-        else:
-            efo = self._minfluxprocessor.filtered_dataframe["efo"].values
-        if len(efo) == 0:
-            return
-
-        # Is there data already plotted
-        if self.efo_cfr_scatter is None:
-            return
-
-        if self.state.gmm_efo_use_bayesian:
-            sel, labels, means = select_by_bgmm_fitting(
-                efo, num_test_components=self.state.gmm_efo_num_clusters
-            )
-        else:
-            sel, labels, means = select_by_gmm_fitting(
-                efo, num_test_components=self.state.gmm_efo_num_clusters
-            )
-
-        # Make sure we have a scatter plot to update
-        if not self.plotting_efo_cfr_scatter_plot:
-            self.plotting_efo_cfr_scatter_plot = True
-            self.update_efo_cfr_plot()
-
-        # Create brushes lookup table
-        brushes_table = [
-            pg.mkBrush(QColor(0, 0, 0, 128)),
-            pg.mkBrush(QColor(62, 175, 118, 128)),
-        ]
-        brushes = [brushes_table[int(i)] for i in sel]
-
-        # Apply brushes (set color of non-selected values to black)
-        self.efo_cfr_scatter.setBrush(brushes)
-
-    @Slot(name="run_efo_gmm_filter_sub_population")
-    def run_efo_gmm_filter_sub_population(self):
-        """Run EFO (B)GMM-based sub-population detection and filtering."""
-
-        # Get the data
-        if self.state.gmm_include_cfr:
-            efo = self._minfluxprocessor.filtered_dataframe[["efo", "cfr"]].values
-        else:
-            efo = self._minfluxprocessor.filtered_dataframe["efo"].values
-        if len(efo) == 0:
-            return
-
-        # Is there data already plotted
-        if self.efo_cfr_scatter is None:
-            return
-
-        if self.state.gmm_efo_use_bayesian:
-            sel, labels, means = select_by_bgmm_fitting(
-                efo, num_test_components=self.state.gmm_efo_num_clusters
-            )
-        else:
-            sel, labels, means = select_by_gmm_fitting(
-                efo, num_test_components=self.state.gmm_efo_num_clusters
-            )
-
-        # Filter the data by the selected indices
-        self._minfluxprocessor.filter_dataframe_by_logical_indexing(sel)
-
-        # Update the EFO thresholds
-        self.state.efo_thresholds = (
-            self.state.efo_thresholds[0],
-            self._minfluxprocessor.filtered_dataframe["efo"].max(),
-        )
-
-        # Update plot
-        self.efo_region.setRegion(self.state.efo_thresholds)
-
-        # Update the histograms
-        self.plot()
-
-        # Signal that the external viewers should be updated
-        self.data_filters_changed.emit()
 
     @Slot(name="run_efo_peak_detection")
     def run_efo_peak_detection(self):
@@ -482,35 +247,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Update plot
         self.cfr_region.setRegion(self.state.cfr_thresholds)
 
-    @Slot(name="run_dwell_time_threshold")
-    def run_dwell_time_threshold(self):
-        """Apply the dwell time threshold."""
-
-        # Get threshold and operation
-        threshold = float(self.ui.leDwellTime.text())
-        smaller_than = self.ui.cxDwellOption.currentIndex() == 0
-
-        # Apply the threshold. Since we want to "discard" the selected set, we can run
-        # the equivalent operation of "keeping" the complement (and vice versa) in
-        # MinFluxProcessor.applyThreshold().
-        self._minfluxprocessor.filter_by_single_threshold(
-            "dwell", threshold, smaller_than
-        )
-
-        # Update the histograms
-        self.plot()
-
-        # Signal that the external viewers should be updated
-        self.data_filters_changed.emit()
-
-    @Slot(int, name="persist_gmm_efo_use_bayesian")
-    def persist_gmm_efo_use_bayesian(self, state):
-        self.state.gmm_efo_use_bayesian = state != 0
-
-    @Slot(int, name="persist_gmm_include_cfr")
-    def persist_gmm_include_cfr(self, state):
-        self.state.gmm_include_cfr = state != 0
-
     @Slot(int, name="persist_cfr_lower_threshold")
     def persist_cfr_lower_threshold(self, state):
         self.state.enable_cfr_lower_threshold = state != 0
@@ -526,14 +262,6 @@ class Analyzer(QDialog, Ui_Analyzer):
     @Slot(int, name="persist_efo_upper_threshold")
     def persist_efo_upper_threshold(self, state):
         self.state.enable_efo_upper_threshold = state != 0
-
-    @Slot(str, name="persist_gmm_efo_num_clusters")
-    def persist_gmm_efo_num_clusters(self, text):
-        try:
-            persist_gmm_efo_num_clusters = int(text)
-        except ValueError as _:
-            return
-        self.state.gmm_efo_num_clusters = persist_gmm_efo_num_clusters
 
     @Slot(str, name="persist_median_efo_filter_support")
     def persist_median_efo_filter_support(self, text):
@@ -558,21 +286,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         except ValueError as _:
             return
         self.state.cfr_threshold_factor = cfr_threshold_factor
-
-    @Slot(name="persist_dwell_time_threshold")
-    def persist_dwell_time_threshold(self, text):
-        try:
-            dwell_time_threshold = float(text)
-        except ValueError as _:
-            return
-        self.state.dwell_time_threshold = dwell_time_threshold
-
-    @Slot(int, name="dwell_option_changed")
-    def dwell_option_changed(self, index):
-        if index == 0:
-            self.state.dwell_time_smaller_than_threshold = True
-        else:
-            self.state.dwell_time_smaller_than_threshold = False
 
     @Slot(name="reset_filters")
     def reset_filters(self):
@@ -625,8 +338,6 @@ class Analyzer(QDialog, Ui_Analyzer):
     def disable_buttons(self):
         self.ui.pbReset.setEnabled(False)
         self.ui.pbEFORunAutoPeakDetection.setEnabled(False)
-        self.ui.pbEFOGMMDetect.setEnabled(False)
-        self.ui.pbEFOGMMFilter.setEnabled(False)
         self.ui.pbCFRRunAutoThreshold.setEnabled(False)
         self.ui.pbEFORunFilter.setEnabled(False)
         self.ui.pbCFRRunFilter.setEnabled(False)
@@ -635,14 +346,15 @@ class Analyzer(QDialog, Ui_Analyzer):
     def enable_buttons(self):
         self.ui.pbReset.setEnabled(True)
         self.ui.pbEFORunAutoPeakDetection.setEnabled(True)
-        self.ui.pbEFOGMMDetect.setEnabled(True)
-        self.ui.pbEFOGMMFilter.setEnabled(True)
         self.ui.pbCFRRunAutoThreshold.setEnabled(True)
         self.ui.pbEFORunFilter.setEnabled(True)
         self.ui.pbCFRRunFilter.setEnabled(True)
 
     def plot(self):
         """Plot histograms."""
+
+        # Hide the communications label
+        self.communication_label.hide()
 
         # Make sure there is data to plot
         is_data = True
@@ -680,13 +392,13 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Is there data to plot?
         if not is_data:
-            label = QLabel("Sorry, no data.")
-            label.setAlignment(QtCore.Qt.AlignCenter)
-            font = label.font()
-            font.setPointSize(16)
-            label.setFont(font)
-            self.ui.parameters_layout.addWidget(label)
+
+            # Show the communication label
+            self.communication_label.show()
+
+            # Announce that the plotting has completed
             self.plotting_completed.emit()
+
             return
 
         # Histogram bin settings
@@ -703,7 +415,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             auto_bins=True,
             bin_size=0.0,
         )
-        self.calculate_efo_cfr_aspect_ratio(efo_bin_edges, cfr_bin_edges)
 
         #
         # Get "efo" and "cfr" measurements, and "sx", "sy" and "sz" localization jitter
@@ -747,40 +458,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         )
         self.ui.parameters_layout.addWidget(self.cfr_plot)
         self.cfr_plot.show()
-
-        # cfr vs. efo
-        if self.plotting_efo_cfr_scatter_plot:
-            self.cfr_efo_plot = self._create_scatter_plot(
-                x=self._minfluxprocessor.filtered_dataframe["efo"],
-                y=self._minfluxprocessor.filtered_dataframe["cfr"],
-                efo_axis_range=self.efo_range,
-                cfr_axis_range=self.cfr_range,
-                title="CFR vs. EFO",
-                x_label="EFO",
-                y_label="CFR",
-                brush=pg.mkBrush(QColor(62, 175, 118, 128)),
-                roi_color=QColor(36, 60, 253, 255),
-                thresholds_efo=self.state.efo_thresholds,
-                thresholds_cfr=self.state.cfr_thresholds,
-            )
-        else:
-            self.cfr_efo_plot = self._create_2d_histogram_plot(
-                x=self._minfluxprocessor.filtered_dataframe["efo"],
-                y=self._minfluxprocessor.filtered_dataframe["cfr"],
-                efo_bin_edges=efo_bin_edges,
-                cfr_bin_edges=cfr_bin_edges,
-                efo_axis_range=self.efo_range,
-                cfr_axis_range=self.cfr_range,
-                use_log_scale=self.efo_cfr_histogram_log_scale,
-                title="CFR vs. EFO",
-                x_label="EFO",
-                y_label="CFR",
-                roi_color=QColor(36, 60, 253, 255),
-                thresholds_efo=self.state.efo_thresholds,
-                thresholds_cfr=self.state.cfr_thresholds,
-            )
-        self.ui.parameters_layout.addWidget(self.cfr_efo_plot)
-        self.cfr_efo_plot.show()
 
         # sx
         n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = prepare_histogram(
@@ -912,11 +589,16 @@ class Analyzer(QDialog, Ui_Analyzer):
             # Add to plot
             plot.addItem(region)
 
-            # Add labels with current values of lower and upper thresholds
-            low_thresh_label = pg.InfLineLabel(region.lines[0], fmt, position=0.95)
-            self._change_region_label_font(low_thresh_label)
-            high_thresh_label = pg.InfLineLabel(region.lines[1], fmt, position=0.95)
-            self._change_region_label_font(high_thresh_label)
+            # Add labels with current values of lower and upper thresholds. Attach them
+            # to the region to be able to access them from callbacks.
+            region.low_thresh_label = pg.InfLineLabel(
+                region.lines[0], fmt, position=0.90
+            )
+            self._change_region_label_font(region.low_thresh_label)
+            region.high_thresh_label = pg.InfLineLabel(
+                region.lines[1], fmt, position=0.95
+            )
+            self._change_region_label_font(region.high_thresh_label)
 
             # Connect signals
             region.sigRegionChanged.connect(self.region_pos_changed)
@@ -930,208 +612,19 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         return plot, region
 
-    def _create_2d_histogram_plot(
-        self,
-        x: np.ndarray,
-        y: np.ndarray,
-        efo_bin_edges: np.ndarray,
-        cfr_bin_edges: np.ndarray,
-        *,
-        efo_axis_range: Optional[tuple] = None,
-        cfr_axis_range: Optional[tuple] = None,
-        efo_auto_bins: bool = True,
-        cfr_auto_bins: bool = True,
-        efo_bin_size: float = 0.0,
-        cfr_bin_size: float = 0.0,
-        use_log_scale: bool = False,
-        title: str = "",
-        x_label: str = "",
-        y_label: str = "",
-        roi_color: str = "r",
-        thresholds_efo: tuple = None,
-        thresholds_cfr: tuple = None,
-    ):
-
-        # Create 2D histogram plot
-        density = calculate_2d_histogram(
-            x=x,
-            y=y,
-            x_bin_edges=efo_bin_edges,
-            y_bin_edges=cfr_bin_edges,
-            x_auto_bins=efo_auto_bins,
-            y_auto_bins=cfr_auto_bins,
-            x_bin_size=efo_bin_size,
-            y_bin_size=cfr_bin_size,
-        )
-
-        # Apply log scale to the intensities?
-        if use_log_scale:
-            density = np.log(1.0 + density)
-
-        # Create plot
-        self.efo_cfr_scatter = pg.PlotItem(
-            labels={"bottom": x_label, "left": y_label}, title=title
-        )
-        self.efo_cfr_scatter.setMenuEnabled(False)
-
-        # Create an ImageView
-        view = pg.ImageView(view=self.efo_cfr_scatter)
-        view.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        cm = pg.colormap.get("CET-L17")
-        view.setColorMap(cm)
-        view.ui.histogram.hide()
-        view.ui.roiBtn.hide()
-        view.ui.menuBtn.hide()
-        view.setImage(
-            density,
-            pos=[efo_bin_edges[0], cfr_bin_edges[0]],
-            scale=[self.efo_scale, self.cfr_scale],
-        )
-        self.efo_cfr_scatter.setAspectLocked(True, ratio=self.efo_cfr_data_aspect_ratio)
-        self.efo_cfr_scatter.invertY(False)
-
-        # Add ROI with thresholds
-        if thresholds_efo is not None and thresholds_cfr is not None:
-            self.efo_cfr_roi = ROI(
-                pos=Point(thresholds_efo[0], thresholds_cfr[0]),
-                size=Point(
-                    thresholds_efo[1] - thresholds_efo[0],
-                    thresholds_cfr[1] - thresholds_cfr[0],
-                ),
-                parent=self.efo_cfr_scatter,
-                pen={"color": roi_color, "width": 3},
-                hoverPen={"color": roi_color, "width": 5},
-                movable=True,
-                rotatable=False,
-                resizable=True,
-                removable=False,
-            )
-            self.efo_cfr_roi.setAcceptedMouseButtons(Qt.MouseButton.RightButton)
-            self.efo_cfr_roi.sigClicked.connect(self.roi_mouse_click_event)
-            self.efo_cfr_roi.sigRegionChanged.connect(self.roi_changed)
-            self.efo_cfr_roi.sigRegionChangeFinished.connect(self.roi_changed_finished)
-            view.getView().addItem(self.efo_cfr_roi)
-
-        # Set the efo axis range
-        if efo_axis_range is None:
-            efo_axis_range = (efo_bin_edges[0], efo_bin_edges[-1])
-        view.getView().setXRange(min=efo_axis_range[0], max=efo_axis_range[1])
-
-        # Set the cfr axis range
-        if cfr_axis_range is None:
-            cfr_axis_range = (cfr_bin_edges[0], cfr_bin_edges[-1])
-        view.getView().setYRange(min=cfr_axis_range[0], max=cfr_axis_range[1])
-
-        # Add context menu
-        view.scene.sigMouseClicked.connect(self.efo_cfr_plot_click_event)
-
-        # Keep a reference to the view
-        self.efo_cfr_plot_view = view.getView().getViewBox()
-
-        # Keep track of manual changes of the view
-        self.efo_cfr_plot_view.sigRangeChangedManually.connect(
-            self.efo_cfr_plot_store_view_ranges
-        )
-
-        return view
-
-    def _create_scatter_plot(
-        self,
-        x: np.ndarray,
-        y: np.ndarray,
-        *,
-        efo_axis_range: Optional[tuple] = None,
-        cfr_axis_range: Optional[tuple] = None,
-        title: str = "",
-        x_label: str = "",
-        y_label: str = "",
-        brush: str = "b",
-        roi_color: str = "r",
-        thresholds_efo: tuple = None,
-        thresholds_cfr: tuple = None,
-    ):
-        """Create a scatter plot and return it to be added to the layout."""
-        plot = pg.PlotWidget(parent=self, background="w", title=title)
-        plot.setLabel("bottom", text=x_label)
-        plot.setLabel("left", text=y_label)
-        plot.setMouseEnabled(x=True, y=True)
-        plot.setMenuEnabled(False)
-
-        # Fix plot ratio
-        plot.getPlotItem().getViewBox().setAspectLocked(
-            lock=True, ratio=self.efo_cfr_data_aspect_ratio
-        )
-
-        # Create scatter plot
-        self.efo_cfr_scatter = pg.ScatterPlotItem(
-            size=3,
-            pen=None,
-            brush=brush,
-            hoverable=False,
-        )
-        self.efo_cfr_scatter.setData(x=x, y=y)
-        plot.addItem(self.efo_cfr_scatter)
-        plot.showAxis("bottom")
-        plot.showAxis("left")
-
-        # Add ROI with thresholds
-        if thresholds_efo is not None and thresholds_cfr is not None:
-            self.efo_cfr_roi = ROI(
-                pos=Point(thresholds_efo[0], thresholds_cfr[0]),
-                size=Point(
-                    thresholds_efo[1] - thresholds_efo[0],
-                    thresholds_cfr[1] - thresholds_cfr[0],
-                ),
-                parent=self.efo_cfr_scatter,
-                pen={"color": roi_color, "width": 3},
-                hoverPen={"color": roi_color, "width": 5},
-                movable=True,
-                rotatable=False,
-                resizable=True,
-                removable=False,
-            )
-            self.efo_cfr_roi.setAcceptedMouseButtons(Qt.MouseButton.RightButton)
-            self.efo_cfr_roi.sigClicked.connect(self.roi_mouse_click_event)
-            self.efo_cfr_roi.sigRegionChanged.connect(self.roi_changed)
-            self.efo_cfr_roi.sigRegionChangeFinished.connect(self.roi_changed_finished)
-
-        # Set the efo axis range
-        if efo_axis_range is None:
-            efo_axis_range = (x.min(), x.max())
-        plot.getPlotItem().getViewBox().setXRange(
-            min=efo_axis_range[0], max=efo_axis_range[1]
-        )
-
-        # Set the cfr axis range
-        if cfr_axis_range is None:
-            cfr_axis_range = (y.min(), y.max())
-        plot.getPlotItem().getViewBox().setYRange(
-            min=cfr_axis_range[0], max=cfr_axis_range[1]
-        )
-
-        # Add context menu
-        plot.scene().sigMouseClicked.connect(self.efo_cfr_plot_click_event)
-
-        # Keep a reference to the view
-        self.efo_cfr_plot_view = plot.getPlotItem().getViewBox()
-
-        # Keep track of manual changes of the view
-        self.efo_cfr_plot_view.sigRangeChangedManually.connect(
-            self.efo_cfr_plot_store_view_ranges
-        )
-
-        return plot
-
-    def efo_cfr_plot_store_view_ranges(self):
-        """Keep track of the X and Y ranges of the efo_cfr_plot viewbox after manual change."""
-        view_range = self.efo_cfr_plot_view.viewRange()
-        self.efo_range = view_range[0]
-        self.cfr_range = view_range[1]
-
     def histogram_raise_context_menu(self, ev):
         """Create a context menu on the efo vs cfr scatter/histogram plot ROI."""
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
+            ranges_action = QAction("Set ROI ranges")
+            ranges_action.triggered.connect(self.roi_open_ranges_dialog)
+            menu.addAction(ranges_action)
+            # filter_action = QAction("Filter")
+            # filter_action.triggered.connect(
+            #     lambda checked: self.trigger_filter_action(ev.currentItem)
+            # )
+            # menu.addAction(filter_action)
+            menu.addSeparator()
             shift_action = QAction("Move x axis origin to 0")
             shift_action.triggered.connect(
                 lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
@@ -1142,65 +635,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             ev.accept()
         else:
             ev.ignore()
-
-    def roi_mouse_click_event(self, roi, ev):
-        """Right-click event on the efo vs cfr scatter/histogram plot ROI."""
-        if ev.button() == Qt.MouseButton.RightButton and self.efo_cfr_roi.isMoving:
-            # Make sure the ROI is not moving
-            self.efo_cfr_roi.isMoving = False
-            self.efo_cfr_roi.movePoint(self.efo_cfr_roi.startPos, finish=True)
-            ev.accept()
-        elif self.efo_cfr_roi.acceptedMouseButtons() & ev.button():
-            ev.accept()
-            if ev.button() == Qt.MouseButton.RightButton:
-                self.roi_raise_context_menu(ev)
-        else:
-            ev.ignore()
-
-    def efo_cfr_plot_click_event(self, ev):
-        if ev.accepted:
-            "This propagated from the ROI mouse event."
-            return
-
-        """Right-click event on the efo vs. cfr scatter/histogram plot."""
-        if ev.button() == Qt.MouseButton.RightButton:
-            ev.accept()
-            self.efo_cfr_plot_raise_context_menu(ev)
-        else:
-            ev.ignore()
-
-    def roi_raise_context_menu(self, ev):
-        """Create a context menu on the efo vs. cfr scatter/histogram plot ROI."""
-        # Open context menu
-        menu = QMenu()
-        ranges_action = QAction("Set ROI ranges")
-        ranges_action.triggered.connect(self.roi_open_ranges_dialog)
-        menu.addAction(ranges_action)
-        pos = ev.screenPos()
-        menu.exec(QPoint(int(pos.x()), int(pos.y())))
-
-    def efo_cfr_plot_raise_context_menu(self, ev):
-        """Create a context menu on the efo vs cfr scatterplot ROI."""
-        # Open context menu
-        menu = QMenu()
-        if self.plotting_efo_cfr_scatter_plot:
-            toggle_plot_type_action = QAction("Change to 2D histogram")
-        else:
-            toggle_plot_type_action = QAction("Change to scatter plot")
-        toggle_plot_type_action.triggered.connect(self.update_efo_cfr_plot_type)
-        menu.addAction(toggle_plot_type_action)
-        if not self.plotting_efo_cfr_scatter_plot:
-            menu.addSeparator()
-            if self.efo_cfr_histogram_log_scale:
-                toggle_intensity_scale_action = QAction("Switch to linear scale")
-            else:
-                toggle_intensity_scale_action = QAction("Switch to logarithmic scale")
-            toggle_intensity_scale_action.triggered.connect(
-                self.update_efo_cfr_plot_scale
-            )
-            menu.addAction(toggle_intensity_scale_action)
-        pos = ev.screenPos()
-        menu.exec(QPoint(int(pos.x()), int(pos.y())))
 
     def roi_open_ranges_dialog(self, item):
         """Open dialog to manually set the filter ranges"""
@@ -1245,7 +679,19 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     def region_pos_changed(self, item):
         """Called when the line region on one of the histogram plots is changing."""
-        pass
+
+        # This seems to be a bug in pyqtgraph. When moving a LinearRegionItems with
+        # two InfLineLabels attached to the region boundaries (InfiniteLine), only
+        # the label of the upper bound is automatically updated.
+        region = item.getRegion()
+        low_thresh_label = item.low_thresh_label
+        if low_thresh_label.format == "{value:.2f}":
+            value = f"{min(region):.2f}"
+        elif low_thresh_label.format == "{value:.0f}":
+            value = f"{min(region):.0f}"
+        else:
+            value = f"{min(region)}"
+        low_thresh_label.textItem.setPlainText(value)
 
     @Slot(None, name="roi_changes_finished")
     def roi_changes_finished(self):
@@ -1273,38 +719,11 @@ class Analyzer(QDialog, Ui_Analyzer):
         if item.data_label not in ["efo", "cfr"]:
             raise ValueError(f"Unexpected data label {item.data_label}.")
 
-        # Signal blocker on self.efo_cfr_roi
-        efo_cfr_roi_blocker = QSignalBlocker(self.efo_cfr_roi)
-
-        # Block signals from efo_cfr_roi
-        efo_cfr_roi_blocker.reblock()
-
         # Update the correct thresholds
         if item.data_label == "efo":
             self.state.efo_thresholds = item.getRegion()
         else:
             self.state.cfr_thresholds = item.getRegion()
-
-        # Update the ROI in the scatter plot without emitting signals
-        self.update_efo_cfr_roi()
-
-        # Unblock the efo_cfr_roi signals
-        efo_cfr_roi_blocker.unblock()
-
-    def roi_changed(self, item):
-        """Called when the line region on one of the histogram plots has changed."""
-        pass
-
-    def roi_changed_finished(self, item):
-        """Called when the ROI in the scatter plot has changed."""
-        pos = self.efo_cfr_roi.pos()
-        size = self.efo_cfr_roi.size()
-        self.state.efo_thresholds = (pos[0], pos[0] + size[0])
-        self.state.cfr_thresholds = (pos[1], pos[1] + size[1])
-
-        # Update plot
-        self.efo_region.setRegion(self.state.efo_thresholds)
-        self.cfr_region.setRegion(self.state.cfr_thresholds)
 
     @staticmethod
     def _change_region_label_font(region_label):
@@ -1319,19 +738,3 @@ class Analyzer(QDialog, Ui_Analyzer):
         """Reset the y axis range whenever the x range changes."""
         viewbox.setYRange(viewbox.y_min, viewbox.y_max)
         viewbox.setAutoVisible(y=True)
-
-    def update_efo_cfr_roi(self):
-        """Update the efo_cfr roi with to match current threshold values."""
-        if self.state.efo_thresholds is None or self.state.cfr_thresholds is None:
-            return
-        if self.efo_cfr_roi is None:
-            return
-        self.efo_cfr_roi.setPos(
-            Point(self.state.efo_thresholds[0], self.state.cfr_thresholds[0])
-        )
-        self.efo_cfr_roi.setSize(
-            Point(
-                self.state.efo_thresholds[1] - self.state.efo_thresholds[0],
-                self.state.cfr_thresholds[1] - self.state.cfr_thresholds[0],
-            )
-        )
