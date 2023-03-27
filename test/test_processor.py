@@ -792,41 +792,6 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         ), "The weighted z localization is wrong!"
 
 
-def test_apply_filter_by_indices(extract_raw_npy_data_files):
-    # Initialize state
-    state = State()
-
-    #
-    # 2D_ValidOnly.npy
-    # state.min_num_loc_per_trace = 1
-    #
-
-    # Make sure to not filter anything
-    state.min_num_loc_per_trace = 1
-
-    # Read and process file
-    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader)
-
-    # Get a copy of the filtered dataframe
-    df = processor.filtered_dataframe.copy()
-
-    # Check counts for totally unfiltered data
-    assert len(df.index) == 12580, "Wrong total number of entries"
-
-    # Select every second entry
-    flags = np.zeros(len(df.index), dtype=bool)
-    flags[::2] = True
-    processor.filter_dataframe_by_logical_indexing(flags)
-
-    # Check the result
-    assert len(processor.filtered_dataframe) == 6290, "Wrong total number of entries"
-    for i in range(len(processor.filtered_dataframe)):
-        assert np.all(
-            processor.filtered_dataframe.iloc[i] == df.iloc[i * 2]
-        ), "Unexpected filtering result!"
-
-
 def test_apply_threshold(extract_raw_npy_data_files):
     # Initialize state
     state = State()

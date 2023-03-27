@@ -16,7 +16,7 @@ class MinFluxProcessor:
         "__current_fluorophore_id",
         "__filtered_stats_dataframe",
         "__fluorophore_ids",
-        "__selected_rows",
+        "__selected_rows_array",
         "__stats_to_be_recomputed",
         "__weighted_localizations",
         "__weighted_localizations_to_be_recomputed",
@@ -42,11 +42,8 @@ class MinFluxProcessor:
         # Cache the filtered stats dataframe
         self.__filtered_stats_dataframe = None
 
-        # Keep a separate array of booleans to cache selection state
-        self.__selected_rows = pd.Series(
-            data=np.ones(len(self.full_dataframe.index), dtype=bool),
-            index=self.full_dataframe.index,
-        )
+        # Keep separate arrays of booleans to cache selection state for all fluorophores IDs.
+        self.__selected_rows_array = []
 
         # Keep a separate array of integers to store the mapping to the corresponding fluorophore
         self.__fluorophore_ids = pd.Series(
@@ -69,6 +66,31 @@ class MinFluxProcessor:
 
         # Apply the global filters
         self._apply_global_filters()
+
+    def __init_selected_rows_array(self):
+        """Initialize the selected rows array."""
+        # How many fluorophores do we have?
+        for i in range(self.num_fluorophorses + 1):
+            self.__selected_rows_array.append(
+                pd.Series(
+                    data=np.ones(len(self.full_dataframe.index), dtype=bool),
+                    index=self.full_dataframe.index,
+                )
+            )
+
+    @property
+    def __selected_rows(self):
+        """Return the selected rows as a function of current fluorophore ID."""
+        if len(self.__selected_rows_array) == 0:
+            self.__init_selected_rows_array()
+        return self.__selected_rows_array[self.current_fluorophore_id]
+
+    @__selected_rows.setter
+    def __selected_rows(self, rows):
+        """Set the passed selected rows for current fluorophore ID."""
+        if len(self.__selected_rows_array) == 0:
+            self.__init_selected_rows_array()
+        self.__selected_rows_array[self.current_fluorophore_id] = rows
 
     @property
     def is_3d(self) -> bool:
@@ -117,6 +139,9 @@ class MinFluxProcessor:
 
             # Set the new fluorophore_id
             self.__current_fluorophore_id = fluorophore_id
+
+        # Apply the global filters
+        self._apply_global_filters()
 
         # Flag stats to be recomputed
         self.__stats_to_be_recomputed = True
@@ -197,11 +222,9 @@ class MinFluxProcessor:
     def reset(self):
         """Drops all dynamic filters and resets the data to the processed data frame with global filters."""
 
-        # All rows are selected
-        self.__selected_rows = pd.Series(
-            data=np.ones(len(self.full_dataframe.index), dtype=bool),
-            index=self.full_dataframe.index,
-        )
+        # Clear the selection per fluorophore; they will be reinitialized as
+        # all selected at the first access.
+        self.__selected_rows_array = []
 
         # Reset the mapping to the corresponding fluorophore
         self.__fluorophore_ids = pd.Series(
@@ -222,6 +245,8 @@ class MinFluxProcessor:
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
         self.__fluorophore_ids[:] = fluorophore_ids
+        self.__selected_rows_array = []
+        self._apply_global_filters()
 
     def select_dataframe_by_indices(
         self, indices, from_weighted_locs: bool = False
@@ -339,9 +364,6 @@ class MinFluxProcessor:
         # Make sure to always apply the global filters
         self._apply_global_filters()
 
-        # Alias
-        df = self.full_dataframe
-
         # Make sure that the ranges are increasing
         x_min = x_range[0]
         x_max = x_range[1]
@@ -356,10 +378,10 @@ class MinFluxProcessor:
         # Apply filter
         self.__selected_rows = (
             self.__selected_rows
-            & (df[x_prop] >= x_min)
-            & (df[x_prop] < x_max)
-            & (df[y_prop] >= y_min)
-            & (df[y_prop] < y_max)
+            & (self.filtered_dataframe[x_prop] >= x_min)
+            & (self.filtered_dataframe[x_prop] < x_max)
+            & (self.filtered_dataframe[y_prop] >= y_min)
+            & (self.filtered_dataframe[y_prop] < y_max)
         )
 
         # Make sure to flag the derived data to be recomputed
@@ -388,14 +410,15 @@ class MinFluxProcessor:
     ):
         """Apply single threshold to filter values either lower or higher (equal) than threshold for given property."""
 
-        # Alias
-        df = self.full_dataframe
-
         # Apply filter
         if larger_than:
-            self.__selected_rows = self.__selected_rows & (df[prop] >= threshold)
+            self.__selected_rows = self.__selected_rows & (
+                self.filtered_dataframe[prop] >= threshold
+            )
         else:
-            self.__selected_rows = self.__selected_rows & (df[prop] < threshold)
+            self.__selected_rows = self.__selected_rows & (
+                self.filtered_dataframe[prop] < threshold
+            )
 
         # Apply the global filters
         self._apply_global_filters()
@@ -429,42 +452,12 @@ class MinFluxProcessor:
         if min_threshold is None or max_threshold is None:
             return
 
-        # Alias
-        df = self.full_dataframe
-
         # Apply filter
         self.__selected_rows = (
             self.__selected_rows
-            & (df[prop] >= min_threshold)
-            & (df[prop] < max_threshold)
+            & (self.filtered_dataframe[prop] >= min_threshold)
+            & (self.filtered_dataframe[prop] < max_threshold)
         )
-
-        # Apply the global filters
-        self._apply_global_filters()
-
-        # Make sure to flag the derived data to be recomputed
-        self.__stats_to_be_recomputed = True
-        self.__weighted_localizations_to_be_recomputed = True
-
-    def filter_dataframe_by_logical_indexing(self, indices):
-        """Apply filter by logical indexing.
-
-        Parameters
-        ----------
-
-        indices: array
-            Logical array for selecting the elements to be returned.
-        """
-
-        # Filter by selected indices
-        current_selection_index = self.__selected_rows.index[
-            self.__selected_rows
-        ].tolist()
-        self.__selected_rows = pd.Series(
-            data=np.ones(len(self.full_dataframe.index), dtype=bool),
-            index=self.full_dataframe.index,
-        )
-        self.__selected_rows.loc[current_selection_index] = indices
 
         # Apply the global filters
         self._apply_global_filters()

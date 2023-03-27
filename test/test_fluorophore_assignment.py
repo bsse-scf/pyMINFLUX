@@ -329,7 +329,7 @@ def test_process_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
 
     # Set the fluorophore id to 2
     processor.current_fluorophore_id = 2
-    assert processor.current_fluorophore_id == 2, "The fluorophore id must be 1."
+    assert processor.current_fluorophore_id == 2, "The fluorophore id must be 2."
 
     # Check counts
     assert len(reader.processed_dataframe.index) == 40, "Wrong total number of entries"
@@ -765,7 +765,7 @@ def test_statistics_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_file
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
-    # Set current fluorophore to 1
+    # Set current fluorophore to 2
     processor.current_fluorophore_id = 2
 
     # Reassign the fluorophore IDs
@@ -839,7 +839,58 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     )
 
     # The dataframe should be empty
-    assert len(select_df.index) == 0, "The stats dataframe should be empty!"
+    assert len(select_df.index) == 0, "The selection should be empty!"
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # We select a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe
+    x_range = (5.0, 15.0)
+    y_range = (8.0, 18.0)
+    select_df = processor.select_dataframe_by_2d_range(
+        "x", "y", x_range=x_range, y_range=y_range
+    )
+
+    # The dataframe should be empty
+    assert len(select_df.index) == 0, "The selection should be empty!"
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 4
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 4
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # We select a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe
+    x_range = (35.0, 45.0)
+    y_range = (38.0, 48.0)
+    select_df = processor.select_dataframe_by_2d_range(
+        "x", "y", x_range=x_range, y_range=y_range
+    )
+
+    # The dataframe should be empty
+    assert len(select_df.index) == 0, "The selection should be empty!"
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
@@ -860,7 +911,67 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     )
 
     # The dataframe should be empty
-    assert len(select_df.index) == 0, "The stats dataframe should be empty!"
+    assert len(select_df.index) == 0, "The selection should be empty!"
+
+
+def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
+    extract_raw_npy_data_files,
+):
+
+    # Initialize State
+    state = State()
+
+    #
+    # 2D filtering
+    #
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe and NOT affect the selection
+    # of the localizations assigned to fluorophore 2.
+    x_range = (35.0, 45.0)
+    y_range = (38.0, 48.0)
+    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 0
+    ), "The selection should be empty!"
+
+    # If we now switch to fluorophore 2 and apply the same filter,
+    # we should get the localizations of all fluorophores (since they
+    # all fit in the range).
+
+    # Set current fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # We filter with a range that only contains traces of fluorophore 2.
+    x_range = (35.0, 45.0)
+    y_range = (38.0, 48.0)
+    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 17
+    ), "The selection should not be empty!"
 
     #
     # MockMinFluxReader
@@ -882,15 +993,46 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     processor.current_fluorophore_id = 1
 
     # We filter with a range that only contains traces of fluorophore 2:
-    # this should return an empty stats dataframe
+    # this should return an empty stats dataframe and NOT affect the selection
+    # of the localizations assigned to fluorophore 2.
     x_range = (35.0, 45.0)
     y_range = (38.0, 48.0)
-    select_df = processor.select_dataframe_by_2d_range(
-        "x", "y", x_range=x_range, y_range=y_range
-    )
+    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
-    # The dataframe should be empty
-    assert len(select_df.index) == 0, "The stats dataframe should be empty!"
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 0
+    ), "The selection should be empty!"
+
+    # If we now switch to fluorophore 2 and apply the same filter,
+    # we should get the localizations of all fluorophores (since they
+    # all fit in the range).
+
+    # Set current fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # We filter with a range that only contains traces of fluorophore 2.
+    x_range = (35.0, 45.0)
+    y_range = (38.0, 48.0)
+    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 13
+    ), "The selection should not be empty!"
+
+    #
+    # 1D filtering
+    #
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
@@ -899,16 +1041,174 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe and NOT affect the selection
+    # of the localizations assigned to fluorophore 2.
+    x_range = (35.0, 45.0)
+    processor.filter_dataframe_by_1d_range("x", x_range[0], x_range[1])
+
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 0
+    ), "The selection should be empty!"
+
+    # If we now switch to fluorophore 2 and apply the same filter,
+    # we should get the localizations of all fluorophores (since they
+    # all fit in the range).
+
     # Set current fluorophore to 2
     processor.current_fluorophore_id = 2
 
-    # We filter with a range that only contains traces of fluorophore 2:
-    # this should return an empty stats dataframe
-    x_range = (5.0, 15.0)
-    y_range = (8.0, 18.0)
-    select_df = processor.select_dataframe_by_2d_range(
-        "x", "y", x_range=x_range, y_range=y_range
-    )
+    # We filter with a range that only contains traces of fluorophore 2.
+    x_range = (35.0, 45.0)
+    processor.filter_dataframe_by_1d_range("x", x_range[0], x_range[1])
 
-    # The dataframe should be empty
-    assert len(select_df.index) == 0, "The stats dataframe should be empty!"
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 17
+    ), "The selection should not be empty!"
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 4
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 4
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe and NOT affect the selection
+    # of the localizations assigned to fluorophore 2.
+    x_range = (35.0, 45.0)
+    processor.filter_dataframe_by_1d_range("x", x_range[0], x_range[1])
+
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 0
+    ), "The selection should be empty!"
+
+    # If we now switch to fluorophore 2 and apply the same filter,
+    # we should get the localizations of all fluorophores (since they
+    # all fit in the range).
+
+    # Set current fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # We filter with a range that only contains traces of fluorophore 2.
+    x_range = (35.0, 45.0)
+    processor.filter_dataframe_by_1d_range("x", x_range[0], x_range[1])
+
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 13
+    ), "The selection should not be empty!"
+
+    #
+    # 1D thresholding
+    #
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe and NOT affect the selection
+    # of the localizations assigned to fluorophore 2.
+    x_range = (35.0, 45.0)
+    processor.filter_by_single_threshold("x", x_range[0], larger_than=True)
+
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 0
+    ), "The selection should be empty!"
+
+    # If we now switch to fluorophore 2 and apply the same filter,
+    # we should get the localizations of all fluorophores (since they
+    # all fit in the range).
+
+    # Set current fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # We filter with a range that only contains traces of fluorophore 2.
+    x_range = (35.0, 45.0)
+    processor.filter_by_single_threshold("x", x_range[0], larger_than=True)
+
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 17
+    ), "The selection should not be empty!"
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 4
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 4
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Set current fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # We filter with a range that only contains traces of fluorophore 2:
+    # this should return an empty stats dataframe and NOT affect the selection
+    # of the localizations assigned to fluorophore 2.
+    x_range = (35.0, 45.0)
+    processor.filter_by_single_threshold("x", x_range[0], larger_than=True)
+
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 0
+    ), "The selection should be empty!"
+
+    # If we now switch to fluorophore 2 and apply the same filter,
+    # we should get the localizations of all fluorophores (since they
+    # all fit in the range).
+
+    # Set current fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # We filter with a range that only contains traces of fluorophore 2.
+    x_range = (35.0, 45.0)
+    processor.filter_by_single_threshold("x", x_range[0], larger_than=True)
+
+    # The current selection should be empty
+    assert (
+        len(processor.filtered_dataframe.index) == 13
+    ), "The selection should not be empty!"
