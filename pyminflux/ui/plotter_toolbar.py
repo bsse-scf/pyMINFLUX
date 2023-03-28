@@ -24,12 +24,16 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         # Initialize state
         self.state = State()
 
-        # Add the values to the plot properties combo boxes
-        self.ui.cbFirstParam.addItems(MinFluxReader.processed_properties())
+        # Add the values to the plot properties combo boxes (without time)
+        first_param_wo_time = MinFluxReader.processed_properties()
+        first_param_wo_time.remove("tim")
+        self.ui.cbFirstParam.addItems(first_param_wo_time)
         self.ui.cbFirstParam.setCurrentIndex(
             MinFluxReader.processed_properties().index("x")
         )
-        self.ui.cbSecondParam.addItems(MinFluxReader.processed_properties())
+        second_param_wo_time = MinFluxReader.processed_properties()
+        second_param_wo_time.remove("tim")
+        self.ui.cbSecondParam.addItems(second_param_wo_time)
         self.ui.cbSecondParam.setCurrentIndex(
             MinFluxReader.processed_properties().index("y")
         )
