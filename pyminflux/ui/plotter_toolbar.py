@@ -24,18 +24,18 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         # Initialize state
         self.state = State()
 
+        # The main plotter does not focus on temporal measurement
+        self.plotting_parameters = MinFluxReader.processed_properties()
+        self.plotting_parameters.remove("tim")
+
         # Add the values to the plot properties combo boxes (without time)
-        first_param_wo_time = MinFluxReader.processed_properties()
-        first_param_wo_time.remove("tim")
-        self.ui.cbFirstParam.addItems(first_param_wo_time)
+        self.ui.cbFirstParam.addItems(self.plotting_parameters)
         self.ui.cbFirstParam.setCurrentIndex(
-            MinFluxReader.processed_properties().index("x")
+            self.plotting_parameters.index("x")
         )
-        second_param_wo_time = MinFluxReader.processed_properties()
-        second_param_wo_time.remove("tim")
-        self.ui.cbSecondParam.addItems(second_param_wo_time)
+        self.ui.cbSecondParam.addItems(self.plotting_parameters)
         self.ui.cbSecondParam.setCurrentIndex(
-            MinFluxReader.processed_properties().index("y")
+            self.plotting_parameters.index("y")
         )
 
         self.ui.cbFirstParam.currentIndexChanged.connect(self.persist_first_param)
@@ -51,21 +51,15 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
     def persist_first_param(self, index):
         """Persist the selection for the first parameter."""
 
-        # Get property list
-        props = MinFluxReader.processed_properties()
-
         # Persist the selection
-        self.state.x_param = props[index]
+        self.state.x_param = self.plotting_parameters[index]
 
     @Slot(None, name="persist_second_param")
     def persist_second_param(self, index):
         """Persist the selection for the second parameter."""
 
-        # Get property list
-        props = MinFluxReader.processed_properties()
-
         # Persist the selection
-        self.state.y_param = props[index]
+        self.state.y_param = self.plotting_parameters[index]
 
     @Slot(None, name="emit_plot_requested")
     def emit_plot_requested(self):
