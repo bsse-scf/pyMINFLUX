@@ -404,9 +404,6 @@ class MinFluxProcessor:
             Tuple containing the minimum and maximum values for the second property.
         """
 
-        # Make sure to always apply the global filters
-        self._apply_global_filters()
-
         # Make sure that the ranges are increasing
         x_min = x_range[0]
         x_max = x_range[1]
@@ -426,6 +423,9 @@ class MinFluxProcessor:
             & (self.filtered_dataframe[y_prop] >= y_min)
             & (self.filtered_dataframe[y_prop] < y_max)
         )
+
+        # Make sure to always apply the global filters
+        self._apply_global_filters()
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True

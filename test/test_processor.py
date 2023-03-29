@@ -2,11 +2,64 @@ import zipfile
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 from pyminflux.state import State
+
+
+class MockMinFluxReader:
+    def __init__(self):
+
+        # TID   # loc   Fluo ID
+        #  54      6        1
+
+        tids = [
+            51,
+            51,
+            51,
+            54,
+            54,
+            54,
+            54,
+            54,
+        ]
+
+        x = np.array(
+            [
+                10.0,  # 51
+                11.0,
+                12.0,
+                10.0,  # 54
+                11.0,
+                12.0,
+                22.0,
+                23.0,
+            ]
+        )
+        y = x + 3.0
+        z = 0.0 * x
+        self.__df = pd.DataFrame(columns=["tid", "x", "y", "z"])
+        self.__df["tid"] = tids
+        self.__df["x"] = x
+        self.__df["y"] = y
+        self.__df["z"] = z
+
+    @property
+    def processed_dataframe(self):
+        return self.__df
+
+    @property
+    def num_valid_entries(self):
+        """Number of valid entries."""
+        return len(self.__df.index)
+
+    @property
+    def num_invalid_entries(self):
+        """Number of invalid entries."""
+        return 0
 
 
 @pytest.fixture(autouse=False)
@@ -862,7 +915,7 @@ def test_apply_threshold(extract_raw_npy_data_files):
     assert (processor.filtered_dataframe["dwell"] >= 7).sum() == 0, "Failed filtering."
 
 
-def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
+def test_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     # Initialize state
     state = State()
 
@@ -910,16 +963,58 @@ def test_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
         "x", "y", x_range=(2000, 3000), y_range=(-12000, -13000)
     )  # y range will be flipped
 
-    assert processor.num_values == 1099, "Wrong total number of filtered entries"
+    assert processor.num_values == 1098, "Wrong total number of filtered entries"
     assert (processor.filtered_dataframe["x"] < 2000).sum() == 0, "Failed filtering."
     assert (processor.filtered_dataframe["x"] >= 3000).sum() == 0, "Failed filtering."
     assert (processor.filtered_dataframe["y"] < -13000).sum() == 0, "Failed filtering."
     assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
 
 
-def test_select_and_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
+def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     # Initialize state
     state = State()
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 1
+    #
+
+    # Now set a minimum number of localization per trace (global filter)
+    state.min_num_loc_per_trace = 1
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Select (that is, get a view) by range
+    df = processor.select_dataframe_by_2d_range(
+        "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
+    )
+
+    # Please notice that the selection is NOT followed by apply_global_filters().
+    # Since apply_global_filters() does not filter away anything, we expect the
+    # number of entries in the selected and the filtered dataframes to be the same!
+    # localizations per trace and is filtered away!
+    assert len(df.index) == 1165, "Wrong total number of filtered entries"
+    assert (df["x"] < 2000).sum() == 0, "Failed filtering."
+    assert (df["x"] >= 3000).sum() == 0, "Failed filtering."
+    assert (df["y"] < -13000).sum() == 0, "Failed filtering."
+    assert (df["y"] >= -12000).sum() == 0, "Failed filtering."
+
+    # Now compare with the filter by the same range
+    processor.filter_dataframe_by_2d_range(
+        "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
+    )
+    assert processor.num_values == 1165, "Wrong total number of filtered entries"
+    assert (processor.filtered_dataframe["x"] < 2000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["x"] >= 3000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["y"] < -13000).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
+
+    # Make sure all entries are the same
+    assert (
+        (df == processor.filtered_dataframe).all().all()
+    ), "The selected and filtered set are not identical."
 
     #
     # 2D_ValidOnly.npy
@@ -938,6 +1033,9 @@ def test_select_and_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
         "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
     )
 
+    # Please notice that the selection is NOT followed by apply_global_filters().
+    # The filtering below with the same 2D range leaves a TID with less than 4
+    # localizations per trace and is filtered away!
     assert len(df.index) == 1099, "Wrong total number of filtered entries"
     assert (df["x"] < 2000).sum() == 0, "Failed filtering."
     assert (df["x"] >= 3000).sum() == 0, "Failed filtering."
@@ -948,16 +1046,18 @@ def test_select_and_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     processor.filter_dataframe_by_2d_range(
         "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
     )
-    assert processor.num_values == 1099, "Wrong total number of filtered entries"
+    assert processor.num_values == 1098, "Wrong total number of filtered entries"
     assert (processor.filtered_dataframe["x"] < 2000).sum() == 0, "Failed filtering."
     assert (processor.filtered_dataframe["x"] >= 3000).sum() == 0, "Failed filtering."
     assert (processor.filtered_dataframe["y"] < -13000).sum() == 0, "Failed filtering."
     assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
 
-    # Make sure all entries are the same
-    assert (
-        (df == processor.filtered_dataframe).all().all()
-    ), "The selected and filtered set are not identical."
+    # There should be just one TID difference
+    select_tids = np.unique(df["tid"].values)
+    filter_tids = np.unique(processor.filtered_dataframe["tid"].values)
+    diff = np.setdiff1d(select_tids, filter_tids, assume_unique=True)
+
+    assert len(diff) == 1, "Unexpected number of different TIDs."
 
 
 def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
@@ -993,3 +1093,80 @@ def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
     assert (
         (df_stats == processor.filtered_dataframe_stats).all().all()
     ), "The selected and filtered set are not identical."
+
+
+def test_proper_application_of_global_filters():
+
+    state = State()
+
+    # FILTER 1D RANGE
+
+    state.min_num_loc_per_trace = 1
+
+    # We expect 8 entries
+    processor = MinFluxProcessor(MockMinFluxReader())
+    assert len(processor.filtered_dataframe.index) == 8
+
+    # We filter out 2, and we should be left with 3 for 51 and 3 for 54 = 6
+    processor.filter_dataframe_by_1d_range("x", (0.0, 15.0))
+    assert len(processor.filtered_dataframe.index) == 6
+
+    state.min_num_loc_per_trace = 4
+
+    processor.reset()
+
+    # We expect 5 entries (51 is filtered out to begin with)
+    assert len(processor.filtered_dataframe.index) == 5
+
+    # We filter out 2, and the remaining 3 should be suppressed by the global
+    # filters since now state.min_num_loc_per_trace is 4.
+    processor.filter_dataframe_by_1d_range("x", (0.0, 15.0))
+    assert len(processor.filtered_dataframe.index) == 0
+
+    # FILTER 2D RANGE
+
+    state.min_num_loc_per_trace = 1
+
+    processor.reset()
+
+    # We filter out 2, and we should be left with 3 for 51 and 3 for 54 = 6
+    processor.filter_dataframe_by_2d_range("x", "y", (0.0, 15.0), (3.0, 18.0))
+    assert len(processor.filtered_dataframe.index) == 6
+
+    state.min_num_loc_per_trace = 4
+
+    processor.reset()
+
+    # We expect 5 entries (51 is filtered out to begin with)
+    # processor = MinFluxProcessor(MockMinFluxReader())
+    assert len(processor.filtered_dataframe.index) == 5
+
+    # We filter out 2, and the remaining 3 should be suppressed by the global
+    # filters since now state.min_num_loc_per_trace is 4.
+    processor.filter_dataframe_by_2d_range("x", "y", (0.0, 15.0), (3.0, 18.0))
+    assert len(processor.filtered_dataframe.index) == 0
+
+    # FILTER 1D SINGLE THRESHOLD
+
+    state.min_num_loc_per_trace = 1
+
+    processor.reset()
+
+    # We expect 8 entries
+    assert len(processor.filtered_dataframe.index) == 8
+
+    # We filter out 2, and we should be left with 3 for 51 and 3 for 54 = 6
+    processor.filter_by_single_threshold("x", 15.0, larger_than=False)
+    assert len(processor.filtered_dataframe.index) == 6
+
+    state.min_num_loc_per_trace = 4
+
+    processor.reset()
+
+    # We expect 5 entries (51 is filtered out to begin with)
+    assert len(processor.filtered_dataframe.index) == 5
+
+    # We filter out 2, and the remaining 3 should be suppressed by the global
+    # filters since now state.min_num_loc_per_trace is 4.
+    processor.filter_by_single_threshold("x", 15.0, larger_than=False)
+    assert len(processor.filtered_dataframe.index) == 0
