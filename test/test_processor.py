@@ -76,7 +76,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply EFO filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+        "efo", (13823.70184744663, 48355.829889892586)
     )
     assert (
         len(reader.processed_dataframe.index) == 12580
@@ -88,7 +88,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply CFR filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+        "cfr", (-0.015163637960486809, 0.2715112942104868)
     )
     assert (
         len(reader.processed_dataframe.index) == 12580
@@ -136,7 +136,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply EFO filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+        "efo", (13823.70184744663, 48355.829889892586)
     )
     assert (
         len(reader.processed_dataframe.index) == 12580
@@ -152,7 +152,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply CFR filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+        "cfr", (-0.015163637960486809, 0.2715112942104868)
     )
     assert (
         len(reader.processed_dataframe.index) == 12580
@@ -204,7 +204,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply EFO filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+        "efo", (13823.70184744663, 48355.829889892586)
     )
     assert (
         len(reader.processed_dataframe.index) == 12580
@@ -216,7 +216,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply CFR filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+        "cfr", (-0.015163637960486809, 0.2715112942104868)
     )
     assert (
         len(reader.processed_dataframe.index) == 12580
@@ -264,7 +264,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply EFO filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+        "efo", (13823.70184744663, 48355.829889892586)
     )
     assert (
         len(reader.processed_dataframe.index) == 12580
@@ -280,7 +280,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply CFR filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+        "cfr", (-0.015163637960486809, 0.2715112942104868)
     )
     assert (
         len(reader.processed_dataframe.index) == 12580
@@ -332,7 +332,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply EFO filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+        "efo", (13823.70184744663, 48355.829889892586)
     )
     assert (
         len(reader.processed_dataframe.index) == 5812
@@ -344,7 +344,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply CFR filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+        "cfr", (-0.015163637960486809, 0.2715112942104868)
     )
     assert (
         len(reader.processed_dataframe.index) == 5812
@@ -392,7 +392,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply EFO filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "efo", min_threshold=13823.70184744663, max_threshold=48355.829889892586
+        "efo", (13823.70184744663, 48355.829889892586)
     )
     assert (
         len(reader.processed_dataframe.index) == 5812
@@ -408,7 +408,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply CFR filter and check counts
     processor.filter_dataframe_by_1d_range(
-        "cfr", min_threshold=-0.015163637960486809, max_threshold=0.2715112942104868
+        "cfr", (-0.015163637960486809, 0.2715112942104868)
     )
     assert (
         len(reader.processed_dataframe.index) == 5812
@@ -957,4 +957,39 @@ def test_select_and_filter_dataframe_by_xy_range(extract_raw_npy_data_files):
     # Make sure all entries are the same
     assert (
         (df == processor.filtered_dataframe).all().all()
+    ), "The selected and filtered set are not identical."
+
+
+def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
+    # Initialize state
+    state = State()
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 1
+    #
+
+    # Now set a minimum number of localization per trace (global filter)
+    state.min_num_loc_per_trace = 1
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Select (that is, get a view) by range
+    df = processor.select_dataframe_by_1d_range("tim", x_range=(0.0, 60.0))
+
+    assert len(df.index) == 814, "Wrong total number of filtered entries"
+    assert (df["tim"] < 0.0).sum() == 0, "Failed filtering."
+    assert (df["tim"] >= 60.0).sum() == 0, "Failed filtering."
+
+    # Get the stats for this dataframe view
+    df_stats = processor.calculate_statistics_on(df)
+
+    # Not get the internal statistics after filtering on the same range
+    processor.filter_dataframe_by_1d_range("tim", (0.0, 60.0))
+
+    # Make sure all entries are the same
+    assert (
+        (df_stats == processor.filtered_dataframe_stats).all().all()
     ), "The selected and filtered set are not identical."
