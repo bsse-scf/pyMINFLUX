@@ -30,13 +30,9 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
         # Add the values to the plot properties combo boxes (without time)
         self.ui.cbFirstParam.addItems(self.plotting_parameters)
-        self.ui.cbFirstParam.setCurrentIndex(
-            self.plotting_parameters.index("x")
-        )
+        self.ui.cbFirstParam.setCurrentIndex(self.plotting_parameters.index("x"))
         self.ui.cbSecondParam.addItems(self.plotting_parameters)
-        self.ui.cbSecondParam.setCurrentIndex(
-            self.plotting_parameters.index("y")
-        )
+        self.ui.cbSecondParam.setCurrentIndex(self.plotting_parameters.index("y"))
 
         self.ui.cbFirstParam.currentIndexChanged.connect(self.persist_first_param)
         self.ui.cbSecondParam.currentIndexChanged.connect(self.persist_second_param)

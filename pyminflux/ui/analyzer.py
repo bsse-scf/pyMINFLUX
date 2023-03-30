@@ -5,10 +5,10 @@ import pyqtgraph as pg
 from pyqtgraph import AxisItem, ViewBox
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
-from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
-from PySide6.QtWidgets import QDialog, QGraphicsRectItem, QLabel, QMenu
+from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
+from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
-from ..analysis import find_first_peak_bounds, get_robust_threshold, prepare_histogram
+from ..analysis import find_cutoff_near_value, get_robust_threshold, prepare_histogram
 from ..processor import MinFluxProcessor
 from ..state import State
 from .roi_ranges import ROIRanges
@@ -61,18 +61,10 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Set defaults
         #
 
-        # EFO peak detection tab
-        self.ui.checkEFOLowerThreshold.setChecked(self.state.enable_efo_lower_threshold)
-        self.ui.checkEFOUpperThreshold.setChecked(self.state.enable_efo_upper_threshold)
-        self.ui.leEFOMedianFilterSupport.setText(
-            str(self.state.median_efo_filter_support)
-        )
-        self.ui.leEFOMedianFilterSupport.setValidator(QIntValidator(bottom=0))
-        self.ui.leEFOMinRelativeProminence.setText(
-            str(self.state.min_efo_relative_peak_prominence)
-        )
-        self.ui.leEFOMinRelativeProminence.setValidator(
-            QDoubleValidator(bottom=0.0, top=1.0, decimals=6)
+        # EFO cutoff frequency tab
+        self.ui.leEFOExpectedCutoff.setText(str(self.state.efo_expected_cutoff))
+        self.ui.leEFOExpectedCutoff.setValidator(
+            QDoubleValidator(bottom=0.0, decimals=2)
         )
 
         # CFR filtering tab
@@ -93,21 +85,14 @@ class Analyzer(QDialog, Ui_Analyzer):
         """Set up signal-slot connections."""
 
         # EFO peak detection tab
-        self.ui.pbEFORunAutoPeakDetection.clicked.connect(self.run_efo_peak_detection)
-        self.ui.checkEFOLowerThreshold.stateChanged.connect(
-            self.persist_efo_lower_threshold
-        )
-        self.ui.checkEFOUpperThreshold.stateChanged.connect(
-            self.persist_efo_upper_threshold
+        self.ui.pbDetectCutoffFrequency.clicked.connect(
+            self.run_efo_cutoff_frequency_detection
         )
         self.ui.pbEFORunFilter.clicked.connect(
             self.run_efo_filter_and_broadcast_viewers_update
         )
-        self.ui.leEFOMedianFilterSupport.textChanged.connect(
-            self.persist_median_efo_filter_support
-        )
-        self.ui.leEFOMinRelativeProminence.textChanged.connect(
-            self.persist_min_efo_relative_peak_prominence
+        self.ui.leEFOExpectedCutoff.textChanged.connect(
+            self.persist_efo_expected_cutoff
         )
 
         # CFR filtering tab
@@ -205,25 +190,18 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.efo_range = None
         self.cfr_range = None
 
-    @Slot(name="run_efo_peak_detection")
-    def run_efo_peak_detection(self):
-        """Run EFO peak detection."""
+    @Slot(name="run_efo_cutoff_frequency_detection")
+    def run_efo_cutoff_frequency_detection(self):
+        """Run EFO cutoff frequency detection."""
 
-        # Is there something to calculate?
-        if (
-            not self.state.enable_efo_lower_threshold
-            and not self.state.enable_efo_upper_threshold
-        ):
-            print("Both lower and upper EFO thresholds are disabled.")
-            return
+        # Get the approximate frequency
+        frequency = float(self.ui.leEFOExpectedCutoff.text())
 
-        # Initialize values
+        # Extract current min_efo
         if self.state.efo_thresholds is None:
             min_efo = self._minfluxprocessor.filtered_dataframe["efo"].values.min()
-            max_efo = self._minfluxprocessor.filtered_dataframe["efo"].values.max()
         else:
             min_efo = self.state.efo_thresholds[0]
-            max_efo = self.state.efo_thresholds[1]
 
         # Histogram bin settings
         efo_auto_bins = self.state.efo_bin_size_hz == 0
@@ -234,16 +212,18 @@ class Analyzer(QDialog, Ui_Analyzer):
             auto_bins=efo_auto_bins,
             bin_size=self.state.efo_bin_size_hz,
         )
-        lower_thresh_efo, upper_thresh_efo = find_first_peak_bounds(
+        cutoff_frequency = find_cutoff_near_value(
             counts=n_efo,
             bins=b_efo,
-            min_rel_prominence=self.state.min_efo_relative_peak_prominence,
-            med_filter_support=self.state.median_efo_filter_support,
+            expected_value=frequency,
         )
-        if self.state.enable_efo_lower_threshold:
-            min_efo = lower_thresh_efo
-        if self.state.enable_efo_upper_threshold:
-            max_efo = upper_thresh_efo
+
+        # If the search failed, we return
+        if cutoff_frequency is None:
+            return
+
+        # Set the new upper bound
+        max_efo = cutoff_frequency
         self.state.efo_thresholds = (min_efo, max_efo)
 
         # Update plot
@@ -291,29 +271,13 @@ class Analyzer(QDialog, Ui_Analyzer):
     def persist_cfr_upper_threshold(self, state):
         self.state.enable_cfr_upper_threshold = state != 0
 
-    @Slot(int, name="persist_efo_lower_threshold")
-    def persist_efo_lower_threshold(self, state):
-        self.state.enable_efo_lower_threshold = state != 0
-
-    @Slot(int, name="persist_efo_upper_threshold")
-    def persist_efo_upper_threshold(self, state):
-        self.state.enable_efo_upper_threshold = state != 0
-
     @Slot(str, name="persist_median_efo_filter_support")
-    def persist_median_efo_filter_support(self, text):
+    def persist_efo_expected_cutoff(self, text):
         try:
-            median_efo_filter_support = int(text)
+            efo_expected_cutoff = float(text)
         except ValueError as _:
             return
-        self.state.median_efo_filter_support = median_efo_filter_support
-
-    @Slot(str, name="persist_min_efo_relative_peak_prominence")
-    def persist_min_efo_relative_peak_prominence(self, text):
-        try:
-            min_efo_relative_peak_prominence = float(text)
-        except ValueError as _:
-            return
-        self.state.min_efo_relative_peak_prominence = min_efo_relative_peak_prominence
+        self.state.efo_expected_cutoff = efo_expected_cutoff
 
     @Slot(str, name="persist_cfr_threshold_factor")
     def persist_cfr_threshold_factor(self, text):
@@ -373,7 +337,7 @@ class Analyzer(QDialog, Ui_Analyzer):
     @Slot(name="disable_buttons")
     def disable_buttons(self):
         self.ui.pbReset.setEnabled(False)
-        self.ui.pbEFORunAutoPeakDetection.setEnabled(False)
+        self.ui.pbDetectCutoffFrequency.setEnabled(False)
         self.ui.pbCFRRunAutoThreshold.setEnabled(False)
         self.ui.pbEFORunFilter.setEnabled(False)
         self.ui.pbCFRRunFilter.setEnabled(False)
@@ -381,7 +345,7 @@ class Analyzer(QDialog, Ui_Analyzer):
     @Slot(name="enable_buttons")
     def enable_buttons(self):
         self.ui.pbReset.setEnabled(True)
-        self.ui.pbEFORunAutoPeakDetection.setEnabled(True)
+        self.ui.pbDetectCutoffFrequency.setEnabled(True)
         self.ui.pbCFRRunAutoThreshold.setEnabled(True)
         self.ui.pbEFORunFilter.setEnabled(True)
         self.ui.pbCFRRunFilter.setEnabled(True)

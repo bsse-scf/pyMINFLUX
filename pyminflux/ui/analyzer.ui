@@ -71,33 +71,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QCheckBox" name="checkEFOLowerThreshold">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Lower bound</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkEFOUpperThreshold">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Upper bound</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="lbEFOMedianFilterSupport">
+        <widget class="QLabel" name="lbEFOExpectedCutoff">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -105,12 +79,12 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Median filter support</string>
+          <string>Expected cutoff frequency (Hz)</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="leEFOMedianFilterSupport">
+        <widget class="QLineEdit" name="leEFOExpectedCutoff">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -123,33 +97,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="lbEFOMinRelativeProminence">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Min peak relative prominence</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="leEFOMinRelativeProminence">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pbEFORunAutoPeakDetection">
+        <widget class="QPushButton" name="pbDetectCutoffFrequency">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>

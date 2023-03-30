@@ -350,6 +350,49 @@ def find_first_peak_bounds(
     return lower_bound, upper_bound
 
 
+def find_cutoff_near_value(
+    counts: np.ndarray,
+    bins: np.ndarray,
+    expected_value: float,
+):
+    """Finds the first peak in the histogram and return the lower and upper bounds.
+
+    Parameters
+    ----------
+
+    counts: np.ndarray
+        Array of histogram counts.
+
+    bins: np.ndarray
+        Array of histogram bins.
+
+    expected_value: float
+        The cutoff is expected to be close to the expected value.
+
+    Returns
+    -------
+
+    cutoff: float
+        Estiated cutoff frequency.
+    """
+
+    # Absolute minimum prominence
+    min_prominence = 0.05 * (counts.max() - counts.min())
+
+    # Find minima
+    counts_inv = counts.max() - counts
+    peaks_inv, properties_inv = find_peaks(counts_inv, prominence=(min_prominence, None))
+
+    # Which is the local minimum closest to the expected value
+    cutoff_pos = peaks_inv[np.argmin(np.abs(bins[peaks_inv] - expected_value))]
+
+    # Extract the corresponding frequency
+    cutoff = bins[cutoff_pos]
+
+    # Return the obtained cutoff frequency
+    return cutoff
+
+
 def calculate_density_map(
     x: np.ndarray,
     y: np.ndarray,
