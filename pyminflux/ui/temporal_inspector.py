@@ -1,9 +1,9 @@
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget
-from PySide6.QtCore import Signal, Slot
-from PySide6.QtGui import QColor, QFont
-from PySide6.QtWidgets import QDialog
+from PySide6.QtCore import QPoint, Signal, Slot
+from PySide6.QtGui import QAction, QColor, QFont, Qt
+from PySide6.QtWidgets import QDialog, QMenu
 
 from pyminflux.state import State
 from pyminflux.ui.ui_temporal_inspector import Ui_TemporalInspector
@@ -36,8 +36,12 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         self.brush = pg.mkBrush(0, 0, 0, 255)
         self.pen = pg.mkPen(None)
 
-        # Keep track of the x-axis limits
+        # Keep track of the x-axis limits and the selection
         self.x_range = None
+        self.selection_range = None
+
+        # Selection region
+        self.selection_region = None
 
         # Time resolution
         # @TODO: This should be user definable!
@@ -83,31 +87,41 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         self.plot_widget.showAxis("left")
         self.plot_widget.setMouseEnabled(x=True, y=False)
         self.plot_widget.setMenuEnabled(False)
+        self.plot_widget.getPlotItem().scene().sigMouseClicked.connect(
+            self.histogram_raise_context_menu
+        )
 
         # Create a linear region for setting filtering thresholds. We create it
         # small enough not to be in the way.
-        q25, q75 = np.percentile(np.arange(self.x_range[0], self.x_range[1]), [25, 75])
-        region = pg.LinearRegionItem(
-            values=[q25, q75],
+        if self.selection_range is None:
+            mn, mx = np.percentile(
+                np.arange(self.x_range[0], self.x_range[1]), [25, 75]
+            )
+            self.selection_range = (mn, mx)
+        mn, mx = self.selection_range[0], self.selection_range[1]
+        self.selection_region = pg.LinearRegionItem(
+            values=[mn, mx],
             pen={"color": "m", "width": 3, "alpha": 0.5},
         )
 
         # Add to plot
-        self.plot_widget.addItem(region)
+        self.plot_widget.addItem(self.selection_region)
 
         # Attach labels to the region to be able to access them from callbacks.
-        region.low_thresh_label = pg.InfLineLabel(
-            region.lines[0], "{value:.2f}", position=0.95
+        self.selection_region.low_thresh_label = pg.InfLineLabel(
+            self.selection_region.lines[0], "{value:.2f}", position=0.95
         )
-        self._change_region_label_font(region.low_thresh_label)
-        region.high_thresh_label = pg.InfLineLabel(
-            region.lines[1], "{value:.2f}", position=0.90
+        self._change_region_label_font(self.selection_region.low_thresh_label)
+        self.selection_region.high_thresh_label = pg.InfLineLabel(
+            self.selection_region.lines[1], "{value:.2f}", position=0.90
         )
-        self._change_region_label_font(region.high_thresh_label)
+        self._change_region_label_font(self.selection_region.high_thresh_label)
 
         # Connect signals
-        region.sigRegionChanged.connect(self.region_pos_changed)
-        region.sigRegionChangeFinished.connect(self.region_pos_changed_finished)
+        self.selection_region.sigRegionChanged.connect(self.region_pos_changed)
+        self.selection_region.sigRegionChangeFinished.connect(
+            self.region_pos_changed_finished
+        )
 
     def plot_localizations_per_unit_time(self):
         """Plot number of localizations per unit time."""
@@ -139,8 +153,9 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         )
 
         # Update the plot
-        self.x_range = (time_axis[0], time_axis[-1])
-        self.plot_widget.setXRange(self.x_range[0], self.x_range[1])
+        if self.x_range is None:
+            self.x_range = (time_axis[0], time_axis[-1])
+            self.plot_widget.setXRange(self.x_range[0], self.x_range[1])
         self.plot_widget.setYRange(0.0, n_tim.max())
         self.plot_widget.setLabel("left", text="Number of localizations per min")
         self.plot_widget.addItem(chart)
@@ -233,8 +248,9 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         self.plot_widget.plotItem.addLegend()
 
         # Update the plot
-        self.x_range = (time_axis[0], time_axis[-1])
-        self.plot_widget.setXRange(self.x_range[0], self.x_range[-1])
+        if self.x_range is None:
+            self.x_range = (time_axis[0], time_axis[-1])
+            self.plot_widget.setXRange(self.x_range[0], self.x_range[-1])
         self.plot_widget.setYRange(0.0, n_max)
         self.plot_widget.setLabel("left", text="Localization precision (nm) per min")
         if self.minfluxprocessor.is_3d:
@@ -270,12 +286,46 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
 
     def region_pos_changed_finished(self, item):
         """Called when the line region on one of the histogram plots has changed."""
-        # if item.data_label not in ["efo", "cfr"]:
-        #     raise ValueError(f"Unexpected data label {item.data_label}.")
-        #
-        # # Update the correct thresholds
-        # if item.data_label == "efo":
-        #     self.state.efo_thresholds = item.getRegion()
-        # else:
-        #     self.state.cfr_thresholds = item.getRegion()
-        pass
+        mn, mx = item.getRegion()
+        self.selection_range = (mn, mx)
+
+    def histogram_raise_context_menu(self, ev):
+        """Create a context menu on the efo vs cfr scatter/histogram plot ROI."""
+        if ev.button() == Qt.MouseButton.RightButton:
+            menu = QMenu()
+            keep_action = QAction("Keep data within region")
+            keep_action.triggered.connect(self.keep_time_region)
+            menu.addAction(keep_action)
+            # @TODO Implement me!
+            # crop_action = QAction("Crop data within region")
+            # crop_action.triggered.connect(self.crop_time_region)
+            # menu.addAction(crop_action)
+            pos = ev.screenPos()
+            menu.exec(QPoint(int(pos.x()), int(pos.y())))
+            ev.accept()
+        else:
+            ev.ignore()
+
+    def crop_time_region(self):
+        """Filter away selected time region."""
+
+        # @TODO Implement me!
+
+    def keep_time_region(self):
+        """Keep the selected time region."""
+
+        # Get the range
+        mn, mx = self.selection_region.getRegion()
+
+        # Make sure the selection is up-to-date
+        self.selection_range = (mn, mx)
+
+        # Convert to seconds
+        mn_s = mn * self.time_resolution_sec
+        mx_s = mx * self.time_resolution_sec
+
+        # Filter
+        self.minfluxprocessor.filter_dataframe_by_1d_range("tim", (mn_s, mx_s))
+
+        # Update the plot
+        self.plot_selected()
