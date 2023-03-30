@@ -2,11 +2,9 @@ import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtGui import QColor, QDoubleValidator, QFont, QIntValidator
+from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import QDialog
-from sklearn.mixture import BayesianGaussianMixture
 
-from pyminflux.analysis import prepare_histogram
 from pyminflux.state import State
 from pyminflux.ui.ui_temporal_inspector import Ui_TemporalInspector
 
@@ -31,18 +29,19 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         # Initialize state
         self.state = State()
 
-        # Set up ui elements
-
-        # Constants
-        self.brush = pg.mkBrush(0, 0, 0, 255)
-        self.pen = pg.mkPen(None)
-
         # Keep a reference to the Processor
-        self.__minfluxprocessor = processor
+        self.minfluxprocessor = processor
 
         # Constants
         self.brush = pg.mkBrush(0, 0, 0, 255)
         self.pen = pg.mkPen(None)
+
+        # Keep track of the x-axis limits
+        self.x_range = None
+
+        # Time resolution
+        # @TODO: This should be user definable!
+        self.time_resolution_sec = 60
 
         # Create the plot elements
         self.plot_widget = PlotWidget(parent=self, background="w", title="")
@@ -56,23 +55,14 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         # Add connections
         self.ui.pbPlot.clicked.connect(self.plot_selected)
 
-    def customize_context_menu(self):
-        """Remove some default context menu actions.
-
-        See: https://stackoverflow.com/questions/44402399/how-to-disable-the-default-context-menu-of-pyqtgraph#44420152
-        """
-
-        # Hide the "Plot Options" menu
-        self.plot_widget.getPlotItem().ctrlMenu.menuAction().setVisible(False)
-
     @Slot(None, name="plot_selected")
     def plot_selected(self):
         """Perform and plot the results of the selected analysis."""
 
         # Do we have something to plot?
         if (
-            self.__minfluxprocessor is None
-            or self.__minfluxprocessor.full_dataframe is None
+            self.minfluxprocessor is None
+            or self.minfluxprocessor.full_dataframe is None
         ):
             return
 
@@ -91,47 +81,21 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         self.plot_widget.setLabel("bottom", text="time (min)")
         self.plot_widget.showAxis("bottom")
         self.plot_widget.showAxis("left")
-        self.plot_widget.setMouseEnabled(x=False, y=False)
+        self.plot_widget.setMouseEnabled(x=True, y=False)
         self.plot_widget.setMenuEnabled(False)
 
-    def plot_localizations_per_unit_time(self):
-        """Plot number of localizations per unit time."""
-
-        # @TODO: This should user-definable
-        unit_step = 1
-        timepoints_in_min = self.__minfluxprocessor.filtered_dataframe["tim"] / 60
-
-        # Calculate the histogram of localizations per unit time
-        n_tim, bin_edges, bin_centers, bin_width = prepare_histogram(
-            timepoints_in_min,
-            auto_bins=False,
-            bin_size=unit_step,
-            normalize=False,
-        )
-
-        # Plot the histogram
-        chart = pg.BarGraphItem(
-            x=bin_centers, height=n_tim, width=0.9 * bin_width, brush=self.brush
-        )
-
-        # Update the plot
-        axis_range = (bin_edges[0], bin_edges[-1])
-        self.plot_widget.setXRange(axis_range[0], axis_range[1])
-        self.plot_widget.setYRange(0.0, n_tim.max())
-        self.plot_widget.setLabel("left", text="Number of localizations per min")
-        self.plot_widget.addItem(chart)
-
-        # Create a linear region for setting filtering thresholds
+        # Create a linear region for setting filtering thresholds. We create it
+        # small enough not to be in the way.
+        q25, q75 = np.percentile(np.arange(self.x_range[0], self.x_range[1]), [25, 75])
         region = pg.LinearRegionItem(
-            values=[axis_range[0], axis_range[1]],
-            pen={"color": "k", "width": 3},
+            values=[q25, q75],
+            pen={"color": "m", "width": 3, "alpha": 0.5},
         )
 
         # Add to plot
         self.plot_widget.addItem(region)
 
-        # Add labels with current values of lower and upper thresholds. Attach them
-        # to the region to be able to access them from callbacks.
+        # Attach labels to the region to be able to access them from callbacks.
         region.low_thresh_label = pg.InfLineLabel(
             region.lines[0], "{value:.2f}", position=0.95
         )
@@ -145,10 +109,139 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         region.sigRegionChanged.connect(self.region_pos_changed)
         region.sigRegionChangeFinished.connect(self.region_pos_changed_finished)
 
+    def plot_localizations_per_unit_time(self):
+        """Plot number of localizations per unit time."""
+
+        # Create `time_resolution_sec` bins starting at 0.0.
+        bin_edges = np.arange(
+            start=0.0,
+            stop=self.minfluxprocessor.filtered_dataframe["tim"].max()
+            + self.time_resolution_sec,
+            step=self.time_resolution_sec,
+        )
+        bin_centers = bin_edges[:-1] + 0.5 * self.time_resolution_sec
+        bin_width = self.time_resolution_sec
+
+        # Calculate the histogram of localizations per unit time
+        n_tim, _ = np.histogram(
+            self.minfluxprocessor.filtered_dataframe["tim"].values,
+            bins=bin_edges,
+            density=False,
+        )
+
+        # Plot the results per minute
+        time_axis = (bin_centers - 0.5 * bin_width) / self.time_resolution_sec
+        time_width = time_axis[1] - time_axis[0]
+
+        # Plot the histogram
+        chart = pg.BarGraphItem(
+            x=time_axis, height=n_tim, width=0.9 * time_width, brush=self.brush
+        )
+
+        # Update the plot
+        self.x_range = (time_axis[0], time_axis[-1])
+        self.plot_widget.setXRange(self.x_range[0], self.x_range[1])
+        self.plot_widget.setYRange(0.0, n_tim.max())
+        self.plot_widget.setLabel("left", text="Number of localizations per min")
+        self.plot_widget.addItem(chart)
+
     def plot_localization_precision_per_unit_time(self):
         """Plot localization precision as a function of time."""
-        # @TODO: Implement me!
-        self.plot_widget.setLabel("left", text="Localization precision per min")
+
+        # Create `time_resolution_sec` bins starting at 0.0.
+        bin_edges = np.arange(
+            start=0.0,
+            stop=self.minfluxprocessor.filtered_dataframe["tim"].max()
+            + self.time_resolution_sec,
+            step=self.time_resolution_sec,
+        )
+        bin_centers = bin_edges[:-1] + 0.5 * self.time_resolution_sec
+        bin_width = self.time_resolution_sec
+
+        # Allocate space for the results
+        x_pr = np.zeros(len(bin_edges) - 1)
+        y_pr = np.zeros(len(bin_edges) - 1)
+        z_pr = np.zeros(len(bin_edges) - 1)
+
+        # Now process all bins
+        for i in range(len(bin_edges) - 1):
+            time_range = (bin_edges[i], bin_edges[i + 1])
+            df = self.minfluxprocessor.select_dataframe_by_1d_range("tim", time_range)
+            if len(df.index) > 0:
+                stats = self.minfluxprocessor.calculate_statistics_on(df)
+                x_pr[i] = stats["sx"].mean()
+                y_pr[i] = stats["sy"].mean()
+                z_pr[i] = stats["sz"].mean()
+            else:
+                x_pr[i] = 0.0
+                y_pr[i] = 0.0
+                z_pr[i] = 0.0
+
+        # It one or more charts already exists, remove them
+        for item in self.plot_widget.allChildItems():
+            self.plot_widget.removeItem(item)
+
+        # Plot the results per minute
+        time_axis = (bin_centers - 0.5 * bin_width) / self.time_resolution_sec
+
+        # Get the max bin number for normalization (and add 10%)
+        n_max = np.max([x_pr.max(), y_pr.max(), z_pr.max()])
+        n_max += 0.1 * n_max
+
+        if self.minfluxprocessor.is_3d:
+            offset = bin_width / self.time_resolution_sec / 3
+            bar_width = 0.9 / 3
+        else:
+            offset = bin_width / self.time_resolution_sec / 2
+            bar_width = 0.9 / 2
+
+        # Create the sx bar charts
+        chart = pg.BarGraphItem(
+            x=time_axis,
+            height=x_pr,
+            width=bar_width * bin_width / self.time_resolution_sec,
+            brush="r",
+            alpha=0.5,
+            name="σx",
+        )
+        self.plot_widget.addItem(chart)
+
+        # Create the sy bar charts
+        chart = pg.BarGraphItem(
+            x=time_axis + offset,
+            height=y_pr,
+            width=bar_width * bin_width / self.time_resolution_sec,
+            brush="b",
+            alpha=0.5,
+            name="σy",
+        )
+        self.plot_widget.addItem(chart)
+
+        # Create the sz bar charts if needed
+        if self.minfluxprocessor.is_3d:
+            chart = pg.BarGraphItem(
+                x=time_axis + 2 * offset,
+                height=z_pr,
+                width=bar_width * bin_width / self.time_resolution_sec,
+                brush="k",
+                alpha=0.5,
+                name="σz",
+            )
+            self.plot_widget.addItem(chart)
+
+        # Add a legend
+        self.plot_widget.plotItem.addLegend()
+
+        # Update the plot
+        self.x_range = (time_axis[0], time_axis[-1])
+        self.plot_widget.setXRange(self.x_range[0], self.x_range[-1])
+        self.plot_widget.setYRange(0.0, n_max)
+        self.plot_widget.setLabel("left", text="Localization precision (nm) per min")
+        if self.minfluxprocessor.is_3d:
+            title = "σx: red, σy: blue; σz: back"
+        else:
+            title = "σx: red, σy: blue"
+        self.plot_widget.getPlotItem().setTitle(title)
 
     @staticmethod
     def _change_region_label_font(region_label):
@@ -162,19 +255,18 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
     def region_pos_changed(self, item):
         """Called when the line region on one of the histogram plots is changing."""
 
-        # # This seems to be a bug in pyqtgraph. When moving a LinearRegionItems with
-        # # two InfLineLabels attached to the region boundaries (InfiniteLine), only
-        # # the label of the upper bound is automatically updated.
-        # region = item.getRegion()
-        # low_thresh_label = item.low_thresh_label
-        # if low_thresh_label.format == "{value:.2f}":
-        #     value = f"{min(region):.2f}"
-        # elif low_thresh_label.format == "{value:.0f}":
-        #     value = f"{min(region):.0f}"
-        # else:
-        #     value = f"{min(region)}"
-        # low_thresh_label.textItem.setPlainText(value)
-        pass
+        # This seems to be a bug in pyqtgraph. When moving a LinearRegionItems with
+        # two InfLineLabels attached to the region boundaries (InfiniteLine), only
+        # the label of the upper bound is automatically updated.
+        region = item.getRegion()
+        low_thresh_label = item.low_thresh_label
+        if low_thresh_label.format == "{value:.2f}":
+            value = f"{min(region):.2f}"
+        elif low_thresh_label.format == "{value:.0f}":
+            value = f"{min(region):.0f}"
+        else:
+            value = f"{min(region)}"
+        low_thresh_label.textItem.setPlainText(value)
 
     def region_pos_changed_finished(self, item):
         """Called when the line region on one of the histogram plots has changed."""
