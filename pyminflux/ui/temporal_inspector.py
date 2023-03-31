@@ -47,6 +47,9 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         # @TODO: This should be user definable!
         self.time_resolution_sec = 60
 
+        # Remember visibility status of the region
+        self.roi_visible = True
+
         # Create the plot elements
         self.plot_widget = PlotWidget(parent=self, background="w", title="")
 
@@ -163,6 +166,10 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
     def plot_localization_precision_per_unit_time(self):
         """Plot localization precision as a function of time."""
 
+        # Add a legend
+        if self.plot_widget.plotItem.legend is None:
+            self.plot_widget.plotItem.addLegend()
+
         # Create `time_resolution_sec` bins starting at 0.0.
         bin_edges = np.arange(
             start=0.0,
@@ -244,26 +251,18 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
             )
             self.plot_widget.addItem(chart)
 
-        # Add a legend
-        self.plot_widget.plotItem.addLegend()
-
         # Update the plot
         if self.x_range is None:
             self.x_range = (time_axis[0], time_axis[-1])
             self.plot_widget.setXRange(self.x_range[0], self.x_range[-1])
         self.plot_widget.setYRange(0.0, n_max)
         self.plot_widget.setLabel("left", text="Localization precision (nm) per min")
-        if self.minfluxprocessor.is_3d:
-            title = "σx: red, σy: blue; σz: back"
-        else:
-            title = "σx: red, σy: blue"
-        self.plot_widget.getPlotItem().setTitle(title)
 
     @staticmethod
     def _change_region_label_font(region_label):
         """Change the region label font style."""
         text_item = region_label.textItem
-        text_item.setDefaultTextColor(QColor("black"))
+        text_item.setDefaultTextColor(QColor("gray"))
         font = text_item.font()
         font.setWeight(QFont.Bold)
         font.setPointSize(20)
@@ -296,20 +295,56 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
             keep_action = QAction("Keep data within region")
             keep_action.triggered.connect(self.keep_time_region)
             menu.addAction(keep_action)
-            # @TODO Implement me!
-            # crop_action = QAction("Crop data within region")
-            # crop_action.triggered.connect(self.crop_time_region)
-            # menu.addAction(crop_action)
+            crop_action = QAction("Crop data within region")
+            crop_action.triggered.connect(self.crop_time_region)
+            menu.addAction(crop_action)
+            menu.addSeparator()
+            if self.roi_visible:
+                text = "Hide region"
+            else:
+                text = "Show region"
+            toggle_visibility_action = QAction(text)
+            toggle_visibility_action.triggered.connect(self.toggle_region_visibility)
+            menu.addAction(toggle_visibility_action)
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
             ev.accept()
         else:
             ev.ignore()
 
+    def toggle_region_visibility(self, action):
+        """Toggles the visibility of the line region."""
+
+        if self.selection_region is None:
+            return
+
+        if self.roi_visible:
+            self.selection_region.hide()
+            self.roi_visible = False
+        else:
+            self.selection_region.show()
+            self.roi_visible = True
+
     def crop_time_region(self):
         """Filter away selected time region."""
 
-        # @TODO Implement me!
+        # Get the range
+        mn, mx = self.selection_region.getRegion()
+
+        # Make sure the selection is up-to-date
+        self.selection_range = (mn, mx)
+
+        # Convert to seconds
+        mn_s = mn * self.time_resolution_sec
+        mx_s = mx * self.time_resolution_sec
+
+        # Filter
+        self.minfluxprocessor.filter_dataframe_by_1d_range_complement(
+            "tim", (mn_s, mx_s)
+        )
+
+        # Update the plot
+        self.plot_selected()
 
     def keep_time_region(self):
         """Keep the selected time region."""

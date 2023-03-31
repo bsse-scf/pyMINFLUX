@@ -1170,3 +1170,62 @@ def test_proper_application_of_global_filters():
     # filters since now state.min_num_loc_per_trace is 4.
     processor.filter_by_single_threshold("x", 15.0, larger_than=False)
     assert len(processor.filtered_dataframe.index) == 0
+
+
+def test_filter_1d_complement(extract_raw_npy_data_files):
+
+    # Initialize state
+    state = State()
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 1
+    #
+
+    # Do not filter anything
+    state.min_num_loc_per_trace = 1
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Select (that is, get a view) by range
+    processor.filter_dataframe_by_1d_range_complement("tim", x_range=(2000, 3000))
+
+    assert (
+        len(processor.filtered_dataframe.index) == 10600
+    ), "Wrong total number of filtered entries"
+    selected = (
+        (processor.filtered_dataframe["tim"] >= 2000)
+        & (processor.filtered_dataframe["tim"] < 3000)
+    ).values.sum()
+    assert selected == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["x"] < 2000).sum() == 1102, "Failed filtering."
+    assert (
+        processor.filtered_dataframe["x"] >= 3000
+    ).sum() == 6237, "Failed filtering."
+
+    #
+    # 2D_ValidOnly.npy
+    # state.min_num_loc_per_trace = 4
+    #
+
+    # Do not filter anything
+    state.min_num_loc_per_trace = 4
+
+    # Read and process file
+    processor.reset()
+
+    # Select (that is, get a view) by range
+    processor.filter_dataframe_by_1d_range_complement("tim", x_range=(2000, 3000))
+
+    assert (
+        len(processor.filtered_dataframe.index) == 10053
+    ), "Wrong total number of filtered entries"
+    selected = (
+        (processor.filtered_dataframe["tim"] >= 2000)
+        & (processor.filtered_dataframe["tim"] < 3000)
+    ).values.sum()
+    assert selected == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["x"] < 1046).sum() == 0, "Failed filtering."
+    assert (processor.filtered_dataframe["x"] >= 5882).sum() == 0, "Failed filtering."

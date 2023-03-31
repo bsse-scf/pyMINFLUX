@@ -503,6 +503,39 @@ class MinFluxProcessor:
         self.__stats_to_be_recomputed = True
         self.__weighted_localizations_to_be_recomputed = True
 
+    def filter_dataframe_by_1d_range_complement(self, prop: str, x_range: tuple):
+        """Apply min and max thresholding to the given property but keep the
+        data outside the range (i.e., crop the selected range).
+
+        Parameters
+        ----------
+
+        prop: str
+            Name of the property (dataframe column) to filter.
+
+        x_range: tuple
+            Tuple containing the minimum and maximum values for cropping the selected property.
+        """
+
+        # Make sure that the ranges are increasing
+        x_min = x_range[0]
+        x_max = x_range[1]
+        if x_max < x_min:
+            x_max, x_min = x_min, x_max
+
+        # Apply filter
+        self.__selected_rows = self.__selected_rows & (
+            (self.filtered_dataframe[prop] < x_min)
+            | (self.filtered_dataframe[prop] >= x_max)
+        )
+
+        # Apply the global filters
+        self._apply_global_filters()
+
+        # Make sure to flag the derived data to be recomputed
+        self.__stats_to_be_recomputed = True
+        self.__weighted_localizations_to_be_recomputed = True
+
     def _calculate_statistics(self):
         """Calculate per-trace statistics."""
 
