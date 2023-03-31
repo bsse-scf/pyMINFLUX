@@ -30,7 +30,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         self.state = State()
 
         # Keep a reference to the Processor
-        self.minfluxprocessor = processor
+        self._minfluxprocessor = processor
 
         # Constants
         self.brush = pg.mkBrush(0, 0, 0, 255)
@@ -68,8 +68,8 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
 
         # Do we have something to plot?
         if (
-            self.minfluxprocessor is None
-            or self.minfluxprocessor.full_dataframe is None
+            self._minfluxprocessor is None
+            or self._minfluxprocessor.full_dataframe is None
         ):
             return
 
@@ -106,7 +106,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         mn, mx = self.selection_range[0], self.selection_range[1]
         self.selection_region = pg.LinearRegionItem(
             values=[mn, mx],
-            pen={"color": "m", "width": 3, "alpha": 0.5},
+            pen={"color": "b", "width": 3, "alpha": 0.5},
         )
 
         # Add to plot
@@ -134,7 +134,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         # Create `time_resolution_sec` bins starting at 0.0.
         bin_edges = np.arange(
             start=0.0,
-            stop=self.minfluxprocessor.filtered_dataframe["tim"].max()
+            stop=self._minfluxprocessor.filtered_dataframe["tim"].max()
             + self.time_resolution_sec,
             step=self.time_resolution_sec,
         )
@@ -143,7 +143,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
 
         # Calculate the histogram of localizations per unit time
         n_tim, _ = np.histogram(
-            self.minfluxprocessor.filtered_dataframe["tim"].values,
+            self._minfluxprocessor.filtered_dataframe["tim"].values,
             bins=bin_edges,
             density=False,
         )
@@ -182,7 +182,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         # Create `time_resolution_sec` bins starting at 0.0.
         bin_edges = np.arange(
             start=0.0,
-            stop=self.minfluxprocessor.filtered_dataframe["tim"].max()
+            stop=self._minfluxprocessor.filtered_dataframe["tim"].max()
             + self.time_resolution_sec,
             step=self.time_resolution_sec,
         )
@@ -197,9 +197,9 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         # Now process all bins
         for i in range(len(bin_edges) - 1):
             time_range = (bin_edges[i], bin_edges[i + 1])
-            df = self.minfluxprocessor.select_dataframe_by_1d_range("tim", time_range)
+            df = self._minfluxprocessor.select_dataframe_by_1d_range("tim", time_range)
             if len(df.index) > 0:
-                stats = self.minfluxprocessor.calculate_statistics_on(df)
+                stats = self._minfluxprocessor.calculate_statistics_on(df)
                 if std_err:
                     x_pr[i] = stats["sx"].mean() / np.sqrt(len(stats["sx"]))
                     y_pr[i] = stats["sy"].mean() / np.sqrt(len(stats["sy"]))
@@ -224,7 +224,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         n_max = np.max([x_pr.max(), y_pr.max(), z_pr.max()])
         n_max += 0.1 * n_max
 
-        if self.minfluxprocessor.is_3d:
+        if self._minfluxprocessor.is_3d:
             offset = bin_width / self.time_resolution_sec / 3
             bar_width = 0.9 / 3
         else:
@@ -254,7 +254,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         self.plot_widget.addItem(chart)
 
         # Create the sz bar charts if needed
-        if self.minfluxprocessor.is_3d:
+        if self._minfluxprocessor.is_3d:
             chart = pg.BarGraphItem(
                 x=time_axis + 2 * offset,
                 height=z_pr,
@@ -353,7 +353,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         mx_s = mx * self.time_resolution_sec
 
         # Filter
-        self.minfluxprocessor.filter_dataframe_by_1d_range_complement(
+        self._minfluxprocessor.filter_dataframe_by_1d_range_complement(
             "tim", (mn_s, mx_s)
         )
 
@@ -374,7 +374,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         mx_s = mx * self.time_resolution_sec
 
         # Filter
-        self.minfluxprocessor.filter_dataframe_by_1d_range("tim", (mn_s, mx_s))
+        self._minfluxprocessor.filter_dataframe_by_1d_range("tim", (mn_s, mx_s))
 
         # Update the plot
         self.plot_selected()
