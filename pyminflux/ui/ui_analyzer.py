@@ -91,82 +91,43 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_3.addItem(self.hsEFOPeakBefore)
 
-        self.checkEFOLowerThreshold = QCheckBox(self.tab_efo_peak_detection)
-        self.checkEFOLowerThreshold.setObjectName("checkEFOLowerThreshold")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.lbEFOExpectedCutoff = QLabel(self.tab_efo_peak_detection)
+        self.lbEFOExpectedCutoff.setObjectName("lbEFOExpectedCutoff")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(
-            self.checkEFOLowerThreshold.sizePolicy().hasHeightForWidth()
+            self.lbEFOExpectedCutoff.sizePolicy().hasHeightForWidth()
         )
-        self.checkEFOLowerThreshold.setSizePolicy(sizePolicy2)
+        self.lbEFOExpectedCutoff.setSizePolicy(sizePolicy2)
 
-        self.horizontalLayout_3.addWidget(self.checkEFOLowerThreshold)
+        self.horizontalLayout_3.addWidget(self.lbEFOExpectedCutoff)
 
-        self.checkEFOUpperThreshold = QCheckBox(self.tab_efo_peak_detection)
-        self.checkEFOUpperThreshold.setObjectName("checkEFOUpperThreshold")
+        self.leEFOExpectedCutoff = QLineEdit(self.tab_efo_peak_detection)
+        self.leEFOExpectedCutoff.setObjectName("leEFOExpectedCutoff")
         sizePolicy2.setHeightForWidth(
-            self.checkEFOUpperThreshold.sizePolicy().hasHeightForWidth()
+            self.leEFOExpectedCutoff.sizePolicy().hasHeightForWidth()
         )
-        self.checkEFOUpperThreshold.setSizePolicy(sizePolicy2)
+        self.leEFOExpectedCutoff.setSizePolicy(sizePolicy2)
 
-        self.horizontalLayout_3.addWidget(self.checkEFOUpperThreshold)
+        self.horizontalLayout_3.addWidget(self.leEFOExpectedCutoff)
 
-        self.lbEFOMedianFilterSupport = QLabel(self.tab_efo_peak_detection)
-        self.lbEFOMedianFilterSupport.setObjectName("lbEFOMedianFilterSupport")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(
-            self.lbEFOMedianFilterSupport.sizePolicy().hasHeightForWidth()
+        self.pbDetectCutoffFrequency = QPushButton(self.tab_efo_peak_detection)
+        self.pbDetectCutoffFrequency.setObjectName("pbDetectCutoffFrequency")
+        sizePolicy2.setHeightForWidth(
+            self.pbDetectCutoffFrequency.sizePolicy().hasHeightForWidth()
         )
-        self.lbEFOMedianFilterSupport.setSizePolicy(sizePolicy3)
+        self.pbDetectCutoffFrequency.setSizePolicy(sizePolicy2)
 
-        self.horizontalLayout_3.addWidget(self.lbEFOMedianFilterSupport)
-
-        self.leEFOMedianFilterSupport = QLineEdit(self.tab_efo_peak_detection)
-        self.leEFOMedianFilterSupport.setObjectName("leEFOMedianFilterSupport")
-        sizePolicy3.setHeightForWidth(
-            self.leEFOMedianFilterSupport.sizePolicy().hasHeightForWidth()
-        )
-        self.leEFOMedianFilterSupport.setSizePolicy(sizePolicy3)
-
-        self.horizontalLayout_3.addWidget(self.leEFOMedianFilterSupport)
-
-        self.lbEFOMinRelativeProminence = QLabel(self.tab_efo_peak_detection)
-        self.lbEFOMinRelativeProminence.setObjectName("lbEFOMinRelativeProminence")
-        sizePolicy3.setHeightForWidth(
-            self.lbEFOMinRelativeProminence.sizePolicy().hasHeightForWidth()
-        )
-        self.lbEFOMinRelativeProminence.setSizePolicy(sizePolicy3)
-
-        self.horizontalLayout_3.addWidget(self.lbEFOMinRelativeProminence)
-
-        self.leEFOMinRelativeProminence = QLineEdit(self.tab_efo_peak_detection)
-        self.leEFOMinRelativeProminence.setObjectName("leEFOMinRelativeProminence")
-        sizePolicy3.setHeightForWidth(
-            self.leEFOMinRelativeProminence.sizePolicy().hasHeightForWidth()
-        )
-        self.leEFOMinRelativeProminence.setSizePolicy(sizePolicy3)
-
-        self.horizontalLayout_3.addWidget(self.leEFOMinRelativeProminence)
-
-        self.pbEFORunAutoPeakDetection = QPushButton(self.tab_efo_peak_detection)
-        self.pbEFORunAutoPeakDetection.setObjectName("pbEFORunAutoPeakDetection")
-        sizePolicy3.setHeightForWidth(
-            self.pbEFORunAutoPeakDetection.sizePolicy().hasHeightForWidth()
-        )
-        self.pbEFORunAutoPeakDetection.setSizePolicy(sizePolicy3)
-
-        self.horizontalLayout_3.addWidget(self.pbEFORunAutoPeakDetection)
+        self.horizontalLayout_3.addWidget(self.pbDetectCutoffFrequency)
 
         self.pbEFORunFilter = QPushButton(self.tab_efo_peak_detection)
         self.pbEFORunFilter.setObjectName("pbEFORunFilter")
         self.pbEFORunFilter.setEnabled(True)
-        sizePolicy3.setHeightForWidth(
+        sizePolicy2.setHeightForWidth(
             self.pbEFORunFilter.sizePolicy().hasHeightForWidth()
         )
-        self.pbEFORunFilter.setSizePolicy(sizePolicy3)
+        self.pbEFORunFilter.setSizePolicy(sizePolicy2)
 
         self.horizontalLayout_3.addWidget(self.pbEFORunFilter)
 
@@ -193,55 +154,58 @@ class Ui_Analyzer(object):
 
         self.checkCFRLowerThreshold = QCheckBox(self.tab_cfr_thresholding)
         self.checkCFRLowerThreshold.setObjectName("checkCFRLowerThreshold")
-        sizePolicy2.setHeightForWidth(
+        sizePolicy3 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(
             self.checkCFRLowerThreshold.sizePolicy().hasHeightForWidth()
         )
-        self.checkCFRLowerThreshold.setSizePolicy(sizePolicy2)
+        self.checkCFRLowerThreshold.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_4.addWidget(self.checkCFRLowerThreshold)
 
         self.checkCFRUpperThreshold = QCheckBox(self.tab_cfr_thresholding)
         self.checkCFRUpperThreshold.setObjectName("checkCFRUpperThreshold")
-        sizePolicy2.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.checkCFRUpperThreshold.sizePolicy().hasHeightForWidth()
         )
-        self.checkCFRUpperThreshold.setSizePolicy(sizePolicy2)
+        self.checkCFRUpperThreshold.setSizePolicy(sizePolicy3)
 
         self.horizontalLayout_4.addWidget(self.checkCFRUpperThreshold)
 
         self.lbCFRFilterThreshFactor = QLabel(self.tab_cfr_thresholding)
         self.lbCFRFilterThreshFactor.setObjectName("lbCFRFilterThreshFactor")
-        sizePolicy3.setHeightForWidth(
+        sizePolicy2.setHeightForWidth(
             self.lbCFRFilterThreshFactor.sizePolicy().hasHeightForWidth()
         )
-        self.lbCFRFilterThreshFactor.setSizePolicy(sizePolicy3)
+        self.lbCFRFilterThreshFactor.setSizePolicy(sizePolicy2)
 
         self.horizontalLayout_4.addWidget(self.lbCFRFilterThreshFactor)
 
         self.leCFRFilterThreshFactor = QLineEdit(self.tab_cfr_thresholding)
         self.leCFRFilterThreshFactor.setObjectName("leCFRFilterThreshFactor")
-        sizePolicy3.setHeightForWidth(
+        sizePolicy2.setHeightForWidth(
             self.leCFRFilterThreshFactor.sizePolicy().hasHeightForWidth()
         )
-        self.leCFRFilterThreshFactor.setSizePolicy(sizePolicy3)
+        self.leCFRFilterThreshFactor.setSizePolicy(sizePolicy2)
 
         self.horizontalLayout_4.addWidget(self.leCFRFilterThreshFactor)
 
         self.pbCFRRunAutoThreshold = QPushButton(self.tab_cfr_thresholding)
         self.pbCFRRunAutoThreshold.setObjectName("pbCFRRunAutoThreshold")
-        sizePolicy3.setHeightForWidth(
+        sizePolicy2.setHeightForWidth(
             self.pbCFRRunAutoThreshold.sizePolicy().hasHeightForWidth()
         )
-        self.pbCFRRunAutoThreshold.setSizePolicy(sizePolicy3)
+        self.pbCFRRunAutoThreshold.setSizePolicy(sizePolicy2)
 
         self.horizontalLayout_4.addWidget(self.pbCFRRunAutoThreshold)
 
         self.pbCFRRunFilter = QPushButton(self.tab_cfr_thresholding)
         self.pbCFRRunFilter.setObjectName("pbCFRRunFilter")
-        sizePolicy3.setHeightForWidth(
+        sizePolicy2.setHeightForWidth(
             self.pbCFRRunFilter.sizePolicy().hasHeightForWidth()
         )
-        self.pbCFRRunFilter.setSizePolicy(sizePolicy3)
+        self.pbCFRRunFilter.setSizePolicy(sizePolicy2)
 
         self.horizontalLayout_4.addWidget(self.pbCFRRunFilter)
 
@@ -291,21 +255,13 @@ class Ui_Analyzer(object):
         Analyzer.setWindowTitle(
             QCoreApplication.translate("Analyzer", "Analyzer", None)
         )
-        self.checkEFOLowerThreshold.setText(
-            QCoreApplication.translate("Analyzer", "Lower bound", None)
+        self.lbEFOExpectedCutoff.setText(
+            QCoreApplication.translate(
+                "Analyzer", "Expected cutoff frequency (Hz)", None
+            )
         )
-        self.checkEFOUpperThreshold.setText(
-            QCoreApplication.translate("Analyzer", "Upper bound", None)
-        )
-        self.lbEFOMedianFilterSupport.setText(
-            QCoreApplication.translate("Analyzer", "Median filter support", None)
-        )
-        self.leEFOMedianFilterSupport.setText("")
-        self.lbEFOMinRelativeProminence.setText(
-            QCoreApplication.translate("Analyzer", "Min peak relative prominence", None)
-        )
-        self.leEFOMinRelativeProminence.setText("")
-        self.pbEFORunAutoPeakDetection.setText(
+        self.leEFOExpectedCutoff.setText("")
+        self.pbDetectCutoffFrequency.setText(
             QCoreApplication.translate("Analyzer", "Detect", None)
         )
         self.pbEFORunFilter.setText(

@@ -128,6 +128,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.state.efo_bin_size_hz = float(
             app_settings.value("options/efo_bin_size_hz", self.state.efo_bin_size_hz)
         )
+        # Read and set 'efo_expected_cutoff' option
+        self.state.efo_expected_cutoff = float(
+            app_settings.value(
+                "options/efo_expected_cutoff", self.state.efo_expected_cutoff
+            )
+        )
 
         # Read and set 'weigh_avg_localization_by_eco' option
         value = app_settings.value(
