@@ -13,9 +13,6 @@ class Options(QDialog, Ui_Options):
     min_num_loc_per_trace_option_changed = Signal(
         name="min_num_loc_per_trace_option_changed"
     )
-    color_code_locs_by_tid_option_changed = Signal(
-        name="color_code_locs_by_tid_option_changed"
-    )
     efo_bin_size_hz_option_changed = Signal(name="efo_bin_size_hz_option_changed")
     weigh_avg_localization_by_eco_option_changed = Signal(
         name="weigh_avg_localization_by_eco_option_changed"
@@ -37,7 +34,6 @@ class Options(QDialog, Ui_Options):
         # Set defaults
         self.ui.leMinTIDNum.setText(str(self.state.min_num_loc_per_trace))
         self.ui.leMinTIDNum.setValidator(QIntValidator(bottom=0))
-        self.ui.cbColorLocsByTID.setChecked(self.state.color_code_locs_by_tid)
         self.ui.leEFOBinSize.setText(str(self.state.efo_bin_size_hz))
         self.ui.leEFOBinSize.setValidator(QDoubleValidator(bottom=0.0))
         self.ui.leEFOExpectedCutoffFrequency.setText(
@@ -53,9 +49,6 @@ class Options(QDialog, Ui_Options):
         """Set up signal-slot connections."""
         self.ui.leMinTIDNum.textChanged.connect(self.persist_min_num_loc_per_trace)
         self.ui.pbSetDefault.clicked.connect(self.set_as_new_default)
-        self.ui.cbColorLocsByTID.stateChanged.connect(
-            self.persist_color_code_locs_by_tid
-        )
         self.ui.cbWeightAvgLocByECO.stateChanged.connect(
             self.weigh_avg_localization_by_eco
         )
@@ -74,13 +67,6 @@ class Options(QDialog, Ui_Options):
 
         # Signal the change
         self.min_num_loc_per_trace_option_changed.emit()
-
-    @Slot(str, name="persist_color_code_locs_by_tid")
-    def persist_color_code_locs_by_tid(self, state):
-        self.state.color_code_locs_by_tid = state != 0
-
-        # Signal the change
-        self.color_code_locs_by_tid_option_changed.emit()
 
     @Slot(str, name="persist_efo_bin_size_hz")
     def persist_efo_bin_size_hz(self, text):
@@ -116,9 +102,6 @@ class Options(QDialog, Ui_Options):
         app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
         app_settings.setValue(
             "options/min_num_loc_per_trace", str(self.state.min_num_loc_per_trace)
-        )
-        app_settings.setValue(
-            "options/color_code_locs_by_tid", self.state.color_code_locs_by_tid
         )
         app_settings.setValue("options/efo_bin_size_hz", self.state.efo_bin_size_hz)
         app_settings.setValue(

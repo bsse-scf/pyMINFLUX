@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>821</width>
+    <width>995</width>
     <height>31</height>
    </rect>
   </property>
@@ -68,7 +68,7 @@
    <item>
     <widget class="QPushButton" name="pbOpenInspector">
      <property name="text">
-      <string>Inspect</string>
+      <string>Time Inspect</string>
      </property>
     </widget>
    </item>
@@ -173,6 +173,20 @@
      <property name="text">
       <string>Plot</string>
      </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QComboBox" name="cbColorCodeSelector">
+     <item>
+      <property name="text">
+       <string>No color code</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Color-code by TID</string>
+      </property>
+     </item>
     </widget>
    </item>
    <item>

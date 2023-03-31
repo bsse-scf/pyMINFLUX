@@ -1,1 +1,1 @@
-from ._state import State
+from ._state import ColorCode, State

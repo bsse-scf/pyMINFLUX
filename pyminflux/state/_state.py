@@ -1,7 +1,14 @@
+from enum import IntEnum
 from pprint import pprint
 from typing import Union
 
 from ..base import Singleton
+
+
+class ColorCode(IntEnum):
+    NONE = 0
+    BY_TID = 1
+    BY_FLUO = 2
 
 
 class State(metaclass=Singleton):
@@ -9,7 +16,7 @@ class State(metaclass=Singleton):
 
     __SLOTS__ = [
         "plot_average_localisations",
-        "color_code_locs_by_tid",
+        "color_code",
         "min_num_loc_per_trace",
         "efo_expected_cutoff",
         "efo_thresholds",
@@ -34,7 +41,7 @@ class State(metaclass=Singleton):
 
         # Plotting options
         self.plot_average_localisations: bool = False
-        self.color_code_locs_by_tid: bool = False
+        self.color_code: ColorCode = ColorCode.NONE
 
         # Minimum number of localizations to consider a trace
         self.min_num_loc_per_trace: int = 1
@@ -72,7 +79,7 @@ class State(metaclass=Singleton):
         return {
             "min_num_loc_per_trace": self.min_num_loc_per_trace,
             "plot_average_localisations": self.plot_average_localisations,
-            "color_code_locs_by_tid": self.color_code_locs_by_tid,
+            "color_code": self.color_code,
             "efo_expected_cutoff": self.efo_expected_cutoff,
             "efo_thresholds": self.efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
@@ -98,7 +105,7 @@ class State(metaclass=Singleton):
 
         self.min_num_loc_per_trace = 1
         self.plot_average_localisations = False
-        self.color_code_locs_by_tid = False
+        self.color_code: ColorCode = ColorCode.NONE
         self.efo_expected_cutoff = 0.0
         self.efo_thresholds = None
         self.cfr_thresholds = None

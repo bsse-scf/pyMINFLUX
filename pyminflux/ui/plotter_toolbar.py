@@ -2,7 +2,7 @@ from PySide6.QtCore import QSignalBlocker, Signal, Slot
 from PySide6.QtWidgets import QWidget
 
 from ..reader import MinFluxReader
-from ..state import State
+from ..state import ColorCode, State
 from .ui_plotter_toolbar import Ui_PlotterToolbar
 
 
@@ -10,6 +10,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
     plot_requested_parameters = Signal(None, name="plot_requested_parameters")
     fluorophore_id_changed = Signal(int, name="fluorophore_id_changed")
+    color_code_locs_changed = Signal(int, name="color_code_locs_changed")
 
     def __init__(self):
         """Constructor."""
@@ -38,19 +39,33 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         self.ui.cbSecondParam.currentIndexChanged.connect(self.persist_second_param)
         self.ui.pbPlot.clicked.connect(self.emit_plot_requested)
 
+        # Color-code combo box
+        self.ui.cbColorCodeSelector.setCurrentIndex(0)
+        self.ui.cbColorCodeSelector.currentIndexChanged.connect(
+            self.persist_color_code_and_broadcast
+        )
+
         # Add callback to the fluorophore combo box
         self.ui.cbFluorophoreIndex.currentIndexChanged.connect(
             self.fluorophore_index_changed
         )
 
-    @Slot(None, name="persist_first_param")
+    @Slot(int, name="persist_color_code_and_broadcast")
+    def persist_color_code_and_broadcast(self, index):
+        """Persist the selection of the color code and broadcast a change."""
+        self.state.color_code = ColorCode(index)
+
+        # Broadcast the change
+        self.color_code_locs_changed.emit(self.state.color_code.value)
+
+    @Slot(int, name="persist_first_param")
     def persist_first_param(self, index):
         """Persist the selection for the first parameter."""
 
         # Persist the selection
         self.state.x_param = self.plotting_parameters[index]
 
-    @Slot(None, name="persist_second_param")
+    @Slot(int, name="persist_second_param")
     def persist_second_param(self, index):
         """Persist the selection for the second parameter."""
 

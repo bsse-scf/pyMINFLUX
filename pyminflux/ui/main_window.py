@@ -117,15 +117,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
         )
 
-        # Read and set 'color_code_locs_by_tid' option
-        value = app_settings.value(
-            "options/color_code_locs_by_tid", self.state.color_code_locs_by_tid
-        )
-        color_code_locs_by_tid = (
-            value.lower() == "true" if isinstance(value, str) else bool(value)
-        )
-        self.state.color_code_locs_by_tid = color_code_locs_by_tid
-
         # Read and set 'efo_bin_size_hz' option
         self.state.efo_bin_size_hz = float(
             app_settings.value("options/efo_bin_size_hz", self.state.efo_bin_size_hz)
@@ -182,7 +173,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.show_selected_points_by_range_in_dataviewer
         )
         self.plotter.crop_region_selected.connect(self.crop_data_by_range)
-        self.options.color_code_locs_by_tid_option_changed.connect(
+        self.plotter_toolbar.color_code_locs_changed.connect(
             self.plot_selected_parameters
         )
         self.options.weigh_avg_localization_by_eco_option_changed.connect(
