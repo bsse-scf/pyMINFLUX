@@ -73,6 +73,7 @@ class Ui_TemporalInspector(object):
         self.cbAnalysisSelection = QComboBox(TemporalInspector)
         self.cbAnalysisSelection.addItem("")
         self.cbAnalysisSelection.addItem("")
+        self.cbAnalysisSelection.addItem("")
         self.cbAnalysisSelection.setObjectName("cbAnalysisSelection")
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -119,6 +120,12 @@ class Ui_TemporalInspector(object):
             1,
             QCoreApplication.translate(
                 "TemporalInspector", "Localization precision per minute", None
+            ),
+        )
+        self.cbAnalysisSelection.setItemText(
+            2,
+            QCoreApplication.translate(
+                "TemporalInspector", "Localization precision per minute (std err)", None
             ),
         )
 

@@ -82,6 +82,8 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
             self.plot_localizations_per_unit_time()
         elif self.ui.cbAnalysisSelection.currentIndex() == 1:
             self.plot_localization_precision_per_unit_time()
+        elif self.ui.cbAnalysisSelection.currentIndex() == 2:
+            self.plot_localization_precision_per_unit_time(std_err=True)
         else:
             raise ValueError("Unexpected plotting request.")
 
@@ -163,8 +165,15 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         self.plot_widget.setLabel("left", text="Number of localizations per min")
         self.plot_widget.addItem(chart)
 
-    def plot_localization_precision_per_unit_time(self):
-        """Plot localization precision as a function of time."""
+    def plot_localization_precision_per_unit_time(self, std_err: bool = False):
+        """Plot localization precision as a function of time.
+
+        Parameters
+        ----------
+
+        std_err: bool
+            Set to True to plot the standard error instead of the standard deviation.
+        """
 
         # Add a legend
         if self.plot_widget.plotItem.legend is None:
@@ -191,9 +200,14 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
             df = self.minfluxprocessor.select_dataframe_by_1d_range("tim", time_range)
             if len(df.index) > 0:
                 stats = self.minfluxprocessor.calculate_statistics_on(df)
-                x_pr[i] = stats["sx"].mean()
-                y_pr[i] = stats["sy"].mean()
-                z_pr[i] = stats["sz"].mean()
+                if std_err:
+                    x_pr[i] = stats["sx"].mean() / np.sqrt(len(stats["sx"]))
+                    y_pr[i] = stats["sy"].mean() / np.sqrt(len(stats["sy"]))
+                    z_pr[i] = stats["sz"].mean() / np.sqrt(len(stats["sz"]))
+                else:
+                    x_pr[i] = stats["sx"].mean()
+                    y_pr[i] = stats["sy"].mean()
+                    z_pr[i] = stats["sz"].mean()
             else:
                 x_pr[i] = 0.0
                 y_pr[i] = 0.0

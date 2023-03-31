@@ -49,6 +49,11 @@
            <string>Localization precision per minute</string>
           </property>
          </item>
+         <item>
+          <property name="text">
+           <string>Localization precision per minute (std err)</string>
+          </property>
+         </item>
         </widget>
        </item>
        <item>
