@@ -42,7 +42,7 @@ class State(metaclass=Singleton):
         self.efo_bin_size_hz: float = 0.0
 
         # EFO expected cutoff frequency
-        self.efo_expected_cutoff: float = 50000.0
+        self.efo_expected_cutoff: float = 0.0
 
         # Lower and upper (absolute) thresholds for the EFO and CFR values
         self.efo_thresholds: Union[None, tuple] = None
@@ -98,7 +98,7 @@ class State(metaclass=Singleton):
         self.min_num_loc_per_trace = 1
         self.plot_average_localisations = False
         self.color_code_locs_by_tid = False
-        self.efo_expected_cutoff = 50000.0
+        self.efo_expected_cutoff = 0.0
         self.efo_thresholds = None
         self.cfr_thresholds = None
         self.enable_cfr_lower_threshold = False

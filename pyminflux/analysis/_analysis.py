@@ -381,7 +381,9 @@ def find_cutoff_near_value(
 
     # Find minima
     counts_inv = counts.max() - counts
-    peaks_inv, properties_inv = find_peaks(counts_inv, prominence=(min_prominence, None))
+    peaks_inv, properties_inv = find_peaks(
+        counts_inv, prominence=(min_prominence, None)
+    )
 
     # Which is the local minimum closest to the expected value
     cutoff_pos = peaks_inv[np.argmin(np.abs(bins[peaks_inv] - expected_value))]

@@ -40,6 +40,10 @@ class Options(QDialog, Ui_Options):
         self.ui.cbColorLocsByTID.setChecked(self.state.color_code_locs_by_tid)
         self.ui.leEFOBinSize.setText(str(self.state.efo_bin_size_hz))
         self.ui.leEFOBinSize.setValidator(QDoubleValidator(bottom=0.0))
+        self.ui.leEFOExpectedCutoffFrequency.setText(
+            str(self.state.efo_expected_cutoff)
+        )
+        self.ui.leEFOExpectedCutoffFrequency.setValidator(QDoubleValidator(bottom=0.0))
         self.ui.cbWeightAvgLocByECO.setChecked(self.state.weigh_avg_localization_by_eco)
 
         # Set signal-slot connections
@@ -56,6 +60,9 @@ class Options(QDialog, Ui_Options):
             self.weigh_avg_localization_by_eco
         )
         self.ui.leEFOBinSize.textChanged.connect(self.persist_efo_bin_size_hz)
+        self.ui.leEFOExpectedCutoffFrequency.textChanged.connect(
+            self.persist_efo_expected_cutoff
+        )
 
     @Slot(str, name="persist_thresh_factor")
     def persist_min_num_loc_per_trace(self, text):
@@ -86,6 +93,14 @@ class Options(QDialog, Ui_Options):
         # Signal the change
         self.efo_bin_size_hz_option_changed.emit()
 
+    @Slot(str, name="persist_efo_expected_cutoff")
+    def persist_efo_expected_cutoff(self, text):
+        try:
+            efo_expected_cutoff = float(text)
+        except Exception as _:
+            return
+        self.state.efo_expected_cutoff = efo_expected_cutoff
+
     @Slot(str, name="weigh_avg_localization_by_eco")
     def weigh_avg_localization_by_eco(self, state):
         self.state.weigh_avg_localization_by_eco = state != 0
@@ -106,6 +121,9 @@ class Options(QDialog, Ui_Options):
             "options/color_code_locs_by_tid", self.state.color_code_locs_by_tid
         )
         app_settings.setValue("options/efo_bin_size_hz", self.state.efo_bin_size_hz)
+        app_settings.setValue(
+            "options/efo_expected_cutoff", self.state.efo_expected_cutoff
+        )
         app_settings.setValue(
             "options/weigh_avg_localization_by_eco",
             self.state.weigh_avg_localization_by_eco,
