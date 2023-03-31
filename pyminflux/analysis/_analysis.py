@@ -186,7 +186,7 @@ def prepare_histogram(
     scott: bool = False,
     bin_size: float = 0.0,
 ):
-    """Return histogram counts and bins for given values with ideal bin number.
+    """Return histogram counts and bins for given values with provided or automatically calculated bin number.
 
     Parameters
     ----------

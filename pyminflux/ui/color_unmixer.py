@@ -70,15 +70,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.pbDetect.clicked.connect(self.detect_fluorophores)
         self.ui.pbAssign.clicked.connect(self.assign_fluorophores_ids)
 
-    def customize_context_menu(self):
-        """Remove some default context menu actions.
-
-        See: https://stackoverflow.com/questions/44402399/how-to-disable-the-default-context-menu-of-pyqtgraph#44420152
-        """
-
-        # Hide the "Plot Options" menu
-        self.plot_widget.getPlotItem().ctrlMenu.menuAction().setVisible(False)
-
     @Slot(str, name="persist_dcr_bin_size")
     def persist_dcr_bin_size(self, text):
         try:

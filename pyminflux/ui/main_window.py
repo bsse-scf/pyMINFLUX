@@ -24,6 +24,7 @@ from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
+from pyminflux.ui.temporal_inspector import TemporalInspector
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 
 
@@ -63,6 +64,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter = None
         self.plotter3D = None
         self.color_unmixer = None
+        self.inspector = None
         self.options = Options()
 
         # Make sure to only show the console if requested
@@ -166,8 +168,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plot_selected_parameters
         )
         self.plotter_toolbar.ui.pbOpenAnalyzer.clicked.connect(self.open_analyzer)
+        self.plotter_toolbar.ui.pbOpenInspector.clicked.connect(self.open_inspector)
         self.plotter_toolbar.ui.pbUnmixColors.clicked.connect(self.open_color_unmixer)
-        self.plotter_toolbar.ui.pbOpenAnalyzer.clicked.connect(self.open_analyzer)
         self.plotter_toolbar.fluorophore_id_changed.connect(
             self.update_fluorophore_id_in_processor_and_broadcast
         )
@@ -251,6 +253,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.color_unmixer is not None:
                 self.color_unmixer.close()
                 self.color_unmixer = None
+
+            if self.inspector is not None:
+                self.inspector.close()
+                self.inspector = None
 
             if self.options is not None:
                 self.options.close()
@@ -358,6 +364,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.color_unmixer.close()
                 self.color_unmixer = None
 
+            # Close the Temporal Inspector
+            if self.inspector is not None:
+                self.inspector.close()
+                self.inspector = None
+
             # Close the 3D plotter
             if self.plotter3D is not None:
                 self.plotter3D.close()
@@ -398,6 +409,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
+
+    @Slot(None, name="open_inspector")
+    def open_inspector(self):
+        """Initialize and open the temporal inspector."""
+        if self.inspector is None:
+            self.inspector = TemporalInspector(self.minfluxprocessor, parent=self)
+        self.inspector.show()
+        self.inspector.activateWindow()
 
     @Slot(None, name="open_color_unmixer")
     def open_color_unmixer(self):
@@ -479,7 +498,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Update the Fluorophore Detector?
         if self.color_unmixer is not None:
-            # @TODO: Need to update?
+            # No need to update
+            pass
+
+        # Update the Temporal Inspector?
+        if self.inspector is not None:
+            # No need to update
             pass
 
         # Update the 3D plotter

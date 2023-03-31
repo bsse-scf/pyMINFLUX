@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import Union
 
 from ..base import Singleton
@@ -110,3 +111,11 @@ class State(metaclass=Singleton):
         self.y_param = "y"
         self.num_fluorophores = 1
         self.dcr_bin_size = 0.0
+
+    def __str__(self):
+        """Human-readable representation."""
+        self.__repr__()
+
+    def __repr__(self):
+        """State representation."""
+        return "\n".join([f"{key}: {value}" for key, value in self.asdict().items()])

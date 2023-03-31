@@ -1048,7 +1048,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     # this should return an empty stats dataframe and NOT affect the selection
     # of the localizations assigned to fluorophore 2.
     x_range = (35.0, 45.0)
-    processor.filter_dataframe_by_1d_range("x", x_range[0], x_range[1])
+    processor.filter_dataframe_by_1d_range("x", x_range)
 
     # The current selection should be empty
     assert (
@@ -1064,7 +1064,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
 
     # We filter with a range that only contains traces of fluorophore 2.
     x_range = (35.0, 45.0)
-    processor.filter_dataframe_by_1d_range("x", x_range[0], x_range[1])
+    processor.filter_dataframe_by_1d_range("x", x_range)
 
     # The current selection should be empty
     assert (
@@ -1094,7 +1094,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     # this should return an empty stats dataframe and NOT affect the selection
     # of the localizations assigned to fluorophore 2.
     x_range = (35.0, 45.0)
-    processor.filter_dataframe_by_1d_range("x", x_range[0], x_range[1])
+    processor.filter_dataframe_by_1d_range("x", x_range)
 
     # The current selection should be empty
     assert (
@@ -1110,7 +1110,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
 
     # We filter with a range that only contains traces of fluorophore 2.
     x_range = (35.0, 45.0)
-    processor.filter_dataframe_by_1d_range("x", x_range[0], x_range[1])
+    processor.filter_dataframe_by_1d_range("x", x_range)
 
     # The current selection should be empty
     assert (

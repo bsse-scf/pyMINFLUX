@@ -279,6 +279,48 @@ class MinFluxProcessor:
                 return None
             return self.filtered_dataframe.iloc[indices]
 
+    def select_dataframe_by_1d_range(
+        self, x_prop, x_range, from_weighted_locs: bool = False
+    ) -> Union[None, pd.DataFrame]:
+        """Return a view on a subset of the filtered dataset or the weighted localisations defined by the passed
+        parameter and corresponding range.
+
+        The underlying dataframe is not modified.
+
+        Parameters
+        ----------
+
+        x_prop: str
+            Property to be filtered by corresponding x_range.
+
+        x_range: tuple
+            Tuple containing the minimum and maximum values for the selected property.
+
+        Returns
+        -------
+
+        subset: Union[None, pd.DataFrame]
+            A view on a subset of the dataframe defined by the passed property and range, or None if no file was loaded.
+        """
+
+        # Make sure that the range is increasing
+        x_min = x_range[0]
+        x_max = x_range[1]
+        if x_max < x_min:
+            x_max, x_min = x_min, x_max
+
+        if from_weighted_locs:
+            return self.__weighted_localizations.loc[
+                (self.__weighted_localizations[x_prop] >= x_min)
+                & (self.__weighted_localizations[x_prop] < x_max)
+            ]
+        else:
+
+            # Work with currently selected rows
+            df = self.filtered_dataframe
+
+            return df.loc[(df[x_prop] >= x_min) & (df[x_prop] < x_max)]
+
     def select_dataframe_by_2d_range(
         self, x_prop, y_prop, x_range, y_range, from_weighted_locs: bool = False
     ) -> Union[None, pd.DataFrame]:
@@ -297,10 +339,10 @@ class MinFluxProcessor:
             Second property to be filtered by corresponding y_range.
 
         x_range: tuple
-            Tuple containing the minimum and maximum values for the x coordinates to be selected.
+            Tuple containing the minimum and maximum values for the first property.
 
         y_range: tuple
-            Tuple containing the minimum and maximum values for the y coordinates to be selected.
+            Tuple containing the minimum and maximum values for the second property.
 
         from_weighted_locs: bool
             If True, select from the weighted_localizations dataframe; otherwise, from the filtered_dataframe.
@@ -309,7 +351,8 @@ class MinFluxProcessor:
         -------
 
         subset: Union[None, pd.DataFrame]
-            A view on a subset of the dataframe defined by the passed x and y ranges, or None if no file was loaded.
+            A view on a subset of the dataframe defined by the passed properties and ranges, or None if no file
+            was loaded.
         """
 
         # Make sure that the ranges are increasing
@@ -355,14 +398,11 @@ class MinFluxProcessor:
             Second property to be filtered by corresponding y_range.
 
         x_range: tuple
-            Tuple containing the minimum and maximum values for the x coordinates to be selected.
+            Tuple containing the minimum and maximum values for the first property.
 
         y_range: tuple
-            Tuple containing the minimum and maximum values for the y coordinates to be selected.
+            Tuple containing the minimum and maximum values for the second property.
         """
-
-        # Make sure to always apply the global filters
-        self._apply_global_filters()
 
         # Make sure that the ranges are increasing
         x_min = x_range[0]
@@ -383,6 +423,9 @@ class MinFluxProcessor:
             & (self.filtered_dataframe[y_prop] >= y_min)
             & (self.filtered_dataframe[y_prop] < y_max)
         )
+
+        # Make sure to always apply the global filters
+        self._apply_global_filters()
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
@@ -427,13 +470,42 @@ class MinFluxProcessor:
         self.__stats_to_be_recomputed = True
         self.__weighted_localizations_to_be_recomputed = True
 
-    def filter_dataframe_by_1d_range(
-        self,
-        prop: str,
-        min_threshold: Union[int, float],
-        max_threshold: Union[int, float],
-    ):
+    def filter_dataframe_by_1d_range(self, x_prop: str, x_range: tuple):
         """Apply min and max thresholding to the given property.
+
+        Parameters
+        ----------
+
+        x_prop: str
+            Name of the property (dataframe column) to filter.
+
+        x_range: tuple
+            Tuple containing the minimum and maximum values for the selected property.
+        """
+
+        # Make sure that the ranges are increasing
+        x_min = x_range[0]
+        x_max = x_range[1]
+        if x_max < x_min:
+            x_max, x_min = x_min, x_max
+
+        # Apply filter
+        self.__selected_rows = (
+            self.__selected_rows
+            & (self.filtered_dataframe[x_prop] >= x_min)
+            & (self.filtered_dataframe[x_prop] < x_max)
+        )
+
+        # Apply the global filters
+        self._apply_global_filters()
+
+        # Make sure to flag the derived data to be recomputed
+        self.__stats_to_be_recomputed = True
+        self.__weighted_localizations_to_be_recomputed = True
+
+    def filter_dataframe_by_1d_range_complement(self, prop: str, x_range: tuple):
+        """Apply min and max thresholding to the given property but keep the
+        data outside the range (i.e., crop the selected range).
 
         Parameters
         ----------
@@ -441,22 +513,20 @@ class MinFluxProcessor:
         prop: str
             Name of the property (dataframe column) to filter.
 
-        min_threshold: Union[int, float]
-            Minimum value for prop to retain the row.
-
-        max_threshold: Union[int, float]
-            Maximum value for prop to retain the row.
+        x_range: tuple
+            Tuple containing the minimum and maximum values for cropping the selected property.
         """
 
-        # Make sure we have valid thresholds
-        if min_threshold is None or max_threshold is None:
-            return
+        # Make sure that the ranges are increasing
+        x_min = x_range[0]
+        x_max = x_range[1]
+        if x_max < x_min:
+            x_max, x_min = x_min, x_max
 
         # Apply filter
-        self.__selected_rows = (
-            self.__selected_rows
-            & (self.filtered_dataframe[prop] >= min_threshold)
-            & (self.filtered_dataframe[prop] < max_threshold)
+        self.__selected_rows = self.__selected_rows & (
+            (self.filtered_dataframe[prop] < x_min)
+            | (self.filtered_dataframe[prop] >= x_max)
         )
 
         # Apply the global filters
@@ -513,6 +583,53 @@ class MinFluxProcessor:
 
         # Flag the statistics to be computed
         self.__stats_to_be_recomputed = False
+
+    @staticmethod
+    def calculate_statistics_on(df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate per-trace statistics for the selected dataframe.
+
+        Parameters
+        ----------
+
+        df: pd.DataFrame
+            DataFrame (view) generated by one of the `select_dataframe_by_*` methods.
+
+        Returns
+        -------
+        df_stats: pd.DataFrame
+            Per-trace statistics calculated on the passed DataFrame selection (view).
+        """
+
+        # Calculate some statistics per TID on the passed dataframe
+        df_grouped = df.groupby("tid")
+
+        tid = df_grouped["tid"].first().values
+        n = df_grouped["tid"].count().values
+        mx = df_grouped["x"].mean().values
+        my = df_grouped["y"].mean().values
+        mz = df_grouped["z"].mean().values
+        sx = df_grouped["x"].std().values
+        sy = df_grouped["y"].std().values
+        sz = df_grouped["z"].std().values
+
+        # Prepare a dataframe with the statistics
+        df_tid = pd.DataFrame(columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz"])
+
+        df_tid["tid"] = tid
+        df_tid["n"] = n
+        df_tid["mx"] = mx
+        df_tid["my"] = my
+        df_tid["mz"] = mz
+        df_tid["sx"] = sx
+        df_tid["sy"] = sy
+        df_tid["sz"] = sz
+
+        # sx, sy sz columns will contain np.nan is n == 1: we replace with 0.0
+        # @TODO: should this be changed?
+        df_tid[["sx", "sy", "sz"]] = df_tid[["sx", "sy", "sz"]].fillna(value=0.0)
+
+        # Return the results
+        return df_tid
 
     def _calculate_weighted_positions(self):
         """Calculate per-trace localization weighted by relative photon count."""

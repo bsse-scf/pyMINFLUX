@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'plotter_toolbar.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -56,7 +56,7 @@ class Ui_PlotterToolbar(object):
     def setupUi(self, PlotterToolbar):
         if not PlotterToolbar.objectName():
             PlotterToolbar.setObjectName("PlotterToolbar")
-        PlotterToolbar.resize(791, 31)
+        PlotterToolbar.resize(821, 31)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -84,10 +84,21 @@ class Ui_PlotterToolbar(object):
         self.horizontalLayout.addWidget(self.pbOpenAnalyzer)
 
         self.horizontalSpacer = QSpacerItem(
-            60, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
+
+        self.pbOpenInspector = QPushButton(PlotterToolbar)
+        self.pbOpenInspector.setObjectName("pbOpenInspector")
+
+        self.horizontalLayout.addWidget(self.pbOpenInspector)
+
+        self.horizontalSpacer_5 = QSpacerItem(
+            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_5)
 
         self.lbFluorophoreIndex = QLabel(PlotterToolbar)
         self.lbFluorophoreIndex.setObjectName("lbFluorophoreIndex")
@@ -119,7 +130,7 @@ class Ui_PlotterToolbar(object):
         self.horizontalLayout.addWidget(self.pbUnmixColors)
 
         self.horizontalSpacer_3 = QSpacerItem(
-            60, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
         self.horizontalLayout.addItem(self.horizontalSpacer_3)
@@ -167,6 +178,9 @@ class Ui_PlotterToolbar(object):
         )
         self.pbOpenAnalyzer.setText(
             QCoreApplication.translate("PlotterToolbar", "Analyze", None)
+        )
+        self.pbOpenInspector.setText(
+            QCoreApplication.translate("PlotterToolbar", "Inspect", None)
         )
         self.lbFluorophoreIndex.setText(
             QCoreApplication.translate("PlotterToolbar", "Fluorophore", None)
