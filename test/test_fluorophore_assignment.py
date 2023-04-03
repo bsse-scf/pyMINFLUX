@@ -180,6 +180,36 @@ class MockMinFluxReader:
         )
 
 
+class MockFromRealDataMinFluxReader:
+    def __init__(self):
+        self.__df = pd.read_csv(
+            Path(__file__).parent / "data" / "two_fluorophores_df.csv"
+        )
+        self.__fluo_ids = np.load(
+            str(Path(__file__).parent / "data" / "two_fluorophores_assignment.npy")
+        )
+        assert len(self.__df.index) == len(self.__fluo_ids), "Inconsistent test data!"
+
+    @property
+    def processed_dataframe(self):
+        return self.__df
+
+    @property
+    def num_valid_entries(self):
+        """Number of valid entries."""
+        return len(self.__df.index)
+
+    @property
+    def num_invalid_entries(self):
+        """Number of invalid entries."""
+        return 0
+
+    @property
+    def test_fluorophore_ids(self):
+        """Fluorophore ids to be used for testing."""
+        return self.__fluo_ids
+
+
 @pytest.fixture(autouse=False)
 def extract_raw_npy_data_files(tmpdir):
     """Fixture to execute asserts before and after a test is run"""
@@ -1386,3 +1416,159 @@ def test_extract_filtered_fluorophore_ids():
     ), "The number of fluorophore IDs must match the number of df entries."
     assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 14, "Unexpected number of ID 2 fluorophores."
+
+
+def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
+    # Initialize State
+    state = State()
+
+    #
+    # MockFromRealDataMinFluxReader
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
+
+    # MockMinFluxReader
+    reader = MockFromRealDataMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Consistency check
+    assert len(reader.processed_dataframe.index) == len(reader.test_fluorophore_ids)
+
+    # Check that the global filters have been applied (and nothing has been dropped)
+    assert (
+        len(processor.filtered_dataframe.index) == 17955
+    ), "Unexpected number of entries."
+
+    # Set current fluorophore to 0
+    processor.current_fluorophore_id = 0
+
+    # Check that there are still 17955 entries
+    assert (
+        len(processor.filtered_dataframe.index) == 17955
+    ), "Unexpected number of entries."
+
+    #
+    # First, switch through fluorophore IDs to check that the number of returned items is correct.
+    #
+
+    # Fluorophore ID = 0
+    processor.current_fluorophore_id = 0
+    ids = processor.filtered_fluorophore_ids
+    assert (
+        len(processor.filtered_dataframe.index) == 17955
+    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == len(
+        ids
+    ), "Unexpected number of entries."
+    assert (ids == 1).sum() == (
+        reader.test_fluorophore_ids == 1
+    ).sum(), "Unexpected number of ID 1 fluorophores."
+    assert (ids == 2).sum() == (
+        reader.test_fluorophore_ids == 2
+    ).sum(), "Unexpected number of ID 2 fluorophores."
+
+    # Fluorophore ID = 1
+    processor.current_fluorophore_id = 1
+    ids = processor.filtered_fluorophore_ids
+    assert (
+        len(processor.filtered_dataframe.index) == 12884
+    ), "Unexpected number of entries."
+    assert len(ids) == 12884, "Unexpected number of entries."
+    assert (ids == 1).sum() == (
+        reader.test_fluorophore_ids == 1
+    ).sum(), "Unexpected number of ID 1 fluorophores."
+    assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
+
+    # Fluorophore ID = 2
+    processor.current_fluorophore_id = 2
+    ids = processor.filtered_fluorophore_ids
+    assert (
+        len(processor.filtered_dataframe.index) == 5071
+    ), "Unexpected number of entries."
+    assert len(ids) == 5071, "Unexpected number of entries."
+    assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
+    assert (ids == 2).sum() == (
+        reader.test_fluorophore_ids == 2
+    ).sum(), "Unexpected number of ID 2 fluorophores."
+
+    #
+    # MockFromRealDataMinFluxReader
+    #
+    # min_num_loc_per_trace = 4
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 4
+
+    # MockMinFluxReader
+    reader = MockFromRealDataMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Consistency check
+    assert len(reader.processed_dataframe.index) == len(reader.test_fluorophore_ids)
+
+    # Check that the global filters have been applied (and nothing has been dropped)
+    assert (
+        len(processor.filtered_dataframe.index) == 16281
+    ), "Unexpected number of entries."
+
+    # Set current fluorophore to 0
+    processor.current_fluorophore_id = 0
+
+    # Check that there are still 16281 entries (because of global filtering)
+    assert (
+        len(processor.filtered_dataframe.index) == 16281
+    ), "Unexpected number of entries."
+
+    #
+    # First, switch through fluorophore IDs to check that the number of returned items is correct.
+    #
+
+    # Fluorophore ID = 0
+    processor.current_fluorophore_id = 0
+    ids = processor.filtered_fluorophore_ids
+    assert (
+        len(processor.filtered_dataframe.index) == 16281
+    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == len(
+        ids
+    ), "Unexpected number of entries."
+    assert (ids == 1).sum() + (ids == 2).sum() == len(
+        processor.filtered_dataframe.index
+    ), "Unexpected partition of fluorophores."
+    assert (ids == 1).sum() == 11544, "Unexpected number of ID 1 fluorophores."
+    assert (ids == 2).sum() == 4737, "Unexpected number of ID 2 fluorophores."
+
+    # Fluorophore ID = 1
+    processor.current_fluorophore_id = 1
+    ids = processor.filtered_fluorophore_ids
+    assert (
+        len(processor.filtered_dataframe.index) == 11544
+    ), "Unexpected number of entries."
+    assert len(ids) == 11544, "Unexpected number of entries."
+    assert (ids == 1).sum() == len(
+        processor.filtered_dataframe.index
+    ), "Unexpected number of ID 1 fluorophores."
+    assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
+
+    # Fluorophore ID = 2
+    processor.current_fluorophore_id = 2
+    ids = processor.filtered_fluorophore_ids
+    assert (
+        len(processor.filtered_dataframe.index) == 4737
+    ), "Unexpected number of entries."
+    assert len(ids) == 4737, "Unexpected number of entries."
+    assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
+    assert (ids == 2).sum() == len(
+        processor.filtered_dataframe.index
+    ), "Unexpected number of ID 2 fluorophores."
