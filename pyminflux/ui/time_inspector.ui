@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>TemporalInspector</class>
- <widget class="QDialog" name="TemporalInspector">
+ <class>TimeInspector</class>
+ <widget class="QDialog" name="TimeInspector">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Temporal Inspector</string>
+   <string>Time Inspector</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
@@ -75,6 +75,34 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="lbSelectionActions">
+         <property name="text">
+          <string>Selection</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pbAreaToggleVisibility">
+         <property name="text">
+          <string>Hide</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pbSelectionKeepData">
+         <property name="text">
+          <string>Keep data</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pbSelectionCropData">
+         <property name="text">
+          <string>Drop data</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

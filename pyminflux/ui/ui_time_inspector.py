@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'temporal_inspector.ui'
+## Form generated from reading UI file 'time_inspector.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.4.3
 ##
@@ -45,6 +45,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QHBoxLayout,
+    QLabel,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
@@ -53,12 +54,12 @@ from PySide6.QtWidgets import (
 )
 
 
-class Ui_TemporalInspector(object):
-    def setupUi(self, TemporalInspector):
-        if not TemporalInspector.objectName():
-            TemporalInspector.setObjectName("TemporalInspector")
-        TemporalInspector.resize(800, 600)
-        self.verticalLayout_2 = QVBoxLayout(TemporalInspector)
+class Ui_TimeInspector(object):
+    def setupUi(self, TimeInspector):
+        if not TimeInspector.objectName():
+            TimeInspector.setObjectName("TimeInspector")
+        TimeInspector.resize(800, 600)
+        self.verticalLayout_2 = QVBoxLayout(TimeInspector)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.main_layout = QVBoxLayout()
         self.main_layout.setObjectName("main_layout")
@@ -70,7 +71,7 @@ class Ui_TemporalInspector(object):
 
         self.commands_layout.addItem(self.horizontalSpacer)
 
-        self.cbAnalysisSelection = QComboBox(TemporalInspector)
+        self.cbAnalysisSelection = QComboBox(TimeInspector)
         self.cbAnalysisSelection.addItem("")
         self.cbAnalysisSelection.addItem("")
         self.cbAnalysisSelection.addItem("")
@@ -85,7 +86,7 @@ class Ui_TemporalInspector(object):
 
         self.commands_layout.addWidget(self.cbAnalysisSelection)
 
-        self.pbPlot = QPushButton(TemporalInspector)
+        self.pbPlot = QPushButton(TimeInspector)
         self.pbPlot.setObjectName("pbPlot")
 
         self.commands_layout.addWidget(self.pbPlot)
@@ -96,41 +97,71 @@ class Ui_TemporalInspector(object):
 
         self.commands_layout.addItem(self.horizontalSpacer_2)
 
+        self.lbSelectionActions = QLabel(TimeInspector)
+        self.lbSelectionActions.setObjectName("lbSelectionActions")
+
+        self.commands_layout.addWidget(self.lbSelectionActions)
+
+        self.pbAreaToggleVisibility = QPushButton(TimeInspector)
+        self.pbAreaToggleVisibility.setObjectName("pbAreaToggleVisibility")
+
+        self.commands_layout.addWidget(self.pbAreaToggleVisibility)
+
+        self.pbSelectionKeepData = QPushButton(TimeInspector)
+        self.pbSelectionKeepData.setObjectName("pbSelectionKeepData")
+
+        self.commands_layout.addWidget(self.pbSelectionKeepData)
+
+        self.pbSelectionCropData = QPushButton(TimeInspector)
+        self.pbSelectionCropData.setObjectName("pbSelectionCropData")
+
+        self.commands_layout.addWidget(self.pbSelectionCropData)
+
         self.main_layout.addLayout(self.commands_layout)
 
         self.verticalLayout_2.addLayout(self.main_layout)
 
-        self.retranslateUi(TemporalInspector)
+        self.retranslateUi(TimeInspector)
 
-        QMetaObject.connectSlotsByName(TemporalInspector)
+        QMetaObject.connectSlotsByName(TimeInspector)
 
     # setupUi
 
-    def retranslateUi(self, TemporalInspector):
-        TemporalInspector.setWindowTitle(
-            QCoreApplication.translate("TemporalInspector", "Temporal Inspector", None)
+    def retranslateUi(self, TimeInspector):
+        TimeInspector.setWindowTitle(
+            QCoreApplication.translate("TimeInspector", "Time Inspector", None)
         )
         self.cbAnalysisSelection.setItemText(
             0,
             QCoreApplication.translate(
-                "TemporalInspector", "Localization number per minute", None
+                "TimeInspector", "Localization number per minute", None
             ),
         )
         self.cbAnalysisSelection.setItemText(
             1,
             QCoreApplication.translate(
-                "TemporalInspector", "Localization precision per minute", None
+                "TimeInspector", "Localization precision per minute", None
             ),
         )
         self.cbAnalysisSelection.setItemText(
             2,
             QCoreApplication.translate(
-                "TemporalInspector", "Localization precision per minute (std err)", None
+                "TimeInspector", "Localization precision per minute (std err)", None
             ),
         )
 
-        self.pbPlot.setText(
-            QCoreApplication.translate("TemporalInspector", "Plot", None)
+        self.pbPlot.setText(QCoreApplication.translate("TimeInspector", "Plot", None))
+        self.lbSelectionActions.setText(
+            QCoreApplication.translate("TimeInspector", "Selection", None)
+        )
+        self.pbAreaToggleVisibility.setText(
+            QCoreApplication.translate("TimeInspector", "Hide", None)
+        )
+        self.pbSelectionKeepData.setText(
+            QCoreApplication.translate("TimeInspector", "Keep data", None)
+        )
+        self.pbSelectionCropData.setText(
+            QCoreApplication.translate("TimeInspector", "Drop data", None)
         )
 
     # retranslateUi

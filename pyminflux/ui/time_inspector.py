@@ -6,16 +6,19 @@ from PySide6.QtGui import QAction, QColor, QFont, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 
 from pyminflux.state import State
-from pyminflux.ui.ui_temporal_inspector import Ui_TemporalInspector
+from pyminflux.ui.ui_time_inspector import Ui_TimeInspector
 
 
-class TemporalInspector(QDialog, Ui_TemporalInspector):
+class TemporalInspector(QDialog, Ui_TimeInspector):
     """
     A QDialog to perform temporal analysis and selection.
     """
 
     # Signal that the fluorophore IDs have been assigned
     fluorophore_ids_assigned = Signal(int, name="fluorophore_ids_assigned")
+    processing_started = Signal(None, name="processing_started")
+    processing_completed = Signal(None, name="processing_completed")
+    dataset_time_filtered = Signal(None, name="dataset_time_filtered")
 
     def __init__(self, processor, parent):
 
@@ -23,7 +26,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         super().__init__(parent=parent)
 
         # Initialize the dialog
-        self.ui = Ui_TemporalInspector()
+        self.ui = Ui_TimeInspector()
         self.ui.setupUi(self)
 
         # Initialize state
@@ -37,11 +40,20 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         self.pen = pg.mkPen(None)
 
         # Keep track of the x-axis limits and the selection
-        self.x_range = None
+        self.x_axis = None
         self.selection_range = None
 
         # Selection region
         self.selection_region = None
+
+        # Cache plot data
+        self.localizations_per_unit_time_cache = None
+        self.localization_precision_per_unit_time_cache_x = None
+        self.localization_precision_per_unit_time_cache_y = None
+        self.localization_precision_per_unit_time_cache_z = None
+        self.localization_precision_stderr_per_unit_time_cache_x = None
+        self.localization_precision_stderr_per_unit_time_cache_y = None
+        self.localization_precision_stderr_per_unit_time_cache_z = None
 
         # Time resolution
         # @TODO: This should be user definable!
@@ -50,17 +62,45 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         # Remember visibility status of the region
         self.roi_visible = True
 
-        # Create the plot elements
+        # Create the main plot widget
         self.plot_widget = PlotWidget(parent=self, background="w", title="")
 
-        # Plot the dcr histogram
-        self.plot_selected()
-
-        # Add them to the UI
+        # Add it to the UI
         self.ui.main_layout.addWidget(self.plot_widget)
 
         # Add connections
         self.ui.pbPlot.clicked.connect(self.plot_selected)
+        self.ui.pbAreaToggleVisibility.clicked.connect(self.toggle_region_visibility)
+        self.ui.pbSelectionKeepData.clicked.connect(self.keep_time_region)
+        self.ui.pbSelectionCropData.clicked.connect(self.crop_time_region)
+        self.processing_started.connect(self.change_ui_for_processing)
+        self.processing_completed.connect(self.change_ui_for_idle)
+
+        # Plot the dcr histogram
+        self.plot_selected()
+
+    def invalidate_cache(self):
+        """Invalidate the cache."""
+        self.localizations_per_unit_time_cache = None
+        self.localization_precision_per_unit_time_cache_x = None
+        self.localization_precision_per_unit_time_cache_y = None
+        self.localization_precision_per_unit_time_cache_z = None
+        self.localization_precision_stderr_per_unit_time_cache_x = None
+        self.localization_precision_stderr_per_unit_time_cache_y = None
+        self.localization_precision_stderr_per_unit_time_cache_z = None
+
+    @Slot(None, name="update")
+    def update(self):
+        """Update the plots as response to data changes."""
+
+        # Invalidate cache
+        self.invalidate_cache()
+
+        # Switch back to the fastest plot
+        self.ui.cbAnalysisSelection.setCurrentIndex(0)
+
+        # Plot
+        self.plot_selected()
 
     @Slot(None, name="plot_selected")
     def plot_selected(self):
@@ -72,6 +112,9 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
             or self._minfluxprocessor.full_dataframe is None
         ):
             return
+
+        # Inform that processing started
+        self.processing_started.emit()
 
         # It one or more charts already exists, remove them
         for item in self.plot_widget.allChildItems():
@@ -92,16 +135,11 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         self.plot_widget.showAxis("left")
         self.plot_widget.setMouseEnabled(x=True, y=False)
         self.plot_widget.setMenuEnabled(False)
-        self.plot_widget.getPlotItem().scene().sigMouseClicked.connect(
-            self.histogram_raise_context_menu
-        )
 
         # Create a linear region for setting filtering thresholds. We create it
         # small enough not to be in the way.
         if self.selection_range is None:
-            mn, mx = np.percentile(
-                np.arange(self.x_range[0], self.x_range[1]), [25, 75]
-            )
+            mn, mx = np.percentile(np.arange(self.x_axis[0], self.x_axis[-1]), [25, 75])
             self.selection_range = (mn, mx)
         mn, mx = self.selection_range[0], self.selection_range[1]
         self.selection_region = pg.LinearRegionItem(
@@ -122,46 +160,56 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         )
         self._change_region_label_font(self.selection_region.high_thresh_label)
 
+        # Make sure it is visible
+        self.selection_region.show()
+        self.roi_visible = True
+
         # Connect signals
         self.selection_region.sigRegionChanged.connect(self.region_pos_changed)
         self.selection_region.sigRegionChangeFinished.connect(
             self.region_pos_changed_finished
         )
 
+        # Inform that processing completed
+        self.processing_completed.emit()
+
     def plot_localizations_per_unit_time(self):
         """Plot number of localizations per unit time."""
 
-        # Create `time_resolution_sec` bins starting at 0.0.
-        bin_edges = np.arange(
-            start=0.0,
-            stop=self._minfluxprocessor.filtered_dataframe["tim"].max()
-            + self.time_resolution_sec,
-            step=self.time_resolution_sec,
-        )
-        bin_centers = bin_edges[:-1] + 0.5 * self.time_resolution_sec
-        bin_width = self.time_resolution_sec
+        # Is the data cached?
+        if self.localizations_per_unit_time_cache is None:
 
-        # Calculate the histogram of localizations per unit time
-        n_tim, _ = np.histogram(
-            self._minfluxprocessor.filtered_dataframe["tim"].values,
-            bins=bin_edges,
-            density=False,
-        )
+            # Create `time_resolution_sec` bins starting at 0.0.
+            bin_edges = np.arange(
+                start=0.0,
+                stop=self._minfluxprocessor.filtered_dataframe["tim"].max()
+                + self.time_resolution_sec,
+                step=self.time_resolution_sec,
+            )
+            bin_centers = bin_edges[:-1] + 0.5 * self.time_resolution_sec
+            bin_width = self.time_resolution_sec
 
-        # Plot the results per minute
-        time_axis = (bin_centers - 0.5 * bin_width) / self.time_resolution_sec
-        time_width = time_axis[1] - time_axis[0]
+            # Calculate the histogram of localizations per unit time
+            self.localizations_per_unit_time_cache, _ = np.histogram(
+                self._minfluxprocessor.filtered_dataframe["tim"].values,
+                bins=bin_edges,
+                density=False,
+            )
+
+            # Cache the x range
+            self.x_axis = (bin_centers - 0.5 * bin_width) / self.time_resolution_sec
 
         # Plot the histogram
         chart = pg.BarGraphItem(
-            x=time_axis, height=n_tim, width=0.9 * time_width, brush=self.brush
+            x=self.x_axis,
+            height=self.localizations_per_unit_time_cache,
+            width=0.9 * (self.x_axis[1] - self.x_axis[0]),
+            brush=self.brush,
         )
 
         # Update the plot
-        if self.x_range is None:
-            self.x_range = (time_axis[0], time_axis[-1])
-            self.plot_widget.setXRange(self.x_range[0], self.x_range[1])
-        self.plot_widget.setYRange(0.0, n_tim.max())
+        self.plot_widget.setXRange(self.x_axis[0], self.x_axis[-1])
+        self.plot_widget.setYRange(0.0, self.localizations_per_unit_time_cache.max())
         self.plot_widget.setLabel("left", text="Number of localizations per min")
         self.plot_widget.addItem(chart)
 
@@ -179,63 +227,89 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         if self.plot_widget.plotItem.legend is None:
             self.plot_widget.plotItem.addLegend()
 
-        # Create `time_resolution_sec` bins starting at 0.0.
-        bin_edges = np.arange(
-            start=0.0,
-            stop=self._minfluxprocessor.filtered_dataframe["tim"].max()
-            + self.time_resolution_sec,
-            step=self.time_resolution_sec,
-        )
-        bin_centers = bin_edges[:-1] + 0.5 * self.time_resolution_sec
-        bin_width = self.time_resolution_sec
+        # Is the data cached?
+        if (
+            not std_err and self.localization_precision_per_unit_time_cache_x is None
+        ) or (
+            std_err and self.localization_precision_stderr_per_unit_time_cache_x is None
+        ):
 
-        # Allocate space for the results
-        x_pr = np.zeros(len(bin_edges) - 1)
-        y_pr = np.zeros(len(bin_edges) - 1)
-        z_pr = np.zeros(len(bin_edges) - 1)
+            # Create `time_resolution_sec` bins starting at 0.0.
+            bin_edges = np.arange(
+                start=0.0,
+                stop=self._minfluxprocessor.filtered_dataframe["tim"].max()
+                + self.time_resolution_sec,
+                step=self.time_resolution_sec,
+            )
+            bin_centers = bin_edges[:-1] + 0.5 * self.time_resolution_sec
+            bin_width = self.time_resolution_sec
 
-        # Now process all bins
-        for i in range(len(bin_edges) - 1):
-            time_range = (bin_edges[i], bin_edges[i + 1])
-            df = self._minfluxprocessor.select_by_1d_range("tim", time_range)
-            if len(df.index) > 0:
-                stats = self._minfluxprocessor.calculate_statistics_on(df)
-                if std_err:
-                    x_pr[i] = stats["sx"].mean() / np.sqrt(len(stats["sx"]))
-                    y_pr[i] = stats["sy"].mean() / np.sqrt(len(stats["sy"]))
-                    z_pr[i] = stats["sz"].mean() / np.sqrt(len(stats["sz"]))
+            # Allocate space for the results
+            x_pr = np.zeros(len(bin_edges) - 1)
+            y_pr = np.zeros(len(bin_edges) - 1)
+            z_pr = np.zeros(len(bin_edges) - 1)
+
+            # Now process all bins
+            for i in range(len(bin_edges) - 1):
+                time_range = (bin_edges[i], bin_edges[i + 1])
+                df = self._minfluxprocessor.select_by_1d_range("tim", time_range)
+                if len(df.index) > 0:
+                    stats = self._minfluxprocessor.calculate_statistics_on(df)
+                    if std_err:
+                        x_pr[i] = stats["sx"].mean() / np.sqrt(len(stats["sx"]))
+                        y_pr[i] = stats["sy"].mean() / np.sqrt(len(stats["sy"]))
+                        z_pr[i] = stats["sz"].mean() / np.sqrt(len(stats["sz"]))
+                    else:
+                        x_pr[i] = stats["sx"].mean()
+                        y_pr[i] = stats["sy"].mean()
+                        z_pr[i] = stats["sz"].mean()
                 else:
-                    x_pr[i] = stats["sx"].mean()
-                    y_pr[i] = stats["sy"].mean()
-                    z_pr[i] = stats["sz"].mean()
+                    x_pr[i] = 0.0
+                    y_pr[i] = 0.0
+                    z_pr[i] = 0.0
+
+            # Cache results for future plotting
+            if std_err:
+                self.localization_precision_stderr_per_unit_time_cache_x = x_pr
+                self.localization_precision_stderr_per_unit_time_cache_y = y_pr
+                self.localization_precision_stderr_per_unit_time_cache_z = z_pr
             else:
-                x_pr[i] = 0.0
-                y_pr[i] = 0.0
-                z_pr[i] = 0.0
+                self.localization_precision_per_unit_time_cache_x = x_pr
+                self.localization_precision_per_unit_time_cache_y = y_pr
+                self.localization_precision_per_unit_time_cache_z = z_pr
+
+            # Cache the x range
+            self.x_axis = (bin_centers - 0.5 * bin_width) / self.time_resolution_sec
 
         # It one or more charts already exists, remove them
         for item in self.plot_widget.allChildItems():
             self.plot_widget.removeItem(item)
 
-        # Plot the results per minute
-        time_axis = (bin_centers - 0.5 * bin_width) / self.time_resolution_sec
+        # Alias
+        if std_err:
+            x_pr = self.localization_precision_stderr_per_unit_time_cache_x
+            y_pr = self.localization_precision_stderr_per_unit_time_cache_y
+            z_pr = self.localization_precision_stderr_per_unit_time_cache_z
+        else:
+            x_pr = self.localization_precision_per_unit_time_cache_x
+            y_pr = self.localization_precision_per_unit_time_cache_y
+            z_pr = self.localization_precision_per_unit_time_cache_z
 
-        # Get the max bin number for normalization (and add 10%)
+        # Get the max bin number for normalization
         n_max = np.max([x_pr.max(), y_pr.max(), z_pr.max()])
-        n_max += 0.1 * n_max
 
         if self._minfluxprocessor.is_3d:
-            offset = bin_width / self.time_resolution_sec / 3
+            offset = 1 / 3
             bar_width = 0.9 / 3
         else:
-            offset = bin_width / self.time_resolution_sec / 2
+            offset = 1 / 2
             bar_width = 0.9 / 2
 
         # Create the sx bar charts
         chart = pg.BarGraphItem(
-            x=time_axis,
+            x=self.x_axis,
             height=x_pr,
-            width=bar_width * bin_width / self.time_resolution_sec,
+            width=bar_width,
             brush="r",
             alpha=0.5,
             name="σx",
@@ -244,9 +318,9 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
 
         # Create the sy bar charts
         chart = pg.BarGraphItem(
-            x=time_axis + offset,
+            x=self.x_axis + offset,
             height=y_pr,
-            width=bar_width * bin_width / self.time_resolution_sec,
+            width=bar_width,
             brush="b",
             alpha=0.5,
             name="σy",
@@ -256,9 +330,9 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         # Create the sz bar charts if needed
         if self._minfluxprocessor.is_3d:
             chart = pg.BarGraphItem(
-                x=time_axis + 2 * offset,
+                x=self.x_axis + 2 * offset,
                 height=z_pr,
-                width=bar_width * bin_width / self.time_resolution_sec,
+                width=bar_width,
                 brush="k",
                 alpha=0.5,
                 name="σz",
@@ -266,9 +340,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
             self.plot_widget.addItem(chart)
 
         # Update the plot
-        if self.x_range is None:
-            self.x_range = (time_axis[0], time_axis[-1])
-            self.plot_widget.setXRange(self.x_range[0], self.x_range[-1])
+        self.plot_widget.setXRange(self.x_axis[0], self.x_axis[-1])
         self.plot_widget.setYRange(0.0, n_max)
         self.plot_widget.setLabel("left", text="Localization precision (nm) per min")
 
@@ -302,31 +374,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         mn, mx = item.getRegion()
         self.selection_range = (mn, mx)
 
-    def histogram_raise_context_menu(self, ev):
-        """Create a context menu on the efo vs cfr scatter/histogram plot ROI."""
-        if ev.button() == Qt.MouseButton.RightButton:
-            menu = QMenu()
-            keep_action = QAction("Keep data within region")
-            keep_action.triggered.connect(self.keep_time_region)
-            menu.addAction(keep_action)
-            crop_action = QAction("Crop data within region")
-            crop_action.triggered.connect(self.crop_time_region)
-            menu.addAction(crop_action)
-            menu.addSeparator()
-            if self.roi_visible:
-                text = "Hide region"
-            else:
-                text = "Show region"
-            toggle_visibility_action = QAction(text)
-            toggle_visibility_action.triggered.connect(self.toggle_region_visibility)
-            menu.addAction(toggle_visibility_action)
-            pos = ev.screenPos()
-            menu.exec(QPoint(int(pos.x()), int(pos.y())))
-            ev.accept()
-        else:
-            ev.ignore()
-
-    def toggle_region_visibility(self, action):
+    def toggle_region_visibility(self, b):
         """Toggles the visibility of the line region."""
 
         if self.selection_region is None:
@@ -335,9 +383,11 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         if self.roi_visible:
             self.selection_region.hide()
             self.roi_visible = False
+            self.ui.pbAreaToggleVisibility.setText("Show")
         else:
             self.selection_region.show()
             self.roi_visible = True
+            self.ui.pbAreaToggleVisibility.setText("Hide")
 
     def crop_time_region(self):
         """Filter away selected time region."""
@@ -354,6 +404,12 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
 
         # Filter
         self._minfluxprocessor.filter_by_1d_range_complement("tim", (mn_s, mx_s))
+
+        # Invalidate the cache
+        self.invalidate_cache()
+
+        # Inform that the data has been filtered
+        self.dataset_time_filtered.emit()
 
         # Update the plot
         self.plot_selected()
@@ -374,5 +430,31 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         # Filter
         self._minfluxprocessor.filter_by_1d_range("tim", (mn_s, mx_s))
 
+        # Invalidate the cache
+        self.invalidate_cache()
+
+        # Inform that the data has been filtered
+        self.dataset_time_filtered.emit()
+
         # Update the plot
         self.plot_selected()
+
+    def change_ui_for_processing(self):
+        """Disable elements and inform that a processing is ongoing."""
+        self.ui.cbAnalysisSelection.setEnabled(False)
+        self.ui.pbPlot.setEnabled(False)
+        self.ui.lbSelectionActions.setEnabled(False)
+        self.ui.pbAreaToggleVisibility.setEnabled(False)
+        self.ui.pbSelectionCropData.setEnabled(False)
+        self.ui.pbSelectionKeepData.setEnabled(False)
+        self.repaint()
+
+    def change_ui_for_idle(self):
+        """Disable elements and inform that a processing is ongoing."""
+        self.ui.cbAnalysisSelection.setEnabled(True)
+        self.ui.pbPlot.setEnabled(True)
+        self.ui.lbSelectionActions.setEnabled(True)
+        self.ui.pbAreaToggleVisibility.setEnabled(True)
+        self.ui.pbSelectionCropData.setEnabled(True)
+        self.ui.pbSelectionKeepData.setEnabled(True)
+        self.repaint()
