@@ -1,1 +1,4 @@
-*.npy
+2d_*.npy
+2D_*.npy
+3d_*.npy
+3D_*.npy
