@@ -255,7 +255,7 @@ class Plotter(PlotWidget):
         self.setBackground("w")
         self.clear()
 
-    def plot_parameters(self, x, y, x_param, y_param, tid):
+    def plot_parameters(self, x, y, x_param, y_param, tid, fid):
         """Plot localizations in a 2D scatter plot."""
 
         # Create the scatter plot
@@ -274,6 +274,11 @@ class Plotter(PlotWidget):
             brushes = self.brush
         elif self.state.color_code == ColorCode.BY_TID:
             brushes = tid
+        elif self.state.color_code == ColorCode.BY_FLUO:
+            if len(np.unique(fid)) == 1:
+                brushes = self.brush
+            else:
+                brushes = 5 + fid  # Better colors
         else:
             raise ValueError("Unexpected request for color-coding the localizations!")
 

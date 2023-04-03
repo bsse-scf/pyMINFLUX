@@ -417,6 +417,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.color_unmixer.fluorophore_ids_assigned.connect(
                 self.plotter_toolbar.set_fluorophore_list
             )
+            self.color_unmixer.fluorophore_ids_assigned.connect(
+                self.plot_selected_parameters
+            )
         self.color_unmixer.show()
         self.color_unmixer.activateWindow()
 
@@ -558,10 +561,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         x = dataframe[self.state.x_param].values
         y = dataframe[self.state.y_param].values
         tid = dataframe["tid"].values
+        fid = self.minfluxprocessor.filtered_fluorophore_ids
 
         # Always plot the (x, y) coordinates in the 2D plotter
         self.plotter.plot_parameters(
             tid=tid,
+            fid=fid,
             x=x,
             y=y,
             x_param=self.state.x_param,
