@@ -444,7 +444,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         indices = sorted(indices)
 
         # Get the filtered dataframe subset corresponding to selected indices
-        df = self.minfluxprocessor.select_dataframe_by_indices(
+        df = self.minfluxprocessor.select_by_indices(
             indices=indices, from_weighted_locs=self.state.plot_average_localisations
         )
 
@@ -462,7 +462,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Select the data by x and y range and show in the dataframe viewer."""
 
         # Get the filtered dataframe subset contained in the provided x and y ranges
-        df = self.minfluxprocessor.select_dataframe_by_2d_range(
+        df = self.minfluxprocessor.select_by_2d_range(
             x_param,
             y_param,
             x_range,
@@ -482,9 +482,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Filter the data by x and y range and show in the dataframe viewer."""
 
         # Filter the dataframe by the passed x and y ranges
-        self.minfluxprocessor.filter_dataframe_by_2d_range(
-            x_param, y_param, x_range, y_range
-        )
+        self.minfluxprocessor.filter_by_2d_range(x_param, y_param, x_range, y_range)
 
         # Update the Analyzer
         if self.analyzer is not None:

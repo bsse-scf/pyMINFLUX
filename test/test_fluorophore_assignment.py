@@ -641,7 +641,7 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # this should return an empty stats dataframe
     x_range = (35.0, 45.0)
     y_range = (38.0, 48.0)
-    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+    processor.filter_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # Now collect the stats
     stats = processor.filtered_dataframe_stats
@@ -670,7 +670,7 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # this should return an empty stats dataframe
     x_range = (5.0, 15.0)
     y_range = (8.0, 18.0)
-    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+    processor.filter_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # Now collect the stats
     stats = processor.filtered_dataframe_stats
@@ -859,9 +859,7 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     # this should return an empty stats dataframe
     x_range = (35.0, 45.0)
     y_range = (38.0, 48.0)
-    select_df = processor.select_dataframe_by_2d_range(
-        "x", "y", x_range=x_range, y_range=y_range
-    )
+    select_df = processor.select_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The dataframe should be empty
     assert len(select_df.index) == 0, "The selection should be empty!"
@@ -880,9 +878,7 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     # this should return an empty stats dataframe
     x_range = (5.0, 15.0)
     y_range = (8.0, 18.0)
-    select_df = processor.select_dataframe_by_2d_range(
-        "x", "y", x_range=x_range, y_range=y_range
-    )
+    select_df = processor.select_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The dataframe should be empty
     assert len(select_df.index) == 0, "The selection should be empty!"
@@ -910,9 +906,7 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     # this should return an empty stats dataframe
     x_range = (35.0, 45.0)
     y_range = (38.0, 48.0)
-    select_df = processor.select_dataframe_by_2d_range(
-        "x", "y", x_range=x_range, y_range=y_range
-    )
+    select_df = processor.select_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The dataframe should be empty
     assert len(select_df.index) == 0, "The selection should be empty!"
@@ -931,9 +925,7 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     # this should return an empty stats dataframe
     x_range = (5.0, 15.0)
     y_range = (8.0, 18.0)
-    select_df = processor.select_dataframe_by_2d_range(
-        "x", "y", x_range=x_range, y_range=y_range
-    )
+    select_df = processor.select_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The dataframe should be empty
     assert len(select_df.index) == 0, "The selection should be empty!"
@@ -973,7 +965,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     # of the localizations assigned to fluorophore 2.
     x_range = (35.0, 45.0)
     y_range = (38.0, 48.0)
-    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+    processor.filter_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The current selection should be empty
     assert (
@@ -990,7 +982,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     # We filter with a range that only contains traces of fluorophore 2.
     x_range = (35.0, 45.0)
     y_range = (38.0, 48.0)
-    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+    processor.filter_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The current selection should be empty
     assert (
@@ -1021,7 +1013,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     # of the localizations assigned to fluorophore 2.
     x_range = (35.0, 45.0)
     y_range = (38.0, 48.0)
-    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+    processor.filter_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The current selection should be empty
     assert (
@@ -1038,7 +1030,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     # We filter with a range that only contains traces of fluorophore 2.
     x_range = (35.0, 45.0)
     y_range = (38.0, 48.0)
-    processor.filter_dataframe_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
+    processor.filter_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The current selection should be empty
     assert (
@@ -1072,7 +1064,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     # this should return an empty stats dataframe and NOT affect the selection
     # of the localizations assigned to fluorophore 2.
     x_range = (35.0, 45.0)
-    processor.filter_dataframe_by_1d_range("x", x_range)
+    processor.filter_by_1d_range("x", x_range)
 
     # The current selection should be empty
     assert (
@@ -1088,7 +1080,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
 
     # We filter with a range that only contains traces of fluorophore 2.
     x_range = (35.0, 45.0)
-    processor.filter_dataframe_by_1d_range("x", x_range)
+    processor.filter_by_1d_range("x", x_range)
 
     # The current selection should be empty
     assert (
@@ -1118,7 +1110,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     # this should return an empty stats dataframe and NOT affect the selection
     # of the localizations assigned to fluorophore 2.
     x_range = (35.0, 45.0)
-    processor.filter_dataframe_by_1d_range("x", x_range)
+    processor.filter_by_1d_range("x", x_range)
 
     # The current selection should be empty
     assert (
@@ -1134,7 +1126,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
 
     # We filter with a range that only contains traces of fluorophore 2.
     x_range = (35.0, 45.0)
-    processor.filter_dataframe_by_1d_range("x", x_range)
+    processor.filter_by_1d_range("x", x_range)
 
     # The current selection should be empty
     assert (

@@ -128,9 +128,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "efo", (13823.70184744663, 48355.829889892586)
-    )
+    processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
@@ -140,9 +138,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "cfr", (-0.015163637960486809, 0.2715112942104868)
-    )
+    processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
@@ -188,9 +184,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "efo", (13823.70184744663, 48355.829889892586)
-    )
+    processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
@@ -204,9 +198,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Apply CFR filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "cfr", (-0.015163637960486809, 0.2715112942104868)
-    )
+    processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
@@ -256,9 +248,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "efo", (13823.70184744663, 48355.829889892586)
-    )
+    processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
@@ -268,9 +258,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "cfr", (-0.015163637960486809, 0.2715112942104868)
-    )
+    processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
@@ -316,9 +304,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "efo", (13823.70184744663, 48355.829889892586)
-    )
+    processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
@@ -332,9 +318,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Apply CFR filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "cfr", (-0.015163637960486809, 0.2715112942104868)
-    )
+    processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
@@ -384,9 +368,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "efo", (13823.70184744663, 48355.829889892586)
-    )
+    processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
     assert (
         len(reader.processed_dataframe.index) == 5812
     ), "Wrong total number of entries"
@@ -396,9 +378,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "cfr", (-0.015163637960486809, 0.2715112942104868)
-    )
+    processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
     assert (
         len(reader.processed_dataframe.index) == 5812
     ), "Wrong total number of entries"
@@ -444,9 +424,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "efo", (13823.70184744663, 48355.829889892586)
-    )
+    processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
     assert (
         len(reader.processed_dataframe.index) == 5812
     ), "Wrong total number of entries"
@@ -460,9 +438,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     assert np.sum(counts.values < state.min_num_loc_per_trace) == 0
 
     # Apply CFR filter and check counts
-    processor.filter_dataframe_by_1d_range(
-        "cfr", (-0.015163637960486809, 0.2715112942104868)
-    )
+    processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
     assert (
         len(reader.processed_dataframe.index) == 5812
     ), "Wrong total number of entries"
@@ -934,7 +910,7 @@ def test_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     assert processor.num_values == 12580, "Wrong total number of entries"
 
     # Filter by range
-    processor.filter_dataframe_by_2d_range(
+    processor.filter_by_2d_range(
         "x", "y", x_range=(2000, 3000), y_range=(-12000, -13000)
     )  # y range will be flipped
 
@@ -959,7 +935,7 @@ def test_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     assert processor.num_values == 11903, "Wrong total number of entries"
 
     # Filter by range
-    processor.filter_dataframe_by_2d_range(
+    processor.filter_by_2d_range(
         "x", "y", x_range=(2000, 3000), y_range=(-12000, -13000)
     )  # y range will be flipped
 
@@ -987,7 +963,7 @@ def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Select (that is, get a view) by range
-    df = processor.select_dataframe_by_2d_range(
+    df = processor.select_by_2d_range(
         "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
     )
 
@@ -1002,7 +978,7 @@ def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     assert (df["y"] >= -12000).sum() == 0, "Failed filtering."
 
     # Now compare with the filter by the same range
-    processor.filter_dataframe_by_2d_range(
+    processor.filter_by_2d_range(
         "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
     )
     assert processor.num_values == 1165, "Wrong total number of filtered entries"
@@ -1029,7 +1005,7 @@ def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Select (that is, get a view) by range
-    df = processor.select_dataframe_by_2d_range(
+    df = processor.select_by_2d_range(
         "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
     )
 
@@ -1043,7 +1019,7 @@ def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     assert (df["y"] >= -12000).sum() == 0, "Failed filtering."
 
     # Now compare with the filter by the same range
-    processor.filter_dataframe_by_2d_range(
+    processor.filter_by_2d_range(
         "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
     )
     assert processor.num_values == 1098, "Wrong total number of filtered entries"
@@ -1077,7 +1053,7 @@ def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Select (that is, get a view) by range
-    df = processor.select_dataframe_by_1d_range("tim", x_range=(0.0, 60.0))
+    df = processor.select_by_1d_range("tim", x_range=(0.0, 60.0))
 
     assert len(df.index) == 814, "Wrong total number of filtered entries"
     assert (df["tim"] < 0.0).sum() == 0, "Failed filtering."
@@ -1087,7 +1063,7 @@ def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
     df_stats = processor.calculate_statistics_on(df)
 
     # Not get the internal statistics after filtering on the same range
-    processor.filter_dataframe_by_1d_range("tim", (0.0, 60.0))
+    processor.filter_by_1d_range("tim", (0.0, 60.0))
 
     # Make sure all entries are the same
     assert (
@@ -1108,7 +1084,7 @@ def test_proper_application_of_global_filters():
     assert len(processor.filtered_dataframe.index) == 8
 
     # We filter out 2, and we should be left with 3 for 51 and 3 for 54 = 6
-    processor.filter_dataframe_by_1d_range("x", (0.0, 15.0))
+    processor.filter_by_1d_range("x", (0.0, 15.0))
     assert len(processor.filtered_dataframe.index) == 6
 
     state.min_num_loc_per_trace = 4
@@ -1120,7 +1096,7 @@ def test_proper_application_of_global_filters():
 
     # We filter out 2, and the remaining 3 should be suppressed by the global
     # filters since now state.min_num_loc_per_trace is 4.
-    processor.filter_dataframe_by_1d_range("x", (0.0, 15.0))
+    processor.filter_by_1d_range("x", (0.0, 15.0))
     assert len(processor.filtered_dataframe.index) == 0
 
     # FILTER 2D RANGE
@@ -1130,7 +1106,7 @@ def test_proper_application_of_global_filters():
     processor.reset()
 
     # We filter out 2, and we should be left with 3 for 51 and 3 for 54 = 6
-    processor.filter_dataframe_by_2d_range("x", "y", (0.0, 15.0), (3.0, 18.0))
+    processor.filter_by_2d_range("x", "y", (0.0, 15.0), (3.0, 18.0))
     assert len(processor.filtered_dataframe.index) == 6
 
     state.min_num_loc_per_trace = 4
@@ -1143,7 +1119,7 @@ def test_proper_application_of_global_filters():
 
     # We filter out 2, and the remaining 3 should be suppressed by the global
     # filters since now state.min_num_loc_per_trace is 4.
-    processor.filter_dataframe_by_2d_range("x", "y", (0.0, 15.0), (3.0, 18.0))
+    processor.filter_by_2d_range("x", "y", (0.0, 15.0), (3.0, 18.0))
     assert len(processor.filtered_dataframe.index) == 0
 
     # FILTER 1D SINGLE THRESHOLD
@@ -1190,7 +1166,7 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Select (that is, get a view) by range
-    processor.filter_dataframe_by_1d_range_complement("tim", x_range=(2000, 3000))
+    processor.filter_by_1d_range_complement("tim", x_range=(2000, 3000))
 
     assert (
         len(processor.filtered_dataframe.index) == 10600
@@ -1217,7 +1193,7 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
     processor.reset()
 
     # Select (that is, get a view) by range
-    processor.filter_dataframe_by_1d_range_complement("tim", x_range=(2000, 3000))
+    processor.filter_by_1d_range_complement("tim", x_range=(2000, 3000))
 
     assert (
         len(processor.filtered_dataframe.index) == 10053

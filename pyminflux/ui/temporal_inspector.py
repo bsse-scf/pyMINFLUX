@@ -197,7 +197,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         # Now process all bins
         for i in range(len(bin_edges) - 1):
             time_range = (bin_edges[i], bin_edges[i + 1])
-            df = self._minfluxprocessor.select_dataframe_by_1d_range("tim", time_range)
+            df = self._minfluxprocessor.select_by_1d_range("tim", time_range)
             if len(df.index) > 0:
                 stats = self._minfluxprocessor.calculate_statistics_on(df)
                 if std_err:
@@ -353,9 +353,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         mx_s = mx * self.time_resolution_sec
 
         # Filter
-        self._minfluxprocessor.filter_dataframe_by_1d_range_complement(
-            "tim", (mn_s, mx_s)
-        )
+        self._minfluxprocessor.filter_by_1d_range_complement("tim", (mn_s, mx_s))
 
         # Update the plot
         self.plot_selected()
@@ -374,7 +372,7 @@ class TemporalInspector(QDialog, Ui_TemporalInspector):
         mx_s = mx * self.time_resolution_sec
 
         # Filter
-        self._minfluxprocessor.filter_dataframe_by_1d_range("tim", (mn_s, mx_s))
+        self._minfluxprocessor.filter_by_1d_range("tim", (mn_s, mx_s))
 
         # Update the plot
         self.plot_selected()

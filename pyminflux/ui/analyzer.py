@@ -308,7 +308,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Apply the EFO filter if needed
         if self.state.efo_thresholds is not None:
-            self._minfluxprocessor.filter_dataframe_by_1d_range(
+            self._minfluxprocessor.filter_by_1d_range(
                 "efo", (self.state.efo_thresholds[0], self.state.efo_thresholds[1])
             )
 
@@ -324,7 +324,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Apply the CFR filter if needed
         if self.state.cfr_thresholds is not None:
-            self._minfluxprocessor.filter_dataframe_by_1d_range(
+            self._minfluxprocessor.filter_by_1d_range(
                 "cfr", (self.state.cfr_thresholds[0], self.state.cfr_thresholds[1])
             )
 
