@@ -93,6 +93,11 @@ class MinFluxProcessor:
         self.__selected_rows_array[self.current_fluorophore_id] = rows
 
     @property
+    def filtered_fluorophore_ids(self):
+        """Return the fluorophore IDs for current selection."""
+        return self.__fluorophore_ids.values[self.__selected_rows]
+
+    @property
     def is_3d(self) -> bool:
         """Return True if the acquisition is 3D.
 
