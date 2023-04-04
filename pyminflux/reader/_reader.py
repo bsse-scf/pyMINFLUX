@@ -139,7 +139,19 @@ class MinFluxReader:
     @classmethod
     def processed_properties(cls):
         """Returns the properties read from the file that correspond to the processed dataframe column names."""
-        return ["tid", "tim", "x", "y", "z", "efo", "cfr", "eco", "dcr", "dwell", "fluo"]
+        return [
+            "tid",
+            "tim",
+            "x",
+            "y",
+            "z",
+            "efo",
+            "cfr",
+            "eco",
+            "dcr",
+            "dwell",
+            "fluo",
+        ]
 
     @classmethod
     def raw_properties(cls):
