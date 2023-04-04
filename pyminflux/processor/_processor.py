@@ -16,7 +16,7 @@ class MinFluxProcessor:
         "__current_fluorophore_id",
         "__filtered_stats_dataframe",
         "__fluorophore_ids",
-        "__selected_rows_array",
+        "__selected_rows_dict",
         "__stats_to_be_recomputed",
         "__weighted_localizations",
         "__weighted_localizations_to_be_recomputed",
@@ -43,10 +43,10 @@ class MinFluxProcessor:
         self.__filtered_stats_dataframe = None
 
         # Keep separate arrays of booleans to cache selection state for all fluorophores IDs.
-        self.__selected_rows_array = []
+        self.__selected_rows_dict = None
 
         # Keep track of the selected fluorophore
-        self.__current_fluorophore_id = 0
+        self.__current_fluorophore_id = 1
 
         # Cache the weighted, averaged TID positions
         self.__weighted_localizations = None
@@ -64,38 +64,35 @@ class MinFluxProcessor:
     def __init_selected_rows_array(self):
         """Initialize the selected rows array."""
         # How many fluorophores do we have?
-        for i in range(self.num_fluorophorses + 1):
-            self.__selected_rows_array.append(
-                pd.Series(
-                    data=np.ones(len(self.full_dataframe.index), dtype=bool),
-                    index=self.full_dataframe.index,
-                )
-            )
+        self.__selected_rows_dict = {
+            1: pd.Series(
+                data=np.ones(len(self.full_dataframe.index), dtype=bool),
+                index=self.full_dataframe.index,
+            ),
+            2: pd.Series(
+                data=np.ones(len(self.full_dataframe.index), dtype=bool),
+                index=self.full_dataframe.index,
+            ),
+        }
 
     @property
     def __selected_rows(self):
         """Return the selected rows as a function of current fluorophore ID."""
-        if len(self.__selected_rows_array) == 0:
+        if self.__selected_rows_dict is None:
             self.__init_selected_rows_array()
-        return self.__selected_rows_array[self.current_fluorophore_id]
+        return self.__selected_rows_dict[self.current_fluorophore_id]
 
     @__selected_rows.setter
     def __selected_rows(self, rows):
         """Set the passed selected rows for current fluorophore ID."""
-        if len(self.__selected_rows_array) == 0:
+        if self.__selected_rows_dict is None:
             self.__init_selected_rows_array()
-        self.__selected_rows_array[self.current_fluorophore_id] = rows
+        self.__selected_rows_dict[self.current_fluorophore_id] = rows
 
     @property
-    def filtered_fluorophore_ids(self):
+    def filtered_fluorophore_ids(self) -> np.ndarray:
         """Return the fluorophore IDs for current selection."""
-        if self.current_fluorophore_id == 0:
-            return self.full_dataframe["fluo"].values[self.__selected_rows]
-        else:
-            selected = (self.__selected_rows_array[self.current_fluorophore_id]) & (
-                self.full_dataframe["fluo"].values == self.current_fluorophore_id
-            )
-            return self.current_fluorophore_id * np.ones(selected.sum())
+        return self.filtered_dataframe["fluo"].values
 
     @property
     def is_3d(self) -> bool:
@@ -133,17 +130,11 @@ class MinFluxProcessor:
     def current_fluorophore_id(self, fluorophore_id: int) -> None:
         """Set current fluorophore ID (0 for all)."""
 
-        # If fluorophore_id is 0, the selection is removed
-        if fluorophore_id == 0:
-            self.__current_fluorophore_id = fluorophore_id
-        else:
-            # Check that the passed fluorophore_id is valid
-            valid_ids = np.unique(self.full_dataframe["fluo"].values)
-            if fluorophore_id not in valid_ids:
-                raise ValueError(f"Only {valid_ids} are valid IDs.")
+        if fluorophore_id not in [1, 2]:
+            raise ValueError(f"Only 1 or 2 are valid fluorophore IDs.")
 
-            # Set the new fluorophore_id
-            self.__current_fluorophore_id = fluorophore_id
+        # Set the new fluorophore_id
+        self.__current_fluorophore_id = fluorophore_id
 
         # Apply the global filters
         self._apply_global_filters()
@@ -180,8 +171,6 @@ class MinFluxProcessor:
         """
         if self.full_dataframe is None:
             return None
-        if self.current_fluorophore_id == 0:
-            return self.full_dataframe.loc[self.__selected_rows]
         df = self.full_dataframe.loc[
             self.full_dataframe["fluo"] == self.current_fluorophore_id
         ]
@@ -229,13 +218,13 @@ class MinFluxProcessor:
 
         # Clear the selection per fluorophore; they will be reinitialized as
         # all selected at the first access.
-        self.__selected_rows_array = []
+        self.__init_selected_rows_array()
 
         # Reset the mapping to the corresponding fluorophore
         self.full_dataframe["fluo"] = 1
 
         # Default fluorophore is 0 (no selection)
-        self.current_fluorophore_id = 0
+        self.current_fluorophore_id = 1
 
         # Apply global filters
         self._apply_global_filters()
@@ -247,7 +236,7 @@ class MinFluxProcessor:
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
         self.full_dataframe["fluo"] = fluorophore_ids
-        self.__selected_rows_array = []
+        self.__init_selected_rows_array()
         self._apply_global_filters()
 
     def select_by_indices(
