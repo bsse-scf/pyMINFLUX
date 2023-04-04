@@ -167,7 +167,6 @@ class Ui_PlotterToolbar(object):
         self.cbColorCodeSelector = QComboBox(PlotterToolbar)
         self.cbColorCodeSelector.addItem("")
         self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.addItem("")
         self.cbColorCodeSelector.setObjectName("cbColorCodeSelector")
 
         self.horizontalLayout.addWidget(self.cbColorCodeSelector)
@@ -210,12 +209,6 @@ class Ui_PlotterToolbar(object):
         )
         self.cbColorCodeSelector.setItemText(
             1, QCoreApplication.translate("PlotterToolbar", "Color-code by TID", None)
-        )
-        self.cbColorCodeSelector.setItemText(
-            2,
-            QCoreApplication.translate(
-                "PlotterToolbar", "Color-code by fluorophore ID", None
-            ),
         )
 
     # retranslateUi

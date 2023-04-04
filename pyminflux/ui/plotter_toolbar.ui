@@ -193,11 +193,6 @@
        <string>Color-code by TID</string>
       </property>
      </item>
-     <item>
-      <property name="text">
-       <string>Color-code by fluorophore ID</string>
-      </property>
-     </item>
     </widget>
    </item>
    <item>
