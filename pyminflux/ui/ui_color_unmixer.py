@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'color_unmixer.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -42,6 +42,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -77,17 +78,12 @@ class Ui_ColorUnmixer(object):
 
         self.commands_layout.addWidget(self.lbNumFluorophores)
 
-        self.leNumFluorophores = QLineEdit(ColorUnmixer)
-        self.leNumFluorophores.setObjectName("leNumFluorophores")
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.leNumFluorophores.sizePolicy().hasHeightForWidth()
-        )
-        self.leNumFluorophores.setSizePolicy(sizePolicy)
+        self.cbNumFluorophores = QComboBox(ColorUnmixer)
+        self.cbNumFluorophores.addItem("")
+        self.cbNumFluorophores.addItem("")
+        self.cbNumFluorophores.setObjectName("cbNumFluorophores")
 
-        self.commands_layout.addWidget(self.leNumFluorophores)
+        self.commands_layout.addWidget(self.cbNumFluorophores)
 
         self.lbBinSize = QLabel(ColorUnmixer)
         self.lbBinSize.setObjectName("lbBinSize")
@@ -101,6 +97,9 @@ class Ui_ColorUnmixer(object):
 
         self.pbDetect = QPushButton(ColorUnmixer)
         self.pbDetect.setObjectName("pbDetect")
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.pbDetect.sizePolicy().hasHeightForWidth())
         self.pbDetect.setSizePolicy(sizePolicy)
 
@@ -134,6 +133,13 @@ class Ui_ColorUnmixer(object):
         self.lbNumFluorophores.setText(
             QCoreApplication.translate("ColorUnmixer", "Number of fluorophores", None)
         )
+        self.cbNumFluorophores.setItemText(
+            0, QCoreApplication.translate("ColorUnmixer", "1", None)
+        )
+        self.cbNumFluorophores.setItemText(
+            1, QCoreApplication.translate("ColorUnmixer", "2", None)
+        )
+
         self.lbBinSize.setText(
             QCoreApplication.translate(
                 "ColorUnmixer", "Bin size (set to 0 for auto)", None
