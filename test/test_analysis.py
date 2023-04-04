@@ -81,7 +81,7 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
 
     # Find the first peak bounds
     lower_bound, upper_bound = find_first_peak_bounds(
-        n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5, qc=False
+        n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5
     )
     assert (
         pytest.approx(lower_bound, 1e-4) == 13821.63722748869
@@ -135,7 +135,7 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
 
     # Find the first peak bounds
     lower_bound, upper_bound = find_first_peak_bounds(
-        n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5, qc=False
+        n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5
     )
     assert pytest.approx(lower_bound, 1e-4) == 12000.0, "The lower bound is wrong!"
     assert pytest.approx(upper_bound, 1e-4) == 23000.0, "The upper bound is wrong!"
@@ -185,7 +185,7 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
 
     # Find the first peak bounds
     lower_bound, upper_bound = find_first_peak_bounds(
-        n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5, qc=False
+        n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5
     )
     assert pytest.approx(lower_bound, 1e-4) == 11600, "The lower bound is wrong!"
     assert (

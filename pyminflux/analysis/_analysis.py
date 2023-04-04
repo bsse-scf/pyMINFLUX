@@ -1,13 +1,10 @@
 import math
 from typing import Optional
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 from scipy.ndimage import median_filter
 from scipy.signal import find_peaks
-from scipy.spatial.distance import cdist
-from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 
 
 def hist_bins(values: np.ndarray, bin_size: float) -> tuple:
@@ -243,7 +240,6 @@ def find_first_peak_bounds(
     bins: np.ndarray,
     min_rel_prominence: float = 0.01,
     med_filter_support: int = 5,
-    qc: bool = False,
 ):
     """Finds the first peak in the histogram and return the lower and upper bounds.
 
@@ -261,9 +257,6 @@ def find_first_peak_bounds(
 
     med_filter_support: int
         Support for the median filter to suppress some spurious noisy peaks in the counts.
-
-    qc: bool
-        Whether to create quality control figures.
 
     Returns
     -------
@@ -290,9 +283,6 @@ def find_first_peak_bounds(
 
     # If we did not find any local maxima, we return failure
     if len(peaks) == 0:
-        if qc:
-            fig, ax = plt.subplots(1, 1, figsize=(12, 12), dpi=300)
-            ax.plot(bins, x)
         return None, None
 
     # First peak position
@@ -300,20 +290,6 @@ def find_first_peak_bounds(
 
     # If we do not have any local minima, we return the beginning and end of the bins range
     if len(peaks_inv) == 0:
-        if qc:
-            fig, ax = plt.subplots(1, 1, figsize=(12, 12), dpi=300)
-            ax.plot(bins, x)
-            ax.plot(bins[peaks], x[peaks], "x")
-            ax.plot(bins, np.zeros_like(x), "--", color="gray")
-            ax.vlines(
-                x=bins[peaks],
-                ymin=x[peaks] - properties["prominences"],
-                ymax=x[peaks],
-                color="C1",
-            )
-            ax.vlines(x=bins[0], ymin=x.min(), ymax=x.max(), color="r")
-            ax.vlines(x=bins[-1], ymin=x.min(), ymax=x.max(), color="r")
-            plt.show()
         return bins[0], bins[-1]
 
     # Do we have a minimum on the left of the first peak?
@@ -329,23 +305,6 @@ def find_first_peak_bounds(
         upper_bound = bins[-1]
     else:
         upper_bound = bins[candidates_right[0]]
-
-    # Plot results
-    if qc:
-        fig, ax = plt.subplots(1, 1, figsize=(12, 12), dpi=300)
-        ax.plot(bins, x)
-        ax.plot(bins[peaks], x[peaks], "x")
-        ax.plot(bins[peaks_inv], x[peaks_inv], "x")
-        ax.plot(bins, np.zeros_like(x), "--", color="gray")
-        ax.vlines(
-            x=bins[peaks],
-            ymin=x[peaks] - properties["prominences"],
-            ymax=x[peaks],
-            color="C1",
-        )
-        ax.vlines(x=lower_bound, ymin=x.min(), ymax=x.max(), color="r")
-        ax.vlines(x=upper_bound, ymin=x.min(), ymax=x.max(), color="r")
-        plt.show()
 
     return lower_bound, upper_bound
 
