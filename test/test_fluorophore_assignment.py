@@ -1248,7 +1248,7 @@ def test_extract_filtered_fluorophore_ids():
         len(processor.filtered_dataframe.index) == 22
     ), "Unexpected number of entries."
 
-    # We filter with a single threshold that should return 18 ID 2 and just one ID 1 fluorophore.
+    # We filter with a single threshold that should return just one ID 1 fluorophore.
     x_thresh = 20.0
     processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
 
@@ -1452,3 +1452,173 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
     assert (ids == 2).sum() == len(
         processor.filtered_dataframe.index
     ), "Unexpected number of ID 2 fluorophores."
+
+
+def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
+    """Test retrieving the join of the fluorophore 1 and 2 filtered datasets."""
+
+    # Initialize State
+    state = State()
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Check that the global filters have been applied (and nothing has been dropped)
+    assert (
+        len(processor.filtered_dataframe.index) == 40
+    ), "Unexpected number of entries."
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Check that we have the default fluorophore (1)
+    assert processor.current_fluorophore_id == 1, "Default fluorophore ID must be 1."
+
+    # Now, the data for fluorophore 1 will be returned
+    assert (
+        len(processor.filtered_dataframe.index) == 22
+    ), "Unexpected number of entries."
+
+    # We filter with a single threshold that should return 10 ID 1 fluorophore.
+    x_thresh = 10.0
+    processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
+
+    # Keep a copy of the filtered_dataframe for later testing
+    df_1 = processor.filtered_dataframe.copy()
+
+    # Get the fluorophore IDs
+    ids = processor.filtered_fluorophore_ids
+
+    # Check
+    assert len(processor.filtered_dataframe.index) == 10, "Expected 10 entry."
+    assert len(processor.filtered_dataframe.index) == len(
+        ids
+    ), "The number of fluorophore IDs must match the number of df entries."
+    assert (ids == 1).sum() == 10, "Unexpected number of ID 1 fluorophores."
+    assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
+
+    # Now change to fluorophore ID 2. This reset current filters.
+    processor.current_fluorophore_id = 2
+
+    # Check that there are 18 entries
+    assert (
+        len(processor.filtered_dataframe.index) == 18
+    ), "Unexpected number of entries."
+
+    # We filter with a single threshold that should return 8 ID 2 fluorophore.
+    x_thresh = 40.0
+    processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
+
+    # Get the fluorophore IDs
+    ids = processor.filtered_fluorophore_ids
+
+    # Check
+    assert len(processor.filtered_dataframe.index) == 8, "Expected 8 entries."
+    assert len(processor.filtered_dataframe.index) == len(
+        ids
+    ), "The number of fluorophore IDs must match the number of df entries."
+    assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
+    assert (ids == 2).sum() == 8, "Unexpected number of ID 2 fluorophores."
+
+    # Keep a copy of the filtered_dataframe for later testing
+    df_2 = processor.filtered_dataframe.copy()
+
+    # Now compare the join of df_1 and df_2 with the result of processor.filtered_dataframe_all
+    df_all = processor.filtered_dataframe_all
+    df_join = pd.concat([df_1, df_2]).sort_index()
+    # Make sure all entries are the same
+    assert (
+        (df_all == df_join).all().all()
+    ), "The selected and filtered set are not identical."
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 4
+    #
+
+    # Now we filter all short-lived traces
+    state.min_num_loc_per_trace = 4
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Check that the global filters have been applied (and nothing has been dropped)
+    assert (
+        len(processor.filtered_dataframe.index) == 35
+    ), "Unexpected number of entries."
+
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+
+    # Check that we have the default fluorophore (1)
+    assert processor.current_fluorophore_id == 1, "Default fluorophore ID must be 1."
+
+    # Now, the data for fluorophore 1 will be returned
+    assert (
+        len(processor.filtered_dataframe.index) == 21
+    ), "Unexpected number of entries."
+
+    # We filter with a single threshold that should return 10 ID 1 fluorophore.
+    x_thresh = 10.0
+    processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
+
+    # Keep a copy of the filtered_dataframe for later testing
+    df_1 = processor.filtered_dataframe.copy()
+
+    # Get the fluorophore IDs
+    ids = processor.filtered_fluorophore_ids
+
+    # Check
+    assert len(processor.filtered_dataframe.index) == 4, "Expected 10 entry."
+    assert len(processor.filtered_dataframe.index) == len(
+        ids
+    ), "The number of fluorophore IDs must match the number of df entries."
+    assert (ids == 1).sum() == 4, "Unexpected number of ID 1 fluorophores."
+    assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
+
+    # Now change to fluorophore ID 2. This reset current filters.
+    processor.current_fluorophore_id = 2
+
+    # Check that there are 14 entries
+    assert (
+        len(processor.filtered_dataframe.index) == 14
+    ), "Unexpected number of entries."
+
+    # We filter with a single threshold that should return 8 ID 2 fluorophore.
+    x_thresh = 40.0
+    processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
+
+    # Get the fluorophore IDs
+    ids = processor.filtered_fluorophore_ids
+
+    # Check
+    assert len(processor.filtered_dataframe.index) == 4, "Expected 8 entries."
+    assert len(processor.filtered_dataframe.index) == len(
+        ids
+    ), "The number of fluorophore IDs must match the number of df entries."
+    assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
+    assert (ids == 2).sum() == 4, "Unexpected number of ID 2 fluorophores."
+
+    # Keep a copy of the filtered_dataframe for later testing
+    df_2 = processor.filtered_dataframe.copy()
+
+    # Now compare the join of df_1 and df_2 with the result of processor.filtered_dataframe_all
+    df_all = processor.filtered_dataframe_all
+    df_join = pd.concat([df_1, df_2]).sort_index()
+
+    # Make sure all entries are the same
+    assert (
+        (df_all == df_join).all().all()
+    ), "The selected and filtered set are not identical."

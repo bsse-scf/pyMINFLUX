@@ -61,7 +61,7 @@ class MinFluxProcessor:
         # Apply the global filters
         self._apply_global_filters()
 
-    def __init_selected_rows_array(self):
+    def __init_selected_rows_dict(self):
         """Initialize the selected rows array."""
         # How many fluorophores do we have?
         self.__selected_rows_dict = {
@@ -79,14 +79,14 @@ class MinFluxProcessor:
     def __selected_rows(self):
         """Return the selected rows as a function of current fluorophore ID."""
         if self.__selected_rows_dict is None:
-            self.__init_selected_rows_array()
+            self.__init_selected_rows_dict()
         return self.__selected_rows_dict[self.current_fluorophore_id]
 
     @__selected_rows.setter
     def __selected_rows(self, rows):
         """Set the passed selected rows for current fluorophore ID."""
         if self.__selected_rows_dict is None:
-            self.__init_selected_rows_array()
+            self.__init_selected_rows_dict()
         self.__selected_rows_dict[self.current_fluorophore_id] = rows
 
     @property
@@ -160,6 +160,24 @@ class MinFluxProcessor:
         return self.__minfluxreader.processed_dataframe
 
     @property
+    def filtered_dataframe_all(self) -> Union[None, pd.DataFrame]:
+        """Return joint dataframe for all fluorophores and with all filters applied.
+
+        Returns
+        -------
+
+        filtered_dataframe_all: Union[None, pd.DataFrame]
+            A Pandas dataframe or None if no file was loaded.
+        """
+        if self.full_dataframe is None:
+            return None
+
+        # Extract combination of fluorophore 1 and 2 filtered dataframes
+        mask_1 = (self.full_dataframe["fluo"] == 1) & self.__selected_rows_dict[1]
+        mask_2 = (self.full_dataframe["fluo"] == 2) & self.__selected_rows_dict[2]
+        return self.full_dataframe.loc[mask_1 | mask_2]
+
+    @property
     def filtered_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return dataframe with all filters applied.
 
@@ -218,7 +236,7 @@ class MinFluxProcessor:
 
         # Clear the selection per fluorophore; they will be reinitialized as
         # all selected at the first access.
-        self.__init_selected_rows_array()
+        self.__init_selected_rows_dict()
 
         # Reset the mapping to the corresponding fluorophore
         self.full_dataframe["fluo"] = 1
@@ -236,7 +254,7 @@ class MinFluxProcessor:
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
         self.full_dataframe["fluo"] = fluorophore_ids
-        self.__init_selected_rows_array()
+        self.__init_selected_rows_dict()
         self._apply_global_filters()
 
     def select_by_indices(
