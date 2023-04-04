@@ -9,7 +9,7 @@ from pyminflux.state import State
 from pyminflux.ui.ui_time_inspector import Ui_TimeInspector
 
 
-class TemporalInspector(QDialog, Ui_TimeInspector):
+class TimeInspector(QDialog, Ui_TimeInspector):
     """
     A QDialog to perform temporal analysis and selection.
     """

@@ -45,12 +45,6 @@ class MinFluxProcessor:
         # Keep separate arrays of booleans to cache selection state for all fluorophores IDs.
         self.__selected_rows_array = []
 
-        # Keep a separate array of integers to store the mapping to the corresponding fluorophore
-        self.__fluorophore_ids = pd.Series(
-            data=np.ones(len(self.full_dataframe.index), dtype=int),
-            index=self.full_dataframe.index,
-        )
-
         # Keep track of the selected fluorophore
         self.__current_fluorophore_id = 0
 
@@ -96,10 +90,10 @@ class MinFluxProcessor:
     def filtered_fluorophore_ids(self):
         """Return the fluorophore IDs for current selection."""
         if self.current_fluorophore_id == 0:
-            return self.__fluorophore_ids.values[self.__selected_rows]
+            return self.full_dataframe["fluo"].values[self.__selected_rows]
         else:
             selected = (self.__selected_rows_array[self.current_fluorophore_id]) & (
-                self.__fluorophore_ids == self.current_fluorophore_id
+                self.full_dataframe["fluo"].values == self.current_fluorophore_id
             )
             return self.current_fluorophore_id * np.ones(selected.sum())
 
@@ -144,7 +138,7 @@ class MinFluxProcessor:
             self.__current_fluorophore_id = fluorophore_id
         else:
             # Check that the passed fluorophore_id is valid
-            valid_ids = np.unique(self.__fluorophore_ids.values)
+            valid_ids = np.unique(self.full_dataframe["fluo"].values)
             if fluorophore_id not in valid_ids:
                 raise ValueError(f"Only {valid_ids} are valid IDs.")
 
@@ -160,7 +154,7 @@ class MinFluxProcessor:
     @property
     def num_fluorophorses(self) -> int:
         """Return the number of fluorophores."""
-        return len(np.unique(self.__fluorophore_ids.values))
+        return len(np.unique(self.full_dataframe["fluo"].values))
 
     @property
     def full_dataframe(self) -> Union[None, pd.DataFrame]:
@@ -189,7 +183,7 @@ class MinFluxProcessor:
         if self.current_fluorophore_id == 0:
             return self.full_dataframe.loc[self.__selected_rows]
         df = self.full_dataframe.loc[
-            self.__fluorophore_ids == self.current_fluorophore_id
+            self.full_dataframe["fluo"] == self.current_fluorophore_id
         ]
         return df.loc[self.__selected_rows]
 
@@ -238,10 +232,7 @@ class MinFluxProcessor:
         self.__selected_rows_array = []
 
         # Reset the mapping to the corresponding fluorophore
-        self.__fluorophore_ids = pd.Series(
-            data=np.ones(len(self.full_dataframe.index), dtype=int),
-            index=self.full_dataframe.index,
-        )
+        self.full_dataframe["fluo"] = 1
 
         # Default fluorophore is 0 (no selection)
         self.current_fluorophore_id = 0
@@ -255,7 +246,7 @@ class MinFluxProcessor:
             raise ValueError(
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
-        self.__fluorophore_ids[:] = fluorophore_ids
+        self.full_dataframe["fluo"] = fluorophore_ids
         self.__selected_rows_array = []
         self._apply_global_filters()
 

@@ -116,6 +116,7 @@ class MockMinFluxReader:
         self.__df["x"] = x
         self.__df["y"] = y
         self.__df["z"] = z
+        self.__df["fluo"] = 1
 
     @property
     def processed_dataframe(self):
