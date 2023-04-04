@@ -93,12 +93,9 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         self.ui.cbFluorophoreIndex.clear()
 
         # Add new items
-        if num_fluorophores < 2:
-            self.ui.cbFluorophoreIndex.addItems(["All"])
-        else:
-            self.ui.cbFluorophoreIndex.addItems(
-                ["All"] + list([str(i + 1) for i in range(num_fluorophores)])
-            )
+        self.ui.cbFluorophoreIndex.addItems(
+            list([str(i + 1) for i in range(num_fluorophores)])
+        )
 
         # Release the blocker
         blocker.unblock()
@@ -115,5 +112,5 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         if index == -1:
             return
 
-        # An index of 0 means no selection, the others map to the fluorophore id
-        self.fluorophore_id_changed.emit(index)
+        # The fluorophore index is 1 + the combobox current index
+        self.fluorophore_id_changed.emit(index + 1)

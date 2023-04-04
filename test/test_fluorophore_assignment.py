@@ -116,6 +116,7 @@ class MockMinFluxReader:
         self.__df["x"] = x
         self.__df["y"] = y
         self.__df["z"] = z
+        self.__df["fluo"] = 1
 
     @property
     def processed_dataframe(self):
@@ -277,8 +278,8 @@ def test_assign_fluorophore_id(extract_raw_npy_data_files):
     # Assign the fluorophore IDs
     processor.set_fluorophore_ids(ids)
 
-    # Make sure that the default fluorophore ID is 0 (that is, no selection)
-    assert processor.current_fluorophore_id == 0, "Default fluorophore ID must be 0."
+    # Make sure that the default fluorophore ID is 1
+    assert processor.current_fluorophore_id == 1, "Default fluorophore ID must be 1."
 
     # Set current_fluorophore ID to 1
     processor.current_fluorophore_id = 1
@@ -472,10 +473,8 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     reader = MockMinFluxReader()
     processor = MinFluxProcessor(reader)
 
-    # Check that no fluorophore is selected
-    assert (
-        processor.current_fluorophore_id == 0
-    ), "Default fluorophore must be 0 (none selected)."
+    # Check that fluorophore 1 is selected
+    assert processor.current_fluorophore_id == 1, "Default fluorophore must be 1."
 
     # Get statistics
     stats = processor.filtered_dataframe_stats
@@ -516,10 +515,8 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Reset the processor
     processor.reset()
 
-    # Check that no fluorophore is selected
-    assert (
-        processor.current_fluorophore_id == 0
-    ), "Default fluorophore must be 0 (none selected)."
+    # Check that fluorophore 1 is selected
+    assert processor.current_fluorophore_id == 1, "Default fluorophore must be 1."
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -566,10 +563,8 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Reset the processor
     processor.reset()
 
-    # Check that no fluorophore is selected
-    assert (
-        processor.current_fluorophore_id == 0
-    ), "Default fluorophore must be 0 (none selected)."
+    # Check that fluorophore 1 is selected
+    assert processor.current_fluorophore_id == 1, "Default fluorophore must be 1."
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -623,10 +618,8 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Reset the processor
     processor.reset()
 
-    # Check that no fluorophore is selected
-    assert (
-        processor.current_fluorophore_id == 0
-    ), "Default fluorophore must be 0 (none selected)."
+    # Check that fluorophore 1 is selected
+    assert processor.current_fluorophore_id == 1, "Default fluorophore must be 1."
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -652,10 +645,8 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Reset the processor
     processor.reset()
 
-    # Check that no fluorophore is selected
-    assert (
-        processor.current_fluorophore_id == 0
-    ), "Default fluorophore must be 0 (none selected)."
+    # Check that fluorophore 1 is selected
+    assert processor.current_fluorophore_id == 1, "Default fluorophore must be 1."
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -691,10 +682,8 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     reader = MockMinFluxReader()
     processor = MinFluxProcessor(reader)
 
-    # Check that no fluorophore is selected
-    assert (
-        processor.current_fluorophore_id == 0
-    ), "Default fluorophore must be 0 (none selected)."
+    # Check that fluorophore 1 is selected
+    assert processor.current_fluorophore_id == 1, "Default fluorophore must be 1."
 
     # Get statistics
     stats = processor.filtered_dataframe_stats
@@ -735,10 +724,8 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Reset the processor
     processor.reset()
 
-    # Check that no fluorophore is selected
-    assert (
-        processor.current_fluorophore_id == 0
-    ), "Default fluorophore must be 0 (none selected)."
+    # Check that fluorophore 1 is selected
+    assert processor.current_fluorophore_id == 1, "Default fluorophore must be 1."
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -783,10 +770,8 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Reset the processor
     processor.reset()
 
-    # Check that no fluorophore is selected
-    assert (
-        processor.current_fluorophore_id == 0
-    ), "Default fluorophore must be 0 (none selected)."
+    # Check that fluorophore 1 is selected
+    assert processor.current_fluorophore_id == 1, "Default fluorophore must be 1."
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1247,46 +1232,23 @@ def test_extract_filtered_fluorophore_ids():
     reader = MockMinFluxReader()
     processor = MinFluxProcessor(reader)
 
-    # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
-
     # Check that the global filters have been applied (and nothing has been dropped)
     assert (
         len(processor.filtered_dataframe.index) == 40
     ), "Unexpected number of entries."
 
-    # Set current fluorophore to 0
-    processor.current_fluorophore_id = 0
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
-    # Check that there are still 40 entries
-    assert (
-        len(processor.filtered_dataframe.index) == 40
-    ), "Unexpected number of entries."
+    # Check that we have the default fluorophore (1)
+    assert processor.current_fluorophore_id == 1, "Default fluorophore ID must be 1."
 
-    # We filter with a single threshold that should return 18 ID 2 and just one ID 1 fluorophore.
-    x_thresh = 20.0
-    processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
-
-    # Get the fluorophore IDs
-    ids = processor.filtered_fluorophore_ids
-
-    # Check
-    assert len(processor.filtered_dataframe.index) == 19, "Expected 19 entries."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The number of fluorophore IDs must match the number of df entries."
-    assert (ids == 1).sum() == 1, "Unexpected number of ID 1 fluorophores."
-    assert (ids == 2).sum() == 18, "Unexpected number of ID 2 fluorophores."
-
-    # Now change to fluorophore ID 1. This reset current filters.
-    processor.current_fluorophore_id = 1
-
-    # Check that there are 22 entries
+    # Now, the data for fluorophore 1 will be returned
     assert (
         len(processor.filtered_dataframe.index) == 22
     ), "Unexpected number of entries."
 
-    # Same filter
+    # We filter with a single threshold that should return 18 ID 2 and just one ID 1 fluorophore.
     x_thresh = 20.0
     processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
 
@@ -1301,7 +1263,7 @@ def test_extract_filtered_fluorophore_ids():
     assert (ids == 1).sum() == 1, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
 
-    # Finally, change to fluorophore ID 2. This reset current filters.
+    # Now change to fluorophore ID 2. This reset current filters.
     processor.current_fluorophore_id = 2
 
     # Check that there are 18 entries
@@ -1339,33 +1301,6 @@ def test_extract_filtered_fluorophore_ids():
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
-
-    # Set current fluorophore to 0
-    processor.current_fluorophore_id = 0
-
-    # Check that the global filters have been applied
-    assert len(processor.filtered_dataframe.index) == 35
-
-    # We filter with a single threshold that should return 18 ID 2 and just one ID 1 fluorophore.
-    x_thresh = 20.0
-    processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
-
-    # Get the fluorophore IDs
-    ids = processor.filtered_fluorophore_ids
-
-    # Check
-    assert len(processor.filtered_dataframe.index) == 14, "Expected 14 entries."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The number of fluorophore IDs must match the number of df entries."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The selection should be empty!"
-    assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
-    assert (ids == 2).sum() == 14, "Unexpected number of ID 2 fluorophores."
-
-    # Now change to fluorophore ID 1. This reset current filters.
-    processor.current_fluorophore_id = 1
 
     # Check that there are 21 entries
     assert (
@@ -1427,9 +1362,6 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
     reader = MockFromRealDataMinFluxReader()
     processor = MinFluxProcessor(reader)
 
-    # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
-
     # Consistency check
     assert len(reader.processed_dataframe.index) == len(reader.test_fluorophore_ids)
 
@@ -1438,33 +1370,12 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
         len(processor.filtered_dataframe.index) == 17955
     ), "Unexpected number of entries."
 
-    # Set current fluorophore to 0
-    processor.current_fluorophore_id = 0
-
-    # Check that there are still 17955 entries
-    assert (
-        len(processor.filtered_dataframe.index) == 17955
-    ), "Unexpected number of entries."
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     #
-    # First, switch through fluorophore IDs to check that the number of returned items is correct.
+    # Switch through fluorophore IDs to check that the number of returned items is correct.
     #
-
-    # Fluorophore ID = 0
-    processor.current_fluorophore_id = 0
-    ids = processor.filtered_fluorophore_ids
-    assert (
-        len(processor.filtered_dataframe.index) == 17955
-    ), "Unexpected number of entries."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "Unexpected number of entries."
-    assert (ids == 1).sum() == (
-        reader.test_fluorophore_ids == 1
-    ).sum(), "Unexpected number of ID 1 fluorophores."
-    assert (ids == 2).sum() == (
-        reader.test_fluorophore_ids == 2
-    ).sum(), "Unexpected number of ID 2 fluorophores."
 
     # Fluorophore ID = 1
     processor.current_fluorophore_id = 1
@@ -1503,9 +1414,6 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
     reader = MockFromRealDataMinFluxReader()
     processor = MinFluxProcessor(reader)
 
-    # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
-
     # Consistency check
     assert len(reader.processed_dataframe.index) == len(reader.test_fluorophore_ids)
 
@@ -1514,32 +1422,12 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
         len(processor.filtered_dataframe.index) == 16281
     ), "Unexpected number of entries."
 
-    # Set current fluorophore to 0
-    processor.current_fluorophore_id = 0
-
-    # Check that there are still 16281 entries (because of global filtering)
-    assert (
-        len(processor.filtered_dataframe.index) == 16281
-    ), "Unexpected number of entries."
+    # Reassign the fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
 
     #
-    # First, switch through fluorophore IDs to check that the number of returned items is correct.
+    # Switch through fluorophore IDs to check that the number of returned items is correct.
     #
-
-    # Fluorophore ID = 0
-    processor.current_fluorophore_id = 0
-    ids = processor.filtered_fluorophore_ids
-    assert (
-        len(processor.filtered_dataframe.index) == 16281
-    ), "Unexpected number of entries."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "Unexpected number of entries."
-    assert (ids == 1).sum() + (ids == 2).sum() == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected partition of fluorophores."
-    assert (ids == 1).sum() == 11544, "Unexpected number of ID 1 fluorophores."
-    assert (ids == 2).sum() == 4737, "Unexpected number of ID 2 fluorophores."
 
     # Fluorophore ID = 1
     processor.current_fluorophore_id = 1

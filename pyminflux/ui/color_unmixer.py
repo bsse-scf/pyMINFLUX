@@ -33,8 +33,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
         # Set up ui elements
         self.ui.pbAssign.setEnabled(False)
-        self.ui.leNumFluorophores.setValidator(QIntValidator(bottom=1))
-        self.ui.leNumFluorophores.setText(str(self.state.num_fluorophores))
         self.ui.leBinSize.setValidator(QDoubleValidator(bottom=0.0))
         self.ui.leBinSize.setText(str(self.state.dcr_bin_size))
 
@@ -64,7 +62,9 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.main_layout.addWidget(self.plot_widget)
 
         # Add connections
-        self.ui.leNumFluorophores.textChanged.connect(self.persist_num_fluorophores)
+        self.ui.cbNumFluorophores.currentIndexChanged.connect(
+            self.persist_num_fluorophores
+        )
         self.ui.leBinSize.textChanged.connect(self.persist_dcr_bin_size)
         self.ui.leBinSize.editingFinished.connect(self.plot_dcr_histogram)
         self.ui.pbDetect.clicked.connect(self.detect_fluorophores)
@@ -80,13 +80,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
     @Slot(str, name="persist_num_fluorophores")
     def persist_num_fluorophores(self, text):
-        try:
-            num_fluorophores = int(text)
-            if num_fluorophores < 1:
-                num_fluorophores = 1
-            self.ui.leNumFluorophores.setText(str(num_fluorophores))
-        except ValueError as _:
-            return
+        num_fluorophores = self.ui.cbNumFluorophores.currentIndex() + 1
         self.state.num_fluorophores = num_fluorophores
         self.ui.pbAssign.setEnabled(False)
 

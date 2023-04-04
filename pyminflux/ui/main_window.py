@@ -24,7 +24,7 @@ from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
-from pyminflux.ui.time_inspector import TemporalInspector
+from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 
 
@@ -407,8 +407,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_inspector(self):
         """Initialize and open the temporal inspector."""
         if self.inspector is None:
-            self.inspector = TemporalInspector(self.minfluxprocessor, parent=self)
+            self.inspector = TimeInspector(self.minfluxprocessor, parent=self)
             self.inspector.dataset_time_filtered.connect(self.full_update_ui)
+            self.plotter_toolbar.fluorophore_id_changed.connect(self.inspector.update)
             if self.analyzer is not None:
                 self.analyzer.data_filters_changed.connect(self.inspector.update)
         self.inspector.show()

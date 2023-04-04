@@ -56,7 +56,7 @@ class Ui_PlotterToolbar(object):
     def setupUi(self, PlotterToolbar):
         if not PlotterToolbar.objectName():
             PlotterToolbar.setObjectName("PlotterToolbar")
-        PlotterToolbar.resize(995, 31)
+        PlotterToolbar.resize(1077, 34)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -167,7 +167,6 @@ class Ui_PlotterToolbar(object):
         self.cbColorCodeSelector = QComboBox(PlotterToolbar)
         self.cbColorCodeSelector.addItem("")
         self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.addItem("")
         self.cbColorCodeSelector.setObjectName("cbColorCodeSelector")
 
         self.horizontalLayout.addWidget(self.cbColorCodeSelector)
@@ -198,7 +197,7 @@ class Ui_PlotterToolbar(object):
             QCoreApplication.translate("PlotterToolbar", "Fluorophore", None)
         )
         self.cbFluorophoreIndex.setItemText(
-            0, QCoreApplication.translate("PlotterToolbar", "All", None)
+            0, QCoreApplication.translate("PlotterToolbar", "1", None)
         )
 
         self.pbUnmixColors.setText(
@@ -210,12 +209,6 @@ class Ui_PlotterToolbar(object):
         )
         self.cbColorCodeSelector.setItemText(
             1, QCoreApplication.translate("PlotterToolbar", "Color-code by TID", None)
-        )
-        self.cbColorCodeSelector.setItemText(
-            2,
-            QCoreApplication.translate(
-                "PlotterToolbar", "Color-code by fluorophore ID", None
-            ),
         )
 
     # retranslateUi
