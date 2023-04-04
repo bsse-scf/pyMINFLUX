@@ -409,6 +409,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.inspector is None:
             self.inspector = TimeInspector(self.minfluxprocessor, parent=self)
             self.inspector.dataset_time_filtered.connect(self.full_update_ui)
+            self.plotter_toolbar.fluorophore_id_changed.connect(self.inspector.update)
             if self.analyzer is not None:
                 self.analyzer.data_filters_changed.connect(self.inspector.update)
         self.inspector.show()
