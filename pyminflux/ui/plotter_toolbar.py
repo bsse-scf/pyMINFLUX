@@ -93,7 +93,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
         # Add new items
         self.ui.cbFluorophoreIndex.addItems(
-            list([str(i + 1) for i in range(num_fluorophores)])
+            ["All"] + list([str(i + 1) for i in range(num_fluorophores)])
         )
 
         # Release the blocker
@@ -112,4 +112,4 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
             return
 
         # The fluorophore index is 1 + the combobox current index
-        self.fluorophore_id_changed.emit(index + 1)
+        self.fluorophore_id_changed.emit(index)

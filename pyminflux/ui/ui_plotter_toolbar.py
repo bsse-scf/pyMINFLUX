@@ -197,7 +197,7 @@ class Ui_PlotterToolbar(object):
             QCoreApplication.translate("PlotterToolbar", "Fluorophore", None)
         )
         self.cbFluorophoreIndex.setItemText(
-            0, QCoreApplication.translate("PlotterToolbar", "1", None)
+            0, QCoreApplication.translate("PlotterToolbar", "All", None)
         )
 
         self.pbUnmixColors.setText(
