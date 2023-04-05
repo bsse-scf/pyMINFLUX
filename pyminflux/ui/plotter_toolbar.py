@@ -27,7 +27,6 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
         # The main plotter does not focus on temporal measurement
         self.plotting_parameters = MinFluxReader.processed_properties()
-        self.plotting_parameters.remove("tim")
 
         # Add the values to the plot properties combo boxes (without time)
         self.ui.cbFirstParam.addItems(self.plotting_parameters)
