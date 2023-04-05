@@ -44,9 +44,13 @@ class MinFluxProcessor:
 
         # Keep separate arrays of booleans to cache selection state for all fluorophores IDs.
         self.__selected_rows_dict = None
+        self.__init_selected_rows_dict()
 
         # Keep track of the selected fluorophore
-        self.__current_fluorophore_id = 1
+        # 0 - All (default)
+        # 1 - Fluorophore 1
+        # 2 - Fluorophore 2
+        self.__current_fluorophore_id = 0
 
         # Cache the weighted, averaged TID positions
         self.__weighted_localizations = None
@@ -74,20 +78,6 @@ class MinFluxProcessor:
                 index=self.full_dataframe.index,
             ),
         }
-
-    @property
-    def __selected_rows(self):
-        """Return the selected rows as a function of current fluorophore ID."""
-        if self.__selected_rows_dict is None:
-            self.__init_selected_rows_dict()
-        return self.__selected_rows_dict[self.current_fluorophore_id]
-
-    @__selected_rows.setter
-    def __selected_rows(self, rows):
-        """Set the passed selected rows for current fluorophore ID."""
-        if self.__selected_rows_dict is None:
-            self.__init_selected_rows_dict()
-        self.__selected_rows_dict[self.current_fluorophore_id] = rows
 
     @property
     def filtered_fluorophore_ids(self) -> np.ndarray:
@@ -130,7 +120,7 @@ class MinFluxProcessor:
     def current_fluorophore_id(self, fluorophore_id: int) -> None:
         """Set current fluorophore ID (0 for all)."""
 
-        if fluorophore_id not in [1, 2]:
+        if fluorophore_id not in [0, 1, 2]:
             raise ValueError(f"Only 1 or 2 are valid fluorophore IDs.")
 
         # Set the new fluorophore_id
@@ -159,8 +149,7 @@ class MinFluxProcessor:
         """
         return self.__minfluxreader.processed_dataframe
 
-    @property
-    def filtered_dataframe_all(self) -> Union[None, pd.DataFrame]:
+    def _filtered_dataframe_all(self) -> Union[None, pd.DataFrame]:
         """Return joint dataframe for all fluorophores and with all filters applied.
 
         Returns
@@ -189,10 +178,13 @@ class MinFluxProcessor:
         """
         if self.full_dataframe is None:
             return None
-        df = self.full_dataframe.loc[
-            self.full_dataframe["fluo"] == self.current_fluorophore_id
-        ]
-        return df.loc[self.__selected_rows]
+        if self.current_fluorophore_id == 0:
+            return self._filtered_dataframe_all()
+        else:
+            df = self.full_dataframe.loc[
+                self.full_dataframe["fluo"] == self.current_fluorophore_id
+            ]
+            return df.loc[self.__selected_rows_dict[self.current_fluorophore_id]]
 
     @property
     def filtered_dataframe_stats(self) -> Union[None, pd.DataFrame]:
@@ -242,14 +234,14 @@ class MinFluxProcessor:
         self.full_dataframe["fluo"] = 1
 
         # Default fluorophore is 0 (no selection)
-        self.current_fluorophore_id = 1
+        self.current_fluorophore_id = 0
 
         # Apply global filters
         self._apply_global_filters()
 
     def set_fluorophore_ids(self, fluorophore_ids: np.ndarray[int]):
         """Assign the fluorophore IDs."""
-        if len(fluorophore_ids) != len(self.__selected_rows.index):
+        if len(fluorophore_ids) != len(self.full_dataframe.index):
             raise ValueError(
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
@@ -304,6 +296,9 @@ class MinFluxProcessor:
 
         x_range: tuple
             Tuple containing the minimum and maximum values for the selected property.
+
+        from_weighted_locs: bool
+            If True, select from the weighted_localizations dataframe; otherwise, from the filtered_dataframe.
 
         Returns
         -------
@@ -424,14 +419,23 @@ class MinFluxProcessor:
         if y_max < y_min:
             y_max, y_min = y_min, y_max
 
-        # Apply filter
-        self.__selected_rows = (
-            self.__selected_rows
-            & (self.filtered_dataframe[x_prop] >= x_min)
-            & (self.filtered_dataframe[x_prop] < x_max)
-            & (self.filtered_dataframe[y_prop] >= y_min)
-            & (self.filtered_dataframe[y_prop] < y_max)
-        )
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
+            self.__selected_rows_dict[1] = (
+                self.__selected_rows_dict[1]
+                & (self.filtered_dataframe[x_prop] >= x_min)
+                & (self.filtered_dataframe[x_prop] < x_max)
+                & (self.filtered_dataframe[y_prop] >= y_min)
+                & (self.filtered_dataframe[y_prop] < y_max)
+            )
+
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
+            self.__selected_rows_dict[2] = (
+                self.__selected_rows_dict[2]
+                & (self.filtered_dataframe[x_prop] >= x_min)
+                & (self.filtered_dataframe[x_prop] < x_max)
+                & (self.filtered_dataframe[y_prop] >= y_min)
+                & (self.filtered_dataframe[y_prop] < y_max)
+            )
 
         # Make sure to always apply the global filters
         self._apply_global_filters()
@@ -443,19 +447,25 @@ class MinFluxProcessor:
     def _apply_global_filters(self):
         """Apply filters that are defined in the global application configuration."""
 
-        # Make sure to count only currently selected rows
-        df = self.full_dataframe.copy()
-        df.loc[np.invert(self.__selected_rows), "tid"] = np.nan
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
+            self.__selected_rows_dict[1] = self.__filter_by_tid_length(1)
 
-        # Select all rows where the count of TIDs is larger than self._min_trace_num
-        counts = df["tid"].value_counts(normalize=False)
-        self.__selected_rows = df["tid"].isin(
-            counts[counts >= self.state.min_num_loc_per_trace].index
-        )
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
+            self.__selected_rows_dict[2] = self.__filter_by_tid_length(2)
 
         # Make sure to flag the derived data to be recomputed
         self.__stats_to_be_recomputed = True
         self.__weighted_localizations_to_be_recomputed = True
+
+    def __filter_by_tid_length(self, index):
+
+        # Make sure to count only currently selected rows
+        df = self.full_dataframe.copy()
+        df.loc[np.invert(self.__selected_rows_dict[index]), "tid"] = np.nan
+
+        # Select all rows where the count of TIDs is larger than self._min_trace_num
+        counts = df["tid"].value_counts(normalize=False)
+        return df["tid"].isin(counts[counts >= self.state.min_num_loc_per_trace].index)
 
     def filter_by_single_threshold(
         self, prop: str, threshold: Union[int, float], larger_than: bool = True
@@ -463,14 +473,25 @@ class MinFluxProcessor:
         """Apply single threshold to filter values either lower or higher (equal) than threshold for given property."""
 
         # Apply filter
-        if larger_than:
-            self.__selected_rows = self.__selected_rows & (
-                self.filtered_dataframe[prop] >= threshold
-            )
-        else:
-            self.__selected_rows = self.__selected_rows & (
-                self.filtered_dataframe[prop] < threshold
-            )
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
+            if larger_than:
+                self.__selected_rows_dict[1] = self.__selected_rows_dict[1] & (
+                    self.filtered_dataframe[prop] >= threshold
+                )
+            else:
+                self.__selected_rows_dict[1] = self.__selected_rows_dict[1] & (
+                    self.filtered_dataframe[prop] < threshold
+                )
+
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
+            if larger_than:
+                self.__selected_rows_dict[2] = self.__selected_rows_dict[2] & (
+                    self.filtered_dataframe[prop] >= threshold
+                )
+            else:
+                self.__selected_rows_dict[2] = self.__selected_rows_dict[2] & (
+                    self.filtered_dataframe[prop] < threshold
+                )
 
         # Apply the global filters
         self._apply_global_filters()
@@ -499,11 +520,19 @@ class MinFluxProcessor:
             x_max, x_min = x_min, x_max
 
         # Apply filter
-        self.__selected_rows = (
-            self.__selected_rows
-            & (self.filtered_dataframe[x_prop] >= x_min)
-            & (self.filtered_dataframe[x_prop] < x_max)
-        )
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
+            self.__selected_rows_dict[1] = (
+                self.__selected_rows_dict[1]
+                & (self.filtered_dataframe[x_prop] >= x_min)
+                & (self.filtered_dataframe[x_prop] < x_max)
+            )
+
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
+            self.__selected_rows_dict[2] = (
+                self.__selected_rows_dict[2]
+                & (self.filtered_dataframe[x_prop] >= x_min)
+                & (self.filtered_dataframe[x_prop] < x_max)
+            )
 
         # Apply the global filters
         self._apply_global_filters()
@@ -533,10 +562,17 @@ class MinFluxProcessor:
             x_max, x_min = x_min, x_max
 
         # Apply filter
-        self.__selected_rows = self.__selected_rows & (
-            (self.filtered_dataframe[prop] < x_min)
-            | (self.filtered_dataframe[prop] >= x_max)
-        )
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
+            self.__selected_rows_dict[1] = self.__selected_rows_dict[1] & (
+                (self.filtered_dataframe[prop] < x_min)
+                | (self.filtered_dataframe[prop] >= x_max)
+            )
+
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
+            self.__selected_rows_dict[2] = self.__selected_rows_dict[2] & (
+                (self.filtered_dataframe[prop] < x_min)
+                | (self.filtered_dataframe[prop] >= x_max)
+            )
 
         # Apply the global filters
         self._apply_global_filters()
