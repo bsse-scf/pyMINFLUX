@@ -275,7 +275,7 @@ class Plotter(PlotWidget):
         elif self.state.color_code == ColorCode.BY_TID:
             brushes = tid
         elif self.state.color_code == ColorCode.BY_FLUO:
-            brushes = 5 + fid  # Better colors
+            brushes = [6 if i == 1 else 9 for i in fid]
         else:
             raise ValueError("Unexpected request for color-coding the localizations!")
 
