@@ -37,7 +37,7 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tab_efo_peak_detection">
+     <widget class="QWidget" name="tab_efo_thresholding">
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
         <horstretch>0</horstretch>
@@ -45,7 +45,7 @@
        </sizepolicy>
       </property>
       <attribute name="title">
-       <string>EFO peak detection</string>
+       <string>EFO thresholding</string>
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>

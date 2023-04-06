@@ -74,16 +74,16 @@ class Ui_Analyzer(object):
         )
         self.tabFilterOptions.setSizePolicy(sizePolicy)
         self.tabFilterOptions.setMaximumSize(QSize(16777215, 16777215))
-        self.tab_efo_peak_detection = QWidget()
-        self.tab_efo_peak_detection.setObjectName("tab_efo_peak_detection")
+        self.tab_efo_thresholding = QWidget()
+        self.tab_efo_thresholding.setObjectName("tab_efo_thresholding")
         sizePolicy1 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(
-            self.tab_efo_peak_detection.sizePolicy().hasHeightForWidth()
+            self.tab_efo_thresholding.sizePolicy().hasHeightForWidth()
         )
-        self.tab_efo_peak_detection.setSizePolicy(sizePolicy1)
-        self.horizontalLayout_3 = QHBoxLayout(self.tab_efo_peak_detection)
+        self.tab_efo_thresholding.setSizePolicy(sizePolicy1)
+        self.horizontalLayout_3 = QHBoxLayout(self.tab_efo_thresholding)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.hsEFOPeakBefore = QSpacerItem(
             20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
@@ -91,7 +91,7 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_3.addItem(self.hsEFOPeakBefore)
 
-        self.lbEFOExpectedCutoff = QLabel(self.tab_efo_peak_detection)
+        self.lbEFOExpectedCutoff = QLabel(self.tab_efo_thresholding)
         self.lbEFOExpectedCutoff.setObjectName("lbEFOExpectedCutoff")
         sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy2.setHorizontalStretch(0)
@@ -103,7 +103,7 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_3.addWidget(self.lbEFOExpectedCutoff)
 
-        self.leEFOExpectedCutoff = QLineEdit(self.tab_efo_peak_detection)
+        self.leEFOExpectedCutoff = QLineEdit(self.tab_efo_thresholding)
         self.leEFOExpectedCutoff.setObjectName("leEFOExpectedCutoff")
         sizePolicy2.setHeightForWidth(
             self.leEFOExpectedCutoff.sizePolicy().hasHeightForWidth()
@@ -112,7 +112,7 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_3.addWidget(self.leEFOExpectedCutoff)
 
-        self.pbDetectCutoffFrequency = QPushButton(self.tab_efo_peak_detection)
+        self.pbDetectCutoffFrequency = QPushButton(self.tab_efo_thresholding)
         self.pbDetectCutoffFrequency.setObjectName("pbDetectCutoffFrequency")
         sizePolicy2.setHeightForWidth(
             self.pbDetectCutoffFrequency.sizePolicy().hasHeightForWidth()
@@ -121,7 +121,7 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_3.addWidget(self.pbDetectCutoffFrequency)
 
-        self.pbEFORunFilter = QPushButton(self.tab_efo_peak_detection)
+        self.pbEFORunFilter = QPushButton(self.tab_efo_thresholding)
         self.pbEFORunFilter.setObjectName("pbEFORunFilter")
         self.pbEFORunFilter.setEnabled(True)
         sizePolicy2.setHeightForWidth(
@@ -137,7 +137,7 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_3.addItem(self.hshsEFOPeakAfter)
 
-        self.tabFilterOptions.addTab(self.tab_efo_peak_detection, "")
+        self.tabFilterOptions.addTab(self.tab_efo_thresholding, "")
         self.tab_cfr_thresholding = QWidget()
         self.tab_cfr_thresholding.setObjectName("tab_cfr_thresholding")
         sizePolicy1.setHeightForWidth(
@@ -268,8 +268,8 @@ class Ui_Analyzer(object):
             QCoreApplication.translate("Analyzer", "Filter", None)
         )
         self.tabFilterOptions.setTabText(
-            self.tabFilterOptions.indexOf(self.tab_efo_peak_detection),
-            QCoreApplication.translate("Analyzer", "EFO peak detection", None),
+            self.tabFilterOptions.indexOf(self.tab_efo_thresholding),
+            QCoreApplication.translate("Analyzer", "EFO thresholding", None),
         )
         self.checkCFRLowerThreshold.setText(
             QCoreApplication.translate("Analyzer", "Lower bound", None)
