@@ -47,7 +47,7 @@ class State(metaclass=Singleton):
         self.min_num_loc_per_trace: int = 1
 
         # EFO bin size in Hz (if 0.0, the bin size will be automatically estimated)
-        self.efo_bin_size_hz: float = 0.0
+        self.efo_bin_size_hz: float = 1000.0
 
         # EFO expected cutoff frequency
         self.efo_expected_cutoff: float = 0.0
@@ -112,7 +112,7 @@ class State(metaclass=Singleton):
         self.enable_cfr_lower_threshold = False
         self.enable_cfr_upper_threshold = True
         self.cfr_threshold_factor = 2.0
-        self.efo_bin_size_hz = 0.0
+        self.efo_bin_size_hz = 1000.0
         self.weigh_avg_localization_by_eco = False
         self.x_param = "x"
         self.y_param = "y"
