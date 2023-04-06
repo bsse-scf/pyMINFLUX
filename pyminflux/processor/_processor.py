@@ -2,6 +2,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from scipy.stats import mode
 
 from pyminflux.reader import MinFluxReader
 from pyminflux.state import State
@@ -78,11 +79,6 @@ class MinFluxProcessor:
                 index=self.full_dataframe.index,
             ),
         }
-
-    @property
-    def filtered_fluorophore_ids(self) -> np.ndarray:
-        """Return the fluorophore IDs for current selection."""
-        return self.filtered_dataframe["fluo"].values
 
     @property
     def is_3d(self) -> bool:
@@ -606,9 +602,12 @@ class MinFluxProcessor:
         sx = df_grouped["x"].std().values
         sy = df_grouped["y"].std().values
         sz = df_grouped["z"].std().values
+        fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
 
         # Prepare a dataframe with the statistics
-        df_tid = pd.DataFrame(columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz"])
+        df_tid = pd.DataFrame(
+            columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz", "fluo"]
+        )
 
         df_tid["tid"] = tid
         df_tid["n"] = n
@@ -618,6 +617,7 @@ class MinFluxProcessor:
         df_tid["sx"] = sx
         df_tid["sy"] = sy
         df_tid["sz"] = sz
+        df_tid["fluo"] = fluo
 
         # sx, sy sz columns will contain np.nan is n == 1: we replace with 0.0
         # @TODO: should this be changed?
@@ -656,9 +656,12 @@ class MinFluxProcessor:
         sx = df_grouped["x"].std().values
         sy = df_grouped["y"].std().values
         sz = df_grouped["z"].std().values
+        fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
 
         # Prepare a dataframe with the statistics
-        df_tid = pd.DataFrame(columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz"])
+        df_tid = pd.DataFrame(
+            columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz", "fluo"]
+        )
 
         df_tid["tid"] = tid
         df_tid["n"] = n
@@ -668,6 +671,7 @@ class MinFluxProcessor:
         df_tid["sx"] = sx
         df_tid["sy"] = sy
         df_tid["sz"] = sz
+        df_tid["fluo"] = fluo
 
         # sx, sy sz columns will contain np.nan is n == 1: we replace with 0.0
         # @TODO: should this be changed?
@@ -708,6 +712,9 @@ class MinFluxProcessor:
             x_w = df_grouped["x_rel"].sum().values
             y_w = df_grouped["y_rel"].sum().values
             z_w = df_grouped["z_rel"].sum().values
+            fluo = (
+                df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
+            )  # Return the most frequent fluo ID
 
         else:
 
@@ -717,13 +724,17 @@ class MinFluxProcessor:
             x_w = df_grouped["x"].mean().values
             y_w = df_grouped["y"].mean().values
             z_w = df_grouped["z"].mean().values
+            fluo = (
+                df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
+            )  # Return the most frequent fluo ID
 
         # Prepare a dataframe with the weighted localizations
-        df_loc = pd.DataFrame(columns=["tid", "x", "y", "z"])
+        df_loc = pd.DataFrame(columns=["tid", "x", "y", "z", "fluo"])
         df_loc["tid"] = tid
         df_loc["x"] = x_w
         df_loc["y"] = y_w
         df_loc["z"] = z_w
+        df_loc["fluo"] = fluo
 
         # Store the results
         self.__weighted_localizations = df_loc

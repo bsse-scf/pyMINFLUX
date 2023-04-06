@@ -565,7 +565,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         x = dataframe[self.state.x_param].values
         y = dataframe[self.state.y_param].values
         tid = dataframe["tid"].values
-        fid = self.minfluxprocessor.filtered_fluorophore_ids
+        fid = dataframe["fluo"].values
 
         # Always plot the (x, y) coordinates in the 2D plotter
         self.plotter.plot_parameters(

@@ -1444,7 +1444,7 @@ def test_extract_filtered_fluorophore_ids():
     processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
 
     # Get the fluorophore IDs
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
 
     # Check
     assert len(processor.filtered_dataframe.index) == 1, "Expected 1 entry."
@@ -1467,7 +1467,7 @@ def test_extract_filtered_fluorophore_ids():
     processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
 
     # Get the fluorophore IDs
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
 
     # Check
     assert len(processor.filtered_dataframe.index) == 18, "Expected 18 entries."
@@ -1511,7 +1511,7 @@ def test_extract_filtered_fluorophore_ids():
     processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
 
     # Get the fluorophore IDs
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
 
     # Check
     assert len(processor.filtered_dataframe.index) == 0, "Expected 0 entries."
@@ -1534,7 +1534,7 @@ def test_extract_filtered_fluorophore_ids():
     processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
 
     # Get the fluorophore IDs
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
 
     # Check
     assert len(processor.filtered_dataframe.index) == len(
@@ -1578,7 +1578,7 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
 
     # Fluorophore ID = 1
     processor.current_fluorophore_id = 1
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
     assert (
         len(processor.filtered_dataframe.index) == 12884
     ), "Unexpected number of entries."
@@ -1590,7 +1590,7 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
 
     # Fluorophore ID = 2
     processor.current_fluorophore_id = 2
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
     assert (
         len(processor.filtered_dataframe.index) == 5071
     ), "Unexpected number of entries."
@@ -1630,7 +1630,7 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
 
     # Fluorophore ID = 1
     processor.current_fluorophore_id = 1
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
     assert (
         len(processor.filtered_dataframe.index) == 11544
     ), "Unexpected number of entries."
@@ -1642,7 +1642,7 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
 
     # Fluorophore ID = 2
     processor.current_fluorophore_id = 2
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
     assert (
         len(processor.filtered_dataframe.index) == 4737
     ), "Unexpected number of entries."
@@ -1699,7 +1699,7 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     df_1 = processor.filtered_dataframe.copy()
 
     # Get the fluorophore IDs
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
 
     # Check
     assert len(processor.filtered_dataframe.index) == 10, "Expected 10 entry."
@@ -1722,7 +1722,7 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
 
     # Get the fluorophore IDs
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
 
     # Check
     assert len(processor.filtered_dataframe.index) == 8, "Expected 8 entries."
@@ -1789,7 +1789,7 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     df_1 = processor.filtered_dataframe.copy()
 
     # Get the fluorophore IDs
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
 
     # Check
     assert len(processor.filtered_dataframe.index) == 4, "Expected 10 entry."
@@ -1812,7 +1812,7 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     processor.filter_by_single_threshold("x", threshold=x_thresh, larger_than=True)
 
     # Get the fluorophore IDs
-    ids = processor.filtered_fluorophore_ids
+    ids = processor.filtered_dataframe["fluo"]
 
     # Check
     assert len(processor.filtered_dataframe.index) == 4, "Expected 8 entries."
