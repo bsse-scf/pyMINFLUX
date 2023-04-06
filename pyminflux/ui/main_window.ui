@@ -65,7 +65,6 @@
     <addaction name="actionAnalyzer"/>
     <addaction name="action3D_Plotter"/>
     <addaction name="separator"/>
-    <addaction name="actionPlotAverageLocalizations"/>
     <addaction name="separator"/>
     <addaction name="actionState"/>
    </widget>
@@ -170,16 +169,6 @@
     <string>Data viewer</string>
    </property>
   </action>
-  <action name="actionSave_plot">
-   <property name="text">
-    <string>Save plot</string>
-   </property>
-  </action>
-  <action name="actionCamera_parameters">
-   <property name="text">
-    <string>Camera parameters</string>
-   </property>
-  </action>
   <action name="action3D_Plotter">
    <property name="checkable">
     <bool>false</bool>
@@ -204,17 +193,6 @@
   <action name="actionOptions">
    <property name="text">
     <string>Options</string>
-   </property>
-  </action>
-  <action name="actionPlotAverageLocalizations">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Plot average localizations</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+A</string>
    </property>
   </action>
   <action name="actionData_Inspector">

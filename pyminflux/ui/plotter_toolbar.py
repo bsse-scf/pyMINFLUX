@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSignalBlocker, Signal, Slot
+from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
 from PySide6.QtWidgets import QWidget
 
 from ..reader import MinFluxReader
@@ -11,6 +11,9 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
     plot_requested_parameters = Signal(None, name="plot_requested_parameters")
     fluorophore_id_changed = Signal(int, name="fluorophore_id_changed")
     color_code_locs_changed = Signal(int, name="color_code_locs_changed")
+    plot_average_positions_state_changed = Signal(
+        None, name="plot_average_positions_state_changed"
+    )
 
     def __init__(self):
         """Constructor."""
@@ -35,7 +38,11 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         self.ui.cbSecondParam.setCurrentIndex(self.plotting_parameters.index("y"))
 
         self.ui.cbFirstParam.currentIndexChanged.connect(self.persist_first_param)
+        self.ui.cbFirstParam.currentIndexChanged.connect(self.toggle_average_state)
         self.ui.cbSecondParam.currentIndexChanged.connect(self.persist_second_param)
+        self.ui.cbSecondParam.currentIndexChanged.connect(self.toggle_average_state)
+
+        # Plot
         self.ui.pbPlot.clicked.connect(self.emit_plot_requested)
 
         # Color-code combo box
@@ -48,6 +55,31 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         self.ui.cbFluorophoreIndex.currentIndexChanged.connect(
             self.fluorophore_index_changed
         )
+
+        # Set the state of the average checkbox
+        self.ui.cbPlotAveragePos.setChecked(self.state.plot_average_localisations)
+        self.ui.cbPlotAveragePos.stateChanged.connect(
+            self.persist_plot_average_localisations_and_broadcast
+        )
+
+    @Slot(int, name="persist_plot_average_localisations_and_broadcast")
+    def persist_plot_average_localisations_and_broadcast(self, value):
+        """Persist the selection for plotting average positions."""
+        if value == Qt.CheckState.Checked.value:
+            self.state.plot_average_localisations = True
+        else:
+            self.state.plot_average_localisations = False
+        self.plot_average_positions_state_changed.emit()
+
+    @Slot(int, name="toggle_average_state")
+    def toggle_average_state(self, index):
+        """Persist the selection for the second parameter."""
+
+        # Enable the Average checkbox only for x, y plots
+        if self.state.x_param in ["x", "y"] and self.state.y_param in ["x", "y"]:
+            self.ui.cbPlotAveragePos.setEnabled(True)
+        else:
+            self.ui.cbPlotAveragePos.setEnabled(False)
 
     @Slot(int, name="persist_color_code_and_broadcast")
     def persist_color_code_and_broadcast(self, index):

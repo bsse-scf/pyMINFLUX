@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 
 from pyqtgraph import ViewBox
@@ -55,6 +54,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Keep a reference to the state machine
         self.state = State()
 
+        # Keep track of the last selected path
+        self.last_selected_path = ""
+
+        # Keep a reference to the MinFluxProcessor
+        self.minfluxprocessor = None
+
         # Read the application settings and update the state
         self.read_settings()
 
@@ -69,9 +74,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Make sure to only show the console if requested
         self.toggle_dock_console_visibility()
-
-        # Initialize menus
-        self.initialize_menu_state()
 
         # Initialize Plotter and DataViewer
         self.plotter = Plotter()
@@ -91,9 +93,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Set up signals and slots
         self.setup_conn()
 
-        # Keep a reference to the MinFluxProcessor
-        self.minfluxprocessor = None
-
         # # Install the custom output stream
         # sys.stdout = EmittingStream()
         # sys.stdout.signal_textWritten.connect(self.print_to_console)
@@ -108,7 +107,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
 
         # Read and set 'last_selected_path' option
-        self.last_selected_path = app_settings.value("io/last_selected_path", ".")
+        self.last_selected_path = Path(app_settings.value("io/last_selected_path", "."))
 
         # Read and set 'min_num_loc_per_trace' option
         self.state.min_num_loc_per_trace = int(
@@ -149,9 +148,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
-        self.ui.actionPlotAverageLocalizations.changed.connect(
-            self.toggle_plot_average_localizations
-        )
         self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Plotter toolbar
@@ -163,6 +159,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter_toolbar.ui.pbUnmixColors.clicked.connect(self.open_color_unmixer)
         self.plotter_toolbar.fluorophore_id_changed.connect(
             self.update_fluorophore_id_in_processor_and_broadcast
+        )
+        self.plotter_toolbar.plot_average_positions_state_changed.connect(
+            self.full_update_ui
         )
 
         # Other connections
@@ -272,13 +271,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Quit the application."""
         self.close()
 
-    @Slot(name="initialize_menu_state")
-    def initialize_menu_state(self):
-        """Initialize state of menu based on state properties."""
-        self.ui.actionPlotAverageLocalizations.setChecked(
-            self.state.plot_average_localisations
-        )
-
     @Slot(bool, name="toggle_dock_console_visibility")
     def toggle_dock_console_visibility(self):
         """Toggle the visibility of the console dock widget."""
@@ -303,6 +295,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.state.plot_average_localisations = True
         else:
             self.state.plot_average_localisations = False
+
+        # Trigger a re-plot
+        self.full_update_ui()
+
+    @Slot(bool, name="toggle_plot_average_localizations")
+    def toggle_plot_average_localizations(self):
+        """Toggle the state of plot_average_localizations."""
+        if self.ui.actionPlotAverageLocalizations.isChecked():
+            self.state.plot_average_localisations = True
+            self.plotter_toolbar.ui.cbPlotAveragePos.setChecked(True)
+        else:
+            self.state.plot_average_localisations = False
+            self.plotter_toolbar.ui.cbPlotAveragePos.setChecked(False)
 
         # Trigger a re-plot
         self.full_update_ui()

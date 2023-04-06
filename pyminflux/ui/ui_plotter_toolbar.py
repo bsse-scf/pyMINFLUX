@@ -42,6 +42,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -157,13 +158,6 @@ class Ui_PlotterToolbar(object):
 
         self.horizontalLayout.addWidget(self.cbSecondParam)
 
-        self.pbPlot = QPushButton(PlotterToolbar)
-        self.pbPlot.setObjectName("pbPlot")
-        sizePolicy1.setHeightForWidth(self.pbPlot.sizePolicy().hasHeightForWidth())
-        self.pbPlot.setSizePolicy(sizePolicy1)
-
-        self.horizontalLayout.addWidget(self.pbPlot)
-
         self.cbColorCodeSelector = QComboBox(PlotterToolbar)
         self.cbColorCodeSelector.addItem("")
         self.cbColorCodeSelector.addItem("")
@@ -171,6 +165,18 @@ class Ui_PlotterToolbar(object):
         self.cbColorCodeSelector.setObjectName("cbColorCodeSelector")
 
         self.horizontalLayout.addWidget(self.cbColorCodeSelector)
+
+        self.cbPlotAveragePos = QCheckBox(PlotterToolbar)
+        self.cbPlotAveragePos.setObjectName("cbPlotAveragePos")
+
+        self.horizontalLayout.addWidget(self.cbPlotAveragePos)
+
+        self.pbPlot = QPushButton(PlotterToolbar)
+        self.pbPlot.setObjectName("pbPlot")
+        sizePolicy1.setHeightForWidth(self.pbPlot.sizePolicy().hasHeightForWidth())
+        self.pbPlot.setSizePolicy(sizePolicy1)
+
+        self.horizontalLayout.addWidget(self.pbPlot)
 
         self.horizontalSpacer_4 = QSpacerItem(
             10, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
@@ -204,7 +210,6 @@ class Ui_PlotterToolbar(object):
         self.pbUnmixColors.setText(
             QCoreApplication.translate("PlotterToolbar", "Unmix", None)
         )
-        self.pbPlot.setText(QCoreApplication.translate("PlotterToolbar", "Plot", None))
         self.cbColorCodeSelector.setItemText(
             0, QCoreApplication.translate("PlotterToolbar", "No color code", None)
         )
@@ -217,5 +222,10 @@ class Ui_PlotterToolbar(object):
                 "PlotterToolbar", "Color-code by fluorophore", None
             ),
         )
+
+        self.cbPlotAveragePos.setText(
+            QCoreApplication.translate("PlotterToolbar", "Average", None)
+        )
+        self.pbPlot.setText(QCoreApplication.translate("PlotterToolbar", "Plot", None))
 
     # retranslateUi

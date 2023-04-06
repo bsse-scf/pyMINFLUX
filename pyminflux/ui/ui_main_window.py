@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -74,10 +74,6 @@ class Ui_MainWindow(object):
         self.actionData_viewer.setObjectName("actionData_viewer")
         self.actionData_viewer.setCheckable(True)
         self.actionData_viewer.setChecked(True)
-        self.actionSave_plot = QAction(MainWindow)
-        self.actionSave_plot.setObjectName("actionSave_plot")
-        self.actionCamera_parameters = QAction(MainWindow)
-        self.actionCamera_parameters.setObjectName("actionCamera_parameters")
         self.action3D_Plotter = QAction(MainWindow)
         self.action3D_Plotter.setObjectName("action3D_Plotter")
         self.action3D_Plotter.setCheckable(False)
@@ -88,11 +84,6 @@ class Ui_MainWindow(object):
         self.actionState.setObjectName("actionState")
         self.actionOptions = QAction(MainWindow)
         self.actionOptions.setObjectName("actionOptions")
-        self.actionPlotAverageLocalizations = QAction(MainWindow)
-        self.actionPlotAverageLocalizations.setObjectName(
-            "actionPlotAverageLocalizations"
-        )
-        self.actionPlotAverageLocalizations.setCheckable(True)
         self.actionData_Inspector = QAction(MainWindow)
         self.actionData_Inspector.setObjectName("actionData_Inspector")
         self.actionData_Inspector.setEnabled(False)
@@ -157,7 +148,6 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionAnalyzer)
         self.menuView.addAction(self.action3D_Plotter)
         self.menuView.addSeparator()
-        self.menuView.addAction(self.actionPlotAverageLocalizations)
         self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
 
@@ -201,12 +191,6 @@ class Ui_MainWindow(object):
         self.actionData_viewer.setText(
             QCoreApplication.translate("MainWindow", "Data viewer", None)
         )
-        self.actionSave_plot.setText(
-            QCoreApplication.translate("MainWindow", "Save plot", None)
-        )
-        self.actionCamera_parameters.setText(
-            QCoreApplication.translate("MainWindow", "Camera parameters", None)
-        )
         self.action3D_Plotter.setText(
             QCoreApplication.translate("MainWindow", "3D Plotter", None)
         )
@@ -219,14 +203,6 @@ class Ui_MainWindow(object):
         self.actionOptions.setText(
             QCoreApplication.translate("MainWindow", "Options", None)
         )
-        self.actionPlotAverageLocalizations.setText(
-            QCoreApplication.translate("MainWindow", "Plot average localizations", None)
-        )
-        # if QT_CONFIG(shortcut)
-        self.actionPlotAverageLocalizations.setShortcut(
-            QCoreApplication.translate("MainWindow", "Ctrl+A", None)
-        )
-        # endif // QT_CONFIG(shortcut)
         self.actionData_Inspector.setText(
             QCoreApplication.translate("MainWindow", "Data Inspector", None)
         )

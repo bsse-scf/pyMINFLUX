@@ -169,19 +169,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="pbPlot">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="text">
-      <string>Plot</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QComboBox" name="cbColorCodeSelector">
      <item>
       <property name="text">
@@ -198,6 +185,26 @@
        <string>Color-code by fluorophore</string>
       </property>
      </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="cbPlotAveragePos">
+     <property name="text">
+      <string>Average</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="pbPlot">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Plot</string>
+     </property>
     </widget>
    </item>
    <item>
