@@ -2,9 +2,9 @@ from pathlib import Path
 
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
-from PySide6.QtCore import QSettings, Slot
+from PySide6.QtCore import QSettings, Qt, Slot
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox
+from PySide6.QtWidgets import QDockWidget, QFileDialog, QMainWindow, QMessageBox
 
 from pyminflux import __version__
 from pyminflux.processor import MinFluxProcessor
@@ -25,6 +25,7 @@ from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.ui_main_window import Ui_MainWindow
+from pyminflux.ui.wizard import WizardDialog
 
 
 class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
@@ -74,6 +75,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Make sure to only show the console if requested
         self.toggle_dock_console_visibility()
+
+        # Initialize widget and its dock
+        self.wizard = WizardDialog()
+        self.wizard_dock = QDockWidget("", self)
+        self.wizard_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.wizard_dock.setWidget(self.wizard)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.wizard_dock)
 
         # Initialize Plotter and DataViewer
         self.plotter = Plotter()
