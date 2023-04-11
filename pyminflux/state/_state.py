@@ -18,7 +18,7 @@ class State(metaclass=Singleton):
         "plot_average_localisations",
         "color_code",
         "min_num_loc_per_trace",
-        "efo_expected_cutoff",
+        "efo_expected_frequency",
         "efo_thresholds",
         "cfr_thresholds",
         "enable_cfr_lower_threshold",
@@ -49,8 +49,8 @@ class State(metaclass=Singleton):
         # EFO bin size in Hz (if 0.0, the bin size will be automatically estimated)
         self.efo_bin_size_hz: float = 1000.0
 
-        # EFO expected cutoff frequency
-        self.efo_expected_cutoff: float = 0.0
+        # EFO expected frequency for single emitters
+        self.efo_expected_frequency: float = 0.0
 
         # Lower and upper (absolute) thresholds for the EFO and CFR values
         self.efo_thresholds: Union[None, tuple] = None
@@ -80,7 +80,7 @@ class State(metaclass=Singleton):
             "min_num_loc_per_trace": self.min_num_loc_per_trace,
             "plot_average_localisations": self.plot_average_localisations,
             "color_code": self.color_code,
-            "efo_expected_cutoff": self.efo_expected_cutoff,
+            "efo_expected_frequency": self.efo_expected_frequency,
             "efo_thresholds": self.efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
             "enable_cfr_lower_threshold": self.enable_cfr_lower_threshold,
@@ -106,7 +106,7 @@ class State(metaclass=Singleton):
         self.min_num_loc_per_trace = 1
         self.plot_average_localisations = False
         self.color_code: ColorCode = ColorCode.NONE
-        self.efo_expected_cutoff = 0.0
+        self.efo_expected_frequency = 0.0
         self.efo_thresholds = None
         self.cfr_thresholds = None
         self.enable_cfr_lower_threshold = False

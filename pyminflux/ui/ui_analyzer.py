@@ -257,7 +257,7 @@ class Ui_Analyzer(object):
         )
         self.lbEFOExpectedCutoff.setText(
             QCoreApplication.translate(
-                "Analyzer", "Expected cutoff frequency (Hz)", None
+                "Analyzer", "Expected frequency of single emitters (Hz)", None
             )
         )
         self.leEFOExpectedCutoff.setText("")

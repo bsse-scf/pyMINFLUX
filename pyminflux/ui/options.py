@@ -37,7 +37,7 @@ class Options(QDialog, Ui_Options):
         self.ui.leEFOBinSize.setText(str(self.state.efo_bin_size_hz))
         self.ui.leEFOBinSize.setValidator(QDoubleValidator(bottom=0.0))
         self.ui.leEFOExpectedCutoffFrequency.setText(
-            str(self.state.efo_expected_cutoff)
+            str(self.state.efo_expected_frequency)
         )
         self.ui.leEFOExpectedCutoffFrequency.setValidator(QDoubleValidator(bottom=0.0))
         self.ui.cbWeightAvgLocByECO.setChecked(self.state.weigh_avg_localization_by_eco)
@@ -85,7 +85,7 @@ class Options(QDialog, Ui_Options):
             efo_expected_cutoff = float(text)
         except Exception as _:
             return
-        self.state.efo_expected_cutoff = efo_expected_cutoff
+        self.state.efo_expected_frequency = efo_expected_cutoff
 
     @Slot(str, name="weigh_avg_localization_by_eco")
     def weigh_avg_localization_by_eco(self, state):
@@ -105,7 +105,7 @@ class Options(QDialog, Ui_Options):
         )
         app_settings.setValue("options/efo_bin_size_hz", self.state.efo_bin_size_hz)
         app_settings.setValue(
-            "options/efo_expected_cutoff", self.state.efo_expected_cutoff
+            "options/efo_expected_frequency", self.state.efo_expected_frequency
         )
         app_settings.setValue(
             "options/weigh_avg_localization_by_eco",

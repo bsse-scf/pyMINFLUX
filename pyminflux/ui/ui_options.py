@@ -60,7 +60,7 @@ class Ui_Options(object):
     def setupUi(self, Options):
         if not Options.objectName():
             Options.setObjectName("Options")
-        Options.resize(489, 261)
+        Options.resize(575, 261)
         self.gridLayout = QGridLayout(Options)
         self.gridLayout.setObjectName("gridLayout")
         self.horizontalLayout = QHBoxLayout()
@@ -186,7 +186,7 @@ class Ui_Options(object):
         Options.setWindowTitle(QCoreApplication.translate("Options", "Options", None))
         self.lbEFOExpectedCutoffFrequency.setText(
             QCoreApplication.translate(
-                "Options", "EFO expected cutoff frequency (Hz)", None
+                "Options", "EFO expected frequency for single emitters (Hz)", None
             )
         )
         self.cbWeightAvgLocByECO.setText(
