@@ -45,11 +45,13 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
     QGridLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -58,7 +60,7 @@ class Ui_WizardDialog(object):
     def setupUi(self, WizardDialog):
         if not WizardDialog.objectName():
             WizardDialog.setObjectName("WizardDialog")
-        WizardDialog.resize(336, 939)
+        WizardDialog.resize(357, 939)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -66,10 +68,42 @@ class Ui_WizardDialog(object):
         WizardDialog.setSizePolicy(sizePolicy)
         self.gridLayout = QGridLayout(WizardDialog)
         self.gridLayout.setObjectName("gridLayout")
-        self.leFrequencySingleEmitters = QLineEdit(WizardDialog)
-        self.leFrequencySingleEmitters.setObjectName("leFrequencySingleEmitters")
+        self.verticalSpacer = QSpacerItem(
+            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        )
 
-        self.gridLayout.addWidget(self.leFrequencySingleEmitters, 8, 2, 1, 2)
+        self.gridLayout.addItem(self.verticalSpacer, 17, 0, 1, 1)
+
+        self.mainLayout = QVBoxLayout()
+        self.mainLayout.setObjectName("mainLayout")
+        self.pbLoadData = QPushButton(WizardDialog)
+        self.pbLoadData.setObjectName("pbLoadData")
+
+        self.mainLayout.addWidget(self.pbLoadData)
+
+        self.color_layout = QHBoxLayout()
+        self.color_layout.setObjectName("color_layout")
+        self.pbColorUnmixer = QPushButton(WizardDialog)
+        self.pbColorUnmixer.setObjectName("pbColorUnmixer")
+
+        self.color_layout.addWidget(self.pbColorUnmixer)
+
+        self.pbSingleColor = QPushButton(WizardDialog)
+        self.pbSingleColor.setObjectName("pbSingleColor")
+
+        self.color_layout.addWidget(self.pbSingleColor)
+
+        self.mainLayout.addLayout(self.color_layout)
+
+        self.pbTimeInspector = QPushButton(WizardDialog)
+        self.pbTimeInspector.setObjectName("pbTimeInspector")
+
+        self.mainLayout.addWidget(self.pbTimeInspector)
+
+        self.pbAnalyzer = QPushButton(WizardDialog)
+        self.pbAnalyzer.setObjectName("pbAnalyzer")
+
+        self.mainLayout.addWidget(self.pbAnalyzer)
 
         self.lbEFOFiltering = QLabel(WizardDialog)
         self.lbEFOFiltering.setObjectName("lbEFOFiltering")
@@ -77,136 +111,150 @@ class Ui_WizardDialog(object):
         font.setBold(True)
         self.lbEFOFiltering.setFont(font)
 
-        self.gridLayout.addWidget(self.lbEFOFiltering, 5, 0, 1, 1)
+        self.mainLayout.addWidget(self.lbEFOFiltering)
 
+        self.efo_lower_bound_layout = QHBoxLayout()
+        self.efo_lower_bound_layout.setObjectName("efo_lower_bound_layout")
+        self.lbEFOLowerBound = QLabel(WizardDialog)
+        self.lbEFOLowerBound.setObjectName("lbEFOLowerBound")
+
+        self.efo_lower_bound_layout.addWidget(self.lbEFOLowerBound)
+
+        self.leEFOLowerBound = QLineEdit(WizardDialog)
+        self.leEFOLowerBound.setObjectName("leEFOLowerBound")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(
+            self.leEFOLowerBound.sizePolicy().hasHeightForWidth()
+        )
+        self.leEFOLowerBound.setSizePolicy(sizePolicy1)
+
+        self.efo_lower_bound_layout.addWidget(self.leEFOLowerBound)
+
+        self.mainLayout.addLayout(self.efo_lower_bound_layout)
+
+        self.efo_upper_bound_layout = QHBoxLayout()
+        self.efo_upper_bound_layout.setObjectName("efo_upper_bound_layout")
+        self.lbEFOUpperBound = QLabel(WizardDialog)
+        self.lbEFOUpperBound.setObjectName("lbEFOUpperBound")
+
+        self.efo_upper_bound_layout.addWidget(self.lbEFOUpperBound)
+
+        self.leEFOUpperBound = QLineEdit(WizardDialog)
+        self.leEFOUpperBound.setObjectName("leEFOUpperBound")
+        sizePolicy1.setHeightForWidth(
+            self.leEFOUpperBound.sizePolicy().hasHeightForWidth()
+        )
+        self.leEFOUpperBound.setSizePolicy(sizePolicy1)
+
+        self.efo_upper_bound_layout.addWidget(self.leEFOUpperBound)
+
+        self.mainLayout.addLayout(self.efo_upper_bound_layout)
+
+        self.efo_emitters_layout = QHBoxLayout()
+        self.efo_emitters_layout.setObjectName("efo_emitters_layout")
         self.lbFrequencySingleEmitters = QLabel(WizardDialog)
         self.lbFrequencySingleEmitters.setObjectName("lbFrequencySingleEmitters")
 
-        self.gridLayout.addWidget(self.lbFrequencySingleEmitters, 8, 0, 1, 2)
+        self.efo_emitters_layout.addWidget(self.lbFrequencySingleEmitters)
+
+        self.leFrequencySingleEmitters = QLineEdit(WizardDialog)
+        self.leFrequencySingleEmitters.setObjectName("leFrequencySingleEmitters")
+        sizePolicy1.setHeightForWidth(
+            self.leFrequencySingleEmitters.sizePolicy().hasHeightForWidth()
+        )
+        self.leFrequencySingleEmitters.setSizePolicy(sizePolicy1)
+
+        self.efo_emitters_layout.addWidget(self.leFrequencySingleEmitters)
+
+        self.mainLayout.addLayout(self.efo_emitters_layout)
+
+        self.pbEFOFilter = QPushButton(WizardDialog)
+        self.pbEFOFilter.setObjectName("pbEFOFilter")
+
+        self.mainLayout.addWidget(self.pbEFOFilter)
+
+        self.lbCFRFiltering = QLabel(WizardDialog)
+        self.lbCFRFiltering.setObjectName("lbCFRFiltering")
+        self.lbCFRFiltering.setFont(font)
+
+        self.mainLayout.addWidget(self.lbCFRFiltering)
+
+        self.cfr_lower_bound_layout = QHBoxLayout()
+        self.cfr_lower_bound_layout.setObjectName("cfr_lower_bound_layout")
+        self.lbCFRLowerBound = QLabel(WizardDialog)
+        self.lbCFRLowerBound.setObjectName("lbCFRLowerBound")
+
+        self.cfr_lower_bound_layout.addWidget(self.lbCFRLowerBound)
+
+        self.leCFRLowerBound = QLineEdit(WizardDialog)
+        self.leCFRLowerBound.setObjectName("leCFRLowerBound")
+        sizePolicy1.setHeightForWidth(
+            self.leCFRLowerBound.sizePolicy().hasHeightForWidth()
+        )
+        self.leCFRLowerBound.setSizePolicy(sizePolicy1)
+
+        self.cfr_lower_bound_layout.addWidget(self.leCFRLowerBound)
+
+        self.mainLayout.addLayout(self.cfr_lower_bound_layout)
+
+        self.cfr_upper_bound_layout = QHBoxLayout()
+        self.cfr_upper_bound_layout.setObjectName("cfr_upper_bound_layout")
+        self.lbCFRUpperBound = QLabel(WizardDialog)
+        self.lbCFRUpperBound.setObjectName("lbCFRUpperBound")
+
+        self.cfr_upper_bound_layout.addWidget(self.lbCFRUpperBound)
+
+        self.leCFRUpperBound = QLineEdit(WizardDialog)
+        self.leCFRUpperBound.setObjectName("leCFRUpperBound")
+        sizePolicy1.setHeightForWidth(
+            self.leCFRUpperBound.sizePolicy().hasHeightForWidth()
+        )
+        self.leCFRUpperBound.setSizePolicy(sizePolicy1)
+
+        self.cfr_upper_bound_layout.addWidget(self.leCFRUpperBound)
+
+        self.mainLayout.addLayout(self.cfr_upper_bound_layout)
+
+        self.robust_threshold_layout = QHBoxLayout()
+        self.robust_threshold_layout.setObjectName("robust_threshold_layout")
+        self.lbCFRSigma = QLabel(WizardDialog)
+        self.lbCFRSigma.setObjectName("lbCFRSigma")
+
+        self.robust_threshold_layout.addWidget(self.lbCFRSigma)
+
+        self.leCFRSigma = QLineEdit(WizardDialog)
+        self.leCFRSigma.setObjectName("leCFRSigma")
+        sizePolicy1.setHeightForWidth(self.leCFRSigma.sizePolicy().hasHeightForWidth())
+        self.leCFRSigma.setSizePolicy(sizePolicy1)
+
+        self.robust_threshold_layout.addWidget(self.leCFRSigma)
+
+        self.mainLayout.addLayout(self.robust_threshold_layout)
+
+        self.cfr_bounds_layout = QHBoxLayout()
+        self.cfr_bounds_layout.setObjectName("cfr_bounds_layout")
+        self.cbCFRLowerBound = QCheckBox(WizardDialog)
+        self.cbCFRLowerBound.setObjectName("cbCFRLowerBound")
+        self.cbCFRLowerBound.setContextMenuPolicy(Qt.DefaultContextMenu)
+
+        self.cfr_bounds_layout.addWidget(self.cbCFRLowerBound)
 
         self.cbCFRUpperBound = QCheckBox(WizardDialog)
         self.cbCFRUpperBound.setObjectName("cbCFRUpperBound")
         self.cbCFRUpperBound.setContextMenuPolicy(Qt.DefaultContextMenu)
 
-        self.gridLayout.addWidget(self.cbCFRUpperBound, 14, 2, 1, 2)
+        self.cfr_bounds_layout.addWidget(self.cbCFRUpperBound)
 
-        self.lbEFOUpperBound = QLabel(WizardDialog)
-        self.lbEFOUpperBound.setObjectName("lbEFOUpperBound")
-
-        self.gridLayout.addWidget(self.lbEFOUpperBound, 7, 0, 1, 1)
-
-        self.pbAnalyzer = QPushButton(WizardDialog)
-        self.pbAnalyzer.setObjectName("pbAnalyzer")
-
-        self.gridLayout.addWidget(self.pbAnalyzer, 3, 0, 1, 4)
-
-        self.lbCFRUpperBound = QLabel(WizardDialog)
-        self.lbCFRUpperBound.setObjectName("lbCFRUpperBound")
-
-        self.gridLayout.addWidget(self.lbCFRUpperBound, 12, 0, 1, 1)
-
-        self.pbColorUnmixer = QPushButton(WizardDialog)
-        self.pbColorUnmixer.setObjectName("pbColorUnmixer")
-
-        self.gridLayout.addWidget(self.pbColorUnmixer, 1, 1, 1, 3)
-
-        self.leEFOUpperBound = QLineEdit(WizardDialog)
-        self.leEFOUpperBound.setObjectName("leEFOUpperBound")
-
-        self.gridLayout.addWidget(self.leEFOUpperBound, 7, 2, 1, 2)
-
-        self.lbCFRSigmaPre = QLabel(WizardDialog)
-        self.lbCFRSigmaPre.setObjectName("lbCFRSigmaPre")
-
-        self.gridLayout.addWidget(self.lbCFRSigmaPre, 13, 0, 1, 1)
-
-        self.leCFRSigma = QLineEdit(WizardDialog)
-        self.leCFRSigma.setObjectName("leCFRSigma")
-
-        self.gridLayout.addWidget(self.leCFRSigma, 13, 2, 1, 2)
-
-        self.leCFRLowerBound = QLineEdit(WizardDialog)
-        self.leCFRLowerBound.setObjectName("leCFRLowerBound")
-
-        self.gridLayout.addWidget(self.leCFRLowerBound, 11, 2, 1, 2)
-
-        self.cbCFRLowerBound = QCheckBox(WizardDialog)
-        self.cbCFRLowerBound.setObjectName("cbCFRLowerBound")
-        self.cbCFRLowerBound.setContextMenuPolicy(Qt.DefaultContextMenu)
-
-        self.gridLayout.addWidget(self.cbCFRLowerBound, 14, 0, 1, 1)
-
-        self.pbSingleColor = QPushButton(WizardDialog)
-        self.pbSingleColor.setObjectName("pbSingleColor")
-
-        self.gridLayout.addWidget(self.pbSingleColor, 1, 0, 1, 1)
-
-        self.leEFOLowerBound = QLineEdit(WizardDialog)
-        self.leEFOLowerBound.setObjectName("leEFOLowerBound")
-
-        self.gridLayout.addWidget(self.leEFOLowerBound, 5, 2, 2, 2)
-
-        self.lbCFRLowerBound = QLabel(WizardDialog)
-        self.lbCFRLowerBound.setObjectName("lbCFRLowerBound")
-
-        self.gridLayout.addWidget(self.lbCFRLowerBound, 11, 0, 1, 1)
-
-        self.pbEFOFilter = QPushButton(WizardDialog)
-        self.pbEFOFilter.setObjectName("pbEFOFilter")
-
-        self.gridLayout.addWidget(self.pbEFOFilter, 9, 0, 1, 4)
-
-        self.leCFRUpperBound = QLineEdit(WizardDialog)
-        self.leCFRUpperBound.setObjectName("leCFRUpperBound")
-
-        self.gridLayout.addWidget(self.leCFRUpperBound, 12, 2, 1, 2)
-
-        self.verticalSpacer = QSpacerItem(
-            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
-        )
-
-        self.gridLayout.addItem(self.verticalSpacer, 16, 0, 1, 1)
+        self.mainLayout.addLayout(self.cfr_bounds_layout)
 
         self.pbCFRFilter = QPushButton(WizardDialog)
         self.pbCFRFilter.setObjectName("pbCFRFilter")
 
-        self.gridLayout.addWidget(self.pbCFRFilter, 15, 0, 1, 4)
+        self.mainLayout.addWidget(self.pbCFRFilter)
 
-        self.lnCFRFiltering = QLabel(WizardDialog)
-        self.lnCFRFiltering.setObjectName("lnCFRFiltering")
-        self.lnCFRFiltering.setFont(font)
-
-        self.gridLayout.addWidget(self.lnCFRFiltering, 10, 0, 1, 1)
-
-        self.pbTimeInspector = QPushButton(WizardDialog)
-        self.pbTimeInspector.setObjectName("pbTimeInspector")
-
-        self.gridLayout.addWidget(self.pbTimeInspector, 2, 0, 1, 4)
-
-        self.lbEFOLowerBound = QLabel(WizardDialog)
-        self.lbEFOLowerBound.setObjectName("lbEFOLowerBound")
-
-        self.gridLayout.addWidget(self.lbEFOLowerBound, 6, 0, 1, 1)
-
-        self.pbLoadData = QPushButton(WizardDialog)
-        self.pbLoadData.setObjectName("pbLoadData")
-
-        self.gridLayout.addWidget(self.pbLoadData, 0, 0, 1, 4)
-
-        QWidget.setTabOrder(self.pbLoadData, self.pbSingleColor)
-        QWidget.setTabOrder(self.pbSingleColor, self.pbColorUnmixer)
-        QWidget.setTabOrder(self.pbColorUnmixer, self.pbTimeInspector)
-        QWidget.setTabOrder(self.pbTimeInspector, self.pbAnalyzer)
-        QWidget.setTabOrder(self.pbAnalyzer, self.leEFOLowerBound)
-        QWidget.setTabOrder(self.leEFOLowerBound, self.leEFOUpperBound)
-        QWidget.setTabOrder(self.leEFOUpperBound, self.leFrequencySingleEmitters)
-        QWidget.setTabOrder(self.leFrequencySingleEmitters, self.pbEFOFilter)
-        QWidget.setTabOrder(self.pbEFOFilter, self.leCFRLowerBound)
-        QWidget.setTabOrder(self.leCFRLowerBound, self.leCFRUpperBound)
-        QWidget.setTabOrder(self.leCFRUpperBound, self.leCFRSigma)
-        QWidget.setTabOrder(self.leCFRSigma, self.cbCFRLowerBound)
-        QWidget.setTabOrder(self.cbCFRLowerBound, self.cbCFRUpperBound)
-        QWidget.setTabOrder(self.cbCFRUpperBound, self.pbCFRFilter)
+        self.gridLayout.addLayout(self.mainLayout, 0, 0, 1, 1)
 
         self.retranslateUi(WizardDialog)
 
@@ -218,58 +266,58 @@ class Ui_WizardDialog(object):
         WizardDialog.setWindowTitle(
             QCoreApplication.translate("WizardDialog", "Dialog", None)
         )
+        self.pbLoadData.setText(
+            QCoreApplication.translate("WizardDialog", "Load", None)
+        )
+        self.pbColorUnmixer.setText(
+            QCoreApplication.translate("WizardDialog", "Color Unmizer", None)
+        )
+        self.pbSingleColor.setText(
+            QCoreApplication.translate("WizardDialog", "Single Color", None)
+        )
+        self.pbTimeInspector.setText(
+            QCoreApplication.translate("WizardDialog", "Time Inspector", None)
+        )
+        self.pbAnalyzer.setText(
+            QCoreApplication.translate("WizardDialog", "Analyzer", None)
+        )
         self.lbEFOFiltering.setText(
             QCoreApplication.translate("WizardDialog", "EFO Filtering", None)
+        )
+        self.lbEFOLowerBound.setText(
+            QCoreApplication.translate("WizardDialog", "Lower bound (Hz)", None)
+        )
+        self.lbEFOUpperBound.setText(
+            QCoreApplication.translate("WizardDialog", "Upper Bound (Hz)", None)
         )
         self.lbFrequencySingleEmitters.setText(
             QCoreApplication.translate(
                 "WizardDialog", "Frequency single emitters (Hz)", None
             )
         )
-        self.cbCFRUpperBound.setText(
-            QCoreApplication.translate("WizardDialog", "Upper bound", None)
+        self.pbEFOFilter.setText(
+            QCoreApplication.translate("WizardDialog", "FIlter EFO", None)
         )
-        self.lbEFOUpperBound.setText(
-            QCoreApplication.translate("WizardDialog", "Upper Bound (Hz)", None)
+        self.lbCFRFiltering.setText(
+            QCoreApplication.translate("WizardDialog", "CFR Filtering", None)
         )
-        self.pbAnalyzer.setText(
-            QCoreApplication.translate("WizardDialog", "Analyzer", None)
+        self.lbCFRLowerBound.setText(
+            QCoreApplication.translate("WizardDialog", "Lower bound", None)
         )
         self.lbCFRUpperBound.setText(
             QCoreApplication.translate("WizardDialog", "Upper bound", None)
         )
-        self.pbColorUnmixer.setText(
-            QCoreApplication.translate("WizardDialog", "Color Unmizer", None)
-        )
-        self.lbCFRSigmaPre.setText(
+        self.lbCFRSigma.setText(
             QCoreApplication.translate("WizardDialog", "Robust threshold", None)
         )
         self.cbCFRLowerBound.setText(
             QCoreApplication.translate("WizardDialog", "Lower bound", None)
         )
-        self.pbSingleColor.setText(
-            QCoreApplication.translate("WizardDialog", "Single Color", None)
-        )
-        self.lbCFRLowerBound.setText(
-            QCoreApplication.translate("WizardDialog", "Lower bound", None)
-        )
-        self.pbEFOFilter.setText(
-            QCoreApplication.translate("WizardDialog", "FIlter EFO", None)
+        self.cbCFRUpperBound.setText(
+            QCoreApplication.translate("WizardDialog", "Upper bound", None)
         )
         self.pbCFRFilter.setText(
             QCoreApplication.translate("WizardDialog", "FIlter CFR", None)
-        )
-        self.lnCFRFiltering.setText(
-            QCoreApplication.translate("WizardDialog", "CFR Filtering", None)
-        )
-        self.pbTimeInspector.setText(
-            QCoreApplication.translate("WizardDialog", "Time Inspector", None)
-        )
-        self.lbEFOLowerBound.setText(
-            QCoreApplication.translate("WizardDialog", "Lower bound (Hz)", None)
-        )
-        self.pbLoadData.setText(
-            QCoreApplication.translate("WizardDialog", "Load", None)
         )
 
     # retranslateUi
