@@ -81,6 +81,12 @@ class Ui_WizardDialog(object):
 
         self.mainLayout.addWidget(self.pbLoadData)
 
+        self.verticalSpacer_2 = QSpacerItem(
+            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+        )
+
+        self.mainLayout.addItem(self.verticalSpacer_2)
+
         self.color_layout = QHBoxLayout()
         self.color_layout.setObjectName("color_layout")
         self.pbSingleColor = QPushButton(WizardDialog)
@@ -95,10 +101,22 @@ class Ui_WizardDialog(object):
 
         self.mainLayout.addLayout(self.color_layout)
 
+        self.verticalSpacer_3 = QSpacerItem(
+            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+        )
+
+        self.mainLayout.addItem(self.verticalSpacer_3)
+
         self.pbTimeInspector = QPushButton(WizardDialog)
         self.pbTimeInspector.setObjectName("pbTimeInspector")
 
         self.mainLayout.addWidget(self.pbTimeInspector)
+
+        self.verticalSpacer_4 = QSpacerItem(
+            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+        )
+
+        self.mainLayout.addItem(self.verticalSpacer_4)
 
         self.pbAnalyzer = QPushButton(WizardDialog)
         self.pbAnalyzer.setObjectName("pbAnalyzer")
@@ -151,24 +169,6 @@ class Ui_WizardDialog(object):
         self.efo_upper_bound_layout.addWidget(self.leEFOUpperBound)
 
         self.mainLayout.addLayout(self.efo_upper_bound_layout)
-
-        self.efo_emitters_layout = QHBoxLayout()
-        self.efo_emitters_layout.setObjectName("efo_emitters_layout")
-        self.lbFrequencySingleEmitters = QLabel(WizardDialog)
-        self.lbFrequencySingleEmitters.setObjectName("lbFrequencySingleEmitters")
-
-        self.efo_emitters_layout.addWidget(self.lbFrequencySingleEmitters)
-
-        self.leFrequencySingleEmitters = QLineEdit(WizardDialog)
-        self.leFrequencySingleEmitters.setObjectName("leFrequencySingleEmitters")
-        sizePolicy1.setHeightForWidth(
-            self.leFrequencySingleEmitters.sizePolicy().hasHeightForWidth()
-        )
-        self.leFrequencySingleEmitters.setSizePolicy(sizePolicy1)
-
-        self.efo_emitters_layout.addWidget(self.leFrequencySingleEmitters)
-
-        self.mainLayout.addLayout(self.efo_emitters_layout)
 
         self.pbEFOFilter = QPushButton(WizardDialog)
         self.pbEFOFilter.setObjectName("pbEFOFilter")
@@ -289,11 +289,6 @@ class Ui_WizardDialog(object):
         )
         self.lbEFOUpperBound.setText(
             QCoreApplication.translate("WizardDialog", "Upper Bound (Hz)", None)
-        )
-        self.lbFrequencySingleEmitters.setText(
-            QCoreApplication.translate(
-                "WizardDialog", "Frequency single emitters (Hz)", None
-            )
         )
         self.pbEFOFilter.setText(
             QCoreApplication.translate("WizardDialog", "FIlter EFO", None)

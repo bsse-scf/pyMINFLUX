@@ -75,8 +75,6 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.ui.leEFOLowerBound.setEnabled(False)
         self.ui.lbEFOUpperBound.setEnabled(False)
         self.ui.leEFOUpperBound.setEnabled(False)
-        self.ui.lbFrequencySingleEmitters.setEnabled(False)
-        self.ui.leFrequencySingleEmitters.setEnabled(False)
         self.ui.pbEFOFilter.setEnabled(False)
 
         # CFR filtering
@@ -116,8 +114,6 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.ui.leEFOLowerBound.setEnabled(True)
         self.ui.lbEFOUpperBound.setEnabled(True)
         self.ui.leEFOUpperBound.setEnabled(True)
-        self.ui.lbFrequencySingleEmitters.setEnabled(True)
-        self.ui.leFrequencySingleEmitters.setEnabled(True)
         self.ui.pbEFOFilter.setEnabled(True)
         if step == 4:
             return
