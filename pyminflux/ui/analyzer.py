@@ -62,7 +62,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         #
 
         # EFO cutoff frequency tab
-        self.ui.leEFOExpectedCutoff.setText(str(self.state.efo_expected_cutoff))
+        self.ui.leEFOExpectedCutoff.setText(str(self.state.efo_expected_frequency))
         self.ui.leEFOExpectedCutoff.setValidator(
             QDoubleValidator(bottom=0.0, decimals=2)
         )
@@ -92,7 +92,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.run_efo_filter_and_broadcast_viewers_update
         )
         self.ui.leEFOExpectedCutoff.textChanged.connect(
-            self.persist_efo_expected_cutoff
+            self.persist_efo_expected_frequency
         )
 
         # CFR filtering tab
@@ -271,13 +271,13 @@ class Analyzer(QDialog, Ui_Analyzer):
     def persist_cfr_upper_threshold(self, state):
         self.state.enable_cfr_upper_threshold = state != 0
 
-    @Slot(str, name="persist_median_efo_filter_support")
-    def persist_efo_expected_cutoff(self, text):
+    @Slot(str, name="persist_efo_expected_frequency")
+    def persist_efo_expected_frequency(self, text):
         try:
-            efo_expected_cutoff = float(text)
+            efo_expected_frequency = float(text)
         except ValueError as _:
             return
-        self.state.efo_expected_cutoff = efo_expected_cutoff
+        self.state.efo_expected_frequency = efo_expected_frequency
 
     @Slot(str, name="persist_cfr_threshold_factor")
     def persist_cfr_threshold_factor(self, text):

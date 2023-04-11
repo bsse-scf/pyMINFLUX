@@ -79,7 +79,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Expected cutoff frequency (Hz)</string>
+          <string>Expected frequency of single emitters (Hz)</string>
          </property>
         </widget>
        </item>
