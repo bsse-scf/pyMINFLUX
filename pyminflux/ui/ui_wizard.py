@@ -43,6 +43,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
+    QComboBox,
     QDialog,
     QGridLayout,
     QHBoxLayout,
@@ -78,6 +79,7 @@ class Ui_WizardDialog(object):
         self.mainLayout.setObjectName("mainLayout")
         self.pbLoadData = QPushButton(WizardDialog)
         self.pbLoadData.setObjectName("pbLoadData")
+        self.pbLoadData.setMinimumSize(QSize(320, 0))
 
         self.mainLayout.addWidget(self.pbLoadData)
 
@@ -100,6 +102,35 @@ class Ui_WizardDialog(object):
         self.color_layout.addWidget(self.pbColorUnmixer)
 
         self.mainLayout.addLayout(self.color_layout)
+
+        self.fluorophores_layout = QHBoxLayout()
+        self.fluorophores_layout.setObjectName("fluorophores_layout")
+        self.lbActiveColor = QLabel(WizardDialog)
+        self.lbActiveColor.setObjectName("lbActiveColor")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(
+            self.lbActiveColor.sizePolicy().hasHeightForWidth()
+        )
+        self.lbActiveColor.setSizePolicy(sizePolicy1)
+
+        self.fluorophores_layout.addWidget(self.lbActiveColor)
+
+        self.cmActiveColor = QComboBox(WizardDialog)
+        self.cmActiveColor.addItem("")
+        self.cmActiveColor.setObjectName("cmActiveColor")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(
+            self.cmActiveColor.sizePolicy().hasHeightForWidth()
+        )
+        self.cmActiveColor.setSizePolicy(sizePolicy2)
+
+        self.fluorophores_layout.addWidget(self.cmActiveColor)
+
+        self.mainLayout.addLayout(self.fluorophores_layout)
 
         self.verticalSpacer_3 = QSpacerItem(
             20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
@@ -140,13 +171,13 @@ class Ui_WizardDialog(object):
 
         self.leEFOLowerBound = QLineEdit(WizardDialog)
         self.leEFOLowerBound.setObjectName("leEFOLowerBound")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(
+        sizePolicy3 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(
             self.leEFOLowerBound.sizePolicy().hasHeightForWidth()
         )
-        self.leEFOLowerBound.setSizePolicy(sizePolicy1)
+        self.leEFOLowerBound.setSizePolicy(sizePolicy3)
 
         self.efo_lower_bound_layout.addWidget(self.leEFOLowerBound)
 
@@ -161,10 +192,10 @@ class Ui_WizardDialog(object):
 
         self.leEFOUpperBound = QLineEdit(WizardDialog)
         self.leEFOUpperBound.setObjectName("leEFOUpperBound")
-        sizePolicy1.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.leEFOUpperBound.sizePolicy().hasHeightForWidth()
         )
-        self.leEFOUpperBound.setSizePolicy(sizePolicy1)
+        self.leEFOUpperBound.setSizePolicy(sizePolicy3)
 
         self.efo_upper_bound_layout.addWidget(self.leEFOUpperBound)
 
@@ -190,10 +221,10 @@ class Ui_WizardDialog(object):
 
         self.leCFRLowerBound = QLineEdit(WizardDialog)
         self.leCFRLowerBound.setObjectName("leCFRLowerBound")
-        sizePolicy1.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.leCFRLowerBound.sizePolicy().hasHeightForWidth()
         )
-        self.leCFRLowerBound.setSizePolicy(sizePolicy1)
+        self.leCFRLowerBound.setSizePolicy(sizePolicy3)
 
         self.cfr_lower_bound_layout.addWidget(self.leCFRLowerBound)
 
@@ -208,10 +239,10 @@ class Ui_WizardDialog(object):
 
         self.leCFRUpperBound = QLineEdit(WizardDialog)
         self.leCFRUpperBound.setObjectName("leCFRUpperBound")
-        sizePolicy1.setHeightForWidth(
+        sizePolicy3.setHeightForWidth(
             self.leCFRUpperBound.sizePolicy().hasHeightForWidth()
         )
-        self.leCFRUpperBound.setSizePolicy(sizePolicy1)
+        self.leCFRUpperBound.setSizePolicy(sizePolicy3)
 
         self.cfr_upper_bound_layout.addWidget(self.leCFRUpperBound)
 
@@ -226,8 +257,8 @@ class Ui_WizardDialog(object):
 
         self.leCFRSigma = QLineEdit(WizardDialog)
         self.leCFRSigma.setObjectName("leCFRSigma")
-        sizePolicy1.setHeightForWidth(self.leCFRSigma.sizePolicy().hasHeightForWidth())
-        self.leCFRSigma.setSizePolicy(sizePolicy1)
+        sizePolicy3.setHeightForWidth(self.leCFRSigma.sizePolicy().hasHeightForWidth())
+        self.leCFRSigma.setSizePolicy(sizePolicy3)
 
         self.robust_threshold_layout.addWidget(self.leCFRSigma)
 
@@ -275,6 +306,13 @@ class Ui_WizardDialog(object):
         self.pbColorUnmixer.setText(
             QCoreApplication.translate("WizardDialog", "Color Unmizer", None)
         )
+        self.lbActiveColor.setText(
+            QCoreApplication.translate("WizardDialog", "Active color", None)
+        )
+        self.cmActiveColor.setItemText(
+            0, QCoreApplication.translate("WizardDialog", "All", None)
+        )
+
         self.pbTimeInspector.setText(
             QCoreApplication.translate("WizardDialog", "Time Inspector", None)
         )

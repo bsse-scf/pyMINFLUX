@@ -37,6 +37,12 @@
     <layout class="QVBoxLayout" name="mainLayout">
      <item>
       <widget class="QPushButton" name="pbLoadData">
+       <property name="minimumSize">
+        <size>
+         <width>320</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="text">
         <string>Load</string>
        </property>
@@ -72,6 +78,38 @@
          <property name="text">
           <string>Color Unmizer</string>
          </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="fluorophores_layout">
+       <item>
+        <widget class="QLabel" name="lbActiveColor">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Active color</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="cmActiveColor">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <item>
+          <property name="text">
+           <string>All</string>
+          </property>
+         </item>
         </widget>
        </item>
       </layout>

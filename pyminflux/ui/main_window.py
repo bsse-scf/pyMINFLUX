@@ -162,9 +162,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter_toolbar.plot_requested_parameters.connect(
             self.plot_selected_parameters
         )
-        self.plotter_toolbar.ui.pbOpenAnalyzer.clicked.connect(self.open_analyzer)
-        self.plotter_toolbar.ui.pbOpenInspector.clicked.connect(self.open_inspector)
-        self.plotter_toolbar.ui.pbUnmixColors.clicked.connect(self.open_color_unmixer)
         self.plotter_toolbar.fluorophore_id_changed.connect(
             self.update_fluorophore_id_in_processor_and_broadcast
         )
@@ -192,6 +189,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.wizard.open_unmixer_triggered.connect(self.open_color_unmixer)
         self.wizard.open_time_inspector_triggered.connect(self.open_inspector)
         self.wizard.open_analyzer_triggered.connect(self.open_analyzer)
+        self.wizard.fluorophore_id_changed.connect(
+            self.update_fluorophore_id_in_processor_and_broadcast
+        )
+        self.wizard.request_fluorophore_ids_reset.connect(self.reset_fluorophore_ids)
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
@@ -390,10 +391,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Make sure to autoupdate the axis on load
             self.plotter.enableAutoRange(enable=True)
 
-            # Reset the fluorophore list in the Plotter Toolbar
-            self.plotter_toolbar.set_fluorophore_list(
-                self.minfluxprocessor.num_fluorophorses
-            )
+            # Reset the fluorophore list in the wizard
+            self.wizard.set_fluorophore_list(self.minfluxprocessor.num_fluorophorses)
 
             # Enable selected ui components
             self.enable_ui_components_on_loaded_data()
@@ -404,12 +403,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.analyzer.plot()
 
             # Enable wizard step 1
-            self.wizard.enable_step(1)
+            self.wizard.enable_controls(True)
 
         else:
 
             # Enable wizard step 1
-            self.wizard.enable_step(0)
+            self.wizard.enable_controls(False)
 
     @Slot(None, name="print_current_state")
     def print_current_state(self):
@@ -424,6 +423,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.analyzer is None:
             self.analyzer = Analyzer(self.minfluxprocessor)
             self.analyzer.data_filters_changed.connect(self.full_update_ui)
+            self.analyzer.cfr_threshold_factor_changed.connect(
+                self.wizard.change_cfr_threshold_factor
+            )
+            self.analyzer.cfr_lower_bound_state_changed.connect(
+                self.wizard.change_cfr_lower_bound_state
+            )
+            self.analyzer.cfr_upper_bound_state_changed.connect(
+                self.wizard.change_cfr_upper_bound_state
+            )
+            self.analyzer.efo_bounds_changed.connect(self.wizard.change_efo_bounds)
+            self.analyzer.cfr_bounds_changed.connect(self.wizard.change_cfr_bounds)
             if self.inspector is not None:
                 self.analyzer.data_filters_changed.connect(self.inspector.update)
             self.analyzer.plot()
@@ -448,7 +458,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.color_unmixer is None:
             self.color_unmixer = ColorUnmixer(self.minfluxprocessor, parent=self)
             self.color_unmixer.fluorophore_ids_assigned.connect(
-                self.plotter_toolbar.set_fluorophore_list
+                self.wizard.set_fluorophore_list
             )
             self.color_unmixer.fluorophore_ids_assigned.connect(
                 self.plot_selected_parameters
@@ -680,3 +690,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Update the analyzer as well
         if self.analyzer is not None:
             self.analyzer.plot()
+
+    def reset_fluorophore_ids(self):
+        """Reset the fluorophore IDs."""
+
+        # Reset
+        self.minfluxprocessor.reset()
+
+        # Update UI
+        self.update_fluorophore_id_in_processor_and_broadcast(0)
