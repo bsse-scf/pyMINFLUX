@@ -45,16 +45,16 @@
      <item>
       <layout class="QHBoxLayout" name="color_layout">
        <item>
-        <widget class="QPushButton" name="pbColorUnmixer">
+        <widget class="QPushButton" name="pbSingleColor">
          <property name="text">
-          <string>Color Unmizer</string>
+          <string>Single Color</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pbSingleColor">
+        <widget class="QPushButton" name="pbColorUnmixer">
          <property name="text">
-          <string>Single Color</string>
+          <string>Color Unmizer</string>
          </property>
         </widget>
        </item>

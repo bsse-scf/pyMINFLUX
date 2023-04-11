@@ -187,6 +187,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.update_weighted_average_localization_option_and_plot
         )
 
+        # Wizard
+        self.wizard.load_data_triggered.connect(self.select_and_open_numpy_file)
+        self.wizard.open_unmixer_triggered.connect(self.open_color_unmixer)
+        self.wizard.open_time_inspector_triggered.connect(self.open_inspector)
+        self.wizard.open_analyzer_triggered.connect(self.open_analyzer)
+
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
         self.ui.actionAnalyzer.setEnabled(True)
@@ -396,6 +402,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.analyzer is not None:
                 self.analyzer.set_processor(self.minfluxprocessor)
                 self.analyzer.plot()
+
+            # Enable wizard step 1
+            self.wizard.enable_step(1)
+
+        else:
+
+            # Enable wizard step 1
+            self.wizard.enable_step(0)
 
     @Slot(None, name="print_current_state")
     def print_current_state(self):

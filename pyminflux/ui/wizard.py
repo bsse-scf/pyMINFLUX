@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QDialog
 
 from pyminflux.state import State
@@ -6,6 +7,12 @@ from .ui_wizard import Ui_WizardDialog
 
 
 class WizardDialog(QDialog, Ui_WizardDialog):
+
+    load_data_triggered = Signal(None, name="load_data_triggered")
+    open_unmixer_triggered = Signal(None, name="open_unmixer_triggered")
+    open_time_inspector_triggered = Signal(None, name="open_time_inspector_triggered")
+    open_analyzer_triggered = Signal(None, name="open_analyzer_triggered")
+
     def __init__(self, parent=None):
         """Constructor."""
 
@@ -21,6 +28,26 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Enable step 0
         self.enable_step(0)
+
+        # Set up connections
+        self.setup_conn()
+
+    def setup_conn(self):
+
+        self.ui.pbLoadData.clicked.connect(lambda _: self.load_data_triggered.emit())
+        self.ui.pbSingleColor.clicked.connect(lambda _: self.enable_step(2))
+        self.ui.pbColorUnmixer.clicked.connect(
+            lambda _: self.open_unmixer_triggered.emit()
+        )
+        self.ui.pbColorUnmixer.clicked.connect(lambda _: self.enable_step(2))
+        self.ui.pbTimeInspector.clicked.connect(
+            lambda _: self.open_time_inspector_triggered.emit()
+        )
+        self.ui.pbTimeInspector.clicked.connect(lambda _: self.enable_step(3))
+        self.ui.pbAnalyzer.clicked.connect(
+            lambda _: self.open_analyzer_triggered.emit()
+        )
+        self.ui.pbAnalyzer.clicked.connect(lambda _: self.enable_step(5))
 
     def enable_step(self, step: int = 0):
 

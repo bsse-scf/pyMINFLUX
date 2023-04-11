@@ -83,15 +83,15 @@ class Ui_WizardDialog(object):
 
         self.color_layout = QHBoxLayout()
         self.color_layout.setObjectName("color_layout")
-        self.pbColorUnmixer = QPushButton(WizardDialog)
-        self.pbColorUnmixer.setObjectName("pbColorUnmixer")
-
-        self.color_layout.addWidget(self.pbColorUnmixer)
-
         self.pbSingleColor = QPushButton(WizardDialog)
         self.pbSingleColor.setObjectName("pbSingleColor")
 
         self.color_layout.addWidget(self.pbSingleColor)
+
+        self.pbColorUnmixer = QPushButton(WizardDialog)
+        self.pbColorUnmixer.setObjectName("pbColorUnmixer")
+
+        self.color_layout.addWidget(self.pbColorUnmixer)
 
         self.mainLayout.addLayout(self.color_layout)
 
@@ -269,11 +269,11 @@ class Ui_WizardDialog(object):
         self.pbLoadData.setText(
             QCoreApplication.translate("WizardDialog", "Load", None)
         )
-        self.pbColorUnmixer.setText(
-            QCoreApplication.translate("WizardDialog", "Color Unmizer", None)
-        )
         self.pbSingleColor.setText(
             QCoreApplication.translate("WizardDialog", "Single Color", None)
+        )
+        self.pbColorUnmixer.setText(
+            QCoreApplication.translate("WizardDialog", "Color Unmizer", None)
         )
         self.pbTimeInspector.setText(
             QCoreApplication.translate("WizardDialog", "Time Inspector", None)
