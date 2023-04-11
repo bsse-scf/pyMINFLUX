@@ -63,3 +63,33 @@ class ROIRanges(QDialog, Ui_ROIRanges):
 
         # Call the base class accept() method
         super().accept()
+
+    def set_target(self, target):
+
+        if target not in ["efo", "cfr"]:
+            raise ValueError("Expected 'efo' or 'cfr' targets.")
+
+        if target == "efo":
+            self.ui.lbCFR.setVisible(False)
+            self.ui.lbMinCFR.setVisible(False)
+            self.ui.leCFRMin.setVisible(False)
+            self.ui.lbCFRMax.setVisible(False)
+            self.ui.leCFRMax.setVisible(False)
+            self.ui.lbEFO.setVisible(True)
+            self.ui.lbEFOMin.setVisible(True)
+            self.ui.leEFOMin.setVisible(True)
+            self.ui.lbEFOMax.setVisible(True)
+            self.ui.leEFOMax.setVisible(True)
+            self.setWindowTitle("EFO roi range")
+        else:
+            self.ui.lbCFR.setVisible(True)
+            self.ui.lbMinCFR.setVisible(True)
+            self.ui.leCFRMin.setVisible(True)
+            self.ui.lbCFRMax.setVisible(True)
+            self.ui.leCFRMax.setVisible(True)
+            self.ui.lbEFO.setVisible(False)
+            self.ui.lbEFOMin.setVisible(False)
+            self.ui.leEFOMin.setVisible(False)
+            self.ui.lbEFOMax.setVisible(False)
+            self.ui.leEFOMax.setVisible(False)
+            self.setWindowTitle("CFR roi range")

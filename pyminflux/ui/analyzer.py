@@ -625,7 +625,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
             ranges_action = QAction("Set ROI ranges")
-            ranges_action.triggered.connect(self.roi_open_ranges_dialog)
+            ranges_action.triggered.connect(
+                lambda checked: self.roi_open_ranges_dialog(ev.currentItem.data_label)
+            )
             menu.addAction(ranges_action)
             filter_action = QAction("Filter")
             filter_action.triggered.connect(
@@ -653,6 +655,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             )
         else:
             self.roi_ranges_dialog.update_fields()
+        self.roi_ranges_dialog.set_target(item)
         self.roi_ranges_dialog.show()
         self.roi_ranges_dialog.activateWindow()
 
