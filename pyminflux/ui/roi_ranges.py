@@ -36,6 +36,10 @@ class ROIRanges(QDialog, Ui_ROIRanges):
         self.ui.leEFOMin.setValidator(QDoubleValidator(decimals=0))
         self.ui.leEFOMax.setValidator(QDoubleValidator(decimals=0))
 
+        # Set height explicitly, since only half of the widgets will be displayed
+        # at any given time
+        self.resize(self.width(), 95)
+
     def update_fields(self):
         """Force an update of the input fields."""
         self.ui.leCFRMin.setText(f"{self.state.cfr_thresholds[0]:.2f}")
