@@ -315,7 +315,6 @@ class MinFluxProcessor:
                 & (self.__weighted_localizations[x_prop] < x_max)
             ]
         else:
-
             # Work with currently selected rows
             df = self.filtered_dataframe
 
@@ -374,7 +373,6 @@ class MinFluxProcessor:
                 & (self.__weighted_localizations[y_prop] < y_max)
             ]
         else:
-
             # Work with currently selected rows
             df = self.filtered_dataframe
 
@@ -454,7 +452,6 @@ class MinFluxProcessor:
         self.__weighted_localizations_to_be_recomputed = True
 
     def __filter_by_tid_length(self, index):
-
         # Make sure to count only currently selected rows
         df = self.full_dataframe.copy()
         df.loc[np.invert(self.__selected_rows_dict[index]), "tid"] = np.nan
@@ -717,7 +714,6 @@ class MinFluxProcessor:
             )  # Return the most frequent fluo ID
 
         else:
-
             # Calculate simple average of localizations by TID
             df_grouped = df.groupby(df["tid"])
             tid = df_grouped["tid"].first().values

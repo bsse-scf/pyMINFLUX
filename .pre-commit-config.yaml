@@ -1,19 +1,10 @@
 repos:
--   repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+-   repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.10.1
     hooks:
     - id: isort
-      exclude: \.ui|\.txt|\.zip|\.npy|\.png|\.cmd|\.icns|\.whl|\.toml|\.lock|\.md|\.qrc|\.sh|\.yaml|.gitignore|.gitattributes
-      args: ["--profile", "black"]
--   repo: https://github.com/python/black
-    rev: 22.3.0
+-   repo: https://github.com/ambv/black
+    rev: 22.12.0
     hooks:
     - id: black
-      pass_filenames: true
-      exclude: \.ui|\.txt|\.zip|\.npy|\.png|\.cmd|\.icns|\.whl|\.toml|\.lock|\.md|\.qrc|\.sh|\.yaml|.gitignore|.gitattributes
--   repo: https://github.com/PyCQA/flake8
-    rev: 3.9.2
-    hooks:
-    - id: flake8
-      pass_filenames: true
-      exclude: \.ui|\.txt|\.zip|\.npy|\.png|\.cmd|\.icns|\.whl|\.toml|\.lock|\.md|\.qrc|\.sh|\.yaml|.gitignore|.gitattributes
+      language_version: python3.10

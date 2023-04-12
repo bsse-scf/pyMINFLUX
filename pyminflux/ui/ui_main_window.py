@@ -77,16 +77,10 @@ class Ui_MainWindow(object):
         self.action3D_Plotter = QAction(MainWindow)
         self.action3D_Plotter.setObjectName("action3D_Plotter")
         self.action3D_Plotter.setCheckable(False)
-        self.actionAnalyzer = QAction(MainWindow)
-        self.actionAnalyzer.setObjectName("actionAnalyzer")
-        self.actionAnalyzer.setEnabled(False)
         self.actionState = QAction(MainWindow)
         self.actionState.setObjectName("actionState")
         self.actionOptions = QAction(MainWindow)
         self.actionOptions.setObjectName("actionOptions")
-        self.actionData_Inspector = QAction(MainWindow)
-        self.actionData_Inspector.setObjectName("actionData_Inspector")
-        self.actionData_Inspector.setEnabled(False)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -145,7 +139,6 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionData_viewer)
         self.menuView.addAction(self.actionConsole)
         self.menuView.addSeparator()
-        self.menuView.addAction(self.actionAnalyzer)
         self.menuView.addAction(self.action3D_Plotter)
         self.menuView.addSeparator()
         self.menuView.addSeparator()
@@ -194,17 +187,11 @@ class Ui_MainWindow(object):
         self.action3D_Plotter.setText(
             QCoreApplication.translate("MainWindow", "3D Plotter", None)
         )
-        self.actionAnalyzer.setText(
-            QCoreApplication.translate("MainWindow", "Analyzer", None)
-        )
         self.actionState.setText(
             QCoreApplication.translate("MainWindow", "[DEBUG] Show state", None)
         )
         self.actionOptions.setText(
             QCoreApplication.translate("MainWindow", "Options", None)
-        )
-        self.actionData_Inspector.setText(
-            QCoreApplication.translate("MainWindow", "Data Inspector", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))

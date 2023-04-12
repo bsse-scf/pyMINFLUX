@@ -7,7 +7,6 @@ from .ui_plotter_toolbar import Ui_PlotterToolbar
 
 
 class PlotterToolbar(QWidget, Ui_PlotterToolbar):
-
     plot_requested_parameters = Signal(None, name="plot_requested_parameters")
     fluorophore_id_changed = Signal(int, name="fluorophore_id_changed")
     color_code_locs_changed = Signal(int, name="color_code_locs_changed")
@@ -49,11 +48,6 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         self.ui.cbColorCodeSelector.setCurrentIndex(0)
         self.ui.cbColorCodeSelector.currentIndexChanged.connect(
             self.persist_color_code_and_broadcast
-        )
-
-        # Add callback to the fluorophore combo box
-        self.ui.cbFluorophoreIndex.currentIndexChanged.connect(
-            self.fluorophore_index_changed
         )
 
         # Set the state of the average checkbox
@@ -109,39 +103,3 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
         # Emit signal
         self.plot_requested_parameters.emit()
-
-    @Slot(int, name="set_fluorophore_list")
-    def set_fluorophore_list(self, num_fluorophores):
-        """Update the fluorophores pull-down menu."""
-
-        # Signal blocker on self.efo_cfr_roi
-        blocker = QSignalBlocker(self.ui.cbFluorophoreIndex)
-
-        # Block signals from the combo box
-        blocker.reblock()
-
-        # Remove old items
-        self.ui.cbFluorophoreIndex.clear()
-
-        # Add new items
-        self.ui.cbFluorophoreIndex.addItems(
-            ["All"] + list([str(i + 1) for i in range(num_fluorophores)])
-        )
-
-        # Release the blocker
-        blocker.unblock()
-
-        # Fall back to no fluorophore id selected.
-        # This is allowed to signal.
-        self.ui.cbFluorophoreIndex.setCurrentIndex(0)
-
-    @Slot(int, name="fluorophore_index_changed")
-    def fluorophore_index_changed(self, index):
-        """Emit a signal informing that the fluorophore id has changed."""
-
-        # If the items have just been added, the index will be -1
-        if index == -1:
-            return
-
-        # The fluorophore index is 1 + the combobox current index
-        self.fluorophore_id_changed.emit(index)

@@ -16,11 +16,15 @@ from .ui_analyzer import Ui_Analyzer
 
 
 class Analyzer(QDialog, Ui_Analyzer):
-
     # Signal that the data viewers should be updated
     data_filters_changed = Signal(name="data_filters_changed")
     plotting_started = Signal(name="plotting_started")
     plotting_completed = Signal(name="plotting_completed")
+    efo_bounds_changed = Signal(name="efo_bounds_changed")
+    cfr_bounds_changed = Signal(name="cfr_bounds_changed")
+    cfr_threshold_factor_changed = Signal(name="cfr_threshold_factor_changed")
+    cfr_lower_bound_state_changed = Signal(name="cfr_lower_bound_state_changed")
+    cfr_upper_bound_state_changed = Signal(name="cfr_upper_bound_state_changed")
 
     def __init__(self, minfluxprocessor: MinFluxProcessor, parent=None):
         """Constructor."""
@@ -266,10 +270,12 @@ class Analyzer(QDialog, Ui_Analyzer):
     @Slot(int, name="persist_cfr_lower_threshold")
     def persist_cfr_lower_threshold(self, state):
         self.state.enable_cfr_lower_threshold = state != 0
+        self.cfr_lower_bound_state_changed.emit()
 
     @Slot(int, name="persist_cfr_upper_threshold")
     def persist_cfr_upper_threshold(self, state):
         self.state.enable_cfr_upper_threshold = state != 0
+        self.cfr_upper_bound_state_changed.emit()
 
     @Slot(str, name="persist_efo_expected_frequency")
     def persist_efo_expected_frequency(self, text):
@@ -286,6 +292,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         except ValueError as _:
             return
         self.state.cfr_threshold_factor = cfr_threshold_factor
+
+        # Broadcast
+        self.cfr_threshold_factor_changed.emit()
 
     @Slot(name="reset_filters")
     def reset_filters(self):
@@ -383,7 +392,6 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Is there data to plot?
         if not is_data:
-
             # Show the communication label
             self.communication_label.show()
 
@@ -566,7 +574,6 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         region = None
         if support_thresholding:
-
             # Create a linear region for setting filtering thresholds
             region = pg.LinearRegionItem(
                 values=[thresholds[0], thresholds[1]],
@@ -748,8 +755,10 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Update the correct thresholds
         if item.data_label == "efo":
             self.state.efo_thresholds = item.getRegion()
+            self.efo_bounds_changed.emit()
         else:
             self.state.cfr_thresholds = item.getRegion()
+            self.cfr_bounds_changed.emit()
 
     @staticmethod
     def _change_region_label_font(region_label):
@@ -764,3 +773,33 @@ class Analyzer(QDialog, Ui_Analyzer):
         """Reset the y axis range whenever the x range changes."""
         viewbox.setYRange(viewbox.y_min, viewbox.y_max)
         viewbox.setAutoVisible(y=True)
+
+    def change_efo_bounds(self):
+        """Update the efo bounds on the histogram (without broadcasting any events)."""
+
+        # Signal blocker on self.efo_plot
+        efo_plot_blocker = QSignalBlocker(self.efo_plot)
+
+        # Block signals from self.efo_plot and self.cfr_plot
+        efo_plot_blocker.reblock()
+
+        # Update the thresholds in the EFO and CFR histograms.
+        self.efo_region.setRegion(self.state.efo_thresholds)
+
+        # Unblock the self.efo_plot and self.cfr_plot signals
+        efo_plot_blocker.unblock()
+
+    def change_cfr_bounds(self):
+        """Update the cfr bounds on the histogram (without broadcasting any events)."""
+
+        # Signal blocker on self.efo_plot
+        cfr_plot_blocker = QSignalBlocker(self.cfr_plot)
+
+        # Block signals from self.efo_plot and self.cfr_plot
+        cfr_plot_blocker.reblock()
+
+        # Update the thresholds in the EFO and CFR histograms.
+        self.cfr_region.setRegion(self.state.cfr_thresholds)
+
+        # Unblock the self.efo_plot and self.cfr_plot signals
+        cfr_plot_blocker.unblock()

@@ -44,6 +44,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -72,76 +73,36 @@ class Ui_PlotterToolbar(object):
 
         self.horizontalLayout.addItem(self.horizontalSpacer_2)
 
-        self.pbOpenAnalyzer = QPushButton(PlotterToolbar)
-        self.pbOpenAnalyzer.setObjectName("pbOpenAnalyzer")
-        sizePolicy1 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(
-            self.pbOpenAnalyzer.sizePolicy().hasHeightForWidth()
-        )
-        self.pbOpenAnalyzer.setSizePolicy(sizePolicy1)
+        self.lbOptions = QLabel(PlotterToolbar)
+        self.lbOptions.setObjectName("lbOptions")
 
-        self.horizontalLayout.addWidget(self.pbOpenAnalyzer)
+        self.horizontalLayout.addWidget(self.lbOptions)
 
-        self.horizontalSpacer = QSpacerItem(
-            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
-        )
+        self.cbColorCodeSelector = QComboBox(PlotterToolbar)
+        self.cbColorCodeSelector.addItem("")
+        self.cbColorCodeSelector.addItem("")
+        self.cbColorCodeSelector.addItem("")
+        self.cbColorCodeSelector.setObjectName("cbColorCodeSelector")
 
-        self.horizontalLayout.addItem(self.horizontalSpacer)
+        self.horizontalLayout.addWidget(self.cbColorCodeSelector)
 
-        self.pbOpenInspector = QPushButton(PlotterToolbar)
-        self.pbOpenInspector.setObjectName("pbOpenInspector")
-        sizePolicy1.setHeightForWidth(
-            self.pbOpenInspector.sizePolicy().hasHeightForWidth()
-        )
-        self.pbOpenInspector.setSizePolicy(sizePolicy1)
+        self.cbPlotAveragePos = QCheckBox(PlotterToolbar)
+        self.cbPlotAveragePos.setObjectName("cbPlotAveragePos")
 
-        self.horizontalLayout.addWidget(self.pbOpenInspector)
+        self.horizontalLayout.addWidget(self.cbPlotAveragePos)
 
-        self.horizontalSpacer_5 = QSpacerItem(
-            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
-        )
+        self.line = QFrame(PlotterToolbar)
+        self.line.setObjectName("line")
+        self.line.setFrameShape(QFrame.VLine)
+        self.line.setFrameShadow(QFrame.Sunken)
 
-        self.horizontalLayout.addItem(self.horizontalSpacer_5)
-
-        self.lbFluorophoreIndex = QLabel(PlotterToolbar)
-        self.lbFluorophoreIndex.setObjectName("lbFluorophoreIndex")
-        self.lbFluorophoreIndex.setEnabled(True)
-        self.lbFluorophoreIndex.setAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
-        )
-
-        self.horizontalLayout.addWidget(self.lbFluorophoreIndex)
-
-        self.cbFluorophoreIndex = QComboBox(PlotterToolbar)
-        self.cbFluorophoreIndex.addItem("")
-        self.cbFluorophoreIndex.setObjectName("cbFluorophoreIndex")
-        sizePolicy1.setHeightForWidth(
-            self.cbFluorophoreIndex.sizePolicy().hasHeightForWidth()
-        )
-        self.cbFluorophoreIndex.setSizePolicy(sizePolicy1)
-
-        self.horizontalLayout.addWidget(self.cbFluorophoreIndex)
-
-        self.pbUnmixColors = QPushButton(PlotterToolbar)
-        self.pbUnmixColors.setObjectName("pbUnmixColors")
-        self.pbUnmixColors.setEnabled(True)
-        sizePolicy1.setHeightForWidth(
-            self.pbUnmixColors.sizePolicy().hasHeightForWidth()
-        )
-        self.pbUnmixColors.setSizePolicy(sizePolicy1)
-
-        self.horizontalLayout.addWidget(self.pbUnmixColors)
-
-        self.horizontalSpacer_3 = QSpacerItem(
-            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
-        )
-
-        self.horizontalLayout.addItem(self.horizontalSpacer_3)
+        self.horizontalLayout.addWidget(self.line)
 
         self.cbFirstParam = QComboBox(PlotterToolbar)
         self.cbFirstParam.setObjectName("cbFirstParam")
+        sizePolicy1 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(
             self.cbFirstParam.sizePolicy().hasHeightForWidth()
         )
@@ -157,19 +118,6 @@ class Ui_PlotterToolbar(object):
         self.cbSecondParam.setSizePolicy(sizePolicy1)
 
         self.horizontalLayout.addWidget(self.cbSecondParam)
-
-        self.cbColorCodeSelector = QComboBox(PlotterToolbar)
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.setObjectName("cbColorCodeSelector")
-
-        self.horizontalLayout.addWidget(self.cbColorCodeSelector)
-
-        self.cbPlotAveragePos = QCheckBox(PlotterToolbar)
-        self.cbPlotAveragePos.setObjectName("cbPlotAveragePos")
-
-        self.horizontalLayout.addWidget(self.cbPlotAveragePos)
 
         self.pbPlot = QPushButton(PlotterToolbar)
         self.pbPlot.setObjectName("pbPlot")
@@ -194,21 +142,8 @@ class Ui_PlotterToolbar(object):
         PlotterToolbar.setWindowTitle(
             QCoreApplication.translate("PlotterToolbar", "Form", None)
         )
-        self.pbOpenAnalyzer.setText(
-            QCoreApplication.translate("PlotterToolbar", "Analyze", None)
-        )
-        self.pbOpenInspector.setText(
-            QCoreApplication.translate("PlotterToolbar", "Time Inspect", None)
-        )
-        self.lbFluorophoreIndex.setText(
-            QCoreApplication.translate("PlotterToolbar", "Fluorophore", None)
-        )
-        self.cbFluorophoreIndex.setItemText(
-            0, QCoreApplication.translate("PlotterToolbar", "All", None)
-        )
-
-        self.pbUnmixColors.setText(
-            QCoreApplication.translate("PlotterToolbar", "Unmix", None)
+        self.lbOptions.setText(
+            QCoreApplication.translate("PlotterToolbar", "Options:", None)
         )
         self.cbColorCodeSelector.setItemText(
             0, QCoreApplication.translate("PlotterToolbar", "No color code", None)

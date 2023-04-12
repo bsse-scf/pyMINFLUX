@@ -7,7 +7,6 @@ import pyminflux.resources
 from pyminflux.ui.main_window import PyMinFluxMainWindow
 
 if __name__ == "__main__":
-
     app = QApplication(sys.argv)
     if sys.platform.startswith("linux"):
         app.setStyle("fusion")

@@ -2,9 +2,9 @@ from pathlib import Path
 
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
-from PySide6.QtCore import QSettings, Slot
+from PySide6.QtCore import QSettings, Qt, Slot
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox
+from PySide6.QtWidgets import QDockWidget, QFileDialog, QMainWindow, QMessageBox
 
 from pyminflux import __version__
 from pyminflux.processor import MinFluxProcessor
@@ -25,6 +25,7 @@ from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.ui_main_window import Ui_MainWindow
+from pyminflux.ui.wizard import WizardDialog
 
 
 class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
@@ -74,6 +75,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Make sure to only show the console if requested
         self.toggle_dock_console_visibility()
+
+        # Initialize widget and its dock
+        self.wizard = WizardDialog()
+        self.wizard_dock = QDockWidget("", self)
+        self.wizard_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.wizard_dock.setFeatures(
+            QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable
+        )
+        self.wizard_dock.setWidget(self.wizard)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.wizard_dock)
 
         # Initialize Plotter and DataViewer
         self.plotter = Plotter()
@@ -147,16 +158,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
-        self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
         self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Plotter toolbar
         self.plotter_toolbar.plot_requested_parameters.connect(
             self.plot_selected_parameters
         )
-        self.plotter_toolbar.ui.pbOpenAnalyzer.clicked.connect(self.open_analyzer)
-        self.plotter_toolbar.ui.pbOpenInspector.clicked.connect(self.open_inspector)
-        self.plotter_toolbar.ui.pbUnmixColors.clicked.connect(self.open_color_unmixer)
         self.plotter_toolbar.fluorophore_id_changed.connect(
             self.update_fluorophore_id_in_processor_and_broadcast
         )
@@ -179,14 +186,23 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.update_weighted_average_localization_option_and_plot
         )
 
+        # Wizard
+        self.wizard.load_data_triggered.connect(self.select_and_open_numpy_file)
+        self.wizard.open_unmixer_triggered.connect(self.open_color_unmixer)
+        self.wizard.open_time_inspector_triggered.connect(self.open_inspector)
+        self.wizard.open_analyzer_triggered.connect(self.open_analyzer)
+        self.wizard.fluorophore_id_changed.connect(
+            self.update_fluorophore_id_in_processor_and_broadcast
+        )
+        self.wizard.request_fluorophore_ids_reset.connect(self.reset_fluorophore_ids)
+        self.wizard.wizard_filters_run.connect(self.full_update_ui)
+
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
-        self.ui.actionAnalyzer.setEnabled(True)
         self.plotter_toolbar.show()
 
     def disable_ui_components_on_closed_data(self):
         """Disable UI components."""
-        self.ui.actionAnalyzer.setEnabled(False)
         self.plotter_toolbar.hide()
 
     def full_update_ui(self):
@@ -328,7 +344,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         filename = res[0]
         if filename != "":
-
             # Reset the state machine
             self.state.reset()
 
@@ -376,10 +391,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Make sure to autoupdate the axis on load
             self.plotter.enableAutoRange(enable=True)
 
-            # Reset the fluorophore list in the Plotter Toolbar
-            self.plotter_toolbar.set_fluorophore_list(
-                self.minfluxprocessor.num_fluorophorses
-            )
+            # Reset the fluorophore list in the wizard
+            self.wizard.set_fluorophore_list(self.minfluxprocessor.num_fluorophorses)
 
             # Enable selected ui components
             self.enable_ui_components_on_loaded_data()
@@ -388,6 +401,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.analyzer is not None:
                 self.analyzer.set_processor(self.minfluxprocessor)
                 self.analyzer.plot()
+
+            # Attach the processor reference to the wizard
+            self.wizard.set_processor(self.minfluxprocessor)
+
+            # Enable wizard step 1
+            self.wizard.enable_controls(True)
+
+        else:
+            # Enable wizard step 1
+            self.wizard.enable_controls(False)
 
     @Slot(None, name="print_current_state")
     def print_current_state(self):
@@ -401,7 +424,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Initialize and open the analyzer."""
         if self.analyzer is None:
             self.analyzer = Analyzer(self.minfluxprocessor)
+            self.wizard.wizard_filters_run.connect(self.analyzer.plot)
+            self.wizard.efo_bounds_modified.connect(self.analyzer.change_efo_bounds)
+            self.wizard.cfr_bounds_modified.connect(self.analyzer.change_cfr_bounds)
             self.analyzer.data_filters_changed.connect(self.full_update_ui)
+            self.analyzer.cfr_threshold_factor_changed.connect(
+                self.wizard.change_cfr_threshold_factor
+            )
+            self.analyzer.efo_bounds_changed.connect(self.wizard.change_efo_bounds)
+            self.analyzer.cfr_bounds_changed.connect(self.wizard.change_cfr_bounds)
             if self.inspector is not None:
                 self.analyzer.data_filters_changed.connect(self.inspector.update)
             self.analyzer.plot()
@@ -415,6 +446,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.inspector = TimeInspector(self.minfluxprocessor, parent=self)
             self.inspector.dataset_time_filtered.connect(self.full_update_ui)
             self.plotter_toolbar.fluorophore_id_changed.connect(self.inspector.update)
+            self.wizard.wizard_filters_run.connect(self.inspector.update)
             if self.analyzer is not None:
                 self.analyzer.data_filters_changed.connect(self.inspector.update)
         self.inspector.show()
@@ -426,11 +458,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.color_unmixer is None:
             self.color_unmixer = ColorUnmixer(self.minfluxprocessor, parent=self)
             self.color_unmixer.fluorophore_ids_assigned.connect(
-                self.plotter_toolbar.set_fluorophore_list
+                self.wizard.set_fluorophore_list
             )
             self.color_unmixer.fluorophore_ids_assigned.connect(
                 self.plot_selected_parameters
             )
+            self.wizard.wizard_filters_run.connect(self.plot_selected_parameters)
         self.color_unmixer.show()
         self.color_unmixer.activateWindow()
 
@@ -658,3 +691,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Update the analyzer as well
         if self.analyzer is not None:
             self.analyzer.plot()
+
+    def reset_fluorophore_ids(self):
+        """Reset the fluorophore IDs."""
+
+        # Reset
+        self.minfluxprocessor.reset()
+
+        # Update UI
+        self.update_fluorophore_id_in_processor_and_broadcast(0)

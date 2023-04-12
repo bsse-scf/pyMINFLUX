@@ -62,7 +62,6 @@
     <addaction name="actionData_viewer"/>
     <addaction name="actionConsole"/>
     <addaction name="separator"/>
-    <addaction name="actionAnalyzer"/>
     <addaction name="action3D_Plotter"/>
     <addaction name="separator"/>
     <addaction name="separator"/>
@@ -177,14 +176,6 @@
     <string>3D Plotter</string>
    </property>
   </action>
-  <action name="actionAnalyzer">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Analyzer</string>
-   </property>
-  </action>
   <action name="actionState">
    <property name="text">
     <string>[DEBUG] Show state</string>
@@ -193,14 +184,6 @@
   <action name="actionOptions">
    <property name="text">
     <string>Options</string>
-   </property>
-  </action>
-  <action name="actionData_Inspector">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Data Inspector</string>
    </property>
   </action>
  </widget>

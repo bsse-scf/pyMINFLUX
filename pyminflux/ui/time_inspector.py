@@ -21,7 +21,6 @@ class TimeInspector(QDialog, Ui_TimeInspector):
     dataset_time_filtered = Signal(None, name="dataset_time_filtered")
 
     def __init__(self, processor, parent):
-
         # Call the base class
         super().__init__(parent=parent)
 
@@ -178,6 +177,9 @@ class TimeInspector(QDialog, Ui_TimeInspector):
 
         # Is the data cached?
         if self.localizations_per_unit_time_cache is None:
+            if len(self._minfluxprocessor.filtered_dataframe.index) == 0:
+                # No data to plot
+                return
 
             # Create `time_resolution_sec` bins starting at 0.0.
             bin_edges = np.arange(
@@ -233,7 +235,6 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         ) or (
             std_err and self.localization_precision_stderr_per_unit_time_cache_x is None
         ):
-
             # Create `time_resolution_sec` bins starting at 0.0.
             bin_edges = np.arange(
                 start=0.0,
