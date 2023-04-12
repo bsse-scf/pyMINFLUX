@@ -9,6 +9,17 @@ readme = "README.md"
 [tool.black]
 line-length = 88
 target-version = ['py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.venv
+  | _build
+  | build
+  | dist
+)/
+'''
 
 [tool.isort]
 profile = "black"
@@ -25,8 +36,6 @@ pyopengl = "^3.1.6"
 scikit-learn = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
-isort = "^5.10.1"
-black = "^22.10.0"
 pytest = "^7.2.0"
 ordered-set = "^4.1.0"
 pyinstaller = "^5.7.0"
