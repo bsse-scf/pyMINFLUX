@@ -80,6 +80,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.wizard = WizardDialog()
         self.wizard_dock = QDockWidget("", self)
         self.wizard_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.wizard_dock.setFeatures(
+            QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable
+        )
         self.wizard_dock.setWidget(self.wizard)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.wizard_dock)
 

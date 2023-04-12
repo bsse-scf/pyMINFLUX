@@ -61,7 +61,7 @@ class Ui_WizardDialog(object):
         if not WizardDialog.objectName():
             WizardDialog.setObjectName("WizardDialog")
         WizardDialog.resize(357, 939)
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding)
+        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(WizardDialog.sizePolicy().hasHeightForWidth())
@@ -140,7 +140,7 @@ class Ui_WizardDialog(object):
         self.mainLayout.addLayout(self.fluorophores_layout)
 
         self.verticalSpacer_4 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding
+            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
         )
 
         self.mainLayout.addItem(self.verticalSpacer_4)
