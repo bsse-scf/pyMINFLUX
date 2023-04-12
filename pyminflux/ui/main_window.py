@@ -158,7 +158,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
-        self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
         self.ui.actionState.triggered.connect(self.print_current_state)
 
         # Plotter toolbar
@@ -200,12 +199,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
-        self.ui.actionAnalyzer.setEnabled(True)
         self.plotter_toolbar.show()
 
     def disable_ui_components_on_closed_data(self):
         """Disable UI components."""
-        self.ui.actionAnalyzer.setEnabled(False)
         self.plotter_toolbar.hide()
 
     def full_update_ui(self):
