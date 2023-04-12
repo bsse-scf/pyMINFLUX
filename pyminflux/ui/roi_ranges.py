@@ -7,7 +7,6 @@ from .ui_roi_ranges import Ui_ROIRanges
 
 
 class ROIRanges(QDialog, Ui_ROIRanges):
-
     # Signal that the data viewers should be updated
     data_ranges_changed = Signal(None, name="data_ranges_changed")
 
@@ -69,7 +68,6 @@ class ROIRanges(QDialog, Ui_ROIRanges):
         super().accept()
 
     def set_target(self, target):
-
         if target not in ["efo", "cfr"]:
             raise ValueError("Expected 'efo' or 'cfr' targets.")
 

@@ -7,7 +7,6 @@ from .ui_plotter_toolbar import Ui_PlotterToolbar
 
 
 class PlotterToolbar(QWidget, Ui_PlotterToolbar):
-
     plot_requested_parameters = Signal(None, name="plot_requested_parameters")
     fluorophore_id_changed = Signal(int, name="fluorophore_id_changed")
     color_code_locs_changed = Signal(int, name="color_code_locs_changed")

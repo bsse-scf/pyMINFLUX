@@ -44,7 +44,9 @@ from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QFrame,
     QHBoxLayout,
+    QLabel,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
@@ -71,6 +73,31 @@ class Ui_PlotterToolbar(object):
 
         self.horizontalLayout.addItem(self.horizontalSpacer_2)
 
+        self.lbOptions = QLabel(PlotterToolbar)
+        self.lbOptions.setObjectName("lbOptions")
+
+        self.horizontalLayout.addWidget(self.lbOptions)
+
+        self.cbColorCodeSelector = QComboBox(PlotterToolbar)
+        self.cbColorCodeSelector.addItem("")
+        self.cbColorCodeSelector.addItem("")
+        self.cbColorCodeSelector.addItem("")
+        self.cbColorCodeSelector.setObjectName("cbColorCodeSelector")
+
+        self.horizontalLayout.addWidget(self.cbColorCodeSelector)
+
+        self.cbPlotAveragePos = QCheckBox(PlotterToolbar)
+        self.cbPlotAveragePos.setObjectName("cbPlotAveragePos")
+
+        self.horizontalLayout.addWidget(self.cbPlotAveragePos)
+
+        self.line = QFrame(PlotterToolbar)
+        self.line.setObjectName("line")
+        self.line.setFrameShape(QFrame.VLine)
+        self.line.setFrameShadow(QFrame.Sunken)
+
+        self.horizontalLayout.addWidget(self.line)
+
         self.cbFirstParam = QComboBox(PlotterToolbar)
         self.cbFirstParam.setObjectName("cbFirstParam")
         sizePolicy1 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
@@ -91,19 +118,6 @@ class Ui_PlotterToolbar(object):
         self.cbSecondParam.setSizePolicy(sizePolicy1)
 
         self.horizontalLayout.addWidget(self.cbSecondParam)
-
-        self.cbColorCodeSelector = QComboBox(PlotterToolbar)
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.setObjectName("cbColorCodeSelector")
-
-        self.horizontalLayout.addWidget(self.cbColorCodeSelector)
-
-        self.cbPlotAveragePos = QCheckBox(PlotterToolbar)
-        self.cbPlotAveragePos.setObjectName("cbPlotAveragePos")
-
-        self.horizontalLayout.addWidget(self.cbPlotAveragePos)
 
         self.pbPlot = QPushButton(PlotterToolbar)
         self.pbPlot.setObjectName("pbPlot")
@@ -127,6 +141,9 @@ class Ui_PlotterToolbar(object):
     def retranslateUi(self, PlotterToolbar):
         PlotterToolbar.setWindowTitle(
             QCoreApplication.translate("PlotterToolbar", "Form", None)
+        )
+        self.lbOptions.setText(
+            QCoreApplication.translate("PlotterToolbar", "Options:", None)
         )
         self.cbColorCodeSelector.setItemText(
             0, QCoreApplication.translate("PlotterToolbar", "No color code", None)

@@ -20,7 +20,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     fluorophore_ids_assigned = Signal(int, name="fluorophore_ids_assigned")
 
     def __init__(self, processor, parent):
-
         # Call the base class
         super().__init__(parent=parent)
 

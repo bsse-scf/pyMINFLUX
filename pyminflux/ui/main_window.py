@@ -193,6 +193,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.update_fluorophore_id_in_processor_and_broadcast
         )
         self.wizard.request_fluorophore_ids_reset.connect(self.reset_fluorophore_ids)
+        self.wizard.wizard_filters_run.connect(self.full_update_ui)
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
@@ -343,7 +344,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         filename = res[0]
         if filename != "":
-
             # Reset the state machine
             self.state.reset()
 
@@ -402,11 +402,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.analyzer.set_processor(self.minfluxprocessor)
                 self.analyzer.plot()
 
+            # Attach the processor reference to the wizard
+            self.wizard.set_processor(self.minfluxprocessor)
+
             # Enable wizard step 1
             self.wizard.enable_controls(True)
 
         else:
-
             # Enable wizard step 1
             self.wizard.enable_controls(False)
 
@@ -422,15 +424,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Initialize and open the analyzer."""
         if self.analyzer is None:
             self.analyzer = Analyzer(self.minfluxprocessor)
+            self.wizard.wizard_filters_run.connect(self.analyzer.plot)
+            self.wizard.efo_bounds_modified.connect(self.analyzer.change_efo_bounds)
+            self.wizard.cfr_bounds_modified.connect(self.analyzer.change_cfr_bounds)
             self.analyzer.data_filters_changed.connect(self.full_update_ui)
             self.analyzer.cfr_threshold_factor_changed.connect(
                 self.wizard.change_cfr_threshold_factor
-            )
-            self.analyzer.cfr_lower_bound_state_changed.connect(
-                self.wizard.change_cfr_lower_bound_state
-            )
-            self.analyzer.cfr_upper_bound_state_changed.connect(
-                self.wizard.change_cfr_upper_bound_state
             )
             self.analyzer.efo_bounds_changed.connect(self.wizard.change_efo_bounds)
             self.analyzer.cfr_bounds_changed.connect(self.wizard.change_cfr_bounds)
@@ -447,6 +446,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.inspector = TimeInspector(self.minfluxprocessor, parent=self)
             self.inspector.dataset_time_filtered.connect(self.full_update_ui)
             self.plotter_toolbar.fluorophore_id_changed.connect(self.inspector.update)
+            self.wizard.wizard_filters_run.connect(self.inspector.update)
             if self.analyzer is not None:
                 self.analyzer.data_filters_changed.connect(self.inspector.update)
         self.inspector.show()
@@ -463,6 +463,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.color_unmixer.fluorophore_ids_assigned.connect(
                 self.plot_selected_parameters
             )
+            self.wizard.wizard_filters_run.connect(self.plot_selected_parameters)
         self.color_unmixer.show()
         self.color_unmixer.activateWindow()
 

@@ -226,7 +226,6 @@ class MinFluxReader:
         # The following extraction pattern will change whether the
         # acquisition is normal or aggregated
         if self.is_aggregated:
-
             # Extract the locations
             loc = itr["loc"].squeeze()
 
@@ -246,7 +245,6 @@ class MinFluxReader:
             dwell = np.around(eco / (efo / 1000.0), decimals=0)
 
         else:
-
             # Extract the locations
             loc = itr[:, self.__loc_index]["loc"] * self.__scaling_factor
 

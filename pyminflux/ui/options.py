@@ -8,7 +8,6 @@ from .ui_options import Ui_Options
 
 
 class Options(QDialog, Ui_Options):
-
     # Signal that the options have changed
     min_num_loc_per_trace_option_changed = Signal(
         name="min_num_loc_per_trace_option_changed"

@@ -10,7 +10,6 @@ from ..state import ColorCode, State
 
 
 class Plotter(PlotWidget):
-
     # Signals
     locations_selected = Signal(list, name="locations_selected")
     locations_selected_by_range = Signal(
@@ -64,7 +63,6 @@ class Plotter(PlotWidget):
             and ev.button() == Qt.MouseButton.LeftButton
             and ev.modifiers() == QtCore.Qt.ShiftModifier
         ):
-
             # Remove previous ROI if it exists
             if self.ROI is not None:
                 self.removeItem(self.ROI)
@@ -99,7 +97,6 @@ class Plotter(PlotWidget):
             and ev.button() == Qt.MouseButton.LeftButton
             and ev.modifiers() == QtCore.Qt.ControlModifier
         ):
-
             # Is the user trying to initiate drawing a line?
 
             # Remove previous line if it exists
@@ -130,13 +127,11 @@ class Plotter(PlotWidget):
             ev.accept()
 
         else:
-
             # Call the parent method
             ev.ignore()
             super().mousePressEvent(ev)
 
     def mouseMoveEvent(self, ev):
-
         # Is the user drawing an ROI?
         if (
             self.scatter is not None
@@ -144,7 +139,6 @@ class Plotter(PlotWidget):
             and ev.modifiers() == QtCore.Qt.ShiftModifier
             and self.__roi_is_being_drawn
         ):
-
             # Resize the ROI
             current_point = (
                 self.getPlotItem().getViewBox().mapSceneToView(ev.position())
@@ -174,7 +168,6 @@ class Plotter(PlotWidget):
             # Accept the event
             ev.accept()
         else:
-
             # Call the parent method
             ev.ignore()
             super().mouseMoveEvent(ev)
@@ -186,7 +179,6 @@ class Plotter(PlotWidget):
             and ev.modifiers() == QtCore.Qt.ShiftModifier
             and self.__roi_is_being_drawn
         ):
-
             # Extract the ranges
             x_range, y_range = self._get_ranges_from_roi()
 
@@ -213,7 +205,6 @@ class Plotter(PlotWidget):
             and ev.modifiers() == QtCore.Qt.ControlModifier
             and self.__line_is_being_drawn
         ):
-
             # Display the measurement
             x_data, y_data = self.line.getData()
             center = np.array(
@@ -246,7 +237,6 @@ class Plotter(PlotWidget):
             ev.accept()
 
         else:
-
             # Call the parent method
             ev.ignore()
             super().mouseReleaseEvent(ev)
@@ -295,7 +285,6 @@ class Plotter(PlotWidget):
         if (self.__last_x_param is None or self.__last_x_param != x_param) or (
             self.__last_y_param is None or self.__last_y_param != y_param
         ):
-
             # Update range
             self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
 

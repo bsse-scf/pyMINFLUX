@@ -16,7 +16,6 @@ from .ui_analyzer import Ui_Analyzer
 
 
 class Analyzer(QDialog, Ui_Analyzer):
-
     # Signal that the data viewers should be updated
     data_filters_changed = Signal(name="data_filters_changed")
     plotting_started = Signal(name="plotting_started")
@@ -393,7 +392,6 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Is there data to plot?
         if not is_data:
-
             # Show the communication label
             self.communication_label.show()
 
@@ -576,7 +574,6 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         region = None
         if support_thresholding:
-
             # Create a linear region for setting filtering thresholds
             region = pg.LinearRegionItem(
                 values=[thresholds[0], thresholds[1]],
@@ -776,3 +773,33 @@ class Analyzer(QDialog, Ui_Analyzer):
         """Reset the y axis range whenever the x range changes."""
         viewbox.setYRange(viewbox.y_min, viewbox.y_max)
         viewbox.setAutoVisible(y=True)
+
+    def change_efo_bounds(self):
+        """Update the efo bounds on the histogram (without broadcasting any events)."""
+
+        # Signal blocker on self.efo_plot
+        efo_plot_blocker = QSignalBlocker(self.efo_plot)
+
+        # Block signals from self.efo_plot and self.cfr_plot
+        efo_plot_blocker.reblock()
+
+        # Update the thresholds in the EFO and CFR histograms.
+        self.efo_region.setRegion(self.state.efo_thresholds)
+
+        # Unblock the self.efo_plot and self.cfr_plot signals
+        efo_plot_blocker.unblock()
+
+    def change_cfr_bounds(self):
+        """Update the cfr bounds on the histogram (without broadcasting any events)."""
+
+        # Signal blocker on self.efo_plot
+        cfr_plot_blocker = QSignalBlocker(self.cfr_plot)
+
+        # Block signals from self.efo_plot and self.cfr_plot
+        cfr_plot_blocker.reblock()
+
+        # Update the thresholds in the EFO and CFR histograms.
+        self.cfr_region.setRegion(self.state.cfr_thresholds)
+
+        # Unblock the self.efo_plot and self.cfr_plot signals
+        cfr_plot_blocker.unblock()

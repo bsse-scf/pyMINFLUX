@@ -42,7 +42,6 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
     QComboBox,
     QDialog,
     QGridLayout,
@@ -89,6 +88,14 @@ class Ui_WizardDialog(object):
 
         self.mainLayout.addItem(self.verticalSpacer_2)
 
+        self.lbColors = QLabel(WizardDialog)
+        self.lbColors.setObjectName("lbColors")
+        font = QFont()
+        font.setBold(True)
+        self.lbColors.setFont(font)
+
+        self.mainLayout.addWidget(self.lbColors)
+
         self.color_layout = QHBoxLayout()
         self.color_layout.setObjectName("color_layout")
         self.pbSingleColor = QPushButton(WizardDialog)
@@ -132,32 +139,14 @@ class Ui_WizardDialog(object):
 
         self.mainLayout.addLayout(self.fluorophores_layout)
 
-        self.verticalSpacer_3 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
-        )
-
-        self.mainLayout.addItem(self.verticalSpacer_3)
-
-        self.pbTimeInspector = QPushButton(WizardDialog)
-        self.pbTimeInspector.setObjectName("pbTimeInspector")
-
-        self.mainLayout.addWidget(self.pbTimeInspector)
-
         self.verticalSpacer_4 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+            20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding
         )
 
         self.mainLayout.addItem(self.verticalSpacer_4)
 
-        self.pbAnalyzer = QPushButton(WizardDialog)
-        self.pbAnalyzer.setObjectName("pbAnalyzer")
-
-        self.mainLayout.addWidget(self.pbAnalyzer)
-
         self.lbEFOFiltering = QLabel(WizardDialog)
         self.lbEFOFiltering.setObjectName("lbEFOFiltering")
-        font = QFont()
-        font.setBold(True)
         self.lbEFOFiltering.setFont(font)
 
         self.mainLayout.addWidget(self.lbEFOFiltering)
@@ -248,42 +237,32 @@ class Ui_WizardDialog(object):
 
         self.mainLayout.addLayout(self.cfr_upper_bound_layout)
 
-        self.robust_threshold_layout = QHBoxLayout()
-        self.robust_threshold_layout.setObjectName("robust_threshold_layout")
-        self.lbCFRSigma = QLabel(WizardDialog)
-        self.lbCFRSigma.setObjectName("lbCFRSigma")
-
-        self.robust_threshold_layout.addWidget(self.lbCFRSigma)
-
-        self.leCFRSigma = QLineEdit(WizardDialog)
-        self.leCFRSigma.setObjectName("leCFRSigma")
-        sizePolicy3.setHeightForWidth(self.leCFRSigma.sizePolicy().hasHeightForWidth())
-        self.leCFRSigma.setSizePolicy(sizePolicy3)
-
-        self.robust_threshold_layout.addWidget(self.leCFRSigma)
-
-        self.mainLayout.addLayout(self.robust_threshold_layout)
-
-        self.cfr_bounds_layout = QHBoxLayout()
-        self.cfr_bounds_layout.setObjectName("cfr_bounds_layout")
-        self.cbCFRLowerBound = QCheckBox(WizardDialog)
-        self.cbCFRLowerBound.setObjectName("cbCFRLowerBound")
-        self.cbCFRLowerBound.setContextMenuPolicy(Qt.DefaultContextMenu)
-
-        self.cfr_bounds_layout.addWidget(self.cbCFRLowerBound)
-
-        self.cbCFRUpperBound = QCheckBox(WizardDialog)
-        self.cbCFRUpperBound.setObjectName("cbCFRUpperBound")
-        self.cbCFRUpperBound.setContextMenuPolicy(Qt.DefaultContextMenu)
-
-        self.cfr_bounds_layout.addWidget(self.cbCFRUpperBound)
-
-        self.mainLayout.addLayout(self.cfr_bounds_layout)
-
         self.pbCFRFilter = QPushButton(WizardDialog)
         self.pbCFRFilter.setObjectName("pbCFRFilter")
 
         self.mainLayout.addWidget(self.pbCFRFilter)
+
+        self.verticalSpacer_3 = QSpacerItem(
+            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+        )
+
+        self.mainLayout.addItem(self.verticalSpacer_3)
+
+        self.lbFilters = QLabel(WizardDialog)
+        self.lbFilters.setObjectName("lbFilters")
+        self.lbFilters.setFont(font)
+
+        self.mainLayout.addWidget(self.lbFilters)
+
+        self.pbTimeInspector = QPushButton(WizardDialog)
+        self.pbTimeInspector.setObjectName("pbTimeInspector")
+
+        self.mainLayout.addWidget(self.pbTimeInspector)
+
+        self.pbAnalyzer = QPushButton(WizardDialog)
+        self.pbAnalyzer.setObjectName("pbAnalyzer")
+
+        self.mainLayout.addWidget(self.pbAnalyzer)
 
         self.gridLayout.addLayout(self.mainLayout, 0, 0, 1, 1)
 
@@ -300,6 +279,9 @@ class Ui_WizardDialog(object):
         self.pbLoadData.setText(
             QCoreApplication.translate("WizardDialog", "Load", None)
         )
+        self.lbColors.setText(
+            QCoreApplication.translate("WizardDialog", "Colors", None)
+        )
         self.pbSingleColor.setText(
             QCoreApplication.translate("WizardDialog", "Single Color", None)
         )
@@ -313,12 +295,6 @@ class Ui_WizardDialog(object):
             0, QCoreApplication.translate("WizardDialog", "All", None)
         )
 
-        self.pbTimeInspector.setText(
-            QCoreApplication.translate("WizardDialog", "Time Inspector", None)
-        )
-        self.pbAnalyzer.setText(
-            QCoreApplication.translate("WizardDialog", "Analyzer", None)
-        )
         self.lbEFOFiltering.setText(
             QCoreApplication.translate("WizardDialog", "EFO Filtering", None)
         )
@@ -340,17 +316,17 @@ class Ui_WizardDialog(object):
         self.lbCFRUpperBound.setText(
             QCoreApplication.translate("WizardDialog", "Upper bound", None)
         )
-        self.lbCFRSigma.setText(
-            QCoreApplication.translate("WizardDialog", "Robust threshold", None)
-        )
-        self.cbCFRLowerBound.setText(
-            QCoreApplication.translate("WizardDialog", "Lower bound", None)
-        )
-        self.cbCFRUpperBound.setText(
-            QCoreApplication.translate("WizardDialog", "Upper bound", None)
-        )
         self.pbCFRFilter.setText(
             QCoreApplication.translate("WizardDialog", "FIlter CFR", None)
+        )
+        self.lbFilters.setText(
+            QCoreApplication.translate("WizardDialog", "Advanced filters", None)
+        )
+        self.pbTimeInspector.setText(
+            QCoreApplication.translate("WizardDialog", "Time Inspector", None)
+        )
+        self.pbAnalyzer.setText(
+            QCoreApplication.translate("WizardDialog", "Analyzer", None)
         )
 
     # retranslateUi
