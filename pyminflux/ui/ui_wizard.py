@@ -162,6 +162,11 @@ class Ui_WizardDialog(object):
 
         self.mainLayout.addItem(self.verticalSpacer_3)
 
+        self.pbAnalyzer = QPushButton(WizardDialog)
+        self.pbAnalyzer.setObjectName("pbAnalyzer")
+
+        self.mainLayout.addWidget(self.pbAnalyzer)
+
         self.lbEFOFiltering = QLabel(WizardDialog)
         self.lbEFOFiltering.setObjectName("lbEFOFiltering")
         self.lbEFOFiltering.setFont(font)
@@ -259,11 +264,6 @@ class Ui_WizardDialog(object):
 
         self.mainLayout.addWidget(self.pbCFRFilter)
 
-        self.pbAnalyzer = QPushButton(WizardDialog)
-        self.pbAnalyzer.setObjectName("pbAnalyzer")
-
-        self.mainLayout.addWidget(self.pbAnalyzer)
-
         self.gridLayout.addLayout(self.mainLayout, 0, 0, 1, 1)
 
         self.retranslateUi(WizardDialog)
@@ -301,6 +301,9 @@ class Ui_WizardDialog(object):
         self.pbTimeInspector.setText(
             QCoreApplication.translate("WizardDialog", "Time Inspector", None)
         )
+        self.pbAnalyzer.setText(
+            QCoreApplication.translate("WizardDialog", "Analyzer", None)
+        )
         self.lbEFOFiltering.setText(
             QCoreApplication.translate("WizardDialog", "EFO Filtering", None)
         )
@@ -324,9 +327,6 @@ class Ui_WizardDialog(object):
         )
         self.pbCFRFilter.setText(
             QCoreApplication.translate("WizardDialog", "FIlter CFR", None)
-        )
-        self.pbAnalyzer.setText(
-            QCoreApplication.translate("WizardDialog", "Analyzer", None)
         )
 
     # retranslateUi

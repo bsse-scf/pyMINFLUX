@@ -178,6 +178,13 @@
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="pbAnalyzer">
+       <property name="text">
+        <string>Analyzer</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="lbEFOFiltering">
        <property name="font">
         <font>
@@ -296,13 +303,6 @@
       <widget class="QPushButton" name="pbCFRFilter">
        <property name="text">
         <string>FIlter CFR</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pbAnalyzer">
-       <property name="text">
-        <string>Analyzer</string>
        </property>
       </widget>
      </item>
