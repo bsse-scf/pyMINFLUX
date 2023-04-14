@@ -50,6 +50,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QSpacerItem,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -66,61 +67,143 @@ class Ui_ColorUnmixer(object):
         self.main_layout.setObjectName("main_layout")
         self.commands_layout = QHBoxLayout()
         self.commands_layout.setObjectName("commands_layout")
+        self.twUnmixingOptions = QTabWidget(ColorUnmixer)
+        self.twUnmixingOptions.setObjectName("twUnmixingOptions")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+            self.twUnmixingOptions.sizePolicy().hasHeightForWidth()
+        )
+        self.twUnmixingOptions.setSizePolicy(sizePolicy)
+        self.tab = QWidget()
+        self.tab.setObjectName("tab")
+        self.horizontalLayout = QHBoxLayout(self.tab)
+        self.horizontalLayout.setObjectName("horizontalLayout")
         self.horizontalSpacer = QSpacerItem(
             40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
-        self.commands_layout.addItem(self.horizontalSpacer)
+        self.horizontalLayout.addItem(self.horizontalSpacer)
 
-        self.lbNumFluorophores = QLabel(ColorUnmixer)
+        self.lbNumFluorophores = QLabel(self.tab)
         self.lbNumFluorophores.setObjectName("lbNumFluorophores")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(
+            self.lbNumFluorophores.sizePolicy().hasHeightForWidth()
+        )
+        self.lbNumFluorophores.setSizePolicy(sizePolicy1)
         self.lbNumFluorophores.setAlignment(Qt.AlignCenter)
 
-        self.commands_layout.addWidget(self.lbNumFluorophores)
+        self.horizontalLayout.addWidget(self.lbNumFluorophores)
 
-        self.cbNumFluorophores = QComboBox(ColorUnmixer)
+        self.cbNumFluorophores = QComboBox(self.tab)
         self.cbNumFluorophores.addItem("")
         self.cbNumFluorophores.addItem("")
         self.cbNumFluorophores.setObjectName("cbNumFluorophores")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(
+            self.cbNumFluorophores.sizePolicy().hasHeightForWidth()
+        )
+        self.cbNumFluorophores.setSizePolicy(sizePolicy2)
 
-        self.commands_layout.addWidget(self.cbNumFluorophores)
+        self.horizontalLayout.addWidget(self.cbNumFluorophores)
 
-        self.lbBinSize = QLabel(ColorUnmixer)
+        self.lbBinSize = QLabel(self.tab)
         self.lbBinSize.setObjectName("lbBinSize")
+        sizePolicy1.setHeightForWidth(self.lbBinSize.sizePolicy().hasHeightForWidth())
+        self.lbBinSize.setSizePolicy(sizePolicy1)
 
-        self.commands_layout.addWidget(self.lbBinSize)
+        self.horizontalLayout.addWidget(self.lbBinSize)
 
-        self.leBinSize = QLineEdit(ColorUnmixer)
+        self.leBinSize = QLineEdit(self.tab)
         self.leBinSize.setObjectName("leBinSize")
+        sizePolicy2.setHeightForWidth(self.leBinSize.sizePolicy().hasHeightForWidth())
+        self.leBinSize.setSizePolicy(sizePolicy2)
 
-        self.commands_layout.addWidget(self.leBinSize)
+        self.horizontalLayout.addWidget(self.leBinSize)
 
-        self.pbDetect = QPushButton(ColorUnmixer)
+        self.pbDetect = QPushButton(self.tab)
         self.pbDetect.setObjectName("pbDetect")
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.pbDetect.sizePolicy().hasHeightForWidth())
-        self.pbDetect.setSizePolicy(sizePolicy)
+        sizePolicy2.setHeightForWidth(self.pbDetect.sizePolicy().hasHeightForWidth())
+        self.pbDetect.setSizePolicy(sizePolicy2)
 
-        self.commands_layout.addWidget(self.pbDetect)
+        self.horizontalLayout.addWidget(self.pbDetect)
 
-        self.pbAssign = QPushButton(ColorUnmixer)
+        self.pbAssign = QPushButton(self.tab)
         self.pbAssign.setObjectName("pbAssign")
+        sizePolicy2.setHeightForWidth(self.pbAssign.sizePolicy().hasHeightForWidth())
+        self.pbAssign.setSizePolicy(sizePolicy2)
 
-        self.commands_layout.addWidget(self.pbAssign)
+        self.horizontalLayout.addWidget(self.pbAssign)
 
         self.horizontalSpacer_2 = QSpacerItem(
+            61, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_2)
+
+        self.twUnmixingOptions.addTab(self.tab, "")
+        self.tab_2 = QWidget()
+        self.tab_2.setObjectName("tab_2")
+        self.horizontalLayout_3 = QHBoxLayout(self.tab_2)
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.horizontalLayout_2 = QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.horizontalSpacer_4 = QSpacerItem(
             40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
-        self.commands_layout.addItem(self.horizontalSpacer_2)
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_4)
+
+        self.lbManualThreshold = QLabel(self.tab_2)
+        self.lbManualThreshold.setObjectName("lbManualThreshold")
+
+        self.horizontalLayout_2.addWidget(self.lbManualThreshold)
+
+        self.leManualThreshold = QLineEdit(self.tab_2)
+        self.leManualThreshold.setObjectName("leManualThreshold")
+
+        self.horizontalLayout_2.addWidget(self.leManualThreshold)
+
+        self.pbPreview = QPushButton(self.tab_2)
+        self.pbPreview.setObjectName("pbPreview")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.pbPreview.sizePolicy().hasHeightForWidth())
+        self.pbPreview.setSizePolicy(sizePolicy3)
+
+        self.horizontalLayout_2.addWidget(self.pbPreview)
+
+        self.pbManualAssign = QPushButton(self.tab_2)
+        self.pbManualAssign.setObjectName("pbManualAssign")
+
+        self.horizontalLayout_2.addWidget(self.pbManualAssign)
+
+        self.horizontalSpacer_3 = QSpacerItem(
+            61, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_3)
+
+        self.horizontalLayout_3.addLayout(self.horizontalLayout_2)
+
+        self.twUnmixingOptions.addTab(self.tab_2, "")
+
+        self.commands_layout.addWidget(self.twUnmixingOptions)
 
         self.main_layout.addLayout(self.commands_layout)
 
         self.verticalLayout_2.addLayout(self.main_layout)
 
         self.retranslateUi(ColorUnmixer)
+
+        self.twUnmixingOptions.setCurrentIndex(0)
 
         QMetaObject.connectSlotsByName(ColorUnmixer)
 
@@ -150,6 +233,23 @@ class Ui_ColorUnmixer(object):
         )
         self.pbAssign.setText(
             QCoreApplication.translate("ColorUnmixer", "Assign", None)
+        )
+        self.twUnmixingOptions.setTabText(
+            self.twUnmixingOptions.indexOf(self.tab),
+            QCoreApplication.translate("ColorUnmixer", "Automatic", None),
+        )
+        self.lbManualThreshold.setText(
+            QCoreApplication.translate("ColorUnmixer", "DCR threshold", None)
+        )
+        self.pbPreview.setText(
+            QCoreApplication.translate("ColorUnmixer", "Preview", None)
+        )
+        self.pbManualAssign.setText(
+            QCoreApplication.translate("ColorUnmixer", "Assign", None)
+        )
+        self.twUnmixingOptions.setTabText(
+            self.twUnmixingOptions.indexOf(self.tab_2),
+            QCoreApplication.translate("ColorUnmixer", "Manual", None),
         )
 
     # retranslateUi
