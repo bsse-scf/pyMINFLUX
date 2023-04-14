@@ -159,7 +159,7 @@ class Ui_PlotterToolbar(object):
         )
 
         self.cbPlotAveragePos.setText(
-            QCoreApplication.translate("PlotterToolbar", "Average", None)
+            QCoreApplication.translate("PlotterToolbar", "Avg Loc (TID)", None)
         )
         self.pbPlot.setText(QCoreApplication.translate("PlotterToolbar", "Plot", None))
 

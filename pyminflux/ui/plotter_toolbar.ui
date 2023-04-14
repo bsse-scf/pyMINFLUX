@@ -68,7 +68,7 @@
    <item>
     <widget class="QCheckBox" name="cbPlotAveragePos">
      <property name="text">
-      <string>Average</string>
+      <string>Avg Loc (TID)</string>
      </property>
     </widget>
    </item>
