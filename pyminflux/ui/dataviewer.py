@@ -1,4 +1,5 @@
 import pandas as pd
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QSizePolicy, QTableView
 
 from ..processor import MinFluxProcessor
@@ -30,6 +31,14 @@ class DataViewer(QTableView):
 
         # Keep a reference to the singleton State class
         self.state = State()
+
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            value = self.data_model[index.row()][index.column()]
+            if isinstance(value, float):  # Check if the value is a float
+                return f"{value:.2f}"  # Format the float value with 2 decimal places
+            return value
+        return None
 
     def set_data(self, df):
         """Display the Pandas dataframe."""
