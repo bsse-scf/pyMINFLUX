@@ -113,20 +113,6 @@ class Ui_ColorUnmixer(object):
 
         self.horizontalLayout.addWidget(self.cbNumFluorophores)
 
-        self.lbBinSize = QLabel(self.tab)
-        self.lbBinSize.setObjectName("lbBinSize")
-        sizePolicy1.setHeightForWidth(self.lbBinSize.sizePolicy().hasHeightForWidth())
-        self.lbBinSize.setSizePolicy(sizePolicy1)
-
-        self.horizontalLayout.addWidget(self.lbBinSize)
-
-        self.leBinSize = QLineEdit(self.tab)
-        self.leBinSize.setObjectName("leBinSize")
-        sizePolicy2.setHeightForWidth(self.leBinSize.sizePolicy().hasHeightForWidth())
-        self.leBinSize.setSizePolicy(sizePolicy2)
-
-        self.horizontalLayout.addWidget(self.leBinSize)
-
         self.pbDetect = QPushButton(self.tab)
         self.pbDetect.setObjectName("pbDetect")
         sizePolicy2.setHeightForWidth(self.pbDetect.sizePolicy().hasHeightForWidth())
@@ -167,6 +153,10 @@ class Ui_ColorUnmixer(object):
 
         self.leManualThreshold = QLineEdit(self.tab_2)
         self.leManualThreshold.setObjectName("leManualThreshold")
+        sizePolicy2.setHeightForWidth(
+            self.leManualThreshold.sizePolicy().hasHeightForWidth()
+        )
+        self.leManualThreshold.setSizePolicy(sizePolicy2)
 
         self.horizontalLayout_2.addWidget(self.leManualThreshold)
 
@@ -194,6 +184,37 @@ class Ui_ColorUnmixer(object):
         self.horizontalLayout_3.addLayout(self.horizontalLayout_2)
 
         self.twUnmixingOptions.addTab(self.tab_2, "")
+        self.tab_3 = QWidget()
+        self.tab_3.setObjectName("tab_3")
+        self.horizontalLayout_4 = QHBoxLayout(self.tab_3)
+        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        self.horizontalSpacer_5 = QSpacerItem(
+            241, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout_4.addItem(self.horizontalSpacer_5)
+
+        self.lbBinSize = QLabel(self.tab_3)
+        self.lbBinSize.setObjectName("lbBinSize")
+        sizePolicy1.setHeightForWidth(self.lbBinSize.sizePolicy().hasHeightForWidth())
+        self.lbBinSize.setSizePolicy(sizePolicy1)
+
+        self.horizontalLayout_4.addWidget(self.lbBinSize)
+
+        self.leBinSize = QLineEdit(self.tab_3)
+        self.leBinSize.setObjectName("leBinSize")
+        sizePolicy2.setHeightForWidth(self.leBinSize.sizePolicy().hasHeightForWidth())
+        self.leBinSize.setSizePolicy(sizePolicy2)
+
+        self.horizontalLayout_4.addWidget(self.leBinSize)
+
+        self.horizontalSpacer_6 = QSpacerItem(
+            240, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout_4.addItem(self.horizontalSpacer_6)
+
+        self.twUnmixingOptions.addTab(self.tab_3, "")
 
         self.commands_layout.addWidget(self.twUnmixingOptions)
 
@@ -223,11 +244,6 @@ class Ui_ColorUnmixer(object):
             1, QCoreApplication.translate("ColorUnmixer", "2", None)
         )
 
-        self.lbBinSize.setText(
-            QCoreApplication.translate(
-                "ColorUnmixer", "Bin size (set to 0 for auto)", None
-            )
-        )
         self.pbDetect.setText(
             QCoreApplication.translate("ColorUnmixer", "Detect", None)
         )
@@ -250,6 +266,15 @@ class Ui_ColorUnmixer(object):
         self.twUnmixingOptions.setTabText(
             self.twUnmixingOptions.indexOf(self.tab_2),
             QCoreApplication.translate("ColorUnmixer", "Manual", None),
+        )
+        self.lbBinSize.setText(
+            QCoreApplication.translate(
+                "ColorUnmixer", "Bin size (set to 0 for auto)", None
+            )
+        )
+        self.twUnmixingOptions.setTabText(
+            self.twUnmixingOptions.indexOf(self.tab_3),
+            QCoreApplication.translate("ColorUnmixer", "Histogram settings", None),
         )
 
     # retranslateUi

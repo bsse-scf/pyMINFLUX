@@ -30,6 +30,7 @@ class State(metaclass=Singleton):
         "y_param",
         "num_fluorophores",
         "dcr_bin_size",
+        "dcr_manual_threshold",
     ]
 
     def __init__(self):
@@ -73,6 +74,7 @@ class State(metaclass=Singleton):
         # Number of fluorophores in the sample
         self.num_fluorophores: int = 1
         self.dcr_bin_size: float = 0.0
+        self.dcr_manual_threshold: float = 0.0
 
     def asdict(self) -> dict:
         """Return class as dictionary."""
@@ -92,6 +94,7 @@ class State(metaclass=Singleton):
             "y_param": self.y_param,
             "num_fluorophores": self.num_fluorophores,
             "dcr_bin_size": self.dcr_bin_size,
+            "dcr_manual_threshold": self.dcr_manual_threshold,
         }
 
     def reset(self):
@@ -118,6 +121,7 @@ class State(metaclass=Singleton):
         self.y_param = "y"
         self.num_fluorophores = 1
         self.dcr_bin_size = 0.0
+        self.dcr_manual_threshold = 0.0
 
     def __str__(self):
         """Human-readable representation."""
