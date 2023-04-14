@@ -72,7 +72,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Colors</string>
+        <string>DCR Unmixing</string>
        </property>
       </widget>
      </item>
@@ -88,7 +88,7 @@
        <item>
         <widget class="QPushButton" name="pbColorUnmixer">
          <property name="text">
-          <string>Color Unmizer</string>
+          <string>Unmizer</string>
          </property>
         </widget>
        </item>

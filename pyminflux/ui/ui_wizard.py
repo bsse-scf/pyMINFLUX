@@ -280,13 +280,13 @@ class Ui_WizardDialog(object):
             QCoreApplication.translate("WizardDialog", "Load", None)
         )
         self.lbColors.setText(
-            QCoreApplication.translate("WizardDialog", "Colors", None)
+            QCoreApplication.translate("WizardDialog", "DCR Unmixing", None)
         )
         self.pbSingleColor.setText(
             QCoreApplication.translate("WizardDialog", "Single Color", None)
         )
         self.pbColorUnmixer.setText(
-            QCoreApplication.translate("WizardDialog", "Color Unmizer", None)
+            QCoreApplication.translate("WizardDialog", "Unmixer", None)
         )
         self.lbActiveColor.setText(
             QCoreApplication.translate("WizardDialog", "Active color", None)
