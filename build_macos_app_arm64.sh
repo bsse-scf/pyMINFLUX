@@ -7,4 +7,5 @@ pyinstaller pyminflux/main.py \
 --icon pyminflux/ui/assets/Logo_v3.icns \
 --name pyMINFLUX \
 --target-architecture=arm64 \
+--osx-bundle-identifier 'ch.ethz.pyminflux' \
 --noconfirm
