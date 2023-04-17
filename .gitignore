@@ -11,3 +11,4 @@ __pycache__/
 /pyminflux.perf.egg-info/
 /.pytest_cache/
 /.coverage
+/pyminflux.spec
