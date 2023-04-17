@@ -620,6 +620,11 @@ class Analyzer(QDialog, Ui_Analyzer):
         """Create a context menu on the efo vs cfr scatter/histogram plot ROI."""
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
+            reset_action = QAction("Reset default axis range")
+            reset_action.triggered.connect(
+                lambda checked: self.reset_default_axis_range(ev.currentItem)
+            )
+            menu.addAction(reset_action)
             shift_action = QAction("Move x axis origin to 0")
             shift_action.triggered.connect(
                 lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
@@ -646,6 +651,11 @@ class Analyzer(QDialog, Ui_Analyzer):
             )
             menu.addAction(filter_action)
             menu.addSeparator()
+            reset_action = QAction("Reset default axis range")
+            reset_action.triggered.connect(
+                lambda checked: self.reset_default_axis_range(ev.currentItem)
+            )
+            menu.addAction(reset_action)
             shift_action = QAction("Move x axis origin to 0")
             shift_action.triggered.connect(
                 lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
@@ -698,6 +708,29 @@ class Analyzer(QDialog, Ui_Analyzer):
             return
         view_range = view_box.viewRange()
         view_box.setRange(xRange=(0.0, view_range[0][1]))
+
+    def reset_default_axis_range(self, item):
+        if isinstance(item, ViewBox):
+            view_box = item
+        elif isinstance(item, AxisItem):
+            view_box = item.getViewBox()
+        else:
+            return
+        if item.data_label == "efo":
+            view_box.setRange(xRange=(self.state.efo_range[0], self.state.efo_range[1]))
+            self.efo_range = self.state.efo_range
+        elif item.data_label == "cfr":
+            view_box.setRange(xRange=(self.state.cfr_range[0], self.state.cfr_range[1]))
+            self.cfr_range = self.state.cfr_range
+        elif item.data_label in ["sx", "sy", "sz"]:
+            view_box.setRange(
+                xRange=(
+                    self.state.loc_precision_range[0],
+                    self.state.loc_precision_range[1],
+                )
+            )
+        else:
+            pass
 
     def trigger_filter_action(self, item):
         """Set the lower range of the x axis of the passed viewbox to 0."""
