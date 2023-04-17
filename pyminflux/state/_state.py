@@ -21,6 +21,9 @@ class State(metaclass=Singleton):
         "efo_expected_frequency",
         "efo_thresholds",
         "cfr_thresholds",
+        "efo_range",
+        "cfr_range",
+        "loc_precision_range",
         "enable_cfr_lower_threshold",
         "enable_cfr_upper_threshold",
         "cfr_threshold_factor",
@@ -57,6 +60,11 @@ class State(metaclass=Singleton):
         self.efo_thresholds: Union[None, tuple] = None
         self.cfr_thresholds: Union[None, tuple] = None
 
+        # Histogram ranges
+        self.efo_range: Union[None, tuple] = None
+        self.cfr_range: Union[None, tuple] = None
+        self.loc_precision_range: Union[None, tuple] = None
+
         # Parameter bounds
         self.enable_cfr_lower_threshold: bool = False
         self.enable_cfr_upper_threshold: bool = True
@@ -85,6 +93,9 @@ class State(metaclass=Singleton):
             "efo_expected_frequency": self.efo_expected_frequency,
             "efo_thresholds": self.efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
+            "efo_range": self.efo_range,
+            "cfr_range": self.cfr_range,
+            "loc_precision_range": self.loc_precision_range,
             "enable_cfr_lower_threshold": self.enable_cfr_lower_threshold,
             "enable_cfr_upper_threshold": self.enable_cfr_upper_threshold,
             "cfr_threshold_factor": self.cfr_threshold_factor,
@@ -112,6 +123,9 @@ class State(metaclass=Singleton):
         self.efo_expected_frequency = 0.0
         self.efo_thresholds = None
         self.cfr_thresholds = None
+        self.efo_range = None
+        self.cfr_range = None
+        self.loc_precision_range = None
         self.enable_cfr_lower_threshold = False
         self.enable_cfr_upper_threshold = True
         self.cfr_threshold_factor = 2.0

@@ -51,7 +51,6 @@ def extract_bounds_extraction_data_archive(tmpdir):
 
 
 def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
-
     #
     # 2D_only_efo.npy
     #

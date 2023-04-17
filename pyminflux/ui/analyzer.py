@@ -51,12 +51,13 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.efo_region = None
         self.cfr_region = None
 
-        # Remember the data ranges
-        self.efo_range = None
-        self.cfr_range = None
-
         # Keep a reference to the singleton State class
         self.state = State()
+
+        # Remember the data ranges (default to the options)
+        self.efo_range = self.state.efo_range
+        self.cfr_range = self.state.cfr_range
+        self.loc_precision_range = self.state.loc_precision_range
 
         # Create widgets
         self.create_widgets()
@@ -471,6 +472,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             sx_bin_edges,
             sx_bin_centers,
             sx_bin_width,
+            axis_range=self.loc_precision_range,
             brush="k",
             support_thresholding=False,
         )
@@ -492,6 +494,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             sy_bin_edges,
             sy_bin_centers,
             sy_bin_width,
+            axis_range=self.loc_precision_range,
             brush="k",
             support_thresholding=False,
         )
@@ -514,6 +517,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 sz_bin_edges,
                 sz_bin_centers,
                 sz_bin_width,
+                axis_range=self.loc_precision_range,
                 brush="k",
                 support_thresholding=False,
             )

@@ -6,13 +6,10 @@ from PySide6.QtCore import QSettings, Qt, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QDockWidget, QFileDialog, QMainWindow, QMessageBox
 
-from pyminflux import __version__
+import pyminflux.resources
+from pyminflux import __APP_NAME__, __version__
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
-
-__APP_NAME__ = "pyMinFlux"
-
-import pyminflux.resources
 from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
@@ -115,7 +112,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Read the application settings and update the State."""
 
         # Open settings file
-        app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
+        app_settings = QSettings(__APP_NAME__, "pyminflux")
 
         # Read and set 'last_selected_path' option
         self.last_selected_path = Path(app_settings.value("io/last_selected_path", "."))
@@ -131,6 +128,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.state.efo_bin_size_hz = float(
             app_settings.value("options/efo_bin_size_hz", self.state.efo_bin_size_hz)
         )
+
         # Read and set 'efo_expected_frequency' option
         self.state.efo_expected_frequency = float(
             app_settings.value(
@@ -147,6 +145,33 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             value.lower() == "true" if isinstance(value, str) else bool(value)
         )
         self.state.weigh_avg_localization_by_eco = weigh_avg_localization_by_eco
+
+        # Read and set the plot ranges
+        value = app_settings.value("options/efo_range", self.state.efo_range)
+        if value is None:
+            self.state.efo_range = None
+        elif type(value) is list:
+            self.state.efo_range = (int(value[0]), int(value[1]))
+        else:
+            raise ValueError("Unexpected value for 'efo_range' in settings.")
+
+        value = app_settings.value("options/cfr_range", self.state.cfr_range)
+        if value is None:
+            self.state.cfr_range = None
+        elif type(value) is list:
+            self.state.cfr_range = (float(value[0]), float(value[1]))
+        else:
+            raise ValueError("Unexpected value for 'cfr_range' in settings.")
+
+        value = app_settings.value(
+            "options/loc_precision_range", self.state.loc_precision_range
+        )
+        if value is None:
+            self.state.loc_precision_range = None
+        elif type(value) is list:
+            self.state.loc_precision_range = (float(value[0]), float(value[1]))
+        else:
+            raise ValueError("Unexpected value for 'loc_precision_range' in settings.")
 
     def setup_conn(self):
         """Set up signals and slots."""
@@ -270,7 +295,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Store the application settings
             if self.last_selected_path != "":
-                app_settings = QSettings("ch.ethz.bsse.scf", "pyminflux")
+                app_settings = QSettings(__APP_NAME__, "pyminflux")
                 app_settings.setValue(
                     "io/last_selected_path", str(self.last_selected_path)
                 )

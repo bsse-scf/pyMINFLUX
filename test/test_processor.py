@@ -12,7 +12,6 @@ from pyminflux.state import State
 
 class MockMinFluxReader:
     def __init__(self):
-
         # TID   # loc   Fluo ID
         #  54      6        1
 
@@ -1073,7 +1072,6 @@ def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
 
 
 def test_proper_application_of_global_filters():
-
     state = State()
 
     # FILTER 1D RANGE
@@ -1150,7 +1148,6 @@ def test_proper_application_of_global_filters():
 
 
 def test_filter_1d_complement(extract_raw_npy_data_files):
-
     # Initialize state
     state = State()
 
