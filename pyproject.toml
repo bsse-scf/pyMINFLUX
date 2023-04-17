@@ -34,16 +34,15 @@ pyqtgraph = "^0.13.2"
 scipy = "^1.9.3"
 pyopengl = "^3.1.6"
 scikit-learn = "^1.2.0"
-pyinstaller = "5.10.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
 ordered-set = "^4.1.0"
-pyinstaller = "^5.7.0"
 pytest-cov = "^4.0.0"
 pre-commit = "^3.1.1"
 isort = "^5.12.0"
 black = "^23.3.0"
+pyinstaller = "5.10.1"
 
 [build-system]
 requires = ["poetry-core"]

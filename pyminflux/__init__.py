@@ -1,6 +1,6 @@
 import pyqtgraph as pg
 
-__APP_NAME__ = "pyMinFlux"
+__APP_NAME__ = "pyMINFLUX"
 __version__ = "0.1.0.dev0"
 
 # PyQtGraph settings
