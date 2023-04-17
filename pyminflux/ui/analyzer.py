@@ -199,7 +199,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         """Run EFO cutoff frequency detection."""
 
         # Get the approximate frequency
-        frequency = float(self.ui.leEFOExpectedCutoff.text())
+        frequency = 2.0 * float(self.ui.leEFOExpectedCutoff.text())
 
         # Extract current min_efo
         if self.state.efo_thresholds is None:
