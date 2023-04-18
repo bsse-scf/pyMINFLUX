@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
-
 ################################################################################
 ## Form generated from reading UI file 'plotter_toolbar.ui'
 ##
@@ -61,7 +59,7 @@ class Ui_PlotterToolbar(object):
         if not PlotterToolbar.objectName():
             PlotterToolbar.setObjectName("PlotterToolbar")
         PlotterToolbar.resize(1077, 34)
-        sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
+        sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(PlotterToolbar.sizePolicy().hasHeightForWidth())
@@ -102,29 +100,24 @@ class Ui_PlotterToolbar(object):
 
         self.cbFirstParam = QComboBox(PlotterToolbar)
         self.cbFirstParam.setObjectName("cbFirstParam")
-        sizePolicy1 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(
-            self.cbFirstParam.sizePolicy().hasHeightForWidth()
-        )
-        self.cbFirstParam.setSizePolicy(sizePolicy1)
+        sizePolicy.setHeightForWidth(self.cbFirstParam.sizePolicy().hasHeightForWidth())
+        self.cbFirstParam.setSizePolicy(sizePolicy)
 
         self.horizontalLayout.addWidget(self.cbFirstParam)
 
         self.cbSecondParam = QComboBox(PlotterToolbar)
         self.cbSecondParam.setObjectName("cbSecondParam")
-        sizePolicy1.setHeightForWidth(
+        sizePolicy.setHeightForWidth(
             self.cbSecondParam.sizePolicy().hasHeightForWidth()
         )
-        self.cbSecondParam.setSizePolicy(sizePolicy1)
+        self.cbSecondParam.setSizePolicy(sizePolicy)
 
         self.horizontalLayout.addWidget(self.cbSecondParam)
 
         self.pbPlot = QPushButton(PlotterToolbar)
         self.pbPlot.setObjectName("pbPlot")
-        sizePolicy1.setHeightForWidth(self.pbPlot.sizePolicy().hasHeightForWidth())
-        self.pbPlot.setSizePolicy(sizePolicy1)
+        sizePolicy.setHeightForWidth(self.pbPlot.sizePolicy().hasHeightForWidth())
+        self.pbPlot.setSizePolicy(sizePolicy)
 
         self.horizontalLayout.addWidget(self.pbPlot)
 

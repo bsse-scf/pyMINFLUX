@@ -1,12 +1,19 @@
 #  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
 
+import sys
 from pathlib import Path
 
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QDockWidget, QFileDialog, QMainWindow, QMessageBox
+from PySide6.QtWidgets import (
+    QDockWidget,
+    QFileDialog,
+    QMainWindow,
+    QMessageBox,
+    QTextEdit,
+)
 
 import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
@@ -17,8 +24,7 @@ from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.dataviewer import DataViewer
-
-# from pyminflux.ui.emittingstream import EmittingStream
+from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
@@ -73,9 +79,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.inspector = None
         self.options = Options()
 
-        # Make sure to only show the console if requested
-        self.toggle_dock_console_visibility()
-
         # Initialize widget and its dock
         self.wizard = WizardDialog()
         self.wizard_dock = QDockWidget("", self)
@@ -91,10 +94,22 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter_toolbar = PlotterToolbar()
         self.data_viewer = DataViewer()
 
+        # Create the output console
+        self.txConsole = QTextEdit()
+        self.txConsole.setReadOnly(True)
+        self.txConsole.setMinimumHeight(100)
+        self.txConsole.setMaximumHeight(300)
+        self.txConsole.setLineWrapMode(QTextEdit.NoWrap)
+        self.txConsole.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+
         # Add them to the splitter
         self.ui.splitter_layout.addWidget(self.plotter)
         self.ui.splitter_layout.addWidget(self.plotter_toolbar)
         self.ui.splitter_layout.addWidget(self.data_viewer)
+        self.ui.splitter_layout.addWidget(self.txConsole)
+
+        # Make sure to only show the console if requested
+        self.toggle_console_visibility()
 
         # Set initial visibiliy
         self.plotter.show()
@@ -104,9 +119,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Set up signals and slots
         self.setup_conn()
 
-        # # Install the custom output stream
-        # sys.stdout = EmittingStream()
-        # sys.stdout.signal_textWritten.connect(self.print_to_console)
+        # Install the custom output stream
+        sys.stdout = EmittingStream()
+        sys.stdout.signal_textWritten.connect(self.print_to_console)
 
         # Print a welcome message to the console
         print(f"Welcome to {__APP_NAME__}.")
@@ -187,7 +202,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
         self.ui.actionOptions.triggered.connect(self.open_options_dialog)
         self.ui.actionQuit.triggered.connect(self.quit_application)
-        self.ui.actionConsole.changed.connect(self.toggle_dock_console_visibility)
+        self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionState.triggered.connect(self.print_current_state)
@@ -258,10 +273,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """
         Append text to the QTextEdit.
         """
-        cursor = self.ui.txConsole.textCursor()
+        cursor = self.txConsole.textCursor()
         cursor.movePosition(QtGui.QTextCursor.MoveOperation.End)
         cursor.insertText(text)
-        self.ui.txConsole.setTextCursor(cursor)
+        self.txConsole.setTextCursor(cursor)
 
     def closeEvent(self, event):
         """Application close event."""
@@ -320,13 +335,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Quit the application."""
         self.close()
 
-    @Slot(bool, name="toggle_dock_console_visibility")
-    def toggle_dock_console_visibility(self):
-        """Toggle the visibility of the console dock widget."""
+    @Slot(bool, name="toggle_console_visibility")
+    def toggle_console_visibility(self):
+        """Toggle the visibility of the console widget."""
         if self.ui.actionConsole.isChecked():
-            self.ui.dwBottom.show()
+            self.txConsole.show()
         else:
-            self.ui.dwBottom.hide()
+            self.txConsole.hide()
 
     @Slot(bool, name="toggle_dataviewer_visibility")
     def toggle_dataviewer_visibility(self):

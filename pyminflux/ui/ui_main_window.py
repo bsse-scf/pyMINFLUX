@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
-
 ################################################################################
 ## Form generated from reading UI file 'main_window.ui'
 ##
@@ -45,7 +43,6 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
-    QDockWidget,
     QGridLayout,
     QMainWindow,
     QMenu,
@@ -53,7 +50,6 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSplitter,
     QStatusBar,
-    QTextEdit,
     QWidget,
 )
 
@@ -110,30 +106,6 @@ class Ui_MainWindow(object):
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
-        self.dwBottom = QDockWidget(MainWindow)
-        self.dwBottom.setObjectName("dwBottom")
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.dwBottom.sizePolicy().hasHeightForWidth())
-        self.dwBottom.setSizePolicy(sizePolicy)
-        self.dwBottom.setMaximumSize(QSize(524287, 100))
-        self.dwBottom.setAllowedAreas(Qt.BottomDockWidgetArea)
-        self.dockWidgetContents = QWidget()
-        self.dockWidgetContents.setObjectName("dockWidgetContents")
-        self.dockWidgetContents.setMinimumSize(QSize(0, 200))
-        self.txConsole = QTextEdit(self.dockWidgetContents)
-        self.txConsole.setObjectName("txConsole")
-        self.txConsole.setGeometry(QRect(10, 10, 16777215, 175))
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.txConsole.sizePolicy().hasHeightForWidth())
-        self.txConsole.setSizePolicy(sizePolicy1)
-        self.txConsole.setMaximumSize(QSize(16777215, 16777215))
-        self.txConsole.setReadOnly(True)
-        self.dwBottom.setWidget(self.dockWidgetContents)
-        MainWindow.addDockWidget(Qt.BottomDockWidgetArea, self.dwBottom)
 
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuView.menuAction())
