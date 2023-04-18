@@ -1,3 +1,5 @@
+#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+
 import sys
 
 from PySide6.QtCore import QObject, Signal

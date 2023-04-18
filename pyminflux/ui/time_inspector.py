@@ -1,3 +1,5 @@
+#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget

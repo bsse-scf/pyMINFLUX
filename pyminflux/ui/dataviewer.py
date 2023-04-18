@@ -1,3 +1,5 @@
+#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+
 import pandas as pd
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QSizePolicy, QTableView

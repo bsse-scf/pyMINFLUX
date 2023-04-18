@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+
 ################################################################################
 ## Form generated from reading UI file 'plotter_toolbar.ui'
 ##

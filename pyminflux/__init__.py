@@ -1,3 +1,5 @@
+#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+
 import pyqtgraph as pg
 
 __APP_NAME__ = "pyMINFLUX"

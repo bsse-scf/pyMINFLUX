@@ -1,3 +1,5 @@
+#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+
 from enum import IntEnum
 from pprint import pprint
 from typing import Union

@@ -1,3 +1,5 @@
+#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+
 from PySide6 import QtCore
 from PySide6.QtCore import Qt
 

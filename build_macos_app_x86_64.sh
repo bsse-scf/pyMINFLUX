@@ -1,3 +1,7 @@
+#
+# Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+#
+
 # To build, use the following command: currently there appears to be an issue with pyqtgraph
 pyinstaller pyminflux/main.py \
 --windowed \

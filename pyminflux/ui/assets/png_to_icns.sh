@@ -1,4 +1,8 @@
 #!/bin/sh
+#
+# Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+#
+
 # Use on macOS
 
 s=$1

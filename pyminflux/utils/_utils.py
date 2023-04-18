@@ -1,3 +1,5 @@
+#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+
 import numpy as np
 
 from pyminflux.analysis import ideal_hist_bins

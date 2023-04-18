@@ -1,3 +1,5 @@
+#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
+
 from pathlib import Path
 
 from pyqtgraph import ViewBox
