@@ -6,6 +6,7 @@
 pyinstaller pyminflux/main.py \
 --clean \
 --windowed \
+--hidden-import="sklearn.neighbors._typedefs" \
 --icon pyminflux/ui/assets/Logo_v3.png \
 --noconsole \
 --name pyMINFLUX \

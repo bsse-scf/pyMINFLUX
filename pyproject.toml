@@ -29,7 +29,7 @@ py_version = 310
 python = ">=3.10,<3.12"
 numpy = "^1.23.4"
 pandas = "^1.5.1"
-pyside6 = "^6.4.0.1"
+pyside6 = ">=6.4.0.1,<6.5"
 pyqtgraph = "^0.13.2"
 scipy = "^1.9.3"
 pyopengl = "^3.1.6"
