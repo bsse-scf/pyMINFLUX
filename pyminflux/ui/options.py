@@ -1,10 +1,11 @@
-from PySide6.QtCore import QSettings, Signal, Slot
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 from PySide6.QtWidgets import QDialog, QMessageBox
 
 from pyminflux import __APP_NAME__
 from pyminflux.state import State
 
+from ..settings import Settings
 from .ui_options import Ui_Options
 
 
@@ -285,22 +286,22 @@ class Options(QDialog, Ui_Options):
             return
 
         # Update the application settings
-        app_settings = QSettings(__APP_NAME__, "pyminflux")
-        app_settings.setValue(
+        settings = Settings()
+        settings.instance.setValue(
             "options/min_num_loc_per_trace", int(self.state.min_num_loc_per_trace)
         )
-        app_settings.setValue(
+        settings.instance.setValue(
             "options/efo_bin_size_hz", float(self.state.efo_bin_size_hz)
         )
-        app_settings.setValue(
+        settings.instance.setValue(
             "options/efo_expected_frequency", float(self.state.efo_expected_frequency)
         )
-        app_settings.setValue(
+        settings.instance.setValue(
             "options/weigh_avg_localization_by_eco",
             self.state.weigh_avg_localization_by_eco,
         )
-        app_settings.setValue("options/efo_range", list(self.state.efo_range))
-        app_settings.setValue("options/cfr_range", list(self.state.cfr_range))
-        app_settings.setValue(
+        settings.instance.setValue("options/efo_range", list(self.state.efo_range))
+        settings.instance.setValue("options/cfr_range", list(self.state.cfr_range))
+        settings.instance.setValue(
             "options/loc_precision_range", list(self.state.loc_precision_range)
         )

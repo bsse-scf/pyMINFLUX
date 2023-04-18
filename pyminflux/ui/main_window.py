@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
-from PySide6.QtCore import QSettings, Qt, Slot
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QDockWidget, QFileDialog, QMainWindow, QMessageBox
 
@@ -10,6 +10,7 @@ import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
+from pyminflux.settings import Settings
 from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
@@ -112,32 +113,36 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Read the application settings and update the State."""
 
         # Open settings file
-        app_settings = QSettings(__APP_NAME__, "pyminflux")
+        settings = Settings()
 
         # Read and set 'last_selected_path' option
-        self.last_selected_path = Path(app_settings.value("io/last_selected_path", "."))
+        self.last_selected_path = Path(
+            settings.instance.value("io/last_selected_path", ".")
+        )
 
         # Read and set 'min_num_loc_per_trace' option
         self.state.min_num_loc_per_trace = int(
-            app_settings.value(
+            settings.instance.value(
                 "options/min_num_loc_per_trace", self.state.min_num_loc_per_trace
             )
         )
 
         # Read and set 'efo_bin_size_hz' option
         self.state.efo_bin_size_hz = float(
-            app_settings.value("options/efo_bin_size_hz", self.state.efo_bin_size_hz)
+            settings.instance.value(
+                "options/efo_bin_size_hz", self.state.efo_bin_size_hz
+            )
         )
 
         # Read and set 'efo_expected_frequency' option
         self.state.efo_expected_frequency = float(
-            app_settings.value(
+            settings.instance.value(
                 "options/efo_expected_frequency", self.state.efo_expected_frequency
             )
         )
 
         # Read and set 'weigh_avg_localization_by_eco' option
-        value = app_settings.value(
+        value = settings.instance.value(
             "options/weigh_avg_localization_by_eco",
             self.state.weigh_avg_localization_by_eco,
         )
@@ -147,7 +152,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.state.weigh_avg_localization_by_eco = weigh_avg_localization_by_eco
 
         # Read and set the plot ranges
-        value = app_settings.value("options/efo_range", self.state.efo_range)
+        value = settings.instance.value("options/efo_range", self.state.efo_range)
         if value is None:
             self.state.efo_range = None
         elif type(value) is list:
@@ -155,7 +160,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         else:
             raise ValueError("Unexpected value for 'efo_range' in settings.")
 
-        value = app_settings.value("options/cfr_range", self.state.cfr_range)
+        value = settings.instance.value("options/cfr_range", self.state.cfr_range)
         if value is None:
             self.state.cfr_range = None
         elif type(value) is list:
@@ -163,7 +168,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         else:
             raise ValueError("Unexpected value for 'cfr_range' in settings.")
 
-        value = app_settings.value(
+        value = settings.instance.value(
             "options/loc_precision_range", self.state.loc_precision_range
         )
         if value is None:
@@ -295,8 +300,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Store the application settings
             if self.last_selected_path != "":
-                app_settings = QSettings(__APP_NAME__, "pyminflux")
-                app_settings.setValue(
+                settings = Settings()
+                settings.instance.setValue(
                     "io/last_selected_path", str(self.last_selected_path)
                 )
 
