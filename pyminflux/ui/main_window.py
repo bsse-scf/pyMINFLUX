@@ -534,7 +534,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_options_dialog(self):
         """Open the options dialog."""
         if self.options is None:
-            self.options = Options()
+            self.options = Options(parent=self)
         self.options.show()
         self.options.activateWindow()
 
