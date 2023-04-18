@@ -10,3 +10,6 @@ pyinstaller pyminflux/main.py \
 --noconsole \
 --name pyMINFLUX \
 --noconfirm
+
+# Copy the icon
+cp pyminflux/ui/assets/Logo_v3.png dist/pyMINFLUX
