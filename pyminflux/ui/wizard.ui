@@ -72,7 +72,7 @@
         </font>
        </property>
        <property name="text">
-        <string>DCR Unmixing</string>
+        <string>DCR unmixing</string>
        </property>
       </widget>
      </item>
@@ -192,7 +192,7 @@
         </font>
        </property>
        <property name="text">
-        <string>EFO Filtering</string>
+        <string>EFO filtering</string>
        </property>
       </widget>
      </item>
@@ -222,7 +222,7 @@
        <item>
         <widget class="QLabel" name="lbEFOUpperBound">
          <property name="text">
-          <string>Upper Bound (Hz)</string>
+          <string>Upper bound (Hz)</string>
          </property>
         </widget>
        </item>
@@ -253,7 +253,7 @@
         </font>
        </property>
        <property name="text">
-        <string>CFR Filtering</string>
+        <string>CFR filtering</string>
        </property>
       </widget>
      </item>

@@ -280,13 +280,13 @@ class Ui_WizardDialog(object):
             QCoreApplication.translate("WizardDialog", "Load", None)
         )
         self.lbColors.setText(
-            QCoreApplication.translate("WizardDialog", "DCR Unmixing", None)
+            QCoreApplication.translate("WizardDialog", "DCR unmixing", None)
         )
         self.pbSingleColor.setText(
             QCoreApplication.translate("WizardDialog", "Single Color", None)
         )
         self.pbColorUnmixer.setText(
-            QCoreApplication.translate("WizardDialog", "Unmixer", None)
+            QCoreApplication.translate("WizardDialog", "Unmizer", None)
         )
         self.lbActiveColor.setText(
             QCoreApplication.translate("WizardDialog", "Active color", None)
@@ -305,19 +305,19 @@ class Ui_WizardDialog(object):
             QCoreApplication.translate("WizardDialog", "Analyzer", None)
         )
         self.lbEFOFiltering.setText(
-            QCoreApplication.translate("WizardDialog", "EFO Filtering", None)
+            QCoreApplication.translate("WizardDialog", "EFO filtering", None)
         )
         self.lbEFOLowerBound.setText(
             QCoreApplication.translate("WizardDialog", "Lower bound (Hz)", None)
         )
         self.lbEFOUpperBound.setText(
-            QCoreApplication.translate("WizardDialog", "Upper Bound (Hz)", None)
+            QCoreApplication.translate("WizardDialog", "Upper bound (Hz)", None)
         )
         self.pbEFOFilter.setText(
             QCoreApplication.translate("WizardDialog", "FIlter EFO", None)
         )
         self.lbCFRFiltering.setText(
-            QCoreApplication.translate("WizardDialog", "CFR Filtering", None)
+            QCoreApplication.translate("WizardDialog", "CFR filtering", None)
         )
         self.lbCFRLowerBound.setText(
             QCoreApplication.translate("WizardDialog", "Lower bound", None)
