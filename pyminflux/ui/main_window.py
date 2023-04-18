@@ -189,6 +189,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionState.triggered.connect(self.print_current_state)
+        self.ui.actionAbout.triggered.connect(self.about)
 
         # Plotter toolbar
         self.plotter_toolbar.plot_requested_parameters.connect(
@@ -448,6 +449,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         state_dict = self.state.asdict()
         for s in state_dict:
             print(f"{s}: {state_dict[s]}")
+
+    @Slot(None, name="about")
+    def about(self):
+        """Show simple About dialog."""
+        QMessageBox.about(
+            self,
+            "About",
+            f"{__APP_NAME__} v{__version__}\n"
+            f"\n"
+            f"Copyright 2022 - 2023\n"
+            f"Single Cell Facility\n"
+            f"D-BSSE\n"
+            f"ETH Zurich\n"
+            f"Switzerland",
+        )
 
     @Slot(None, name="open_analyzer")
     def open_analyzer(self):

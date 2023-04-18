@@ -81,6 +81,8 @@ class Ui_MainWindow(object):
         self.actionState.setObjectName("actionState")
         self.actionOptions = QAction(MainWindow)
         self.actionOptions.setObjectName("actionOptions")
+        self.actionAbout = QAction(MainWindow)
+        self.actionAbout.setObjectName("actionAbout")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -95,11 +97,13 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName("menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1000, 22))
+        self.menubar.setGeometry(QRect(0, 0, 1000, 23))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
         self.menuView = QMenu(self.menubar)
         self.menuView.setObjectName("menuView")
+        self.menuHelp = QMenu(self.menubar)
+        self.menuHelp.setObjectName("menuHelp")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -131,6 +135,7 @@ class Ui_MainWindow(object):
 
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuView.menuAction())
+        self.menubar.addAction(self.menuHelp.menuAction())
         self.menuFile.addAction(self.actionLoad)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionOptions)
@@ -143,6 +148,7 @@ class Ui_MainWindow(object):
         self.menuView.addSeparator()
         self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
+        self.menuHelp.addAction(self.actionAbout)
 
         self.retranslateUi(MainWindow)
 
@@ -193,7 +199,11 @@ class Ui_MainWindow(object):
         self.actionOptions.setText(
             QCoreApplication.translate("MainWindow", "Options", None)
         )
+        self.actionAbout.setText(
+            QCoreApplication.translate("MainWindow", "About", None)
+        )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
+        self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", "Help", None))
 
     # retranslateUi
