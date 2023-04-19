@@ -453,12 +453,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Attach the processor reference to the wizard
             self.wizard.set_processor(self.minfluxprocessor)
 
-            # Enable wizard step 1
+            # Enable wizard
             self.wizard.enable_controls(True)
 
         else:
-            # Enable wizard step 1
-            self.wizard.enable_controls(False)
+            # If nothing is loaded (even from earlier), disable wizard
+            if self.minfluxprocessor is None:
+                self.wizard.enable_controls(False)
 
     @Slot(None, name="print_current_state")
     def print_current_state(self):
