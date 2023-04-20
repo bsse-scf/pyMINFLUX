@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
-
 ################################################################################
 ## Form generated from reading UI file 'wizard.ui'
 ##
@@ -288,7 +286,7 @@ class Ui_WizardDialog(object):
             QCoreApplication.translate("WizardDialog", "Single Color", None)
         )
         self.pbColorUnmixer.setText(
-            QCoreApplication.translate("WizardDialog", "Unmizer", None)
+            QCoreApplication.translate("WizardDialog", "Unmixer", None)
         )
         self.lbActiveColor.setText(
             QCoreApplication.translate("WizardDialog", "Active color", None)
