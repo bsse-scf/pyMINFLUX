@@ -386,7 +386,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Open a file dialog for the user to pick an .npy file
         res = QFileDialog.getOpenFileName(
             self,
-            "Open Image",
+            "Open NumPy file",
             str(self.last_selected_path),
             "NumPy binary file (*.npy);;All files (*.*)",
         )
