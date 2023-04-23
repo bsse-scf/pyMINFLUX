@@ -316,7 +316,3 @@ class Options(QDialog, Ui_Options):
             settings.instance.setValue(
                 "options/loc_precision_range", list(self.state.loc_precision_range)
             )
-
-    def closeEvent(self, event):
-        """Make sure to call the parent closeEvent()."""
-        super().closeEvent(event)
