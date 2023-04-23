@@ -302,11 +302,20 @@ class Options(QDialog, Ui_Options):
             "options/weigh_avg_localization_by_eco",
             self.state.weigh_avg_localization_by_eco,
         )
-        settings.instance.setValue("options/efo_range", list(self.state.efo_range))
-        settings.instance.setValue("options/cfr_range", list(self.state.cfr_range))
-        settings.instance.setValue(
-            "options/loc_precision_range", list(self.state.loc_precision_range)
-        )
+        if self.state.efo_range is None:
+            settings.instance.setValue("options/efo_range", "None")
+        else:
+            settings.instance.setValue("options/efo_range", list(self.state.efo_range))
+        if self.state.cfr_range is None:
+            settings.instance.setValue("options/cfr_range", "None")
+        else:
+            settings.instance.setValue("options/cfr_range", list(self.state.cfr_range))
+        if self.state.loc_precision_range is None:
+            settings.instance.setValue("options/loc_precision_range", "None")
+        else:
+            settings.instance.setValue(
+                "options/loc_precision_range", list(self.state.loc_precision_range)
+            )
 
     def closeEvent(self, event):
         """Make sure to call the parent closeEvent()."""

@@ -170,15 +170,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Read and set the plot ranges
         value = settings.instance.value("options/efo_range", self.state.efo_range)
-        if value is None:
+        if value == "None" or value is None:
             self.state.efo_range = None
         elif type(value) is list:
-            self.state.efo_range = (int(value[0]), int(value[1]))
+            self.state.efo_range = (float(value[0]), float(value[1]))
         else:
             raise ValueError("Unexpected value for 'efo_range' in settings.")
 
         value = settings.instance.value("options/cfr_range", self.state.cfr_range)
-        if value is None:
+        if value == "None" or value is None:
             self.state.cfr_range = None
         elif type(value) is list:
             self.state.cfr_range = (float(value[0]), float(value[1]))
@@ -188,7 +188,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         value = settings.instance.value(
             "options/loc_precision_range", self.state.loc_precision_range
         )
-        if value is None:
+        if value == "None" or value is None:
             self.state.loc_precision_range = None
         elif type(value) is list:
             self.state.loc_precision_range = (float(value[0]), float(value[1]))
