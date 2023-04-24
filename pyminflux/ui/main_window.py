@@ -1,12 +1,13 @@
 #  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
 
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, Slot
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import (
     QDockWidget,
     QFileDialog,
@@ -208,6 +209,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionState.triggered.connect(self.print_current_state)
+        self.ui.actionDocs.triggered.connect(
+            lambda _: QDesktopServices.openUrl("https://pyminflux.ethz.ch/docs")
+        )
+        self.ui.actionWebsite.triggered.connect(
+            lambda _: QDesktopServices.openUrl("https://pyminflux.ethz.ch")
+        )
         self.ui.actionAbout.triggered.connect(self.about)
 
         # Plotter toolbar
@@ -520,7 +527,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             "About",
             f"{__APP_NAME__} v{__version__}\n"
             f"\n"
-            f"Copyright 2022 - 2023\n"
+            f"Copyright 2022 - {datetime.now().year}\n"
             f"Single Cell Facility\n"
             f"D-BSSE\n"
             f"ETH Zurich\n"
