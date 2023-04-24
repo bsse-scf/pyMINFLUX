@@ -618,7 +618,7 @@ class MinFluxProcessor:
         df_tid["sz"] = sz
         df_tid["fluo"] = fluo
 
-        # sx, sy sz columns will contain np.nan is n == 1: we replace with 0.0
+        # sx, sy sz columns will contain np.nan if n == 1: we replace with 0.0
         # @TODO: should this be changed?
         df_tid[["sx", "sy", "sz"]] = df_tid[["sx", "sy", "sz"]].fillna(value=0.0)
 
