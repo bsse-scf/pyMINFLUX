@@ -72,7 +72,7 @@
     <property name="title">
      <string>Help</string>
     </property>
-    <addaction name="actionDocs"/>
+    <addaction name="actionManual"/>
     <addaction name="actionWebsite"/>
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
@@ -131,7 +131,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>3D Plotter</string>
+    <string>3D plotter</string>
    </property>
   </action>
   <action name="actionState">
@@ -154,9 +154,9 @@
     <string>Export data</string>
    </property>
   </action>
-  <action name="actionDocs">
+  <action name="actionManual">
    <property name="text">
-    <string>Docs</string>
+    <string>Manual</string>
    </property>
   </action>
   <action name="actionWebsite">

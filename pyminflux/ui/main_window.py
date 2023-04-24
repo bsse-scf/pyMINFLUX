@@ -209,8 +209,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionState.triggered.connect(self.print_current_state)
-        self.ui.actionDocs.triggered.connect(
-            lambda _: QDesktopServices.openUrl("https://pyminflux.ethz.ch/docs")
+        self.ui.actionManual.triggered.connect(
+            lambda _: QDesktopServices.openUrl("https://pyminflux.ethz.ch/manual")
         )
         self.ui.actionWebsite.triggered.connect(
             lambda _: QDesktopServices.openUrl("https://pyminflux.ethz.ch")
@@ -526,6 +526,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self,
             "About",
             f"{__APP_NAME__} v{__version__}\n"
+            f'"Heidelberg"\n'
             f"\n"
             f"Copyright 2022 - {datetime.now().year}\n"
             f"Single Cell Facility\n"

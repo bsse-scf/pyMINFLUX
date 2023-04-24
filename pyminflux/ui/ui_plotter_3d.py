@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
-
 ################################################################################
 ## Form generated from reading UI file 'plotter_3d.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.0
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -65,7 +63,7 @@ class Ui_Plotter3D(object):
 
     def retranslateUi(self, Plotter3D):
         Plotter3D.setWindowTitle(
-            QCoreApplication.translate("Plotter3D", "Plotter 3D", None)
+            QCoreApplication.translate("Plotter3D", "3D plotter", None)
         )
 
     # retranslateUi

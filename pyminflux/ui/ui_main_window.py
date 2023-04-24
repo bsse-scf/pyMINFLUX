@@ -83,8 +83,8 @@ class Ui_MainWindow(object):
         self.actionAbout.setObjectName("actionAbout")
         self.actionExport_data = QAction(MainWindow)
         self.actionExport_data.setObjectName("actionExport_data")
-        self.actionDocs = QAction(MainWindow)
-        self.actionDocs.setObjectName("actionDocs")
+        self.actionManual = QAction(MainWindow)
+        self.actionManual.setObjectName("actionManual")
         self.actionWebsite = QAction(MainWindow)
         self.actionWebsite.setObjectName("actionWebsite")
         self.centralwidget = QWidget(MainWindow)
@@ -129,7 +129,7 @@ class Ui_MainWindow(object):
         self.menuView.addSeparator()
         self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
-        self.menuHelp.addAction(self.actionDocs)
+        self.menuHelp.addAction(self.actionManual)
         self.menuHelp.addAction(self.actionWebsite)
         self.menuHelp.addSeparator()
         self.menuHelp.addAction(self.actionAbout)
@@ -175,7 +175,7 @@ class Ui_MainWindow(object):
             QCoreApplication.translate("MainWindow", "Data viewer", None)
         )
         self.action3D_Plotter.setText(
-            QCoreApplication.translate("MainWindow", "3D Plotter", None)
+            QCoreApplication.translate("MainWindow", "3D plotter", None)
         )
         self.actionState.setText(
             QCoreApplication.translate("MainWindow", "[DEBUG] Show state", None)
@@ -189,7 +189,9 @@ class Ui_MainWindow(object):
         self.actionExport_data.setText(
             QCoreApplication.translate("MainWindow", "Export data", None)
         )
-        self.actionDocs.setText(QCoreApplication.translate("MainWindow", "Docs", None))
+        self.actionManual.setText(
+            QCoreApplication.translate("MainWindow", "Manual", None)
+        )
         self.actionWebsite.setText(
             QCoreApplication.translate("MainWindow", "Website", None)
         )
