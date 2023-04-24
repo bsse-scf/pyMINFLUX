@@ -91,7 +91,7 @@ class State(metaclass=Singleton):
         return {
             "min_num_loc_per_trace": self.min_num_loc_per_trace,
             "plot_average_localisations": self.plot_average_localisations,
-            "color_code": self.color_code,
+            "color_code": str(ColorCode(self.color_code)),
             "efo_expected_frequency": self.efo_expected_frequency,
             "efo_thresholds": self.efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,

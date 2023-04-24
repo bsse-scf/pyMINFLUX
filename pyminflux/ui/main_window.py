@@ -111,10 +111,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Make sure to only show the console if requested
         self.toggle_console_visibility()
 
-        # Set initial visibiliy
+        # Set initial visibility and enabled states
         self.plotter.show()
         self.plotter_toolbar.hide()
         self.data_viewer.show()
+        self.ui.actionExport_data.setEnabled(False)
 
         # Set up signals and slots
         self.setup_conn()
@@ -200,6 +201,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Menu actions
         self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
+        self.ui.actionExport_data.triggered.connect(self.export_filtered_data)
         self.ui.actionOptions.triggered.connect(self.open_options_dialog)
         self.ui.actionQuit.triggered.connect(self.quit_application)
         self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
@@ -244,13 +246,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         self.wizard.request_fluorophore_ids_reset.connect(self.reset_fluorophore_ids)
         self.wizard.wizard_filters_run.connect(self.full_update_ui)
+        self.wizard.export_data_triggered.connect(self.export_filtered_data)
 
     def enable_ui_components_on_loaded_data(self):
         """Enable UI components."""
+        self.ui.actionExport_data.setEnabled(True)
         self.plotter_toolbar.show()
 
     def disable_ui_components_on_closed_data(self):
         """Disable UI components."""
+        self.ui.actionExport_data.setEnabled(False)
         self.plotter_toolbar.hide()
 
     def full_update_ui(self):
@@ -461,12 +466,51 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.minfluxprocessor is None:
                 self.wizard.enable_controls(False)
 
+    @Slot(None, name="export_filtered_data")
+    def export_filtered_data(self):
+        """Export filtered data as CSV file."""
+        if (
+            self.minfluxprocessor is None
+            or len(self.minfluxprocessor.filtered_dataframe.index) == 0
+        ):
+            return
+
+        filename, ext = QFileDialog.getSaveFileName(
+            self,
+            "Export filtered data",
+            str(self.last_selected_path),
+            "Comma-separated value files (*.csv)",
+        )
+
+        # Did the user cancel?
+        if filename == "":
+            return
+
+        # Does the file name have the .csv extension?
+        if not filename.lower().endswith(".csv"):
+            filename = Path(filename)
+            filename = filename.parent / f"{filename.stem}.csv"
+
+        # Try saving
+        try:
+            self.minfluxprocessor.filtered_dataframe.to_csv(filename, index=False)
+            print(
+                f"Successfully exported {len(self.minfluxprocessor.filtered_dataframe.index)} localizations."
+            )
+        except:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Could not export filtered data to {Path(filename).name}.",
+            )
+
     @Slot(None, name="print_current_state")
     def print_current_state(self):
         """Print current contents of the state machine (DEBUG)."""
         state_dict = self.state.asdict()
+        print("[DEBUG] Internal state:")
         for s in state_dict:
-            print(f"{s}: {state_dict[s]}")
+            print(f'  ∟ "{s}": {state_dict[s]}')
 
     @Slot(None, name="about")
     def about(self):

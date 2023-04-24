@@ -21,6 +21,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     cfr_bounds_modified = Signal(None, name="cfr_bounds_modified")
     cfr_robust_threshold_modified = Signal(float, name="cfr_robust_threshold_modified ")
     wizard_filters_run = Signal(None, name="wizard_filters_run")
+    export_data_triggered = Signal(None, name="export_data_triggered")
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -91,6 +92,9 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         )
         self.ui.pbEFOFilter.clicked.connect(self.run_efo_filter_and_broadcast)
         self.ui.pbCFRFilter.clicked.connect(self.run_cfr_filter_and_broadcast)
+        self.ui.pbExportData.clicked.connect(
+            lambda _: self.export_data_triggered.emit()
+        )
 
     def prepare_filter_ranges(self):
         """Extract bounds from the EFO and CFR data and prefill the values."""
@@ -154,6 +158,9 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.ui.lbCFRUpperBound.setVisible(enabled)
         self.ui.leCFRUpperBound.setVisible(enabled)
         self.ui.pbCFRFilter.setVisible(enabled)
+
+        # Export data
+        self.ui.pbExportData.setVisible(enabled)
 
     def reset_fluorophores(self):
         """Reset the fluorophores."""

@@ -81,6 +81,10 @@ class Ui_MainWindow(object):
         self.actionOptions.setObjectName("actionOptions")
         self.actionAbout = QAction(MainWindow)
         self.actionAbout.setObjectName("actionAbout")
+        self.actionExport_data = QAction(MainWindow)
+        self.actionExport_data.setObjectName("actionExport_data")
+        self.actionDocs = QAction(MainWindow)
+        self.actionDocs.setObjectName("actionDocs")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -111,6 +115,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuView.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
         self.menuFile.addAction(self.actionLoad)
+        self.menuFile.addAction(self.actionExport_data)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionOptions)
         self.menuFile.addSeparator()
@@ -122,6 +127,8 @@ class Ui_MainWindow(object):
         self.menuView.addSeparator()
         self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
+        self.menuHelp.addAction(self.actionDocs)
+        self.menuHelp.addSeparator()
         self.menuHelp.addAction(self.actionAbout)
 
         self.retranslateUi(MainWindow)
@@ -176,6 +183,10 @@ class Ui_MainWindow(object):
         self.actionAbout.setText(
             QCoreApplication.translate("MainWindow", "About", None)
         )
+        self.actionExport_data.setText(
+            QCoreApplication.translate("MainWindow", "Export data", None)
+        )
+        self.actionDocs.setText(QCoreApplication.translate("MainWindow", "Docs", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", "Help", None))

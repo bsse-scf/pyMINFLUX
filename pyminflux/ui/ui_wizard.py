@@ -264,6 +264,17 @@ class Ui_WizardDialog(object):
 
         self.mainLayout.addWidget(self.pbCFRFilter)
 
+        self.verticalSpacer_5 = QSpacerItem(
+            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+        )
+
+        self.mainLayout.addItem(self.verticalSpacer_5)
+
+        self.pbExportData = QPushButton(WizardDialog)
+        self.pbExportData.setObjectName("pbExportData")
+
+        self.mainLayout.addWidget(self.pbExportData)
+
         self.gridLayout.addLayout(self.mainLayout, 0, 0, 1, 1)
 
         self.retranslateUi(WizardDialog)
@@ -327,6 +338,9 @@ class Ui_WizardDialog(object):
         )
         self.pbCFRFilter.setText(
             QCoreApplication.translate("WizardDialog", "FIlter CFR", None)
+        )
+        self.pbExportData.setText(
+            QCoreApplication.translate("WizardDialog", "Export", None)
         )
 
     # retranslateUi
