@@ -440,11 +440,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.inspector.close()
                 self.inspector = None
 
-            # Close the 3D plotter
-            if self.plotter3D is not None:
-                self.plotter3D.close()
-                self.plotter3D = None
-
             # Update the ui
             self.full_update_ui()
 
@@ -659,7 +654,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             pass
 
         # Update the 3D plotter
-        if self.plotter3D is not None:
+        if self.plotter3D is not None and self.plotter.isVisible():
             self.plotter3D.plot(
                 self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
             )
@@ -708,7 +703,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 dataframe = self.minfluxprocessor.filtered_dataframe
 
             # If the 3D plotter is open, also plot the coordinates in the 3D plotter.
-            if self.plotter3D is not None:
+            if self.plotter3D is not None and self.plotter3D.isVisible():
                 self.plot_localizations_3d(dataframe[["x", "y", "z"]].values)
 
         else:
@@ -760,20 +755,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Initialize and open the analyzer."""
         if self.plotter3D is None:
             self.plotter3D = Plotter3D()
-            if (
-                self.minfluxprocessor is not None
-                and self.minfluxprocessor.num_values > 0
-            ):
-                if self.state.plot_average_localisations:
-                    self.plot_localizations_3d(
-                        self.minfluxprocessor.weighted_localizations[
-                            ["x", "y", "z"]
-                        ].values
-                    )
-                else:
-                    self.plot_localizations_3d(
-                        self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
-                    )
+        if self.minfluxprocessor is not None and self.minfluxprocessor.num_values > 0:
+            if self.state.plot_average_localisations:
+                self.plot_localizations_3d(
+                    self.minfluxprocessor.weighted_localizations[["x", "y", "z"]].values
+                )
+            else:
+                self.plot_localizations_3d(
+                    self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
+                )
         self.plotter3D.show()
         self.plotter3D.activateWindow()
 

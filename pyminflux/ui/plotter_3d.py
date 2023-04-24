@@ -2,7 +2,7 @@
 
 import numpy as np
 import pyqtgraph.opengl as gl
-from PySide6.QtGui import QQuaternion
+from PySide6.QtGui import QQuaternion, Qt
 from PySide6.QtWidgets import QDialog
 
 from pyminflux.ui.ui_plotter_3d import Ui_Plotter3D
@@ -51,20 +51,22 @@ class Plotter3D(QDialog, Ui_Plotter3D):
         center_z = 0.0
         distance = np.max((range_x, range_y, range_z))
 
-        # Make sure to clear all items from the scene
-        self.view.clear()
+        # Remove items if they already exist
+        if self.grid is not None:
+            self.view.removeItem(self.grid)
+            self.grid.deleteLater()
+
+        if self.scatter is not None:
+            self.view.removeItem(self.scatter)
+            self.scatter.deleteLater()
 
         # Create a grid and center it at the center of mass of the point cloud
-        if self.grid is not None:
-            self.grid = None
         self.grid = gl.GLGridItem()
         self.grid.setSize(range_x, range_y, range_z)
         self.grid.setSpacing(spacing_x, spacing_y, spacing_z)
         self.view.addItem(self.grid)
 
         # Add the points
-        if self.scatter is not None:
-            self.scatter = None
         self.scatter = gl.GLScatterPlotItem(
             pos=coords, size=5.0, color=self.color, pxMode=True
         )
@@ -80,3 +82,8 @@ class Plotter3D(QDialog, Ui_Plotter3D):
 
         # Show
         self.view.show()
+
+    def closeEvent(self, ev):
+        """Hide the dialog instead of closing it."""
+        ev.ignore()
+        self.hide()
