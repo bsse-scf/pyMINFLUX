@@ -30,6 +30,9 @@ class Plotter3D(QDialog, Ui_Plotter3D):
         # Set color
         self.color = (1.0, 1.0, 1.0, 0.5)
 
+        # Only hide on close by default
+        self.hide_on_close = True
+
     def plot(self, coords):
         """Plot the data in 3D."""
 
@@ -85,5 +88,8 @@ class Plotter3D(QDialog, Ui_Plotter3D):
 
     def closeEvent(self, ev):
         """Hide the dialog instead of closing it."""
-        ev.ignore()
-        self.hide()
+        if self.hide_on_close:
+            ev.ignore()
+            self.hide()
+        else:
+            ev.accept()

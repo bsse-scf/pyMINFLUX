@@ -309,6 +309,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Close the external dialogs
             if self.plotter3D is not None:
+                self.plotter3D.hide_on_close = False
                 self.plotter3D.close()
                 self.plotter3D = None
 
@@ -755,6 +756,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Initialize and open the analyzer."""
         if self.plotter3D is None:
             self.plotter3D = Plotter3D()
+            self.plotter3D.hide_on_close = True
         if self.minfluxprocessor is not None and self.minfluxprocessor.num_values > 0:
             if self.state.plot_average_localisations:
                 self.plot_localizations_3d(
