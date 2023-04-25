@@ -33,6 +33,7 @@ from pyminflux.ui.plotter_toolbar import PlotterToolbar
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.wizard import WizardDialog
+from pyminflux.writer import MinFluxWriter
 
 
 class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
@@ -478,29 +479,45 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         ):
             return
 
+        # Ask the user to pick a name (and format)
         filename, ext = QFileDialog.getSaveFileName(
             self,
             "Export filtered data",
             str(self.last_selected_path),
-            "Comma-separated value files (*.csv)",
+            "NumPy array (*.npy);;Comma-separated value files (*.csv)",
         )
 
         # Did the user cancel?
         if filename == "":
             return
 
-        # Does the file name have the .csv extension?
-        if not filename.lower().endswith(".csv"):
-            filename = Path(filename)
-            filename = filename.parent / f"{filename.stem}.csv"
+        if ext == "NumPy array (*.npy)":
+            # Does the file name have the .npy extension?
+            if not filename.lower().endswith(".npy"):
+                filename = Path(filename)
+                filename = filename.parent / f"{filename.stem}.npy"
 
-        # Try saving
-        try:
-            self.minfluxprocessor.filtered_dataframe.to_csv(filename, index=False)
+            # Write to disk
+            result = MinFluxWriter.write_npy(self.minfluxprocessor, filename)
+
+        elif ext == "Comma-separated value files (*.csv)":
+            # Does the file name have the .csv extension?
+            if not filename.lower().endswith(".csv"):
+                filename = Path(filename)
+                filename = filename.parent / f"{filename.stem}.csv"
+
+            # Write to disk
+            result = MinFluxWriter.write_csv(self.minfluxprocessor, filename)
+
+        else:
+            return
+
+        # Save
+        if result:
             print(
                 f"Successfully exported {len(self.minfluxprocessor.filtered_dataframe.index)} localizations."
             )
-        except:
+        else:
             QMessageBox.critical(
                 self,
                 "Error",

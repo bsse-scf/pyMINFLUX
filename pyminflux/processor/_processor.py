@@ -136,6 +136,25 @@ class MinFluxProcessor:
         return len(np.unique(self.full_dataframe["fluo"].values))
 
     @property
+    def raw_numpy_array(self):
+        """Return the raw NumPy array."""
+        return self.__minfluxreader.raw_data
+
+    @property
+    def filtered_numpy_array(self):
+        """Return the raw NumPy array."""
+
+        # Copy the raw NumPy array
+        raw_array = self.__minfluxreader.raw_data.copy()
+        if raw_array is None:
+            return None
+
+        # Extract combination of fluorophore 1 and 2 filtered dataframes
+        mask_1 = (self.full_dataframe["fluo"] == 1) & self.__selected_rows_dict[1]
+        mask_2 = (self.full_dataframe["fluo"] == 2) & self.__selected_rows_dict[2]
+        return raw_array[mask_1 | mask_2]
+
+    @property
     def full_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return the full dataframe (with valid entries only), with no selections or filters.
 
