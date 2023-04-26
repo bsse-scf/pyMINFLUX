@@ -1,5 +1,4 @@
 #  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich. All rights reserved.
-
 from pathlib import Path
 from typing import Union
 
@@ -171,7 +170,11 @@ class MinFluxReader:
         # Call the specialized _load_*() function
         if self.__filename.name.lower().endswith(".npy"):
             try:
-                self.__data_array = np.load(str(self.__filename))
+                data_array = np.load(str(self.__filename))
+                if "fluo" in data_array.dtype.names:
+                    self.__data_array = data_array
+                else:
+                    self.__data_array = self._migrate_npy_array(data_array)
             except ValueError as e:
                 print(f"Could not open {self.__filename}: {e}")
                 return False
@@ -222,8 +225,11 @@ class MinFluxReader:
         # Number of entries
         n_entries = len(mat_array["itr"]["itr"][0][0])
 
+        # Number of iterations
+        n_iters = mat_array["itr"]["itr"][0][0].shape[-1]
+
         # Initialize an empty structure NumPy data array
-        data_array = self.create_empty_data_array(n_entries)
+        data_array = self.create_empty_data_array(n_entries, n_iters)
 
         # Copy the data over
         data_array["vld"] = mat_array["vld"].ravel().astype(data_array.dtype["vld"])
@@ -329,6 +335,11 @@ class MinFluxReader:
         # Extract the valid time points
         tim = self.__data_array["tim"][indices]
 
+        # Extract the fluorophore IDs
+        fluo = self.__data_array["fluo"][indices]
+        if np.all(fluo) == 0:
+            fluo = np.ones(fluo.shape, dtype=fluo.dtype)
+
         # The following extraction pattern will change whether the
         # acquisition is normal or aggregated
         if self.is_aggregated:
@@ -386,7 +397,7 @@ class MinFluxReader:
         df["eco"] = eco
         df["dcr"] = dcr
         df["dwell"] = dwell
-        df["fluo"] = 1
+        df["fluo"] = fluo
 
         return df
 
@@ -483,8 +494,27 @@ class MinFluxReader:
                 self.__eco_index = 4
                 self.__loc_index = 4
 
-    def create_empty_data_array(self, n_entries):
-        """Initializes a structured data array compatible with those exported from Imspector."""
+    def create_empty_data_array(self, n_entries: int, n_iters: int):
+        """Initializes a structured data array compatible with those exported from Imspector.
+
+        Parameters
+        ----------
+
+        n_entries: int
+            Number of localizations in the array.
+
+        n_iters: int
+            Number of iterations per localization.
+            10 for 3D datasets, 5 for 2D datasets, 1 for aggregated measurements.
+
+        Returns
+        -------
+
+        array: Empty array with the requested dimensionality.
+        """
+
+        if n_iters not in [1, 5, 10]:
+            raise ValueError("`n_iters` must be one of 1, 5, 10.")
 
         return np.empty(
             n_entries,
@@ -515,7 +545,7 @@ class MinFluxReader:
                             ("lcz", "<f8"),
                             ("fbg", "<f8"),
                         ],
-                        (5,),
+                        (n_iters,),
                     ),
                     ("sqi", "<u4"),
                     ("gri", "<u4"),
@@ -525,9 +555,25 @@ class MinFluxReader:
                     ("act", "?"),
                     ("dos", "<i4"),
                     ("sky", "<i4"),
+                    ("fluo", "<i1"),
                 ]
             ),
         )
+
+    def _migrate_npy_array(self, data_array):
+        """Migrate the raw Imspector NumPy array into a pyMINFLUX raw array."""
+
+        # Initialize the empty target array
+        new_array = self.create_empty_data_array(
+            len(data_array), data_array["itr"].shape[-1]
+        )
+
+        # Copy the data over
+        for field_name in data_array.dtype.names:
+            new_array[field_name] = data_array[field_name]
+
+        # Return the migrated array
+        return new_array
 
     def __repr__(self):
         """String representation of the object."""

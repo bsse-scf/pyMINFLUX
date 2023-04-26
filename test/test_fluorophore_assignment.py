@@ -281,7 +281,7 @@ def test_assign_fluorophore_id(extract_raw_npy_data_files):
     processor.set_fluorophore_ids(ids)
 
     # Make sure that the default fluorophore ID is 0
-    assert processor.current_fluorophore_id == 0, "Default fluorophore ID must be 1."
+    assert processor.current_fluorophore_id == 0, "Default fluorophore ID must be 0."
 
     # Set current_fluorophore ID to 1
     processor.current_fluorophore_id = 1

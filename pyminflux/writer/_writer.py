@@ -16,6 +16,9 @@ class MinFluxWriter:
         if filtered_array is None:
             return False
 
+        # Append the fluorophore ID data
+        filtered_array["fluo"] = processor.filtered_dataframe["fluo"].astype(np.uint8)
+
         # Save the filtered structured NumPy array to disk
         try:
             np.save(str(file_name), filtered_array)
