@@ -484,14 +484,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self,
             "Export filtered data",
             str(self.last_selected_path),
-            "NumPy array (*.npy);;Comma-separated value files (*.csv)",
+            "NumPy binary files (*.npy);;Comma-separated value files (*.csv)",
         )
 
         # Did the user cancel?
         if filename == "":
             return
 
-        if ext == "NumPy array (*.npy)":
+        if ext == "NumPy binary files (*.npy)":
             # Does the file name have the .npy extension?
             if not filename.lower().endswith(".npy"):
                 filename = Path(filename)
