@@ -3,4 +3,5 @@
 *.png binary
 *.icns binary
 *.ico binary
-
+*.npy binary
+*.mat binary
