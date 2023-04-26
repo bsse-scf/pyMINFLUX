@@ -498,9 +498,14 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
         mx = rows["x"].values.mean()
         my = rows["y"].values.mean()
         mz = rows["z"].values.mean()
-        sx = rows["x"].values.std(ddof=1)
-        sy = rows["y"].values.std(ddof=1)
-        sz = rows["z"].values.std(ddof=1)
+        if rows.shape[0] > 1:
+            sx = rows["x"].values.std(ddof=1)
+            sy = rows["y"].values.std(ddof=1)
+            sz = rows["z"].values.std(ddof=1)
+        else:
+            sx = np.nan
+            sy = np.nan
+            sz = np.nan
         if np.isnan(sx):
             sx = 0.0
         if np.isnan(sy):
@@ -540,9 +545,14 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
         mx = rows["x"].values.mean()
         my = rows["y"].values.mean()
         mz = rows["z"].values.mean()
-        sx = rows["x"].values.std(ddof=1)
-        sy = rows["y"].values.std(ddof=1)
-        sz = rows["z"].values.std(ddof=1)
+        if rows.shape[0] > 1:
+            sx = rows["x"].values.std(ddof=1)
+            sy = rows["y"].values.std(ddof=1)
+            sz = rows["z"].values.std(ddof=1)
+        else:
+            sx = np.nan
+            sy = np.nan
+            sz = np.nan
         if np.isnan(sx):
             sx = 0.0
         if np.isnan(sy):
@@ -592,9 +602,14 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
         mx = rows["x"].values.mean()
         my = rows["y"].values.mean()
         mz = rows["z"].values.mean()
-        sx = rows["x"].values.std(ddof=1)
-        sy = rows["y"].values.std(ddof=1)
-        sz = rows["z"].values.std(ddof=1)
+        if rows.shape[0] > 1:
+            sx = rows["x"].values.std(ddof=1)
+            sy = rows["y"].values.std(ddof=1)
+            sz = rows["z"].values.std(ddof=1)
+        else:
+            sx = np.nan
+            sy = np.nan
+            sz = np.nan
         if np.isnan(sx):
             sx = 0.0
         if np.isnan(sy):
@@ -631,9 +646,14 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
         mx = rows["x"].values.mean()
         my = rows["y"].values.mean()
         mz = rows["z"].values.mean()
-        sx = rows["x"].values.std(ddof=1)
-        sy = rows["y"].values.std(ddof=1)
-        sz = rows["z"].values.std(ddof=1)
+        if rows.shape[0] > 1:
+            sx = rows["x"].values.std(ddof=1)
+            sy = rows["y"].values.std(ddof=1)
+            sz = rows["z"].values.std(ddof=1)
+        else:
+            sx = np.nan
+            sy = np.nan
+            sz = np.nan
         if np.isnan(sx):
             sx = 0.0
         if np.isnan(sy):
@@ -682,9 +702,14 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
         mx = rows["x"].values.mean()
         my = rows["y"].values.mean()
         mz = rows["z"].values.mean()
-        sx = rows["x"].values.std(ddof=1)
-        sy = rows["y"].values.std(ddof=1)
-        sz = rows["z"].values.std(ddof=1)
+        if rows.shape[0] > 1:
+            sx = rows["x"].values.std(ddof=1)
+            sy = rows["y"].values.std(ddof=1)
+            sz = rows["z"].values.std(ddof=1)
+        else:
+            sx = np.nan
+            sy = np.nan
+            sz = np.nan
         if np.isnan(sx):
             sx = 0.0
         if np.isnan(sy):
