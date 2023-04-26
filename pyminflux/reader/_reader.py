@@ -115,11 +115,11 @@ class MinFluxReader:
         return np.logical_not(self.__valid_entries).sum()
 
     @property
-    def raw_data(self) -> Union[None, np.ndarray]:
+    def valid_raw_data(self) -> Union[None, np.ndarray]:
         """Return the raw data."""
         if self.__data_array is None:
             return None
-        return self.__data_array.copy()
+        return self.__data_array[self.__valid_entries].copy()
 
     @property
     def processed_dataframe(self) -> Union[None, pd.DataFrame]:

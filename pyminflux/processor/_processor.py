@@ -136,16 +136,11 @@ class MinFluxProcessor:
         return len(np.unique(self.full_dataframe["fluo"].values))
 
     @property
-    def raw_numpy_array(self):
-        """Return the raw NumPy array."""
-        return self.__minfluxreader.raw_data
-
-    @property
     def filtered_numpy_array(self):
         """Return the raw NumPy array."""
 
         # Copy the raw NumPy array
-        raw_array = self.__minfluxreader.raw_data.copy()
+        raw_array = self.__minfluxreader.valid_raw_data
         if raw_array is None:
             return None
 
