@@ -202,7 +202,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Set up signals and slots."""
 
         # Menu actions
-        self.ui.actionLoad.triggered.connect(self.select_and_open_numpy_file)
+        self.ui.actionLoad.triggered.connect(self.select_and_open_data_file)
         self.ui.actionExport_data.triggered.connect(self.export_filtered_data)
         self.ui.actionOptions.triggered.connect(self.open_options_dialog)
         self.ui.actionQuit.triggered.connect(self.quit_application)
@@ -245,7 +245,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
 
         # Wizard
-        self.wizard.load_data_triggered.connect(self.select_and_open_numpy_file)
+        self.wizard.load_data_triggered.connect(self.select_and_open_data_file)
         self.wizard.open_unmixer_triggered.connect(self.open_color_unmixer)
         self.wizard.open_time_inspector_triggered.connect(self.open_inspector)
         self.wizard.open_analyzer_triggered.connect(self.open_analyzer)
@@ -390,19 +390,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Trigger a re-plot
         self.full_update_ui()
 
-    @Slot(None, name="select_and_open_numpy_file")
-    def select_and_open_numpy_file(self):
+    @Slot(None, name="select_and_open_data_file")
+    def select_and_open_data_file(self):
         """
-        Pick NumPy MINFLUX data file to open.
+        Pick a MINFLUX data file to open.
         :return: void
         """
 
         # Open a file dialog for the user to pick an .npy file
         res = QFileDialog.getOpenFileName(
             self,
-            "Open NumPy file",
+            "Open MINFLUX data file",
             str(self.last_selected_path),
-            "NumPy binary file (*.npy);;All files (*.*)",
+            "NumPy binary files (*.npy);;MATLAB mat files(*.mat)",
         )
         filename = res[0]
         if filename != "":

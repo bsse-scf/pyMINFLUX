@@ -5,6 +5,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from scipy.io import loadmat
 
 
 class MinFluxReader:
@@ -167,10 +168,22 @@ class MinFluxReader:
             print(f"File {self.__filename} does not exist.")
             return False
 
-        try:
-            self.__data_array = np.load(str(self.__filename))
-        except ValueError as e:
-            print(f"Could not open {self.__filename}: {e}")
+        # Call the specialized _load_*() function
+        if self.__filename.name.lower().endswith(".npy"):
+            try:
+                self.__data_array = np.load(str(self.__filename))
+            except ValueError as e:
+                print(f"Could not open {self.__filename}: {e}")
+                return False
+
+        elif self.__filename.name.lower().endswith(".mat"):
+            try:
+                self.__data_array = self._convert_from_mat()
+            except ValueError as e:
+                print(f"Could not open {self.__filename}: {e}")
+                return False
+        else:
+            print(f"Unexpected file {self.__filename}.")
             return False
 
         # Store a logical array with the valid entries
@@ -196,6 +209,97 @@ class MinFluxReader:
 
         # Return success
         return True
+
+    def _convert_from_mat(self) -> Union[np.ndarray, None]:
+        """Load the MAT file."""
+
+        try:
+            mat_array = loadmat(str(self.__filename))
+        except ValueError as e:
+            print(f"Could not open {self.__filename}: {e}")
+            return None
+
+        # Number of entries
+        n_entries = len(mat_array["itr"]["itr"][0][0])
+
+        # Initialize an empty structure NumPy data array
+        data_array = self.create_empty_data_array(n_entries)
+
+        # Copy the data over
+        data_array["vld"] = mat_array["vld"].ravel().astype(data_array.dtype["vld"])
+        data_array["sqi"] = mat_array["sqi"].ravel().astype(data_array.dtype["sqi"])
+        data_array["gri"] = mat_array["gri"].ravel().astype(data_array.dtype["gri"])
+        data_array["tim"] = mat_array["tim"].ravel().astype(data_array.dtype["tim"])
+        data_array["tid"] = mat_array["tid"].ravel().astype(data_array.dtype["tid"])
+        data_array["act"] = mat_array["act"].ravel().astype(data_array.dtype["act"])
+        data_array["dos"] = mat_array["dos"].ravel().astype(data_array.dtype["dos"])
+        data_array["sky"] = mat_array["sky"].ravel().astype(data_array.dtype["sky"])
+        data_array["itr"]["itr"] = mat_array["itr"]["itr"][0][0].astype(
+            data_array["itr"]["itr"].dtype
+        )
+        data_array["itr"]["tic"] = mat_array["itr"]["tic"][0][0].astype(
+            data_array["itr"]["tic"].dtype
+        )
+        data_array["itr"]["loc"] = mat_array["itr"]["loc"][0][0].astype(
+            data_array["itr"]["loc"].dtype
+        )
+        data_array["itr"]["lnc"] = mat_array["itr"]["lnc"][0][0].astype(
+            data_array["itr"]["lnc"].dtype
+        )
+        data_array["itr"]["eco"] = mat_array["itr"]["eco"][0][0].astype(
+            data_array["itr"]["eco"].dtype
+        )
+        data_array["itr"]["ecc"] = mat_array["itr"]["ecc"][0][0].astype(
+            data_array["itr"]["ecc"].dtype
+        )
+        data_array["itr"]["efo"] = mat_array["itr"]["efo"][0][0].astype(
+            data_array["itr"]["efo"].dtype
+        )
+        data_array["itr"]["efc"] = mat_array["itr"]["efc"][0][0].astype(
+            data_array["itr"]["efc"].dtype
+        )
+        data_array["itr"]["sta"] = mat_array["itr"]["sta"][0][0].astype(
+            data_array["itr"]["sta"].dtype
+        )
+        data_array["itr"]["cfr"] = mat_array["itr"]["cfr"][0][0].astype(
+            data_array["itr"]["cfr"].dtype
+        )
+        data_array["itr"]["dcr"] = mat_array["itr"]["dcr"][0][0].astype(
+            data_array["itr"]["dcr"].dtype
+        )
+        data_array["itr"]["ext"] = mat_array["itr"]["ext"][0][0].astype(
+            data_array["itr"]["ext"].dtype
+        )
+        data_array["itr"]["gvy"] = mat_array["itr"]["gvy"][0][0].astype(
+            data_array["itr"]["gvy"].dtype
+        )
+        data_array["itr"]["gvx"] = mat_array["itr"]["gvx"][0][0].astype(
+            data_array["itr"]["gvx"].dtype
+        )
+        data_array["itr"]["eoy"] = mat_array["itr"]["eoy"][0][0].astype(
+            data_array["itr"]["eoy"].dtype
+        )
+        data_array["itr"]["eox"] = mat_array["itr"]["eox"][0][0].astype(
+            data_array["itr"]["eox"].dtype
+        )
+        data_array["itr"]["dmz"] = mat_array["itr"]["dmz"][0][0].astype(
+            data_array["itr"]["dmz"].dtype
+        )
+        data_array["itr"]["lcy"] = mat_array["itr"]["lcy"][0][0].astype(
+            data_array["itr"]["lcy"].dtype
+        )
+        data_array["itr"]["lcx"] = mat_array["itr"]["lcx"][0][0].astype(
+            data_array["itr"]["lcx"].dtype
+        )
+        data_array["itr"]["lcz"] = mat_array["itr"]["lcz"][0][0].astype(
+            data_array["itr"]["lcz"].dtype
+        )
+        data_array["itr"]["fbg"] = mat_array["itr"]["fbg"][0][0].astype(
+            data_array["itr"]["fbg"].dtype
+        )
+
+        # Return success
+        return data_array
 
     def _process(self) -> Union[None, pd.DataFrame]:
         """Returns processed dataframe for valid (or invalid) entries.
@@ -378,6 +482,52 @@ class MinFluxReader:
                 self.__dcr_index = 4
                 self.__eco_index = 4
                 self.__loc_index = 4
+
+    def create_empty_data_array(self, n_entries):
+        """Initializes a structured data array compatible with those exported from Imspector."""
+
+        return np.empty(
+            n_entries,
+            dtype=np.dtype(
+                [
+                    (
+                        "itr",
+                        [
+                            ("itr", "<i4"),
+                            ("tic", "<u8"),
+                            ("loc", "<f8", (3,)),
+                            ("lnc", "<f8", (3,)),
+                            ("eco", "<i4"),
+                            ("ecc", "<i4"),
+                            ("efo", "<f8"),
+                            ("efc", "<f8"),
+                            ("sta", "<i4"),
+                            ("cfr", "<f8"),
+                            ("dcr", "<f8"),
+                            ("ext", "<f8", (3,)),
+                            ("gvy", "<f8"),
+                            ("gvx", "<f8"),
+                            ("eoy", "<f8"),
+                            ("eox", "<f8"),
+                            ("dmz", "<f8"),
+                            ("lcy", "<f8"),
+                            ("lcx", "<f8"),
+                            ("lcz", "<f8"),
+                            ("fbg", "<f8"),
+                        ],
+                        (5,),
+                    ),
+                    ("sqi", "<u4"),
+                    ("gri", "<u4"),
+                    ("tim", "<f8"),
+                    ("tid", "<i4"),
+                    ("vld", "?"),
+                    ("act", "?"),
+                    ("dos", "<i4"),
+                    ("sky", "<i4"),
+                ]
+            ),
+        )
 
     def __repr__(self):
         """String representation of the object."""
