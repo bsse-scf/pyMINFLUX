@@ -239,6 +239,15 @@ class Plotter(PlotWidget):
             ev.accept()
 
         else:
+
+            # Incomplete action
+            if self.__roi_is_being_drawn:
+                self.removeItem(self.ROI)
+                self.__roi_is_being_drawn = False
+            if self.__line_is_being_drawn:
+                self.removeItem(self.line)
+                self.__line_is_being_drawn = False
+
             # Call the parent method
             ev.ignore()
             super().mouseReleaseEvent(ev)
