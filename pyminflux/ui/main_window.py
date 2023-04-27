@@ -100,7 +100,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.txConsole = QTextEdit()
         self.txConsole.setReadOnly(True)
         self.txConsole.setMinimumHeight(100)
-        self.txConsole.setMaximumHeight(300)
+        self.txConsole.setMaximumHeight(500)
         self.txConsole.setLineWrapMode(QTextEdit.NoWrap)
         self.txConsole.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
