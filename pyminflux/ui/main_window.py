@@ -527,6 +527,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot(None, name="print_current_state")
     def print_current_state(self):
         """Print current contents of the state machine (DEBUG)."""
+        if self.txConsole.isHidden():
+            self.txConsole.show()
+            self.ui.actionConsole.setChecked(True)
         state_dict = self.state.asdict()
         print("[DEBUG] Internal state:")
         for s in state_dict:

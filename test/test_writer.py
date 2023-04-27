@@ -180,14 +180,11 @@ def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
         reloaded_dataframe.index
     ), "Unexpected number of entries in reloaded .npy file."
     assert np.all(
-        processor.filtered_dataframe["fluo"].values
-        == reloaded_dataframe["fluo"].values
+        processor.filtered_dataframe["fluo"].values == reloaded_dataframe["fluo"].values
     ), "Mismatch in fluorophore assignments."
     assert np.allclose(
         processor.filtered_dataframe.values, processor.filtered_dataframe.values
     ), "Reloaded .npy file does not match the original."
     assert np.all(
-        processor.filtered_dataframe.columns.values
-        == reloaded_dataframe.columns.values
+        processor.filtered_dataframe.columns.values == reloaded_dataframe.columns.values
     ), "Unexpected columns."
-

@@ -152,117 +152,120 @@ class Options(QDialog, Ui_Options):
 
     @Slot(str, name="persist_cfr_range")
     def persist_cfr_range(self, _):
+        """Persist CFR range."""
+
+        # Initialize the status to valid
+        self.valid["leCFRRangeMin"] = True
+        self.valid["leCFRRangeMax"] = True
+
+        # Get current values
         cfr_min = self.ui.leCFRRangeMin.text()
-        if cfr_min == "":
-            self.ui.leCFRRangeMin.setStyleSheet("background-color: red;")
-            self.valid["leCFRRangeMin"] = False
-        else:
-            cfr_min = float(cfr_min)
-            self.ui.leCFRRangeMin.setStyleSheet("")
-            self.valid["leCFRRangeMin"] = True
-
         cfr_max = self.ui.leCFRRangeMax.text()
-        if cfr_max == "":
-            self.ui.leCFRRangeMax.setStyleSheet("background-color: red;")
-            self.valid["leCFRRangeMax"] = False
-        else:
-            cfr_max = float(cfr_max)
-            self.ui.leCFRRangeMax.setStyleSheet("")
-            self.valid["leCFRRangeMax"] = True
 
-        # If both values are not empty, check if min_value is greater than max_value
+        # Validate them
+        cfr_min = self._validate(cfr_min, self.ui.leCFRRangeMin)
+        cfr_max = self._validate(cfr_max, self.ui.leCFRRangeMax)
+
+        # Check that min and max values are consistent
         if cfr_min != "" and cfr_max != "":
-            try:
-                if float(cfr_min) > float(cfr_max):
-                    self.ui.leCFRRangeMin.setStyleSheet("background-color: red;")
-                    self.valid["leCFRRangeMin"] = False
-            except ValueError:
-                # If the input is not a valid number, set the background to red
+            if cfr_min < cfr_max:
+                self.state.cfr_range = (cfr_min, cfr_max)
+                stylesheet = ""
+            else:
+                stylesheet = "background-color: red;"
+                self.valid["leCFRRangeMin"] = False
+                self.valid["leCFRRangeMax"] = False
+                self.state.cfr_range = None
+            self.ui.leCFRRangeMin.setStyleSheet(stylesheet)
+            self.ui.leCFRRangeMax.setStyleSheet(stylesheet)
+        elif cfr_min == "" and cfr_max == "":
+            self.state.cfr_range = None
+        else:
+            self.state.cfr_range = None
+            if cfr_min == "":
                 self.ui.leCFRRangeMin.setStyleSheet("background-color: red;")
                 self.valid["leCFRRangeMin"] = False
+            if cfr_max == "":
                 self.ui.leCFRRangeMax.setStyleSheet("background-color: red;")
                 self.valid["leCFRRangeMax"] = False
 
-        if cfr_min != "" and cfr_max != "" and cfr_min < cfr_max:
-            self.state.cfr_range = (cfr_min, cfr_max)
-            self.valid["leCFRRangeMin"] = True
-            self.valid["leCFRRangeMax"] = True
-
     @Slot(str, name="persist_efo_range")
     def persist_efo_range(self, _):
+        """Persist EFO range."""
+
+        # Initialize the status to valid
+        self.valid["leEFORangeMin"] = True
+        self.valid["leEFORangeMax"] = True
+
+        # Get current values
         efo_min = self.ui.leEFORangeMin.text()
-        if efo_min == "":
-            self.ui.leEFORangeMin.setStyleSheet("background-color: red;")
-            self.valid["leEFORangeMin"] = False
-        else:
-            efo_min = float(efo_min)
-            self.ui.leEFORangeMin.setStyleSheet("")
-            self.valid["leEFORangeMin"] = True
-
         efo_max = self.ui.leEFORangeMax.text()
-        if efo_max == "":
-            self.ui.leEFORangeMax.setStyleSheet("background-color: red;")
-            self.valid["leEFORangeMax"] = False
-        else:
-            efo_max = float(efo_max)
-            self.ui.leEFORangeMax.setStyleSheet("")
-            self.valid["leEFORangeMax"] = True
 
-        # If both values are not empty, check if min_value is greater than max_value
+        # Validate them
+        efo_min = self._validate(efo_min, self.ui.leEFORangeMin)
+        efo_max = self._validate(efo_max, self.ui.leEFORangeMax)
+
+        # Check that min and max values are consistent
         if efo_min != "" and efo_max != "":
-            try:
-                if float(efo_min) > float(efo_max):
-                    self.ui.leEFORangeMin.setStyleSheet("background-color: red;")
-                    self.valid["leEFORangeMax"] = False
-            except ValueError:
-                # If the input is not a valid number, set the background to red
-                self.ui.leEFORangeMin.setStyleSheet("background-color: red;")
+            if efo_min < efo_max:
+                self.state.efo_range = (efo_min, efo_max)
+                stylesheet = ""
+            else:
+                stylesheet = "background-color: red;"
+                self.valid["leEFORangeMin"] = False
                 self.valid["leEFORangeMax"] = False
+                self.state.efo_range = None
+            self.ui.leEFORangeMin.setStyleSheet(stylesheet)
+            self.ui.leEFORangeMax.setStyleSheet(stylesheet)
+        elif efo_min == "" and efo_max == "":
+            self.state.efo_range = None
+        else:
+            self.state.efo_range = None
+            if efo_min == "":
+                self.ui.leEFORangeMin.setStyleSheet("background-color: red;")
+                self.valid["leEFORangeMin"] = False
+            if efo_max == "":
                 self.ui.leEFORangeMax.setStyleSheet("background-color: red;")
                 self.valid["leEFORangeMax"] = False
 
-        if efo_min != "" and efo_max != "" and efo_min < efo_max:
-            self.state.efo_range = (efo_min, efo_max)
-            self.valid["leEFORangeMin"] = True
-            self.valid["leEFORangeMax"] = True
-
     @Slot(str, name="persist_loc_prec_range")
     def persist_loc_prec_range(self, _):
+        """Persist localization precision range."""
+
+        # Initialize the status to valid
+        self.valid["leLocPrecRangeMin"] = True
+        self.valid["leLocPrecRangeMax"] = True
+
+        # Get current values
         loc_prec_min = self.ui.leLocPrecRangeMin.text()
-        if loc_prec_min == "":
-            self.ui.leLocPrecRangeMin.setStyleSheet("background-color: red;")
-            self.valid["leLocPrecRangeMin"] = False
-        else:
-            loc_prec_min = float(loc_prec_min)
-            self.ui.leLocPrecRangeMin.setStyleSheet("")
-            self.valid["leLocPrecRangeMin"] = True
-
         loc_prec_max = self.ui.leLocPrecRangeMax.text()
-        if loc_prec_max == "":
-            self.ui.leLocPrecRangeMax.setStyleSheet("background-color: red;")
-            self.valid["leLocPrecRangeMax"] = False
-        else:
-            loc_prec_max = float(loc_prec_max)
-            self.ui.leLocPrecRangeMax.setStyleSheet("")
-            self.valid["leLocPrecRangeMax"] = True
 
-        # If both values are not empty, check if min_value is greater than max_value
+        # Validate them
+        loc_prec_min = self._validate(loc_prec_min, self.ui.leLocPrecRangeMin)
+        loc_prec_max = self._validate(loc_prec_max, self.ui.leLocPrecRangeMax)
+
+        # Check that min and max values are consistent
         if loc_prec_min != "" and loc_prec_max != "":
-            try:
-                if float(loc_prec_min) > float(loc_prec_max):
-                    self.ui.leLocPrecRangeMin.setStyleSheet("background-color: red;")
-                    self.valid["leLocPrecRangeMin"] = False
-            except ValueError:
-                # If the input is not a valid number, set the background to red
+            if loc_prec_min < loc_prec_max:
+                self.state.loc_precision_range = (loc_prec_min, loc_prec_max)
+                stylesheet = ""
+            else:
+                stylesheet = "background-color: red;"
+                self.valid["leLocPrecRangeMin"] = False
+                self.valid["leLocPrecRangeMax"] = False
+                self.state.loc_precision_range = None
+            self.ui.leLocPrecRangeMin.setStyleSheet(stylesheet)
+            self.ui.leLocPrecRangeMax.setStyleSheet(stylesheet)
+        elif loc_prec_min == "" and loc_prec_max == "":
+            self.state.loc_precision_range = None
+        else:
+            self.state.loc_precision_range = None
+            if loc_prec_min == "":
                 self.ui.leLocPrecRangeMin.setStyleSheet("background-color: red;")
                 self.valid["leLocPrecRangeMin"] = False
+            if loc_prec_max == "":
                 self.ui.leLocPrecRangeMax.setStyleSheet("background-color: red;")
                 self.valid["leLocPrecRangeMax"] = False
-
-        if loc_prec_min != "" and loc_prec_max != "" and loc_prec_min < loc_prec_max:
-            self.state.loc_precision_range = (loc_prec_min, loc_prec_max)
-            self.valid["leLocPrecRangeMin"] = True
-            self.valid["leLocPrecRangeMax"] = True
 
     @Slot(str, name="weigh_avg_localization_by_eco")
     def weigh_avg_localization_by_eco(self, state):
@@ -316,3 +319,18 @@ class Options(QDialog, Ui_Options):
             settings.instance.setValue(
                 "options/loc_precision_range", list(self.state.loc_precision_range)
             )
+
+    def _validate(self, value, line_edit):
+        """Check that the value in the QLineEdit is a valid float, or reset it and visually mark it otherwise."""
+        if value == "":
+            line_edit.setStyleSheet("")
+            return value
+
+        try:
+            value = float(value)
+            line_edit.setStyleSheet("")
+        except ValueError:
+            value = ""
+            line_edit.setText("")
+            line_edit.setStyleSheet("background-color: red;")
+        return value
