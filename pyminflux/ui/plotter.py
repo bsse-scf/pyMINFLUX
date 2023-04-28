@@ -138,7 +138,6 @@ class Plotter(PlotWidget):
         if (
             self.scatter is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
-            and ev.modifiers() == QtCore.Qt.ShiftModifier
             and self.__roi_is_being_drawn
         ):
             # Resize the ROI
@@ -153,7 +152,6 @@ class Plotter(PlotWidget):
         elif (
             self.scatter is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
-            and ev.modifiers() == QtCore.Qt.ControlModifier
             and self.__line_is_being_drawn
         ):
             # Is the user drawing a line?
@@ -178,7 +176,6 @@ class Plotter(PlotWidget):
         if (
             self.scatter is not None
             and ev.button() == Qt.MouseButton.LeftButton
-            and ev.modifiers() == QtCore.Qt.ShiftModifier
             and self.__roi_is_being_drawn
         ):
             # Extract the ranges
@@ -204,7 +201,6 @@ class Plotter(PlotWidget):
         elif (
             self.scatter is not None
             and ev.button() == Qt.MouseButton.LeftButton
-            and ev.modifiers() == QtCore.Qt.ControlModifier
             and self.__line_is_being_drawn
         ):
             # Display the measurement
@@ -239,15 +235,6 @@ class Plotter(PlotWidget):
             ev.accept()
 
         else:
-
-            # Incomplete action
-            if self.__roi_is_being_drawn:
-                self.removeItem(self.ROI)
-                self.__roi_is_being_drawn = False
-            if self.__line_is_being_drawn:
-                self.removeItem(self.line)
-                self.__line_is_being_drawn = False
-
             # Call the parent method
             ev.ignore()
             super().mouseReleaseEvent(ev)
