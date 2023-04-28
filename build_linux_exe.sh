@@ -16,7 +16,7 @@
 VERSION=0.1.0
 
 if [[ -z "$ANACONDA_HOME" ]]; then
-    echo "Please set environment variable to ANACONDA_HOME." 1>&2
+    echo "Please set environment variable ANACONDA_HOME." 1>&2
     exit 1
 fi
 
