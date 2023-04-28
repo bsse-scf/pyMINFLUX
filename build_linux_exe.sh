@@ -1,4 +1,3 @@
-#
 # Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +13,29 @@
 #  limitations under the License.
 #
 
-# To build, use the following command
+VERSION=0.1.0
+ANACONDA_HOME=/home/pontia/miniconda3
+
+if [[ -z "$ANACONDA_HOME" ]]; then
+    echo "Please set environment variable to ANACONDA_HOME." 1>&2
+    exit 1
+fi
+
+# Source conda.sh
+source $ANACONDA_HOME/etc/profile.d/conda.sh
+
+# Create and activate a dedicated env
+conda create -n pyminflux-build python=3.11 -y
+conda activate pyminflux-build
+
+# Install dependencies
+poetry install
+
+# Delete build and dist folders
+rm -fR build
+rm -fR dist
+
+# Build the executable
 pyinstaller pyminflux/main.py \
 --clean \
 --windowed \
@@ -26,3 +47,12 @@ pyinstaller pyminflux/main.py \
 
 # Copy the icon
 cp pyminflux/ui/assets/Logo_v3.png dist/pyMINFLUX
+
+# Zip the archive
+cd dist
+zip -r pyMINFLUX_${VERSION}_linux.zip pyMINFLUX
+cd ..
+
+# Remove the conda environment
+conda deactivate
+conda env remove -n pyminflux-build
