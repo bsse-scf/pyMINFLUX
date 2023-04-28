@@ -12,4 +12,4 @@ __pycache__/
 /.pytest_cache/
 /.coverage
 /pyMINFLUX.spec
-.DS_Store/
+.DS_Store
