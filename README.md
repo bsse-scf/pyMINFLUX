@@ -35,8 +35,8 @@ pyMINFLUX is compatible with and tested on Python 3.10 and 3.11. For development
 ```bash
 conda create -n pyminflux-env python=3.11  # or 3.10
 conda activate pyminflux-env
-git clone https://github.com/bsse-scf/pyMINFLUX ${/path/to/pyminflux}
-cd ${/path/to/pyminflux}
+git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
+cd /path/to/pyminflux
 python -m pip install -e .
 ```
 
@@ -47,8 +47,8 @@ openGL support in recent macOS requires `pyopengl` to be installed with `conda` 
 ```bash
 conda create -n pyminflux-env python=3.11  # or 3.10
 conda activate pyminflux-env
-git clone https://github.com/bsse-scf/pyMINFLUX ${/path/to/pyminflux}
-cd ${/path/to/pyminflux}
+git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
+cd /path/to/pyminflux
 conda install pyopengl       # This is specific to macOS
 python -m pip install -e .
 ```
@@ -56,7 +56,7 @@ python -m pip install -e .
 ### Running pyMinFlux from console
 
 ```bash
-cd ${/path/to/pyminflux}
+cd /path/to/pyminflux
 python pyminflux/main.py
 ```
 
