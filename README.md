@@ -32,32 +32,32 @@ pyMINFLUX is compatible with and tested on Python 3.10 and 3.11. For development
 
 ### Windows and Linux
 
-```bash
-conda create -n pyminflux-env python=3.11  # or 3.10
-conda activate pyminflux-env
-git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
-cd /path/to/pyminflux
-python -m pip install -e .
+```sh
+$ conda create -n pyminflux-env python=3.11  # or 3.10
+$ conda activate pyminflux-env
+$ git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
+$ cd /path/to/pyminflux
+$ python -m pip install -e .
 ```
 
 ### macOS
 
 openGL support in recent macOS requires `pyopengl` to be installed with `conda` instead of `pip`.
 
-```bash
-conda create -n pyminflux-env python=3.11  # or 3.10
-conda activate pyminflux-env
-git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
-cd /path/to/pyminflux
-conda install pyopengl       # This is specific to macOS
-python -m pip install -e .
+```sh
+$ conda create -n pyminflux-env python=3.11  # or 3.10
+$ conda activate pyminflux-env
+$ git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
+$ cd /path/to/pyminflux
+$ conda install pyopengl       # This is specific to macOS
+$ python -m pip install -e .
 ```
 
 ### Running pyMinFlux from console
 
-```bash
-cd /path/to/pyminflux
-python pyminflux/main.py
+```sh
+$ cd /path/to/pyminflux
+$ python pyminflux/main.py
 ```
 
 ## Official website and documentation
