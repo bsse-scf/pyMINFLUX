@@ -21,7 +21,8 @@ from PySide6.QtWidgets import QApplication
 import pyminflux.resources
 from pyminflux.ui.main_window import PyMinFluxMainWindow
 
-if __name__ == "__main__":
+
+def main():
     app = QApplication(sys.argv)
     if sys.platform.startswith("linux"):
         app.setStyle("fusion")
@@ -32,3 +33,7 @@ if __name__ == "__main__":
     main.show()
 
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
