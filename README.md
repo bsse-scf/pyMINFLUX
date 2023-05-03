@@ -1,4 +1,4 @@
-# pyMINFLUX
+# ![](pyminflux/ui/assets/Logo_v3_small.png)pyMINFLUX
 
 Reader, analyzer, and viewer of MINFLUX raw data.
 
