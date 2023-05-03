@@ -6,7 +6,7 @@ Reader, analyzer, and viewer of MINFLUX raw data.
 
 ### Apps
 
-Compiled executables (apps) for Linux, macOS and Windows can be downloaded from the [release page](#). 
+Compiled executables (apps) for Linux, macOS and Windows can be downloaded from the [release page](https://github.com/bsse-scf/pyMINFLUX/releases/latest). 
 
 **Please note**: since pyMINFLUX on macOS comes from an *unidentified developer*, you might need to make an exception in the macOS security settings when launching it for the first time. To do this, right-click on the application icon and select `Open`. After this initial setup, you can simply double-click the icon to launch pyMINFLUX normally.
 
@@ -20,7 +20,7 @@ $ conda activate pyminflux-env
 $ pip install --upgrade pyminflux
 ```
 
-pyMINFLUX can then be easily run from command-line:
+pyMINFLUX can then be easily run from the command line:
 
 ```sh
 $ pyminflux
