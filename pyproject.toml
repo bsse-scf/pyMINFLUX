@@ -5,6 +5,26 @@ description = "Reader, processor, and viewer of MINFLUX raw data."
 authors = ["Aaron Ponti <aaron.ponti@bsse.ethz.ch>"]
 license = "Apache-2.0"
 readme = "README.md"
+repository = "https://github.com/bsse-scf/pyMINFLUX"
+documentation = "https://github.com/bsse-scf/pyMINFLUX/wiki"
+keywords = ["MINFLUX", "Visualization", "Filtering", "Analysis", "Python"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering"
+]
+include = [
+    "LICENSE.txt",
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/bsse-scf/pyMINFLUX/issues"
 
 [tool.black]
 line-length = 88
