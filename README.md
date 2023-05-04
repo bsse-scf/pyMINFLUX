@@ -68,5 +68,5 @@ The official pyMINFLUX website is on https://pyminflux.ethz.ch.
 
 If you use pyMINFLUX in your research, please cite this repository as follows:
 
-> Aaron Ponti, Javier Casares Aria, Thomas Horn (2023). pyMINFLUX: reader, analyzer, and viewer of MINFLUX raw data. [doi:10.5281/zenodo.7895502](https://zenodo.org/record/7895502)
+> Aaron Ponti, Javier Casares Arias, Thomas Horn (2023). pyMINFLUX: reader, analyzer, and viewer of MINFLUX raw data. [doi:10.5281/zenodo.7895502](https://zenodo.org/record/7895502)
 
