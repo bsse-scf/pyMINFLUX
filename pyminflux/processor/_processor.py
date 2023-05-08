@@ -149,18 +149,41 @@ class MinFluxProcessor:
         return len(np.unique(self.full_dataframe["fluo"].values))
 
     @property
-    def filtered_numpy_array(self):
-        """Return the raw NumPy array."""
+    def filtered_numpy_array_all(self):
+        """Return the raw NumPy array with applied filters (for all fluorphores)."""
 
         # Copy the raw NumPy array
         raw_array = self.__minfluxreader.valid_raw_data
         if raw_array is None:
             return None
 
+        # Append the fluorophore ID data
+        raw_array["fluo"] = self.full_dataframe["fluo"].astype(np.uint8)
+
         # Extract combination of fluorophore 1 and 2 filtered dataframes
         mask_1 = (self.full_dataframe["fluo"] == 1) & self.__selected_rows_dict[1]
         mask_2 = (self.full_dataframe["fluo"] == 2) & self.__selected_rows_dict[2]
         return raw_array[mask_1 | mask_2]
+
+    @property
+    def filtered_numpy_array(self):
+        """Return the raw NumPy array wit applied filters for the selected fluorophores."""
+
+        # Copy the raw NumPy array
+        full_array = self.filtered_numpy_array_all
+        if full_array is None:
+            return None
+
+        if self.current_fluorophore_id == 0:
+            return full_array
+        elif self.current_fluorophore_id == 1:
+            return full_array[full_array["fluo"] == 1]
+        elif self.current_fluorophore_id == 2:
+            return full_array[full_array["fluo"] == 2]
+        else:
+            raise ValueError(
+                f"Unexpected fluorophore ID {self.current_fluorophore_id}."
+            )
 
     @property
     def full_dataframe(self) -> Union[None, pd.DataFrame]:
