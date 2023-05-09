@@ -20,7 +20,7 @@ $ conda activate pyminflux-env
 $ pip install --upgrade pyminflux
 ```
 
-pyMINFLUX can then be easily run from the command line:
+pyMINFLUX can then easily be run from the command line:
 
 ```sh
 $ pyminflux
