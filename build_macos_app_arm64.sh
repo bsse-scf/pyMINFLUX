@@ -24,7 +24,7 @@ fi
 source $ANACONDA_HOME/etc/profile.d/conda.sh
 
 # Create and activate a dedicated env
-conda create -n pyminflux-build python=3.9 -y
+conda create -n pyminflux-build python=3.11 -y
 conda activate pyminflux-build
 
 # Install dependencies
