@@ -15,7 +15,7 @@ REM  limitations under the License.
 REM
 setlocal
 
-SET VERSION=0.1.1
+SET VERSION=0.1.2
 
 IF "%ANACONDA_HOME%"=="" ECHO Please set environment variable ANACONDA_HOME. && exit /b
 
