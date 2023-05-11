@@ -20,7 +20,7 @@ SET VERSION=0.1.2
 IF "%ANACONDA_HOME%"=="" ECHO Please set environment variable ANACONDA_HOME. && exit /b
 
 REM Create and activate a dedicated env
-call conda create -n pyminflux-build python=3.11 -y
+call conda create -n pyminflux-build python=3.10 -y
 call conda activate pyminflux-build
 
 REM Install dependencies
@@ -32,6 +32,7 @@ rmdir /s /q dist
 
 REM TBuild the executable
 pyinstaller.exe pyminflux\main.py ^
+--clean ^
 --windowed ^
 --hidden-import="sklearn.metrics._pairwise_distances_reduction._datasets_pair" ^
 --hidden-import="sklearn.metrics._pairwise_distances_reduction._middle_term_computer" ^

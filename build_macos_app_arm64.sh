@@ -24,7 +24,7 @@ fi
 source $ANACONDA_HOME/etc/profile.d/conda.sh
 
 # Create and activate a dedicated env
-conda create -n pyminflux-build python=3.11 -y
+conda create -n pyminflux-build python=3.10 -y
 conda activate pyminflux-build
 
 # Install dependencies
@@ -36,6 +36,7 @@ rm -fR dist
 
 # Build the app
 pyinstaller pyminflux/main.py \
+--clean \
 --windowed \
 --hidden-import="sklearn.metrics._pairwise_distances_reduction._datasets_pair" \
 --hidden-import="sklearn.metrics._pairwise_distances_reduction._middle_term_computer" \
