@@ -13,8 +13,6 @@
 #   limitations under the License.
 #
 
-import sys
-
 import numpy as np
 import pyqtgraph.opengl as gl
 from PySide6.QtGui import QQuaternion
@@ -105,9 +103,6 @@ class Plotter3D(QDialog, Ui_Plotter3D):
         """Hide the dialog instead of closing it."""
         if self.hide_on_close:
             ev.ignore()
-            if sys.platform == "darwin":
-                self.showMinimized()
-            else:
-                self.hide()
+            self.hide()
         else:
             ev.accept()

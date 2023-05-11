@@ -799,8 +799,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.plot_localizations_3d(
                     self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
                 )
-        if self.plotter3D.isMinimized():
-            self.plotter3D.showNormal()
         self.plotter3D.show()
         self.plotter3D.activateWindow()
 
