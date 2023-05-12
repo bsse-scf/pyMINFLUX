@@ -9,7 +9,6 @@ Bug fix release.
 ### Fixed
 
 * Fix issue with exporting to `.npy` only working when the `Active Color` selector was on `All`.
-* Fix issue with the compiled macOS app crashing when the 3D Plotter was closed.
 
 ## [0.1.1] - 2023-05-04
 
