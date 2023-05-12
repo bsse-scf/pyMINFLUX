@@ -38,6 +38,7 @@ rm -fR dist
 pyinstaller pyminflux/main.py \
 --clean \
 --windowed \
+--hidden-import="sklearn.neighbors._typedefs" \
 --hidden-import="sklearn.metrics._pairwise_distances_reduction._datasets_pair" \
 --hidden-import="sklearn.metrics._pairwise_distances_reduction._middle_term_computer" \
 --noconsole \
