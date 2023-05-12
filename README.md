@@ -2,6 +2,10 @@
 
 Reader, analyzer, and viewer of MINFLUX raw data.
 
+<p align="center">
+  <img width="460" src="https://pyminflux.ethz.ch/img/pyminflux.png">
+</p>
+
 ## Installation
 
 ### Apps
