@@ -1,0 +1,170 @@
+name: Build app and release
+
+on:
+  push:
+    tags:
+      - '*'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build apps
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            pyinstaller_args: '--clean --windowed --hidden-import="sklearn.neighbors._typedefs" --hidden-import="sklearn.metrics._pairwise_distances_reduction._datasets_pair" --hidden-import="sklearn.metrics._pairwise_distances_reduction._middle_term_computer" --icon pyminflux/ui/assets/Logo_v3.png --noconsole --name pyMINFLUX --noconfirm'
+            filename: pyMINFLUX 
+            extension: .zip
+            arch: x64
+            platform: linux
+            platform_ext: linux          
+          - os: macos-11
+            pyinstaller_args: '--clean --windowed --noconsole --hidden-import="sklearn.neighbors._typedefs" --hidden-import="sklearn.metrics._pairwise_distances_reduction._datasets_pair" --hidden-import="sklearn.metrics._pairwise_distances_reduction._middle_term_computer" --icon pyminflux/ui/assets/Logo_v3.icns --name pyMINFLUX --target-architecture=x86_64 --osx-bundle-identifier "ch.ethz.pyminflux" --noconfirm'
+            filename: pyMINFLUX.app
+            extension: .zip
+            arch: x64
+            platform: darwin
+            platform_ext: macos
+          - os: windows-latest
+            pyinstaller_args: '--clean --windowed --hidden-import="sklearn.neighbors._typedefs" --hidden-import="sklearn.metrics._pairwise_distances_reduction._datasets_pair" --hidden-import="sklearn.metrics._pairwise_distances_reduction._middle_term_computer" --noconsole --icon pyminflux/ui/assets/Logo_v3.ico --name pyMINFLUX --noconfirm' 
+            filename: pyMINFLUX
+            extension: .zip
+            arch: x64
+            platform: win32
+            platform_ext: windows
+
+    runs-on: ${{ matrix.os }}
+    env:
+      PY_ARCH: ${{ matrix.arch }}
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10' 
+        architecture: ${{ matrix.arch }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+
+    - name: Install dependencies
+      run: |
+        rm -f poetry.toml
+        poetry install
+        source $VENV
+        python -m pip install --upgrade pip
+        python -m pip install pyinstaller
+
+    - name: Build app
+      run: |
+        source $VENV
+        pyinstaller ${{ matrix.pyinstaller_args }} --name pyMINFLUX pyminflux/main.py
+
+    - name: Post-process
+      run: |
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          cp .venv/lib/python3.10/site-packages/PySide6/Qt/lib/libQt6Widgets.so.6 dist/${{ matrix.filename }}/
+          cp pyminflux/ui/assets/Logo_v3.png dist/${{ matrix.filename }}/
+        fi
+
+    - name: Archive
+      run: |
+        cd dist
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          zip -r ../pyMINFLUX${{ matrix.extension }} ${{ matrix.filename }}
+        fi        
+        if [[ "${{ matrix.os }}" == "macos-11" ]]; then
+          zip -r ../pyMINFLUX${{ matrix.extension }} ${{ matrix.filename }}
+        fi
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          7z a ../pyMINFLUX${{ matrix.extension }} ${{ matrix.filename }}
+        fi
+        cd ..
+
+    - name: Get version
+      id: get_version
+      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+    - name: Upload app
+      uses: actions/upload-artifact@v3
+      with:
+        name: pyMINFLUX_${{ env.RELEASE_VERSION }}_${{ matrix.platform_ext }}
+        path: pyMINFLUX${{ matrix.extension }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Get version
+        id: get_version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      - name: Pre-process
+        run: |
+          cd pyMINFLUX_${{ env.RELEASE_VERSION }}_linux/
+          mv pyMINFLUX.zip pyMINFLUX_${{ env.RELEASE_VERSION }}_linux.zip
+          cd ..
+          cd pyMINFLUX_${{ env.RELEASE_VERSION }}_macos/
+          mv pyMINFLUX.zip pyMINFLUX_${{ env.RELEASE_VERSION }}_macos.zip
+          cd ..
+          cd pyMINFLUX_${{ env.RELEASE_VERSION }}_windows/
+          mv pyMINFLUX.zip pyMINFLUX_${{ env.RELEASE_VERSION }}_windows.zip
+          cd ..
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_CREATION_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Linux asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_CREATION_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: pyMINFLUX_${{ env.RELEASE_VERSION }}_linux/pyMINFLUX_${{ env.RELEASE_VERSION }}_linux.zip
+          asset_name: pyMINFLUX_${{ env.RELEASE_VERSION }}_linux.zip
+          asset_content_type: application/zip
+
+      - name: Upload macOS asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_CREATION_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: pyMINFLUX_${{ env.RELEASE_VERSION }}_macos/pyMINFLUX_${{ env.RELEASE_VERSION }}_macos.zip
+          asset_name: pyMINFLUX_${{ env.RELEASE_VERSION }}_macos.zip
+          asset_content_type: application/zip
+
+      - name: Upload Windows asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_CREATION_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: pyMINFLUX_${{ env.RELEASE_VERSION }}_windows/pyMINFLUX_${{ env.RELEASE_VERSION }}_windows.zip
+          asset_name: pyMINFLUX_${{ env.RELEASE_VERSION }}_windows.zip
+          asset_content_type: application/zip

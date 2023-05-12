@@ -15,7 +15,7 @@
 
 import numpy as np
 import pyqtgraph.opengl as gl
-from PySide6.QtGui import QQuaternion, Qt
+from PySide6.QtGui import QQuaternion
 from PySide6.QtWidgets import QDialog
 
 from pyminflux.ui.ui_plotter_3d import Ui_Plotter3D
