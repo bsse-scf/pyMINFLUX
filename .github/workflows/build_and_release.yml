@@ -75,6 +75,8 @@ jobs:
       run: |
         if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
           cp .venv/lib/python3.10/site-packages/PySide6/Qt/lib/libQt6Widgets.so.6 dist/${{ matrix.filename }}/
+          cp .venv/lib/python3.10/site-packages/PySide6/Qt/lib/libQt6OpenGL.so.6 dist/${{ matrix.filename }}/
+          cp .venv/lib/python3.10/site-packages/PySide6/Qt/lib/libQt6OpenGLWidgets.so.6 dist/${{ matrix.filename }}/
           cp pyminflux/ui/assets/Logo_v3.png dist/${{ matrix.filename }}/
         fi
 
