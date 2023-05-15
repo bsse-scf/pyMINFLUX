@@ -76,7 +76,7 @@ The official pyMINFLUX website is on https://pyminflux.ethz.ch.
 
 If you use pyMINFLUX in your research, please cite this repository as follows:
 
-> Aaron Ponti, Javier Casares Arias, & Thomas Horn. (2023). pyMINFLUX (0.1.1). Zenodo. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7895501.svg)](https://doi.org/10.5281/zenodo.7895501)
+> Aaron Ponti, Javier Casares Arias, & Thomas Horn. (2023). pyMINFLUX. Zenodo. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7895501.svg)](https://doi.org/10.5281/zenodo.7895501)
 
 
 
