@@ -64,7 +64,11 @@ $ cd /path/to/pyminflux
 $ python pyminflux/main.py
 ```
 
-## Official website and documentation
+## User manual
+
+The user manual is hosted in the [project wiki](https://github.com/bsse-scf/pyMINFLUX/wiki/pyMINFLUX-user-manual).
+
+## Official website
 
 The official pyMINFLUX website is on https://pyminflux.ethz.ch.
 
