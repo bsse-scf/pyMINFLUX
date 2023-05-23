@@ -81,7 +81,7 @@
        <item>
         <widget class="QPushButton" name="pbSingleColor">
          <property name="text">
-          <string>Single Color</string>
+          <string>Single fluorophore</string>
          </property>
         </widget>
        </item>
@@ -105,7 +105,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Active color</string>
+          <string>Active fluorophore</string>
          </property>
         </widget>
        </item>
