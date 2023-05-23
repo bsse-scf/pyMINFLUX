@@ -49,6 +49,9 @@
          <height>16777215</height>
         </size>
        </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
        <property name="text">
         <string>?</string>
        </property>
@@ -67,7 +70,11 @@
     </layout>
    </item>
    <item row="16" column="0">
-    <widget class="QTextEdit" name="teHelp"/>
+    <widget class="QTextEdit" name="teHelp">
+     <property name="focusPolicy">
+      <enum>Qt::NoFocus</enum>
+     </property>
+    </widget>
    </item>
    <item row="2" column="0">
     <layout class="QHBoxLayout" name="hlEFOBinSize">
@@ -84,6 +91,9 @@
          <width>20</width>
          <height>16777215</height>
         </size>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
        </property>
        <property name="text">
         <string>?</string>
@@ -143,6 +153,9 @@
          <width>20</width>
          <height>16777215</height>
         </size>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
        </property>
        <property name="text">
         <string>?</string>
@@ -215,6 +228,9 @@
          <width>20</width>
          <height>16777215</height>
         </size>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
        </property>
        <property name="text">
         <string>?</string>
@@ -300,6 +316,9 @@
          <height>16777215</height>
         </size>
        </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
        <property name="text">
         <string>?</string>
        </property>
@@ -359,6 +378,9 @@
          <height>16777215</height>
         </size>
        </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
        <property name="text">
         <string>?</string>
        </property>
@@ -417,6 +439,9 @@
          <width>20</width>
          <height>16777215</height>
         </size>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
        </property>
        <property name="text">
         <string>?</string>
@@ -489,6 +514,9 @@
          <width>20</width>
          <height>16777215</height>
         </size>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
        </property>
        <property name="text">
         <string>?</string>
@@ -568,27 +596,18 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>pbSetDefault</tabstop>
-  <tabstop>pbMinTIDNumHelp</tabstop>
   <tabstop>leMinTIDNum</tabstop>
-  <tabstop>pbZScalingFactorHelp</tabstop>
   <tabstop>leZScalingFactor</tabstop>
-  <tabstop>pbEFOBinSizeHelp</tabstop>
   <tabstop>leEFOBinSize</tabstop>
-  <tabstop>pbEFOSingleEmitterFrequencyHelp</tabstop>
   <tabstop>leEFOSingleEmitterFrequency</tabstop>
-  <tabstop>pbEFORangeHelp</tabstop>
   <tabstop>leEFORangeMin</tabstop>
   <tabstop>leEFORangeMax</tabstop>
-  <tabstop>pbCFRRangeHelp</tabstop>
   <tabstop>leCFRRangeMin</tabstop>
   <tabstop>leCFRRangeMax</tabstop>
-  <tabstop>pbLocPrecRangeHelp</tabstop>
   <tabstop>leLocPrecRangeMin</tabstop>
   <tabstop>leLocPrecRangeMax</tabstop>
-  <tabstop>pbWeightAvgLocByECOHelp</tabstop>
   <tabstop>cbWeightAvgLocByECO</tabstop>
-  <tabstop>teHelp</tabstop>
+  <tabstop>pbSetDefault</tabstop>
  </tabstops>
  <resources/>
  <connections/>

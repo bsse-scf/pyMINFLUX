@@ -91,6 +91,7 @@ class Ui_Options(object):
         )
         self.pbWeightAvgLocByECOHelp.setSizePolicy(sizePolicy)
         self.pbWeightAvgLocByECOHelp.setMaximumSize(QSize(20, 16777215))
+        self.pbWeightAvgLocByECOHelp.setFocusPolicy(Qt.NoFocus)
 
         self.hlWeightAvgLocByECO.addWidget(self.pbWeightAvgLocByECOHelp)
 
@@ -103,6 +104,7 @@ class Ui_Options(object):
 
         self.teHelp = QTextEdit(Options)
         self.teHelp.setObjectName("teHelp")
+        self.teHelp.setFocusPolicy(Qt.NoFocus)
 
         self.gridLayout.addWidget(self.teHelp, 16, 0, 1, 1)
 
@@ -115,6 +117,7 @@ class Ui_Options(object):
         )
         self.pbEFOBinSizeHelp.setSizePolicy(sizePolicy)
         self.pbEFOBinSizeHelp.setMaximumSize(QSize(20, 16777215))
+        self.pbEFOBinSizeHelp.setFocusPolicy(Qt.NoFocus)
 
         self.hlEFOBinSize.addWidget(self.pbEFOBinSizeHelp)
 
@@ -152,6 +155,7 @@ class Ui_Options(object):
         )
         self.pbLocPrecRangeHelp.setSizePolicy(sizePolicy)
         self.pbLocPrecRangeHelp.setMaximumSize(QSize(20, 16777215))
+        self.pbLocPrecRangeHelp.setFocusPolicy(Qt.NoFocus)
 
         self.hlLocPrecRange.addWidget(self.pbLocPrecRangeHelp)
 
@@ -197,6 +201,7 @@ class Ui_Options(object):
         )
         self.pbEFOSingleEmitterFrequencyHelp.setSizePolicy(sizePolicy)
         self.pbEFOSingleEmitterFrequencyHelp.setMaximumSize(QSize(20, 16777215))
+        self.pbEFOSingleEmitterFrequencyHelp.setFocusPolicy(Qt.NoFocus)
 
         self.hlExpectedEFOFrequency.addWidget(self.pbEFOSingleEmitterFrequencyHelp)
 
@@ -246,6 +251,7 @@ class Ui_Options(object):
         )
         self.pbZScalingFactorHelp.setSizePolicy(sizePolicy)
         self.pbZScalingFactorHelp.setMaximumSize(QSize(20, 16777215))
+        self.pbZScalingFactorHelp.setFocusPolicy(Qt.NoFocus)
 
         self.hlZScalingFactor.addWidget(self.pbZScalingFactorHelp)
 
@@ -280,6 +286,7 @@ class Ui_Options(object):
         )
         self.pbMinTIDNumHelp.setSizePolicy(sizePolicy)
         self.pbMinTIDNumHelp.setMaximumSize(QSize(20, 16777215))
+        self.pbMinTIDNumHelp.setFocusPolicy(Qt.NoFocus)
 
         self.hlMinNumTraces.addWidget(self.pbMinTIDNumHelp)
 
@@ -312,6 +319,7 @@ class Ui_Options(object):
         )
         self.pbCFRRangeHelp.setSizePolicy(sizePolicy)
         self.pbCFRRangeHelp.setMaximumSize(QSize(20, 16777215))
+        self.pbCFRRangeHelp.setFocusPolicy(Qt.NoFocus)
 
         self.hlCFRRange.addWidget(self.pbCFRRangeHelp)
 
@@ -355,6 +363,7 @@ class Ui_Options(object):
         )
         self.pbEFORangeHelp.setSizePolicy(sizePolicy)
         self.pbEFORangeHelp.setMaximumSize(QSize(20, 16777215))
+        self.pbEFORangeHelp.setFocusPolicy(Qt.NoFocus)
 
         self.hlEFORange.addWidget(self.pbEFORangeHelp)
 
@@ -402,28 +411,17 @@ class Ui_Options(object):
 
         self.gridLayout.addWidget(self.lbQuickHelp, 15, 0, 1, 1)
 
-        QWidget.setTabOrder(self.pbSetDefault, self.pbMinTIDNumHelp)
-        QWidget.setTabOrder(self.pbMinTIDNumHelp, self.leMinTIDNum)
-        QWidget.setTabOrder(self.leMinTIDNum, self.pbZScalingFactorHelp)
-        QWidget.setTabOrder(self.pbZScalingFactorHelp, self.leZScalingFactor)
-        QWidget.setTabOrder(self.leZScalingFactor, self.pbEFOBinSizeHelp)
-        QWidget.setTabOrder(self.pbEFOBinSizeHelp, self.leEFOBinSize)
-        QWidget.setTabOrder(self.leEFOBinSize, self.pbEFOSingleEmitterFrequencyHelp)
-        QWidget.setTabOrder(
-            self.pbEFOSingleEmitterFrequencyHelp, self.leEFOSingleEmitterFrequency
-        )
-        QWidget.setTabOrder(self.leEFOSingleEmitterFrequency, self.pbEFORangeHelp)
-        QWidget.setTabOrder(self.pbEFORangeHelp, self.leEFORangeMin)
+        QWidget.setTabOrder(self.leMinTIDNum, self.leZScalingFactor)
+        QWidget.setTabOrder(self.leZScalingFactor, self.leEFOBinSize)
+        QWidget.setTabOrder(self.leEFOBinSize, self.leEFOSingleEmitterFrequency)
+        QWidget.setTabOrder(self.leEFOSingleEmitterFrequency, self.leEFORangeMin)
         QWidget.setTabOrder(self.leEFORangeMin, self.leEFORangeMax)
-        QWidget.setTabOrder(self.leEFORangeMax, self.pbCFRRangeHelp)
-        QWidget.setTabOrder(self.pbCFRRangeHelp, self.leCFRRangeMin)
+        QWidget.setTabOrder(self.leEFORangeMax, self.leCFRRangeMin)
         QWidget.setTabOrder(self.leCFRRangeMin, self.leCFRRangeMax)
-        QWidget.setTabOrder(self.leCFRRangeMax, self.pbLocPrecRangeHelp)
-        QWidget.setTabOrder(self.pbLocPrecRangeHelp, self.leLocPrecRangeMin)
+        QWidget.setTabOrder(self.leCFRRangeMax, self.leLocPrecRangeMin)
         QWidget.setTabOrder(self.leLocPrecRangeMin, self.leLocPrecRangeMax)
-        QWidget.setTabOrder(self.leLocPrecRangeMax, self.pbWeightAvgLocByECOHelp)
-        QWidget.setTabOrder(self.pbWeightAvgLocByECOHelp, self.cbWeightAvgLocByECO)
-        QWidget.setTabOrder(self.cbWeightAvgLocByECO, self.teHelp)
+        QWidget.setTabOrder(self.leLocPrecRangeMax, self.cbWeightAvgLocByECO)
+        QWidget.setTabOrder(self.cbWeightAvgLocByECO, self.pbSetDefault)
 
         self.retranslateUi(Options)
 
