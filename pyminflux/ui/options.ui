@@ -96,7 +96,7 @@
         <string/>
        </property>
        <property name="text">
-        <string>EFO bin size (Hz): set to 0 for automatic estimation</string>
+        <string>EFO bin size (Hz)</string>
        </property>
       </widget>
      </item>

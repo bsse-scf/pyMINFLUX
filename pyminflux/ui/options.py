@@ -146,32 +146,36 @@ class Options(QDialog, Ui_Options):
 
         self.ui.pbMinTIDNumHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
-                "Minimum number of localizations within a trace to be considered for plotting and precision calculation."
+                "Minimum number of localizations within a trace to be considered for "
+                "plotting and precision calculation."
             )
         )
         self.ui.pbZScalingFactorHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
-                "Scales the z positions to compensate for the refractive index mismatch between the coverglass and the sample."
+                "Scales the z positions to compensate for the refractive index mismatch "
+                "between the coverglass and the sample."
             )
         )
         self.ui.pbEFOBinSizeHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
-                "Bin size to be used for efo distribution plotting on the Analyzer."
+                "Bin size to be used for EFO distribution plotting on the Analyzer. "
+                "Set to 0 for automatic estimation."
             )
         )
         self.ui.pbEFOSingleEmitterFrequencyHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
-                "Expected default frequency for single emitters to be used for automated efo threshold selection."
+                "Expected default frequency for single emitters to be used for automated "
+                "EFO threshold selection."
             )
         )
         self.ui.pbEFORangeHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
-                "Default plot range for the efo histogram in the Analyzer."
+                "Default plot range for the EFO histogram in the Analyzer."
             )
         )
         self.ui.pbCFRRangeHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
-                "Default plot range for the cfr histogram in the Analyzer."
+                "Default plot range for the CFR histogram in the Analyzer."
             )
         )
         self.ui.pbLocPrecRangeHelp.clicked.connect(
@@ -181,7 +185,8 @@ class Options(QDialog, Ui_Options):
         )
         self.ui.pbWeightAvgLocByECOHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
-                "Whether to use the eco value as weighting factor during the calculation of the average localization position for each trace ID."
+                "Whether to use the ECO value as weighting factor during the calculation of the "
+                "average localization position for each trace ID."
             )
         )
 

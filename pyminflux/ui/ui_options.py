@@ -446,9 +446,7 @@ class Ui_Options(object):
         self.lbEFOBinSize.setToolTip("")
         # endif // QT_CONFIG(tooltip)
         self.lbEFOBinSize.setText(
-            QCoreApplication.translate(
-                "Options", "EFO bin size (Hz): set to 0 for automatic estimation", None
-            )
+            QCoreApplication.translate("Options", "EFO bin size (Hz)", None)
         )
         # if QT_CONFIG(tooltip)
         self.leEFOBinSize.setToolTip("")
