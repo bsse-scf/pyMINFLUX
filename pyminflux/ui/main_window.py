@@ -160,6 +160,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
         )
 
+        # Read and set 'z_scaling_factor' option
+        self.state.z_scaling_factor = float(
+            settings.instance.value(
+                "options/z_scaling_factor", self.state.z_scaling_factor
+            )
+        )
+
         # Read and set 'efo_bin_size_hz' option
         self.state.efo_bin_size_hz = float(
             settings.instance.value(
@@ -424,7 +431,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Open the file
             self.last_selected_path = Path(filename).parent
-            minfluxreader = MinFluxReader(filename)
+            minfluxreader = MinFluxReader(
+                filename, z_scaling_factor=self.state.z_scaling_factor
+            )
 
             # Show some info
             print(minfluxreader)

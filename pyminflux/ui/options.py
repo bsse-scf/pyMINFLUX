@@ -59,6 +59,7 @@ class Options(QDialog, Ui_Options):
             "leCFRRangeMax": True,
             "leLocPrecRangeMin": True,
             "leLocPrecRangeMax": True,
+            "leZScalingFactor": True,
         }
 
         # Set defaults
@@ -99,6 +100,9 @@ class Options(QDialog, Ui_Options):
         self.ui.leLocPrecRangeMin.setValidator(QDoubleValidator(bottom=0.0, decimals=1))
         self.ui.leLocPrecRangeMax.setValidator(QDoubleValidator(bottom=0.0, decimals=1))
 
+        self.ui.leZScalingFactor.setText(str(self.state.z_scaling_factor))
+        self.ui.leZScalingFactor.setValidator(QDoubleValidator(bottom=0.0, decimals=2))
+
         # Set signal-slot connections
         self.setup_conn()
 
@@ -121,6 +125,8 @@ class Options(QDialog, Ui_Options):
         self.ui.leLocPrecRangeMin.textChanged.connect(self.persist_loc_prec_range)
         self.ui.leLocPrecRangeMax.textChanged.connect(self.persist_loc_prec_range)
 
+        self.ui.leZScalingFactor.textChanged.connect(self.persist_z_scaling_factor)
+
     @Slot(str, name="persist_min_num_loc_per_trace")
     def persist_min_num_loc_per_trace(self, text):
         try:
@@ -135,6 +141,18 @@ class Options(QDialog, Ui_Options):
 
         # Signal the change
         self.min_num_loc_per_trace_option_changed.emit()
+
+    @Slot(str, name="persist_z_scaling_factor")
+    def persist_z_scaling_factor(self, text):
+        try:
+            z_scaling_factor = float(text)
+        except Exception as _:
+            self.ui.leZScalingFactor.setStyleSheet("background-color: red;")
+            self.valid["leZScalingFactor"] = False
+            return
+        self.ui.leZScalingFactor.setStyleSheet("")
+        self.valid["leZScalingFactor"] = True
+        self.state.z_scaling_factor = z_scaling_factor
 
     @Slot(str, name="persist_efo_bin_size_hz")
     def persist_efo_bin_size_hz(self, text):
@@ -307,6 +325,9 @@ class Options(QDialog, Ui_Options):
         settings = Settings()
         settings.instance.setValue(
             "options/min_num_loc_per_trace", int(self.state.min_num_loc_per_trace)
+        )
+        settings.instance.setValue(
+            "options/z_scaling_factor", float(self.state.z_scaling_factor)
         )
         settings.instance.setValue(
             "options/efo_bin_size_hz", float(self.state.efo_bin_size_hz)
