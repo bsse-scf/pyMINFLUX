@@ -49,6 +49,7 @@ class State(metaclass=Singleton):
         "num_fluorophores",
         "dcr_bin_size",
         "dcr_manual_threshold",
+        "z_scaling_factor",
     ]
 
     def __init__(self):
@@ -99,6 +100,9 @@ class State(metaclass=Singleton):
         self.dcr_bin_size: float = 0.0
         self.dcr_manual_threshold: float = 0.0
 
+        # Z scaling factor
+        self.z_scaling_factor: float = 0.7
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -121,6 +125,7 @@ class State(metaclass=Singleton):
             "num_fluorophores": self.num_fluorophores,
             "dcr_bin_size": self.dcr_bin_size,
             "dcr_manual_threshold": self.dcr_manual_threshold,
+            "z_scaling_factor": self.z_scaling_factor,
         }
 
     def reset(self):
@@ -151,6 +156,7 @@ class State(metaclass=Singleton):
         self.num_fluorophores = 1
         self.dcr_bin_size = 0.0
         self.dcr_manual_threshold = 0.0
+        self.z_scaling_factor = 0.7
 
     def __str__(self):
         """Human-readable representation."""

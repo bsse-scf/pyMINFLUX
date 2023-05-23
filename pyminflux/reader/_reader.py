@@ -25,7 +25,7 @@ class MinFluxReader:
     __slots__ = [
         "__filename",
         "__valid",
-        "__scaling_factor",
+        "__unit_scaling_factor",
         "__data_array",
         "__data_df",
         "__data_full_df",
@@ -41,13 +41,15 @@ class MinFluxReader:
         "__tid_index",
         "__tim_index",
         "__vld_index",
+        "__z_scaling_factor",
     ]
 
     def __init__(
         self,
         filename: Union[Path, str],
         valid: bool = True,
-        scaling_factor: float = 1e9,
+        unit_scaling_factor: float = 1e9,
+        z_scaling_factor: float = 1.0,
     ):
         """Constructor.
 
@@ -60,9 +62,12 @@ class MinFluxReader:
         valid: bool (optional, default = True)
             Whether to load only valid localizations.
 
-        scaling_factor: float (optional, default = 1e9)
+        unit_scaling_factor: float (optional, default = 1e9)
             Measurement are stored in meters, and by default they are
             scaled to be in nanometers.
+
+        z_scaling_factor: float (optional, default = 1.0)
+            Refractive index mismatch correction factor to apply to the z coordinates.
         """
 
         # Store the filename
@@ -74,7 +79,10 @@ class MinFluxReader:
         self.__valid: bool = valid
 
         # Store the scaling factor
-        self.__scaling_factor: float = scaling_factor
+        self.__unit_scaling_factor: float = unit_scaling_factor
+
+        # Store the z correction factor
+        self.__z_scaling_factor: float = z_scaling_factor
 
         # Initialize the data
         self.__data_array = None
@@ -358,7 +366,8 @@ class MinFluxReader:
         # acquisition is normal or aggregated
         if self.is_aggregated:
             # Extract the locations
-            loc = itr["loc"].squeeze()
+            loc = itr["loc"].squeeze() * self.__unit_scaling_factor
+            loc[:, 2] = loc[:, 2] * self.__z_scaling_factor
 
             # Extract EFO
             efo = itr["efo"]
@@ -377,7 +386,8 @@ class MinFluxReader:
 
         else:
             # Extract the locations
-            loc = itr[:, self.__loc_index]["loc"] * self.__scaling_factor
+            loc = itr[:, self.__loc_index]["loc"] * self.__unit_scaling_factor
+            loc[:, 2] = loc[:, 2] * self.__z_scaling_factor
 
             # Extract EFO
             efo = itr[:, self.__efo_index]["efo"]
@@ -450,8 +460,10 @@ class MinFluxReader:
 
         # Get all localizations (reshaped to drop the first dimension)
         loc = (
-            self.__data_array["itr"]["loc"].reshape((n_rows, 3)) * self.__scaling_factor
+            self.__data_array["itr"]["loc"].reshape((n_rows, 3))
+            * self.__unit_scaling_factor
         )
+        loc[:, 2] = loc[:, 2] * self.__z_scaling_factor
 
         # Get all efos (reshaped to drop the first dimension)
         efo = self.__data_array["itr"]["efo"].reshape((n_rows, 1))

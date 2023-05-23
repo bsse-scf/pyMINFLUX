@@ -7,36 +7,24 @@
     <x>0</x>
     <y>0</y>
     <width>575</width>
-    <height>331</height>
+    <height>396</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Options</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="6" column="0">
-    <widget class="QLabel" name="lbInfo">
-     <property name="font">
-      <font>
-       <italic>true</italic>
-      </font>
-     </property>
-     <property name="text">
-      <string>Changes above will be applied when loading new data or when filtering in the Analyzer.</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <layout class="QHBoxLayout" name="hlEFORange">
+   <item row="4" column="0">
+    <layout class="QHBoxLayout" name="hlExpectedEFOFrequency">
      <item>
-      <widget class="QLabel" name="lbEFORange">
+      <widget class="QLabel" name="lbEFOSingleEmitterFrequency">
        <property name="text">
-        <string>EFO default plot range</string>
+        <string>EFO expected frequency for single emitters (Hz)</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="hsEFORange">
+      <spacer name="hsEFOSingleEmitterFrequency">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -49,17 +37,53 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLineEdit" name="leEFORangeMin">
+      <widget class="QLineEdit" name="leEFOSingleEmitterFrequency">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
       </widget>
      </item>
+    </layout>
+   </item>
+   <item row="10" column="0">
+    <widget class="QLabel" name="lbInfoImmediate">
+     <property name="font">
+      <font>
+       <italic>true</italic>
+      </font>
+     </property>
+     <property name="text">
+      <string>Changes below will be applied immediately to all open views.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <layout class="QHBoxLayout" name="hlEFOBinSize">
      <item>
-      <widget class="QLineEdit" name="leEFORangeMax">
+      <widget class="QLabel" name="lbEFOBinSize">
+       <property name="text">
+        <string>EFO bin size (Hz): set to 0 for automatic estimation</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="hsEFOBinSize">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="leEFOBinSize">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -70,7 +94,21 @@
      </item>
     </layout>
    </item>
-   <item row="4" column="0">
+   <item row="9" column="0">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0">
+    <widget class="QCheckBox" name="cbWeightAvgLocByECO">
+     <property name="text">
+      <string>Use relative ECO count for weighted average localization calculation</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
     <layout class="QHBoxLayout" name="hlCFRRange">
      <item>
       <widget class="QLabel" name="lbCFRRange">
@@ -114,43 +152,17 @@
      </item>
     </layout>
    </item>
-   <item row="8" column="0">
-    <widget class="QLabel" name="lbInfoImmediate">
-     <property name="font">
-      <font>
-       <italic>true</italic>
-      </font>
-     </property>
-     <property name="text">
-      <string>Changes below will be applied immediately to all open views.</string>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="0">
-    <widget class="QCheckBox" name="cbWeightAvgLocByECO">
-     <property name="text">
-      <string>Use relative ECO count for weighted average localization calculation</string>
-     </property>
-    </widget>
-   </item>
-   <item row="11" column="0">
-    <widget class="QPushButton" name="pbSetDefault">
-     <property name="text">
-      <string>Set as new default</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="hlEFOBinSize">
+   <item row="5" column="0">
+    <layout class="QHBoxLayout" name="hlEFORange">
      <item>
-      <widget class="QLabel" name="lbEFOBinSize">
+      <widget class="QLabel" name="lbEFORange">
        <property name="text">
-        <string>EFO bin size (Hz): set to 0 for automatic estimation</string>
+        <string>EFO default plot range</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="hsEFOBinSize">
+      <spacer name="hsEFORange">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -163,7 +175,17 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLineEdit" name="leEFOBinSize">
+      <widget class="QLineEdit" name="leEFORangeMin">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="leEFORangeMax">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -174,48 +196,19 @@
      </item>
     </layout>
    </item>
-   <item row="2" column="0">
-    <layout class="QHBoxLayout" name="hlExpectedEFOFrequency">
-     <item>
-      <widget class="QLabel" name="lbEFOSingleEmitterFrequency">
-       <property name="text">
-        <string>EFO expected frequency for single emitters (Hz)</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="hsEFOSingleEmitterFrequency">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="leEFOSingleEmitterFrequency">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="7" column="0">
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+   <item row="8" column="0">
+    <widget class="QLabel" name="lbInfo">
+     <property name="font">
+      <font>
+       <italic>true</italic>
+      </font>
+     </property>
+     <property name="text">
+      <string>Changes above will be applied when loading new data or when applying filters.</string>
      </property>
     </widget>
    </item>
-   <item row="10" column="0">
+   <item row="12" column="0">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -262,7 +255,48 @@
      </item>
     </layout>
    </item>
-   <item row="5" column="0">
+   <item row="13" column="0">
+    <widget class="QPushButton" name="pbSetDefault">
+     <property name="text">
+      <string>Set as new default</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="hlZScalingFactor">
+     <item>
+      <widget class="QLabel" name="lbZScalingFactor">
+       <property name="text">
+        <string>Z scaling factor</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="hsZScalingFactor">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="leZScalingFactor">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="7" column="0">
     <layout class="QHBoxLayout" name="hlLocPrecRange">
      <item>
       <widget class="QLabel" name="lbLocPrecRange">
@@ -306,10 +340,27 @@
      </item>
     </layout>
    </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="lbInfoZScalingFactor">
+     <property name="font">
+      <font>
+       <pointsize>8</pointsize>
+       <italic>true</italic>
+      </font>
+     </property>
+     <property name="text">
+      <string>Scales the z positions to compensate for the refractive index mismatch between the coverglass and the sample.</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <tabstops>
   <tabstop>leMinTIDNum</tabstop>
+  <tabstop>leZScalingFactor</tabstop>
   <tabstop>leEFOBinSize</tabstop>
   <tabstop>leEFOSingleEmitterFrequency</tabstop>
   <tabstop>leEFORangeMin</tabstop>

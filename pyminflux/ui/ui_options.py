@@ -1,20 +1,5 @@
 # -*- coding: utf-8 -*-
 
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#   limitations under the License.
-#
-
 ################################################################################
 ## Form generated from reading UI file 'options.ui'
 ##
@@ -75,101 +60,43 @@ class Ui_Options(object):
     def setupUi(self, Options):
         if not Options.objectName():
             Options.setObjectName("Options")
-        Options.resize(575, 331)
+        Options.resize(575, 396)
         self.gridLayout = QGridLayout(Options)
         self.gridLayout.setObjectName("gridLayout")
-        self.lbInfo = QLabel(Options)
-        self.lbInfo.setObjectName("lbInfo")
-        font = QFont()
-        font.setItalic(True)
-        self.lbInfo.setFont(font)
+        self.hlExpectedEFOFrequency = QHBoxLayout()
+        self.hlExpectedEFOFrequency.setObjectName("hlExpectedEFOFrequency")
+        self.lbEFOSingleEmitterFrequency = QLabel(Options)
+        self.lbEFOSingleEmitterFrequency.setObjectName("lbEFOSingleEmitterFrequency")
 
-        self.gridLayout.addWidget(self.lbInfo, 6, 0, 1, 1)
+        self.hlExpectedEFOFrequency.addWidget(self.lbEFOSingleEmitterFrequency)
 
-        self.hlEFORange = QHBoxLayout()
-        self.hlEFORange.setObjectName("hlEFORange")
-        self.lbEFORange = QLabel(Options)
-        self.lbEFORange.setObjectName("lbEFORange")
-
-        self.hlEFORange.addWidget(self.lbEFORange)
-
-        self.hsEFORange = QSpacerItem(
+        self.hsEFOSingleEmitterFrequency = QSpacerItem(
             40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
 
-        self.hlEFORange.addItem(self.hsEFORange)
+        self.hlExpectedEFOFrequency.addItem(self.hsEFOSingleEmitterFrequency)
 
-        self.leEFORangeMin = QLineEdit(Options)
-        self.leEFORangeMin.setObjectName("leEFORangeMin")
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.leEFOSingleEmitterFrequency = QLineEdit(Options)
+        self.leEFOSingleEmitterFrequency.setObjectName("leEFOSingleEmitterFrequency")
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.leEFORangeMin.sizePolicy().hasHeightForWidth()
+            self.leEFOSingleEmitterFrequency.sizePolicy().hasHeightForWidth()
         )
-        self.leEFORangeMin.setSizePolicy(sizePolicy)
+        self.leEFOSingleEmitterFrequency.setSizePolicy(sizePolicy)
 
-        self.hlEFORange.addWidget(self.leEFORangeMin)
+        self.hlExpectedEFOFrequency.addWidget(self.leEFOSingleEmitterFrequency)
 
-        self.leEFORangeMax = QLineEdit(Options)
-        self.leEFORangeMax.setObjectName("leEFORangeMax")
-        sizePolicy.setHeightForWidth(
-            self.leEFORangeMax.sizePolicy().hasHeightForWidth()
-        )
-        self.leEFORangeMax.setSizePolicy(sizePolicy)
-
-        self.hlEFORange.addWidget(self.leEFORangeMax)
-
-        self.gridLayout.addLayout(self.hlEFORange, 3, 0, 1, 1)
-
-        self.hlCFRRange = QHBoxLayout()
-        self.hlCFRRange.setObjectName("hlCFRRange")
-        self.lbCFRRange = QLabel(Options)
-        self.lbCFRRange.setObjectName("lbCFRRange")
-
-        self.hlCFRRange.addWidget(self.lbCFRRange)
-
-        self.hsCFRRange = QSpacerItem(
-            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
-        )
-
-        self.hlCFRRange.addItem(self.hsCFRRange)
-
-        self.leCFRRangeMin = QLineEdit(Options)
-        self.leCFRRangeMin.setObjectName("leCFRRangeMin")
-        sizePolicy.setHeightForWidth(
-            self.leCFRRangeMin.sizePolicy().hasHeightForWidth()
-        )
-        self.leCFRRangeMin.setSizePolicy(sizePolicy)
-
-        self.hlCFRRange.addWidget(self.leCFRRangeMin)
-
-        self.leCFRRangeMax = QLineEdit(Options)
-        self.leCFRRangeMax.setObjectName("leCFRRangeMax")
-        sizePolicy.setHeightForWidth(
-            self.leCFRRangeMax.sizePolicy().hasHeightForWidth()
-        )
-        self.leCFRRangeMax.setSizePolicy(sizePolicy)
-
-        self.hlCFRRange.addWidget(self.leCFRRangeMax)
-
-        self.gridLayout.addLayout(self.hlCFRRange, 4, 0, 1, 1)
+        self.gridLayout.addLayout(self.hlExpectedEFOFrequency, 4, 0, 1, 1)
 
         self.lbInfoImmediate = QLabel(Options)
         self.lbInfoImmediate.setObjectName("lbInfoImmediate")
+        font = QFont()
+        font.setItalic(True)
         self.lbInfoImmediate.setFont(font)
 
-        self.gridLayout.addWidget(self.lbInfoImmediate, 8, 0, 1, 1)
-
-        self.cbWeightAvgLocByECO = QCheckBox(Options)
-        self.cbWeightAvgLocByECO.setObjectName("cbWeightAvgLocByECO")
-
-        self.gridLayout.addWidget(self.cbWeightAvgLocByECO, 9, 0, 1, 1)
-
-        self.pbSetDefault = QPushButton(Options)
-        self.pbSetDefault.setObjectName("pbSetDefault")
-
-        self.gridLayout.addWidget(self.pbSetDefault, 11, 0, 1, 1)
+        self.gridLayout.addWidget(self.lbInfoImmediate, 10, 0, 1, 1)
 
         self.hlEFOBinSize = QHBoxLayout()
         self.hlEFOBinSize.setObjectName("hlEFOBinSize")
@@ -186,52 +113,107 @@ class Ui_Options(object):
 
         self.leEFOBinSize = QLineEdit(Options)
         self.leEFOBinSize.setObjectName("leEFOBinSize")
-        sizePolicy.setHeightForWidth(self.leEFOBinSize.sizePolicy().hasHeightForWidth())
-        self.leEFOBinSize.setSizePolicy(sizePolicy)
-
-        self.hlEFOBinSize.addWidget(self.leEFOBinSize)
-
-        self.gridLayout.addLayout(self.hlEFOBinSize, 1, 0, 1, 1)
-
-        self.hlExpectedEFOFrequency = QHBoxLayout()
-        self.hlExpectedEFOFrequency.setObjectName("hlExpectedEFOFrequency")
-        self.lbEFOSingleEmitterFrequency = QLabel(Options)
-        self.lbEFOSingleEmitterFrequency.setObjectName("lbEFOSingleEmitterFrequency")
-
-        self.hlExpectedEFOFrequency.addWidget(self.lbEFOSingleEmitterFrequency)
-
-        self.hsEFOSingleEmitterFrequency = QSpacerItem(
-            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
-        )
-
-        self.hlExpectedEFOFrequency.addItem(self.hsEFOSingleEmitterFrequency)
-
-        self.leEFOSingleEmitterFrequency = QLineEdit(Options)
-        self.leEFOSingleEmitterFrequency.setObjectName("leEFOSingleEmitterFrequency")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(
-            self.leEFOSingleEmitterFrequency.sizePolicy().hasHeightForWidth()
+            self.leEFOBinSize.sizePolicy().hasHeightForWidth()
         )
-        self.leEFOSingleEmitterFrequency.setSizePolicy(sizePolicy1)
+        self.leEFOBinSize.setSizePolicy(sizePolicy1)
 
-        self.hlExpectedEFOFrequency.addWidget(self.leEFOSingleEmitterFrequency)
+        self.hlEFOBinSize.addWidget(self.leEFOBinSize)
 
-        self.gridLayout.addLayout(self.hlExpectedEFOFrequency, 2, 0, 1, 1)
+        self.gridLayout.addLayout(self.hlEFOBinSize, 3, 0, 1, 1)
 
         self.line = QFrame(Options)
         self.line.setObjectName("line")
         self.line.setFrameShape(QFrame.HLine)
         self.line.setFrameShadow(QFrame.Sunken)
 
-        self.gridLayout.addWidget(self.line, 7, 0, 1, 1)
+        self.gridLayout.addWidget(self.line, 9, 0, 1, 1)
+
+        self.cbWeightAvgLocByECO = QCheckBox(Options)
+        self.cbWeightAvgLocByECO.setObjectName("cbWeightAvgLocByECO")
+
+        self.gridLayout.addWidget(self.cbWeightAvgLocByECO, 11, 0, 1, 1)
+
+        self.hlCFRRange = QHBoxLayout()
+        self.hlCFRRange.setObjectName("hlCFRRange")
+        self.lbCFRRange = QLabel(Options)
+        self.lbCFRRange.setObjectName("lbCFRRange")
+
+        self.hlCFRRange.addWidget(self.lbCFRRange)
+
+        self.hsCFRRange = QSpacerItem(
+            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.hlCFRRange.addItem(self.hsCFRRange)
+
+        self.leCFRRangeMin = QLineEdit(Options)
+        self.leCFRRangeMin.setObjectName("leCFRRangeMin")
+        sizePolicy1.setHeightForWidth(
+            self.leCFRRangeMin.sizePolicy().hasHeightForWidth()
+        )
+        self.leCFRRangeMin.setSizePolicy(sizePolicy1)
+
+        self.hlCFRRange.addWidget(self.leCFRRangeMin)
+
+        self.leCFRRangeMax = QLineEdit(Options)
+        self.leCFRRangeMax.setObjectName("leCFRRangeMax")
+        sizePolicy1.setHeightForWidth(
+            self.leCFRRangeMax.sizePolicy().hasHeightForWidth()
+        )
+        self.leCFRRangeMax.setSizePolicy(sizePolicy1)
+
+        self.hlCFRRange.addWidget(self.leCFRRangeMax)
+
+        self.gridLayout.addLayout(self.hlCFRRange, 6, 0, 1, 1)
+
+        self.hlEFORange = QHBoxLayout()
+        self.hlEFORange.setObjectName("hlEFORange")
+        self.lbEFORange = QLabel(Options)
+        self.lbEFORange.setObjectName("lbEFORange")
+
+        self.hlEFORange.addWidget(self.lbEFORange)
+
+        self.hsEFORange = QSpacerItem(
+            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.hlEFORange.addItem(self.hsEFORange)
+
+        self.leEFORangeMin = QLineEdit(Options)
+        self.leEFORangeMin.setObjectName("leEFORangeMin")
+        sizePolicy1.setHeightForWidth(
+            self.leEFORangeMin.sizePolicy().hasHeightForWidth()
+        )
+        self.leEFORangeMin.setSizePolicy(sizePolicy1)
+
+        self.hlEFORange.addWidget(self.leEFORangeMin)
+
+        self.leEFORangeMax = QLineEdit(Options)
+        self.leEFORangeMax.setObjectName("leEFORangeMax")
+        sizePolicy1.setHeightForWidth(
+            self.leEFORangeMax.sizePolicy().hasHeightForWidth()
+        )
+        self.leEFORangeMax.setSizePolicy(sizePolicy1)
+
+        self.hlEFORange.addWidget(self.leEFORangeMax)
+
+        self.gridLayout.addLayout(self.hlEFORange, 5, 0, 1, 1)
+
+        self.lbInfo = QLabel(Options)
+        self.lbInfo.setObjectName("lbInfo")
+        self.lbInfo.setFont(font)
+
+        self.gridLayout.addWidget(self.lbInfo, 8, 0, 1, 1)
 
         self.verticalSpacer = QSpacerItem(
             20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
         )
 
-        self.gridLayout.addItem(self.verticalSpacer, 10, 0, 1, 1)
+        self.gridLayout.addItem(self.verticalSpacer, 12, 0, 1, 1)
 
         self.hlMinNumTraces = QHBoxLayout()
         self.hlMinNumTraces.setObjectName("hlMinNumTraces")
@@ -248,12 +230,41 @@ class Ui_Options(object):
 
         self.leMinTIDNum = QLineEdit(Options)
         self.leMinTIDNum.setObjectName("leMinTIDNum")
-        sizePolicy.setHeightForWidth(self.leMinTIDNum.sizePolicy().hasHeightForWidth())
-        self.leMinTIDNum.setSizePolicy(sizePolicy)
+        sizePolicy1.setHeightForWidth(self.leMinTIDNum.sizePolicy().hasHeightForWidth())
+        self.leMinTIDNum.setSizePolicy(sizePolicy1)
 
         self.hlMinNumTraces.addWidget(self.leMinTIDNum)
 
         self.gridLayout.addLayout(self.hlMinNumTraces, 0, 0, 1, 1)
+
+        self.pbSetDefault = QPushButton(Options)
+        self.pbSetDefault.setObjectName("pbSetDefault")
+
+        self.gridLayout.addWidget(self.pbSetDefault, 13, 0, 1, 1)
+
+        self.hlZScalingFactor = QHBoxLayout()
+        self.hlZScalingFactor.setObjectName("hlZScalingFactor")
+        self.lbZScalingFactor = QLabel(Options)
+        self.lbZScalingFactor.setObjectName("lbZScalingFactor")
+
+        self.hlZScalingFactor.addWidget(self.lbZScalingFactor)
+
+        self.hsZScalingFactor = QSpacerItem(
+            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.hlZScalingFactor.addItem(self.hsZScalingFactor)
+
+        self.leZScalingFactor = QLineEdit(Options)
+        self.leZScalingFactor.setObjectName("leZScalingFactor")
+        sizePolicy1.setHeightForWidth(
+            self.leZScalingFactor.sizePolicy().hasHeightForWidth()
+        )
+        self.leZScalingFactor.setSizePolicy(sizePolicy1)
+
+        self.hlZScalingFactor.addWidget(self.leZScalingFactor)
+
+        self.gridLayout.addLayout(self.hlZScalingFactor, 1, 0, 1, 1)
 
         self.hlLocPrecRange = QHBoxLayout()
         self.hlLocPrecRange.setObjectName("hlLocPrecRange")
@@ -270,25 +281,38 @@ class Ui_Options(object):
 
         self.leLocPrecRangeMin = QLineEdit(Options)
         self.leLocPrecRangeMin.setObjectName("leLocPrecRangeMin")
-        sizePolicy.setHeightForWidth(
+        sizePolicy1.setHeightForWidth(
             self.leLocPrecRangeMin.sizePolicy().hasHeightForWidth()
         )
-        self.leLocPrecRangeMin.setSizePolicy(sizePolicy)
+        self.leLocPrecRangeMin.setSizePolicy(sizePolicy1)
 
         self.hlLocPrecRange.addWidget(self.leLocPrecRangeMin)
 
         self.leLocPrecRangeMax = QLineEdit(Options)
         self.leLocPrecRangeMax.setObjectName("leLocPrecRangeMax")
-        sizePolicy.setHeightForWidth(
+        sizePolicy1.setHeightForWidth(
             self.leLocPrecRangeMax.sizePolicy().hasHeightForWidth()
         )
-        self.leLocPrecRangeMax.setSizePolicy(sizePolicy)
+        self.leLocPrecRangeMax.setSizePolicy(sizePolicy1)
 
         self.hlLocPrecRange.addWidget(self.leLocPrecRangeMax)
 
-        self.gridLayout.addLayout(self.hlLocPrecRange, 5, 0, 1, 1)
+        self.gridLayout.addLayout(self.hlLocPrecRange, 7, 0, 1, 1)
 
-        QWidget.setTabOrder(self.leMinTIDNum, self.leEFOBinSize)
+        self.lbInfoZScalingFactor = QLabel(Options)
+        self.lbInfoZScalingFactor.setObjectName("lbInfoZScalingFactor")
+        font1 = QFont()
+        font1.setPointSize(8)
+        font1.setItalic(True)
+        self.lbInfoZScalingFactor.setFont(font1)
+        self.lbInfoZScalingFactor.setAlignment(
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
+
+        self.gridLayout.addWidget(self.lbInfoZScalingFactor, 2, 0, 1, 1)
+
+        QWidget.setTabOrder(self.leMinTIDNum, self.leZScalingFactor)
+        QWidget.setTabOrder(self.leZScalingFactor, self.leEFOBinSize)
         QWidget.setTabOrder(self.leEFOBinSize, self.leEFOSingleEmitterFrequency)
         QWidget.setTabOrder(self.leEFOSingleEmitterFrequency, self.leEFORangeMin)
         QWidget.setTabOrder(self.leEFORangeMin, self.leEFORangeMax)
@@ -307,24 +331,21 @@ class Ui_Options(object):
 
     def retranslateUi(self, Options):
         Options.setWindowTitle(QCoreApplication.translate("Options", "Options", None))
-        self.lbInfo.setText(
+        self.lbEFOSingleEmitterFrequency.setText(
             QCoreApplication.translate(
-                "Options",
-                "Changes above will be applied when loading new data or when filtering in the Analyzer.",
-                None,
+                "Options", "EFO expected frequency for single emitters (Hz)", None
             )
-        )
-        self.lbEFORange.setText(
-            QCoreApplication.translate("Options", "EFO default plot range", None)
-        )
-        self.lbCFRRange.setText(
-            QCoreApplication.translate("Options", "CFR default plot range", None)
         )
         self.lbInfoImmediate.setText(
             QCoreApplication.translate(
                 "Options",
                 "Changes below will be applied immediately to all open views.",
                 None,
+            )
+        )
+        self.lbEFOBinSize.setText(
+            QCoreApplication.translate(
+                "Options", "EFO bin size (Hz): set to 0 for automatic estimation", None
             )
         )
         self.cbWeightAvgLocByECO.setText(
@@ -334,17 +355,17 @@ class Ui_Options(object):
                 None,
             )
         )
-        self.pbSetDefault.setText(
-            QCoreApplication.translate("Options", "Set as new default", None)
+        self.lbCFRRange.setText(
+            QCoreApplication.translate("Options", "CFR default plot range", None)
         )
-        self.lbEFOBinSize.setText(
-            QCoreApplication.translate(
-                "Options", "EFO bin size (Hz): set to 0 for automatic estimation", None
-            )
+        self.lbEFORange.setText(
+            QCoreApplication.translate("Options", "EFO default plot range", None)
         )
-        self.lbEFOSingleEmitterFrequency.setText(
+        self.lbInfo.setText(
             QCoreApplication.translate(
-                "Options", "EFO expected frequency for single emitters (Hz)", None
+                "Options",
+                "Changes above will be applied when loading new data or when applying filters.",
+                None,
             )
         )
         self.lbMinTIDNum.setText(
@@ -352,9 +373,22 @@ class Ui_Options(object):
                 "Options", "Minimum number of trace localizations", None
             )
         )
+        self.pbSetDefault.setText(
+            QCoreApplication.translate("Options", "Set as new default", None)
+        )
+        self.lbZScalingFactor.setText(
+            QCoreApplication.translate("Options", "Z scaling factor", None)
+        )
         self.lbLocPrecRange.setText(
             QCoreApplication.translate(
                 "Options", "Localization precision default plot range", None
+            )
+        )
+        self.lbInfoZScalingFactor.setText(
+            QCoreApplication.translate(
+                "Options",
+                "Scales the z positions to compensate for the refractive index mismatch between the coverglass and the sample.",
+                None,
             )
         )
 
