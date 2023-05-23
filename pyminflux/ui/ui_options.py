@@ -402,16 +402,28 @@ class Ui_Options(object):
 
         self.gridLayout.addWidget(self.lbQuickHelp, 15, 0, 1, 1)
 
-        QWidget.setTabOrder(self.leMinTIDNum, self.leZScalingFactor)
-        QWidget.setTabOrder(self.leZScalingFactor, self.leEFOBinSize)
-        QWidget.setTabOrder(self.leEFOBinSize, self.leEFOSingleEmitterFrequency)
-        QWidget.setTabOrder(self.leEFOSingleEmitterFrequency, self.leEFORangeMin)
+        QWidget.setTabOrder(self.pbSetDefault, self.pbMinTIDNumHelp)
+        QWidget.setTabOrder(self.pbMinTIDNumHelp, self.leMinTIDNum)
+        QWidget.setTabOrder(self.leMinTIDNum, self.pbZScalingFactorHelp)
+        QWidget.setTabOrder(self.pbZScalingFactorHelp, self.leZScalingFactor)
+        QWidget.setTabOrder(self.leZScalingFactor, self.pbEFOBinSizeHelp)
+        QWidget.setTabOrder(self.pbEFOBinSizeHelp, self.leEFOBinSize)
+        QWidget.setTabOrder(self.leEFOBinSize, self.pbEFOSingleEmitterFrequencyHelp)
+        QWidget.setTabOrder(
+            self.pbEFOSingleEmitterFrequencyHelp, self.leEFOSingleEmitterFrequency
+        )
+        QWidget.setTabOrder(self.leEFOSingleEmitterFrequency, self.pbEFORangeHelp)
+        QWidget.setTabOrder(self.pbEFORangeHelp, self.leEFORangeMin)
         QWidget.setTabOrder(self.leEFORangeMin, self.leEFORangeMax)
-        QWidget.setTabOrder(self.leEFORangeMax, self.leCFRRangeMin)
+        QWidget.setTabOrder(self.leEFORangeMax, self.pbCFRRangeHelp)
+        QWidget.setTabOrder(self.pbCFRRangeHelp, self.leCFRRangeMin)
         QWidget.setTabOrder(self.leCFRRangeMin, self.leCFRRangeMax)
-        QWidget.setTabOrder(self.leCFRRangeMax, self.leLocPrecRangeMin)
+        QWidget.setTabOrder(self.leCFRRangeMax, self.pbLocPrecRangeHelp)
+        QWidget.setTabOrder(self.pbLocPrecRangeHelp, self.leLocPrecRangeMin)
         QWidget.setTabOrder(self.leLocPrecRangeMin, self.leLocPrecRangeMax)
-        QWidget.setTabOrder(self.leLocPrecRangeMax, self.pbSetDefault)
+        QWidget.setTabOrder(self.leLocPrecRangeMax, self.pbWeightAvgLocByECOHelp)
+        QWidget.setTabOrder(self.pbWeightAvgLocByECOHelp, self.cbWeightAvgLocByECO)
+        QWidget.setTabOrder(self.cbWeightAvgLocByECO, self.teHelp)
 
         self.retranslateUi(Options)
 

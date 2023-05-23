@@ -568,17 +568,27 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>pbSetDefault</tabstop>
+  <tabstop>pbMinTIDNumHelp</tabstop>
   <tabstop>leMinTIDNum</tabstop>
+  <tabstop>pbZScalingFactorHelp</tabstop>
   <tabstop>leZScalingFactor</tabstop>
+  <tabstop>pbEFOBinSizeHelp</tabstop>
   <tabstop>leEFOBinSize</tabstop>
+  <tabstop>pbEFOSingleEmitterFrequencyHelp</tabstop>
   <tabstop>leEFOSingleEmitterFrequency</tabstop>
+  <tabstop>pbEFORangeHelp</tabstop>
   <tabstop>leEFORangeMin</tabstop>
   <tabstop>leEFORangeMax</tabstop>
+  <tabstop>pbCFRRangeHelp</tabstop>
   <tabstop>leCFRRangeMin</tabstop>
   <tabstop>leCFRRangeMax</tabstop>
+  <tabstop>pbLocPrecRangeHelp</tabstop>
   <tabstop>leLocPrecRangeMin</tabstop>
   <tabstop>leLocPrecRangeMax</tabstop>
-  <tabstop>pbSetDefault</tabstop>
+  <tabstop>pbWeightAvgLocByECOHelp</tabstop>
+  <tabstop>cbWeightAvgLocByECO</tabstop>
+  <tabstop>teHelp</tabstop>
  </tabstops>
  <resources/>
  <connections/>
