@@ -15,7 +15,7 @@
 
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QDoubleValidator, QIntValidator
-from PySide6.QtWidgets import QDialog, QMessageBox
+from PySide6.QtWidgets import QDialog, QHBoxLayout, QMessageBox, QTextEdit
 
 from pyminflux import __APP_NAME__
 from pyminflux.state import State
@@ -46,6 +46,23 @@ class Options(QDialog, Ui_Options):
 
         # Keep a reference to the singleton State class
         self.state = State()
+
+        # Add the help text edit
+        self.ui.teHelp.setReadOnly(True)
+        font_metrics = self.ui.teHelp.fontMetrics()
+        self.ui.teHelp.setMaximumHeight(font_metrics.height() * 3)
+        self.ui.teHelp.setText('Click on a "?" button to get help.')
+
+        # Hide the border and change the background color
+        self.ui.teHelp.setStyleSheet(
+            """
+            QTextEdit {
+                border: none;
+                background-color: transparent;
+                font-style: italic;
+            }
+        """
+        )
 
         # Keep track of the validity of all entries
         self.valid = {
@@ -126,6 +143,47 @@ class Options(QDialog, Ui_Options):
         self.ui.leLocPrecRangeMax.textChanged.connect(self.persist_loc_prec_range)
 
         self.ui.leZScalingFactor.textChanged.connect(self.persist_z_scaling_factor)
+
+        self.ui.pbMinTIDNumHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Minimum number of localizations within a trace to be considered for plotting and precision calculation."
+            )
+        )
+        self.ui.pbZScalingFactorHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Scales the z positions to compensate for the refractive index mismatch between the coverglass and the sample."
+            )
+        )
+        self.ui.pbEFOBinSizeHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Bin size to be used for efo distribution plotting on the Analyzer."
+            )
+        )
+        self.ui.pbEFOSingleEmitterFrequencyHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Expected default frequency for single emitters to be used for automated efo threshold selection."
+            )
+        )
+        self.ui.pbEFORangeHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Default plot range for the efo histogram in the Analyzer."
+            )
+        )
+        self.ui.pbCFRRangeHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Default plot range for the cfr histogram in the Analyzer."
+            )
+        )
+        self.ui.pbLocPrecRangeHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Default plot range for the localization precision histograms in the Analyzer."
+            )
+        )
+        self.ui.pbWeightAvgLocByECOHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Whether to use the eco value as weighting factor during the calculation of the average localization position for each trace ID."
+            )
+        )
 
     @Slot(str, name="persist_min_num_loc_per_trace")
     def persist_min_num_loc_per_trace(self, text):
