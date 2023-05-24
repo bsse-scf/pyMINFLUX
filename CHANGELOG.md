@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2023-05-25
+
+### New features
+
+* Implement z-scaling factor to compensate for refractive index mismatch.
+* Add global reset button to the Wizard and remove the one from the Analyzer.
+* Add quick help for all entries in the Options dialog.
+* Add links to code repository and issues page to Help menu.
+* Add a few minor UI tweaks.
+
+### Fixed
+
+* Applying a filter in the Time Inspector would not update the Analyzer plots.
+
 ## [0.1.2] - 2023-05-12
 
 Bug fix release.
