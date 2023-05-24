@@ -19,7 +19,7 @@ from pathlib import Path
 
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -53,6 +53,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     """
     Main application window.
     """
+
+    request_sync_external_tools = Signal(None, name="request_sync_external_tools")
 
     def __init__(self, parent=None):
         """
@@ -271,6 +273,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Wizard
         self.wizard.load_data_triggered.connect(self.select_and_open_data_file)
+        self.wizard.reset_filters_triggered.connect(self.reset_filters_and_broadcast)
         self.wizard.open_unmixer_triggered.connect(self.open_color_unmixer)
         self.wizard.open_time_inspector_triggered.connect(self.open_inspector)
         self.wizard.open_analyzer_triggered.connect(self.open_analyzer)
@@ -369,6 +372,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Now exit
             event.accept()
 
+    @Slot(None, name="reset_filters_and_broadcast")
+    def reset_filters_and_broadcast(self):
+        """Reset all filters and broadcast changes."""
+
+        # Reset filters and data
+        self.minfluxprocessor.reset()
+        self.state.efo_thresholds = None
+        self.state.cfr_thresholds = None
+
+        # Update main window
+        self.full_update_ui()
+
+        # Signal that the external viewers and tools should be updated
+        self.request_sync_external_tools.emit()
+
     @Slot(None, name="quit_application")
     def quit_application(self):
         """Quit the application."""
@@ -390,30 +408,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.data_viewer.show()
             else:
                 self.data_viewer.hide()
-
-    @Slot(bool, name="toggle_plot_average_localizations")
-    def toggle_plot_average_localizations(self):
-        """Toggle the state of plot_average_localizations."""
-        if self.ui.actionPlotAverageLocalizations.isChecked():
-            self.state.plot_average_localisations = True
-        else:
-            self.state.plot_average_localisations = False
-
-        # Trigger a re-plot
-        self.full_update_ui()
-
-    @Slot(bool, name="toggle_plot_average_localizations")
-    def toggle_plot_average_localizations(self):
-        """Toggle the state of plot_average_localizations."""
-        if self.ui.actionPlotAverageLocalizations.isChecked():
-            self.state.plot_average_localisations = True
-            self.plotter_toolbar.ui.cbPlotAveragePos.setChecked(True)
-        else:
-            self.state.plot_average_localisations = False
-            self.plotter_toolbar.ui.cbPlotAveragePos.setChecked(False)
-
-        # Trigger a re-plot
-        self.full_update_ui()
 
     @Slot(None, name="select_and_open_data_file")
     def select_and_open_data_file(self):
@@ -584,6 +578,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.analyzer is None:
             self.analyzer = Analyzer(self.minfluxprocessor)
             self.wizard.wizard_filters_run.connect(self.analyzer.plot)
+            self.request_sync_external_tools.connect(self.analyzer.plot)
             self.wizard.efo_bounds_modified.connect(self.analyzer.change_efo_bounds)
             self.wizard.cfr_bounds_modified.connect(self.analyzer.change_cfr_bounds)
             self.analyzer.data_filters_changed.connect(self.full_update_ui)
@@ -606,8 +601,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.inspector.dataset_time_filtered.connect(self.full_update_ui)
             self.plotter_toolbar.fluorophore_id_changed.connect(self.inspector.update)
             self.wizard.wizard_filters_run.connect(self.inspector.update)
+            self.request_sync_external_tools.connect(self.inspector.update)
             if self.analyzer is not None:
                 self.analyzer.data_filters_changed.connect(self.inspector.update)
+                self.inspector.dataset_time_filtered.connect(self.analyzer.plot)
         self.inspector.show()
         self.inspector.activateWindow()
 
@@ -712,6 +709,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Make sure to autoupdate the axis (on load only)
         self.plotter.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
+
+        # Signal that the external viewers and tools should be updated
+        self.request_sync_external_tools.emit()
 
     def set_state_from_data(self):
         """Set state properties that depend on data."""

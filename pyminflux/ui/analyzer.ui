@@ -277,25 +277,14 @@
      </widget>
     </widget>
    </item>
-   <item row="3" column="0">
-    <layout class="QHBoxLayout" name="localizations_layout"/>
-   </item>
-   <item row="6" column="0">
-    <layout class="QHBoxLayout" name="actions_layout">
-     <item>
-      <widget class="QPushButton" name="pbReset">
-       <property name="text">
-        <string>Reset</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="communication_layout"/>
    </item>
    <item row="2" column="0">
     <layout class="QHBoxLayout" name="parameters_layout"/>
    </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="communication_layout"/>
+   <item row="3" column="0">
+    <layout class="QHBoxLayout" name="localizations_layout"/>
    </item>
   </layout>
  </widget>

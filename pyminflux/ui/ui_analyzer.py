@@ -1,24 +1,9 @@
 # -*- coding: utf-8 -*-
 
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#   limitations under the License.
-#
-
 ################################################################################
 ## Form generated from reading UI file 'analyzer.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -234,29 +219,20 @@ class Ui_Analyzer(object):
 
         self.gridLayout.addWidget(self.tabFilterOptions, 0, 0, 1, 1)
 
-        self.localizations_layout = QHBoxLayout()
-        self.localizations_layout.setObjectName("localizations_layout")
+        self.communication_layout = QHBoxLayout()
+        self.communication_layout.setObjectName("communication_layout")
 
-        self.gridLayout.addLayout(self.localizations_layout, 3, 0, 1, 1)
-
-        self.actions_layout = QHBoxLayout()
-        self.actions_layout.setObjectName("actions_layout")
-        self.pbReset = QPushButton(Analyzer)
-        self.pbReset.setObjectName("pbReset")
-
-        self.actions_layout.addWidget(self.pbReset)
-
-        self.gridLayout.addLayout(self.actions_layout, 6, 0, 1, 1)
+        self.gridLayout.addLayout(self.communication_layout, 1, 0, 1, 1)
 
         self.parameters_layout = QHBoxLayout()
         self.parameters_layout.setObjectName("parameters_layout")
 
         self.gridLayout.addLayout(self.parameters_layout, 2, 0, 1, 1)
 
-        self.communication_layout = QHBoxLayout()
-        self.communication_layout.setObjectName("communication_layout")
+        self.localizations_layout = QHBoxLayout()
+        self.localizations_layout.setObjectName("localizations_layout")
 
-        self.gridLayout.addLayout(self.communication_layout, 1, 0, 1, 1)
+        self.gridLayout.addLayout(self.localizations_layout, 3, 0, 1, 1)
 
         self.retranslateUi(Analyzer)
 
@@ -305,6 +281,5 @@ class Ui_Analyzer(object):
             self.tabFilterOptions.indexOf(self.tab_cfr_thresholding),
             QCoreApplication.translate("Analyzer", "CFR thresholding", None),
         )
-        self.pbReset.setText(QCoreApplication.translate("Analyzer", "Reset", None))
 
     # retranslateUi

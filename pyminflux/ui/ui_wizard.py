@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'wizard.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -81,6 +81,11 @@ class Ui_WizardDialog(object):
         self.pbLoadData.setMinimumSize(QSize(320, 0))
 
         self.mainLayout.addWidget(self.pbLoadData)
+
+        self.pbReset = QPushButton(WizardDialog)
+        self.pbReset.setObjectName("pbReset")
+
+        self.mainLayout.addWidget(self.pbReset)
 
         self.verticalSpacer_2 = QSpacerItem(
             20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
@@ -290,6 +295,7 @@ class Ui_WizardDialog(object):
         self.pbLoadData.setText(
             QCoreApplication.translate("WizardDialog", "Load", None)
         )
+        self.pbReset.setText(QCoreApplication.translate("WizardDialog", "Reset", None))
         self.lbColors.setText(
             QCoreApplication.translate("WizardDialog", "DCR unmixing", None)
         )
