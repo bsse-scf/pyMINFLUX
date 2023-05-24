@@ -231,7 +231,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionState.triggered.connect(self.print_current_state)
         self.ui.actionManual.triggered.connect(
-            lambda _: QDesktopServices.openUrl("https://pyminflux.ethz.ch/manual")
+            lambda _: QDesktopServices.openUrl(
+                "https://github.com/bsse-scf/pyMINFLUX/wiki/pyMINFLUX-user-manual"
+            )
         )
         self.ui.actionWebsite.triggered.connect(
             lambda _: QDesktopServices.openUrl("https://pyminflux.ethz.ch")
