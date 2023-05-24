@@ -238,6 +238,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionWebsite.triggered.connect(
             lambda _: QDesktopServices.openUrl("https://pyminflux.ethz.ch")
         )
+        self.ui.actionCode_repository.triggered.connect(
+            lambda _: QDesktopServices.openUrl("https://github.com/bsse-scf/pyMINFLUX")
+        )
         self.ui.actionAbout.triggered.connect(self.about)
 
         # Plotter toolbar
