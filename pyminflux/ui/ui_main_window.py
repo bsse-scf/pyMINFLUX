@@ -89,6 +89,8 @@ class Ui_MainWindow(object):
         self.actionWebsite.setObjectName("actionWebsite")
         self.actionCode_repository = QAction(MainWindow)
         self.actionCode_repository.setObjectName("actionCode_repository")
+        self.actionIssues = QAction(MainWindow)
+        self.actionIssues.setObjectName("actionIssues")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -134,6 +136,7 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionManual)
         self.menuHelp.addAction(self.actionWebsite)
         self.menuHelp.addAction(self.actionCode_repository)
+        self.menuHelp.addAction(self.actionIssues)
         self.menuHelp.addSeparator()
         self.menuHelp.addAction(self.actionAbout)
 
@@ -200,6 +203,9 @@ class Ui_MainWindow(object):
         )
         self.actionCode_repository.setText(
             QCoreApplication.translate("MainWindow", "Repository", None)
+        )
+        self.actionIssues.setText(
+            QCoreApplication.translate("MainWindow", "Issues", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
