@@ -7,7 +7,8 @@ All notable changes to this project will be documented in this file.
 ### New features
 
 * Implement z-scaling factor to compensate for refractive index mismatch.
-* Add global reset button to the Wizard and remove the one from the Analyzer.
+* Add context menu actions to export all plots to `.png` images.
+* Add global reset button to the main-window wizard and remove the one from the Analyzer.
 * Add quick help for all entries in the Options dialog.
 * Add links to code repository and issues page to Help menu.
 * Add a few minor UI tweaks.
@@ -15,6 +16,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 * Applying a filter in the Time Inspector would not update the Analyzer plots.
+* Do not allow to draw a measurement line if the plotted data is not (x, y).
 
 ## [0.1.2] - 2023-05-12
 

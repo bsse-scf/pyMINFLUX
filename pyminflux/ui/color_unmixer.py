@@ -16,13 +16,14 @@
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget
-from PySide6.QtCore import Signal, Slot
-from PySide6.QtGui import QDoubleValidator, QIntValidator
-from PySide6.QtWidgets import QDialog
+from PySide6.QtCore import QPoint, Signal, Slot
+from PySide6.QtGui import QAction, QDoubleValidator, QIntValidator, Qt
+from PySide6.QtWidgets import QDialog, QMenu
 from sklearn.mixture import BayesianGaussianMixture
 
 from pyminflux.analysis import prepare_histogram
 from pyminflux.state import State
+from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.ui_color_unmixer import Ui_ColorUnmixer
 
 
@@ -164,6 +165,9 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.plot_widget.setLabel("bottom", "Complete dataset")
         self.plot_widget.setMenuEnabled(False)
         self.plot_widget.addItem(chart)
+        self.plot_widget.scene().sigMouseClicked.connect(
+            self.histogram_raise_context_menu
+        )
 
     @Slot(None, name="preview_manual_assignment")
     def preview_manual_assignment(self):
@@ -305,3 +309,18 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
         # Disable the button until the new detection is run
         self.ui.pbAssign.setEnabled(False)
+
+    def histogram_raise_context_menu(self, ev):
+        """Create a context menu on the plot."""
+        if ev.button() == Qt.MouseButton.RightButton:
+            menu = QMenu()
+            export_action = QAction("Export plot")
+            export_action.triggered.connect(
+                lambda checked: export_plot_interactive(ev.currentItem)
+            )
+            menu.addAction(export_action)
+            pos = ev.screenPos()
+            menu.exec(QPoint(int(pos.x()), int(pos.y())))
+            ev.accept()
+        else:
+            ev.ignore()

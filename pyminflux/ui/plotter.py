@@ -22,6 +22,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu
 
 from ..state import ColorCode, State
+from .helpers import export_plot_interactive
 
 
 class Plotter(PlotWidget):
@@ -38,10 +39,12 @@ class Plotter(PlotWidget):
         self.brush = pg.mkBrush(255, 255, 255, 128)
         self.pen = pg.mkPen(None)
         self.remove_points()
-        self.customize_context_menu()
         self.hideAxis("bottom")
         self.hideAxis("left")
         self.show()
+
+        # Disable default context menu
+        self.setMenuEnabled(False)
 
         # Set aspect ratio to 1.0 locked
         self.getPlotItem().getViewBox().setAspectLocked(lock=True, ratio=1.0)
@@ -111,6 +114,8 @@ class Plotter(PlotWidget):
             self.scatter is not None
             and ev.button() == Qt.MouseButton.LeftButton
             and ev.modifiers() == QtCore.Qt.ControlModifier
+            and self.state.x_param in ("x", "y")
+            and self.state.y_param in ("x", "y")
         ):
             # Is the user trying to initiate drawing a line?
 
@@ -142,9 +147,23 @@ class Plotter(PlotWidget):
             ev.accept()
 
         else:
-            # Call the parent method
-            ev.ignore()
-            super().mousePressEvent(ev)
+
+            # Is the user trying to open a context menu?
+            if self.scatter is not None and ev.button() == Qt.MouseButton.RightButton:
+                menu = QMenu()
+                export_action = QAction("Export plot")
+                export_action.triggered.connect(
+                    lambda checked: export_plot_interactive(self.getPlotItem())
+                )
+                menu.addAction(export_action)
+                pos = ev.screenPos()
+                menu.exec(QPoint(int(pos.x()), int(pos.y())))
+                ev.accept()
+            else:
+
+                # Call the parent method
+                ev.ignore()
+                super().mousePressEvent(ev)
 
     def mouseMoveEvent(self, ev):
         # Is the user drawing an ROI?
@@ -229,9 +248,11 @@ class Plotter(PlotWidget):
                 v_norm = v / norm
                 length = np.sqrt(delta_x * delta_x + delta_y * delta_y)
                 pos = center + 1.0 * v_norm
-                self.line_text = TextItem(
-                    text=f"{length:.2f} nm", color=(255, 255, 255)
-                )
+                if self.state.color_code == ColorCode.NONE:
+                    clr = (0, 128, 255)
+                else:
+                    clr = (255, 255, 255)
+                self.line_text = TextItem(text=f"{length:.2f} nm", color=clr)
                 self.line_text.setPos(pos[0], pos[1])
                 self.addItem(self.line_text)
             else:
@@ -310,15 +331,6 @@ class Plotter(PlotWidget):
         # Update last plotted parameters
         self.__last_x_param = x_param
         self.__last_y_param = y_param
-
-    def customize_context_menu(self):
-        """Remove some default context menu actions.
-
-        See: https://stackoverflow.com/questions/44402399/how-to-disable-the-default-context-menu-of-pyqtgraph#44420152
-        """
-
-        # Hide the "Plot Options" menu
-        self.getPlotItem().ctrlMenu.menuAction().setVisible(False)
 
     def roi_mouse_click_event(self, roi, ev):
         """Right-click event on the ROI."""

@@ -21,6 +21,7 @@ from PySide6.QtGui import QAction, QColor, QFont, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 
 from pyminflux.state import State
+from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.ui_time_inspector import Ui_TimeInspector
 
 
@@ -182,6 +183,9 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.selection_region.sigRegionChanged.connect(self.region_pos_changed)
         self.selection_region.sigRegionChangeFinished.connect(
             self.region_pos_changed_finished
+        )
+        self.plot_widget.scene().sigMouseClicked.connect(
+            self.histogram_raise_context_menu
         )
 
         # Inform that processing completed
@@ -474,3 +478,18 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.ui.pbSelectionCropData.setEnabled(True)
         self.ui.pbSelectionKeepData.setEnabled(True)
         self.repaint()
+
+    def histogram_raise_context_menu(self, ev):
+        """Create a context menu on the plot."""
+        if ev.button() == Qt.MouseButton.RightButton:
+            menu = QMenu()
+            export_action = QAction("Export plot")
+            export_action.triggered.connect(
+                lambda checked: export_plot_interactive(ev.currentItem)
+            )
+            menu.addAction(export_action)
+            pos = ev.screenPos()
+            menu.exec(QPoint(int(pos.x()), int(pos.y())))
+            ev.accept()
+        else:
+            ev.ignore()

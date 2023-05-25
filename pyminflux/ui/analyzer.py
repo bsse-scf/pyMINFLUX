@@ -21,11 +21,12 @@ from pyqtgraph import AxisItem, ViewBox
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
-from PySide6.QtWidgets import QDialog, QLabel, QMenu
+from PySide6.QtWidgets import QDialog, QFileDialog, QLabel, QMenu
 
 from ..analysis import find_cutoff_near_value, get_robust_threshold, prepare_histogram
 from ..processor import MinFluxProcessor
 from ..state import State
+from .helpers import export_plot_interactive
 from .roi_ranges import ROIRanges
 from .ui_analyzer import Ui_Analyzer
 
@@ -622,6 +623,12 @@ class Analyzer(QDialog, Ui_Analyzer):
                 lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
             )
             menu.addAction(shift_action)
+            menu.addSeparator()
+            export_action = QAction("Export plot")
+            export_action.triggered.connect(
+                lambda checked: export_plot_interactive(ev.currentItem)
+            )
+            menu.addAction(export_action)
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
             ev.accept()
@@ -653,6 +660,12 @@ class Analyzer(QDialog, Ui_Analyzer):
                 lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
             )
             menu.addAction(shift_action)
+            menu.addSeparator()
+            export_action = QAction("Export plot")
+            export_action.triggered.connect(
+                lambda checked: export_plot_interactive(ev.currentItem)
+            )
+            menu.addAction(export_action)
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
             ev.accept()
