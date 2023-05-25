@@ -130,7 +130,7 @@ class State(metaclass=Singleton):
             "dcr_bin_size": self.dcr_bin_size,
             "dcr_manual_threshold": self.dcr_manual_threshold,
             "z_scaling_factor": self.z_scaling_factor,
-            "plot_export_dpi": sef.plot_export_dpi,
+            "plot_export_dpi": self.plot_export_dpi,
         }
 
     def reset(self):
