@@ -72,6 +72,10 @@ The user manual is hosted in the [project wiki](https://github.com/bsse-scf/pyMI
 
 The official pyMINFLUX website is on https://pyminflux.ethz.ch.
 
+## pyMINFLUX mailing list
+
+Join the pyMINFLUX mailing list on https://sympa.ethz.ch/sympa/subscribe/pyminflux for release announcements and further discussions.
+
 ## Citing pyMINFLUX
 
 If you use pyMINFLUX in your research, please cite this repository as follows:
