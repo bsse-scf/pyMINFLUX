@@ -216,12 +216,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Get the approximate frequency
         frequency = 2.0 * float(self.ui.leEFOExpectedCutoff.text())
 
-        # Extract current min_efo
-        if self.state.efo_thresholds is None:
-            min_efo = self._minfluxprocessor.filtered_dataframe["efo"].values.min()
-        else:
-            min_efo = self.state.efo_thresholds[0]
-
         # Histogram bin settings
         efo_auto_bins = self.state.efo_bin_size_hz == 0
 
@@ -241,7 +235,8 @@ class Analyzer(QDialog, Ui_Analyzer):
         if cutoff_frequency is None:
             return
 
-        # Set the new upper bound
+        # Set the new upper bound and reset the lower bound
+        min_efo = self._minfluxprocessor.filtered_dataframe["efo"].values.min()
         max_efo = cutoff_frequency
         self.state.efo_thresholds = (min_efo, max_efo)
 
