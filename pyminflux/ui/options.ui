@@ -609,6 +609,9 @@
          <height>16777215</height>
         </size>
        </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
        <property name="text">
         <string>?</string>
        </property>
@@ -660,6 +663,7 @@
   <tabstop>leLocPrecRangeMin</tabstop>
   <tabstop>leLocPrecRangeMax</tabstop>
   <tabstop>cbWeightAvgLocByECO</tabstop>
+  <tabstop>lePlotExportDPI</tabstop>
   <tabstop>pbSetDefault</tabstop>
  </tabstops>
  <resources/>

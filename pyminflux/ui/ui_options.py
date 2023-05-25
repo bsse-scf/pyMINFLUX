@@ -420,6 +420,7 @@ class Ui_Options(object):
         )
         self.pbPlotExportDPIHelp.setSizePolicy(sizePolicy)
         self.pbPlotExportDPIHelp.setMaximumSize(QSize(20, 16777215))
+        self.pbPlotExportDPIHelp.setFocusPolicy(Qt.NoFocus)
 
         self.hlPlotExportDPI.addWidget(self.pbPlotExportDPIHelp)
 
@@ -455,7 +456,8 @@ class Ui_Options(object):
         QWidget.setTabOrder(self.leCFRRangeMax, self.leLocPrecRangeMin)
         QWidget.setTabOrder(self.leLocPrecRangeMin, self.leLocPrecRangeMax)
         QWidget.setTabOrder(self.leLocPrecRangeMax, self.cbWeightAvgLocByECO)
-        QWidget.setTabOrder(self.cbWeightAvgLocByECO, self.pbSetDefault)
+        QWidget.setTabOrder(self.cbWeightAvgLocByECO, self.lePlotExportDPI)
+        QWidget.setTabOrder(self.lePlotExportDPI, self.pbSetDefault)
 
         self.retranslateUi(Options)
 
