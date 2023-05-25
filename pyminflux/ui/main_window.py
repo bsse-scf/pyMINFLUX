@@ -220,6 +220,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         else:
             raise ValueError("Unexpected value for 'loc_precision_range' in settings.")
 
+        # Read and set 'plot_export_dpi' option
+        self.state.plot_export_dpi = int(
+            settings.instance.value(
+                "options/plot_export_dpi", self.state.plot_export_dpi
+            )
+        )
+
     def setup_conn(self):
         """Set up signals and slots."""
 

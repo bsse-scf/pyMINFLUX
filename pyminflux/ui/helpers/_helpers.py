@@ -20,6 +20,8 @@ from PySide6.QtCore import QRect, QRectF
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QApplication, QFileDialog
 
+from pyminflux.state import State
+
 
 def export_plot_interactive(item, parent=None):
     """Save the content of the current scene to a PNG image."""
@@ -48,8 +50,11 @@ def export_plot_interactive(item, parent=None):
     if not filename.lower().endswith(".png"):
         filename += ".png"
 
+    # Get the dpi from the State
+    state = State()
+
     # Save the scene to file
-    export_to_image(view_box, filename)
+    export_to_image(view_box, filename, dpi=state.plot_export_dpi)
 
 
 def export_to_image(

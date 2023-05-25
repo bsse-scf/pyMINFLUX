@@ -77,6 +77,7 @@ class Options(QDialog, Ui_Options):
             "leLocPrecRangeMin": True,
             "leLocPrecRangeMax": True,
             "leZScalingFactor": True,
+            "lePlotExportDPI": True,
         }
 
         # Set defaults
@@ -120,6 +121,9 @@ class Options(QDialog, Ui_Options):
         self.ui.leZScalingFactor.setText(str(self.state.z_scaling_factor))
         self.ui.leZScalingFactor.setValidator(QDoubleValidator(bottom=0.0, decimals=2))
 
+        self.ui.lePlotExportDPI.setText(str(self.state.plot_export_dpi))
+        self.ui.lePlotExportDPI.setValidator(QIntValidator(bottom=72))
+
         # Set signal-slot connections
         self.setup_conn()
 
@@ -143,6 +147,8 @@ class Options(QDialog, Ui_Options):
         self.ui.leLocPrecRangeMax.textChanged.connect(self.persist_loc_prec_range)
 
         self.ui.leZScalingFactor.textChanged.connect(self.persist_z_scaling_factor)
+
+        self.ui.lePlotExportDPI.textChanged.connect(self.persist_plot_export_dpi)
 
         self.ui.pbMinTIDNumHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
@@ -189,6 +195,11 @@ class Options(QDialog, Ui_Options):
                 "average localization position for each trace ID."
             )
         )
+        self.ui.pbPlotExportDPIHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Resolution (in dots per inch) for the all plots when exported as .png images."
+            )
+        )
 
     @Slot(str, name="persist_min_num_loc_per_trace")
     def persist_min_num_loc_per_trace(self, text):
@@ -216,6 +227,18 @@ class Options(QDialog, Ui_Options):
         self.ui.leZScalingFactor.setStyleSheet("")
         self.valid["leZScalingFactor"] = True
         self.state.z_scaling_factor = z_scaling_factor
+
+    @Slot(str, name="persist_plot_export_dpi")
+    def persist_plot_export_dpi(self, text):
+        try:
+            plot_export_dpi = int(text)
+        except Exception as _:
+            self.ui.lePlotExportDPI.setStyleSheet("background-color: red;")
+            self.valid["lePlotExportDPI"] = False
+            return
+        self.ui.lePlotExportDPI.setStyleSheet("")
+        self.valid["lePlotExportDPI"] = True
+        self.state.plot_export_dpi = plot_export_dpi
 
     @Slot(str, name="persist_efo_bin_size_hz")
     def persist_efo_bin_size_hz(self, text):
@@ -416,6 +439,9 @@ class Options(QDialog, Ui_Options):
             settings.instance.setValue(
                 "options/loc_precision_range", list(self.state.loc_precision_range)
             )
+        settings.instance.setValue(
+            "options/plot_export_dpi", int(self.state.plot_export_dpi)
+        )
 
     def _validate(self, value, line_edit):
         """Check that the value in the QLineEdit is a valid float, or reset it and visually mark it otherwise."""
