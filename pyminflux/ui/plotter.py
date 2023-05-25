@@ -100,7 +100,6 @@ class Plotter(PlotWidget):
                 pen=(255, 0, 0),
             )
             self.ROI.setAcceptedMouseButtons(Qt.MouseButton.RightButton)
-            self.ROI.sigClicked.connect(self.roi_mouse_click_event)
             self.addItem(self.ROI)
             self.ROI.show()
 
@@ -151,6 +150,11 @@ class Plotter(PlotWidget):
             # Is the user trying to open a context menu?
             if self.scatter is not None and ev.button() == Qt.MouseButton.RightButton:
                 menu = QMenu()
+                if self.ROI is not None:
+                    crop_data_action = QAction("Crop data")
+                    crop_data_action.triggered.connect(self.crop_data_by_roi_selection)
+                    menu.addAction(crop_data_action)
+                    menu.addSeparator()
                 export_action = QAction("Export plot")
                 export_action.triggered.connect(
                     lambda checked: export_plot_interactive(self.getPlotItem())
@@ -227,6 +231,16 @@ class Plotter(PlotWidget):
             self.__roi_start_point = None
             self.__roi_is_being_drawn = False
 
+            # If the ROI has 0 size (when a shift-click has been used to remove a previous ROI),
+            # clean it up properly.
+            if (
+                np.abs(x_range[1] - x_range[0]) < 1e-4
+                or np.abs(y_range[1] - y_range[0]) < 1e-4
+            ):
+                self.removeItem(self.ROI)
+                self.ROI.deleteLater()
+                self.ROI = None
+
             # Accept the event
             ev.accept()
 
@@ -249,7 +263,7 @@ class Plotter(PlotWidget):
                 length = np.sqrt(delta_x * delta_x + delta_y * delta_y)
                 pos = center + 1.0 * v_norm
                 if self.state.color_code == ColorCode.NONE:
-                    clr = (0, 128, 255)
+                    clr = (255, 255, 0)
                 else:
                     clr = (255, 255, 255)
                 self.line_text = TextItem(text=f"{length:.2f} nm", color=clr)
@@ -332,30 +346,6 @@ class Plotter(PlotWidget):
         self.__last_x_param = x_param
         self.__last_y_param = y_param
 
-    def roi_mouse_click_event(self, roi, ev):
-        """Right-click event on the ROI."""
-        if ev.button() == Qt.MouseButton.RightButton and self.ROI.isMoving:
-            # Make sure the ROI is not moving
-            self.ROI.isMoving = False
-            self.ROI.movePoint(self.ROI.startPos, finish=True)
-            ev.accept()
-        elif self.ROI.acceptedMouseButtons() & ev.button():
-            ev.accept()
-            if ev.button() == Qt.MouseButton.RightButton:
-                self.roi_raise_context_menu(ev)
-        else:
-            ev.ignore()
-
-    def roi_raise_context_menu(self, ev):
-        """Create a context menu on the ROI."""
-        # Open context menu
-        menu = QMenu()
-        crop_data_action = QAction("Crop data")
-        crop_data_action.triggered.connect(self.crop_data_by_roi_selection)
-        menu.addAction(crop_data_action)
-        pos = ev.screenPos()
-        menu.exec(QPoint(int(pos.x()), int(pos.y())))
-
     def crop_data_by_roi_selection(self, item):
         """Open dialog to manually set the filter ranges"""
 
@@ -372,6 +362,11 @@ class Plotter(PlotWidget):
         y_param = self.state.y_param
 
         self.crop_region_selected.emit(x_param, y_param, x_range, y_range)
+
+        # Delete ROI after it has been used to crop
+        self.removeItem(self.ROI)
+        self.ROI.deleteLater()
+        self.ROI = None
 
     def roi_moved(self):
         """Inform that the selection of localizations may have changed after the ROI was moved."""
