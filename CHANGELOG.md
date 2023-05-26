@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 * Add context menu actions to export any plot as a `.png` image and at a user-defined DPI (issue #3).
 * Add global reset button to the main-window wizard and remove the one from the Analyzer.
 * Add quick help for all entries in the Options dialog.
-* Add links to code repository and issues page to Help menu.
+* Add links to code repository, issues page, and mailing list to the Help menu.
 * Add a few minor UI tweaks.
 
 ### Fixed

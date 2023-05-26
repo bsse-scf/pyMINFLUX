@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -91,6 +91,8 @@ class Ui_MainWindow(object):
         self.actionCode_repository.setObjectName("actionCode_repository")
         self.actionIssues = QAction(MainWindow)
         self.actionIssues.setObjectName("actionIssues")
+        self.actionMailing_list = QAction(MainWindow)
+        self.actionMailing_list.setObjectName("actionMailing_list")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -137,6 +139,7 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionWebsite)
         self.menuHelp.addAction(self.actionCode_repository)
         self.menuHelp.addAction(self.actionIssues)
+        self.menuHelp.addAction(self.actionMailing_list)
         self.menuHelp.addSeparator()
         self.menuHelp.addAction(self.actionAbout)
 
@@ -206,6 +209,9 @@ class Ui_MainWindow(object):
         )
         self.actionIssues.setText(
             QCoreApplication.translate("MainWindow", "Issues", None)
+        )
+        self.actionMailing_list.setText(
+            QCoreApplication.translate("MainWindow", "Mailing list", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
