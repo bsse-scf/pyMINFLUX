@@ -192,7 +192,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.plot_widget.removeItem(item)
 
         # Prepare some colors
-        brushes = ["r", "b", "g", "m", "c"]
+        brushes = ["b", "r", "g", "m", "c"]
 
         # Calculate the bar width as a function of the number of fluorophores
         bar_width = 0.9 / self.state.num_fluorophores
@@ -258,11 +258,23 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.plot_widget.removeItem(item)
 
         # Prepare some colors
-        brushes = ["r", "b", "g", "m", "c"]
+        brushes = ["b", "r", "g", "m", "c"]
 
         # Calculate the bar width as a function of the number of fluorophores
         bar_width = 0.9 / self.state.num_fluorophores
         offset = self.dcr_bin_width / self.state.num_fluorophores
+
+        # If there is more than one fluorophore, sort the indices by mean dcr values,
+        # from low to high (to match the assignment of the manual thresholding)
+        if self.state.num_fluorophores > 1:
+            means = [np.mean(values[y_pred == f_id]) for f_id in np.unique(y_pred)]
+            sorted_f = np.argsort(means)
+            for f in range(self.state.num_fluorophores):
+                if np.isnan(means[f]):
+                    continue
+                n = sorted_f[f] + self.state.num_fluorophores
+                y_pred[y_pred == f] = n
+            y_pred -= self.state.num_fluorophores
 
         # Create new histograms
         for f in range(self.state.num_fluorophores):

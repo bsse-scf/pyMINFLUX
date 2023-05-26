@@ -195,6 +195,14 @@ class MockMinFluxReader:
             ]
         )
 
+    @property
+    def test_swapped_fluorophore_ids(self):
+        """Swapped fluorophore ids to be used for testing."""
+        tmp = self.test_fluorophore_ids.copy()
+        tmp[tmp == 2] = 0
+        tmp += 1
+        return tmp
+
 
 class MockFromRealDataMinFluxReader:
     def __init__(self):
@@ -1582,6 +1590,58 @@ def test_extract_filtered_fluorophore_ids():
     ), "The number of fluorophore IDs must match the number of df entries."
     assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 14, "Unexpected number of ID 2 fluorophores."
+
+
+def test_assignment_by_increasing_dcr(tmpdir):
+    """The fluorophore ID is sorted by increasing DCR."""
+
+    # Initialize State
+    state = State()
+
+    #
+    # MockMinFluxReader
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
+
+    # MockMinFluxReader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader)
+
+    # Set the swapped fluorophore IDs
+    processor.set_fluorophore_ids(reader.test_swapped_fluorophore_ids)
+
+    # Check that the global filters have been applied (and nothing has been dropped)
+    assert (
+        len(processor.filtered_dataframe.index) == 40
+    ), "Unexpected number of entries."
+
+    # Check that we have the default fluorophore (0)
+    assert processor.current_fluorophore_id == 0, "Default fluorophore ID must be 0."
+
+    # Now, the data for all fluorophores will be returned
+    assert (
+        len(processor.filtered_dataframe.index) == 40
+    ), "Unexpected number of entries."
+
+    # Change to fluorophore 1
+    processor.current_fluorophore_id = 1
+
+    # Now, the data for fluorophore 1 will be returned
+    assert (
+        len(processor.filtered_dataframe.index) == 18  # 22 if now swapped
+    ), "Unexpected number of entries."
+
+    # Now change to fluorophore ID 2. This reset current filters.
+    processor.current_fluorophore_id = 2
+
+    # Check that there are 18 entries
+    assert (
+        len(processor.filtered_dataframe.index) == 22  # 18 if not swapped
+    ), "Unexpected number of entries."
 
 
 def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
