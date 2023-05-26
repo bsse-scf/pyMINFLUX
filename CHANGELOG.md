@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.3] - 2023-05-25
+## [0.1.3] - 2023-05-26
 
 ### New features
 
@@ -15,8 +15,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-* Applying a filter in the Time Inspector would not update the Analyzer plots.
-* When the plotted data was not spatial (x, y), it was possible to draw a measurement line and the distance would be in nm.
+* Fix issue with applying a filter in the Time Inspector not updating the Analyzer plots.
+* Fix issue with measurement lines being allowed when the plotted data was not spatial (x, y), and the reported distance would be in nm.
+* Fix inconsistency in the way fluorophore IDs and colors were assigned by the various methods used.
 
 ## [0.1.2] - 2023-05-12
 
