@@ -78,7 +78,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
     def setup_conn(self):
         self.ui.pbLoadData.clicked.connect(lambda _: self.load_data_triggered.emit())
-        self.ui.pbReset.clicked.connect(lambda _: self.reset_filters_triggered.emit())
+        self.ui.pbReset.clicked.connect(self.reset_filters)
         self.ui.pbSingleColor.clicked.connect(self.reset_fluorophores)
         self.ui.pbColorUnmixer.clicked.connect(
             lambda _: self.open_unmixer_triggered.emit()
@@ -340,3 +340,13 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Broadcast
         self.cfr_bounds_modified.emit()
+
+    @Slot(None, name="reset_filters")
+    def reset_filters(self):
+        """Reset fluorophores pull-down menu in the wizard and broadcast changes to other tools."""
+
+        # Reset the fluorophore ID pull-down menu
+        self.reset_fluorophores()
+
+        # Broadcast change
+        self.reset_filters_triggered.emit()
