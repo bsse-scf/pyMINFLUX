@@ -11,12 +11,5 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
-#
 
-import pyqtgraph as pg
-
-__APP_NAME__ = "pyMINFLUX"
-__version__ = "0.1.3"
-
-# PyQtGraph settings
-pg.setConfigOption("imageAxisOrder", "row-major")  # For best performance
+from ._helpers import export_plot_interactive, export_to_image

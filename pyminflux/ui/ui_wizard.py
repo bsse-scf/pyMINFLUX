@@ -1,24 +1,9 @@
 # -*- coding: utf-8 -*-
 
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#   limitations under the License.
-#
-
 ################################################################################
 ## Form generated from reading UI file 'wizard.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -96,6 +81,11 @@ class Ui_WizardDialog(object):
         self.pbLoadData.setMinimumSize(QSize(320, 0))
 
         self.mainLayout.addWidget(self.pbLoadData)
+
+        self.pbReset = QPushButton(WizardDialog)
+        self.pbReset.setObjectName("pbReset")
+
+        self.mainLayout.addWidget(self.pbReset)
 
         self.verticalSpacer_2 = QSpacerItem(
             20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
@@ -305,17 +295,18 @@ class Ui_WizardDialog(object):
         self.pbLoadData.setText(
             QCoreApplication.translate("WizardDialog", "Load", None)
         )
+        self.pbReset.setText(QCoreApplication.translate("WizardDialog", "Reset", None))
         self.lbColors.setText(
             QCoreApplication.translate("WizardDialog", "DCR unmixing", None)
         )
         self.pbSingleColor.setText(
-            QCoreApplication.translate("WizardDialog", "Single Color", None)
+            QCoreApplication.translate("WizardDialog", "Single fluorophore", None)
         )
         self.pbColorUnmixer.setText(
             QCoreApplication.translate("WizardDialog", "Unmixer", None)
         )
         self.lbActiveColor.setText(
-            QCoreApplication.translate("WizardDialog", "Active color", None)
+            QCoreApplication.translate("WizardDialog", "Active fluorophore", None)
         )
         self.cmActiveColor.setItemText(
             0, QCoreApplication.translate("WizardDialog", "All", None)

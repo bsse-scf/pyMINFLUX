@@ -25,6 +25,7 @@ from .ui_wizard import Ui_WizardDialog
 
 class WizardDialog(QDialog, Ui_WizardDialog):
     load_data_triggered = Signal(None, name="load_data_triggered")
+    reset_filters_triggered = Signal(None, name="reset_filters_triggered")
     open_unmixer_triggered = Signal(None, name="open_unmixer_triggered")
     open_time_inspector_triggered = Signal(None, name="open_time_inspector_triggered")
     open_analyzer_triggered = Signal(None, name="open_analyzer_triggered")
@@ -77,6 +78,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
     def setup_conn(self):
         self.ui.pbLoadData.clicked.connect(lambda _: self.load_data_triggered.emit())
+        self.ui.pbReset.clicked.connect(lambda _: self.reset_filters_triggered.emit())
         self.ui.pbSingleColor.clicked.connect(self.reset_fluorophores)
         self.ui.pbColorUnmixer.clicked.connect(
             lambda _: self.open_unmixer_triggered.emit()
@@ -141,6 +143,9 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     def enable_controls(self, enabled: bool = False):
         # The Load data button is always visible
         self.ui.pbLoadData.show()
+
+        # Reset button
+        self.ui.pbReset.setVisible(enabled)
 
         # Color unmixing
         self.ui.lbColors.setVisible(enabled)

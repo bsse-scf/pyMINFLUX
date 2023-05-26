@@ -1,20 +1,5 @@
 # -*- coding: utf-8 -*-
 
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#   limitations under the License.
-#
-
 ################################################################################
 ## Form generated from reading UI file 'main_window.ui'
 ##
@@ -102,6 +87,12 @@ class Ui_MainWindow(object):
         self.actionManual.setObjectName("actionManual")
         self.actionWebsite = QAction(MainWindow)
         self.actionWebsite.setObjectName("actionWebsite")
+        self.actionCode_repository = QAction(MainWindow)
+        self.actionCode_repository.setObjectName("actionCode_repository")
+        self.actionIssues = QAction(MainWindow)
+        self.actionIssues.setObjectName("actionIssues")
+        self.actionMailing_list = QAction(MainWindow)
+        self.actionMailing_list.setObjectName("actionMailing_list")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -146,6 +137,9 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionState)
         self.menuHelp.addAction(self.actionManual)
         self.menuHelp.addAction(self.actionWebsite)
+        self.menuHelp.addAction(self.actionCode_repository)
+        self.menuHelp.addAction(self.actionIssues)
+        self.menuHelp.addAction(self.actionMailing_list)
         self.menuHelp.addSeparator()
         self.menuHelp.addAction(self.actionAbout)
 
@@ -209,6 +203,15 @@ class Ui_MainWindow(object):
         )
         self.actionWebsite.setText(
             QCoreApplication.translate("MainWindow", "Website", None)
+        )
+        self.actionCode_repository.setText(
+            QCoreApplication.translate("MainWindow", "Repository", None)
+        )
+        self.actionIssues.setText(
+            QCoreApplication.translate("MainWindow", "Issues", None)
+        )
+        self.actionMailing_list.setText(
+            QCoreApplication.translate("MainWindow", "Mailing list", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))

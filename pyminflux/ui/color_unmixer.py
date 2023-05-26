@@ -16,13 +16,14 @@
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget
-from PySide6.QtCore import Signal, Slot
-from PySide6.QtGui import QDoubleValidator, QIntValidator
-from PySide6.QtWidgets import QDialog
+from PySide6.QtCore import QPoint, Signal, Slot
+from PySide6.QtGui import QAction, QDoubleValidator, QIntValidator, Qt
+from PySide6.QtWidgets import QDialog, QMenu
 from sklearn.mixture import BayesianGaussianMixture
 
 from pyminflux.analysis import prepare_histogram
 from pyminflux.state import State
+from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.ui_color_unmixer import Ui_ColorUnmixer
 
 
@@ -161,8 +162,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.plot_widget.setMouseEnabled(x=False, y=False)
         self.plot_widget.setXRange(self.dcr_bin_centers[0], self.dcr_bin_centers[-1])
         self.plot_widget.setYRange(0.0, self.n_dcr_max)
+        self.plot_widget.setLabel("bottom", "Complete dataset")
         self.plot_widget.setMenuEnabled(False)
         self.plot_widget.addItem(chart)
+        self.plot_widget.scene().sigMouseClicked.connect(
+            self.histogram_raise_context_menu
+        )
 
     @Slot(None, name="preview_manual_assignment")
     def preview_manual_assignment(self):
@@ -187,7 +192,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.plot_widget.removeItem(item)
 
         # Prepare some colors
-        brushes = ["r", "b", "g", "m", "c"]
+        brushes = ["b", "r", "g", "m", "c"]
 
         # Calculate the bar width as a function of the number of fluorophores
         bar_width = 0.9 / self.state.num_fluorophores
@@ -253,11 +258,23 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.plot_widget.removeItem(item)
 
         # Prepare some colors
-        brushes = ["r", "b", "g", "m", "c"]
+        brushes = ["b", "r", "g", "m", "c"]
 
         # Calculate the bar width as a function of the number of fluorophores
         bar_width = 0.9 / self.state.num_fluorophores
         offset = self.dcr_bin_width / self.state.num_fluorophores
+
+        # If there is more than one fluorophore, sort the indices by mean dcr values,
+        # from low to high (to match the assignment of the manual thresholding)
+        if self.state.num_fluorophores > 1:
+            means = [np.mean(values[y_pred == f_id]) for f_id in np.unique(y_pred)]
+            sorted_f = np.argsort(means)
+            for f in range(self.state.num_fluorophores):
+                if np.isnan(means[f]):
+                    continue
+                n = sorted_f[f] + self.state.num_fluorophores
+                y_pred[y_pred == f] = n
+            y_pred -= self.state.num_fluorophores
 
         # Create new histograms
         for f in range(self.state.num_fluorophores):
@@ -304,3 +321,18 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
         # Disable the button until the new detection is run
         self.ui.pbAssign.setEnabled(False)
+
+    def histogram_raise_context_menu(self, ev):
+        """Create a context menu on the plot."""
+        if ev.button() == Qt.MouseButton.RightButton:
+            menu = QMenu()
+            export_action = QAction("Export plot")
+            export_action.triggered.connect(
+                lambda checked: export_plot_interactive(ev.currentItem)
+            )
+            menu.addAction(export_action)
+            pos = ev.screenPos()
+            menu.exec(QPoint(int(pos.x()), int(pos.y())))
+            ev.accept()
+        else:
+            ev.ignore()

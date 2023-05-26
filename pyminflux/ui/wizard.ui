@@ -49,6 +49,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="pbReset">
+       <property name="text">
+        <string>Reset</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="verticalSpacer_2">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -81,7 +88,7 @@
        <item>
         <widget class="QPushButton" name="pbSingleColor">
          <property name="text">
-          <string>Single Color</string>
+          <string>Single fluorophore</string>
          </property>
         </widget>
        </item>
@@ -105,7 +112,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Active color</string>
+          <string>Active fluorophore</string>
          </property>
         </widget>
        </item>

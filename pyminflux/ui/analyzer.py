@@ -21,11 +21,12 @@ from pyqtgraph import AxisItem, ViewBox
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
-from PySide6.QtWidgets import QDialog, QLabel, QMenu
+from PySide6.QtWidgets import QDialog, QFileDialog, QLabel, QMenu
 
 from ..analysis import find_cutoff_near_value, get_robust_threshold, prepare_histogram
 from ..processor import MinFluxProcessor
 from ..state import State
+from .helpers import export_plot_interactive
 from .roi_ranges import ROIRanges
 from .ui_analyzer import Ui_Analyzer
 
@@ -131,7 +132,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         )
 
         # Others
-        self.ui.pbReset.clicked.connect(self.reset_filters)
         self.plotting_started.connect(self.disable_buttons)
         self.plotting_completed.connect(self.enable_buttons)
 
@@ -217,12 +217,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Get the approximate frequency
         frequency = 2.0 * float(self.ui.leEFOExpectedCutoff.text())
 
-        # Extract current min_efo
-        if self.state.efo_thresholds is None:
-            min_efo = self._minfluxprocessor.filtered_dataframe["efo"].values.min()
-        else:
-            min_efo = self.state.efo_thresholds[0]
-
         # Histogram bin settings
         efo_auto_bins = self.state.efo_bin_size_hz == 0
 
@@ -242,7 +236,8 @@ class Analyzer(QDialog, Ui_Analyzer):
         if cutoff_frequency is None:
             return
 
-        # Set the new upper bound
+        # Set the new upper bound and reset the lower bound
+        min_efo = self._minfluxprocessor.filtered_dataframe["efo"].values.min()
         max_efo = cutoff_frequency
         self.state.efo_thresholds = (min_efo, max_efo)
 
@@ -312,21 +307,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Broadcast
         self.cfr_threshold_factor_changed.emit()
 
-    @Slot(name="reset_filters")
-    def reset_filters(self):
-        """Reset efo and cfr filters."""
-
-        # Reset filters and data
-        self._minfluxprocessor.reset()
-        self.state.efo_thresholds = None
-        self.state.cfr_thresholds = None
-
-        # Update the plots
-        self.plot()
-
-        # Signal that the external viewers should be updated
-        self.data_filters_changed.emit()
-
     @Slot(name="run_efo_filter_and_broadcast_viewers_update")
     def run_efo_filter_and_broadcast_viewers_update(self):
         """Apply the EFO filter and inform the rest of the application that the data viewers should be updated."""
@@ -361,7 +341,6 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     @Slot(name="disable_buttons")
     def disable_buttons(self):
-        self.ui.pbReset.setEnabled(False)
         self.ui.pbDetectCutoffFrequency.setEnabled(False)
         self.ui.pbCFRRunAutoThreshold.setEnabled(False)
         self.ui.pbEFORunFilter.setEnabled(False)
@@ -369,7 +348,6 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     @Slot(name="enable_buttons")
     def enable_buttons(self):
-        self.ui.pbReset.setEnabled(True)
         self.ui.pbDetectCutoffFrequency.setEnabled(True)
         self.ui.pbCFRRunAutoThreshold.setEnabled(True)
         self.ui.pbEFORunFilter.setEnabled(True)
@@ -645,6 +623,12 @@ class Analyzer(QDialog, Ui_Analyzer):
                 lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
             )
             menu.addAction(shift_action)
+            menu.addSeparator()
+            export_action = QAction("Export plot")
+            export_action.triggered.connect(
+                lambda checked: export_plot_interactive(ev.currentItem)
+            )
+            menu.addAction(export_action)
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
             ev.accept()
@@ -676,6 +660,12 @@ class Analyzer(QDialog, Ui_Analyzer):
                 lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
             )
             menu.addAction(shift_action)
+            menu.addSeparator()
+            export_action = QAction("Export plot")
+            export_action.triggered.connect(
+                lambda checked: export_plot_interactive(ev.currentItem)
+            )
+            menu.addAction(export_action)
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
             ev.accept()

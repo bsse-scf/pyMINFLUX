@@ -15,7 +15,7 @@
 
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QDoubleValidator, QIntValidator
-from PySide6.QtWidgets import QDialog, QMessageBox
+from PySide6.QtWidgets import QDialog, QHBoxLayout, QMessageBox, QTextEdit
 
 from pyminflux import __APP_NAME__
 from pyminflux.state import State
@@ -47,6 +47,23 @@ class Options(QDialog, Ui_Options):
         # Keep a reference to the singleton State class
         self.state = State()
 
+        # Add the help text edit
+        self.ui.teHelp.setReadOnly(True)
+        font_metrics = self.ui.teHelp.fontMetrics()
+        self.ui.teHelp.setMaximumHeight(font_metrics.height() * 3)
+        self.ui.teHelp.setText('Click on a "?" button to get help.')
+
+        # Hide the border and change the background color
+        self.ui.teHelp.setStyleSheet(
+            """
+            QTextEdit {
+                border: none;
+                background-color: transparent;
+                font-style: italic;
+            }
+        """
+        )
+
         # Keep track of the validity of all entries
         self.valid = {
             "leMinTIDNum": True,
@@ -59,6 +76,8 @@ class Options(QDialog, Ui_Options):
             "leCFRRangeMax": True,
             "leLocPrecRangeMin": True,
             "leLocPrecRangeMax": True,
+            "leZScalingFactor": True,
+            "lePlotExportDPI": True,
         }
 
         # Set defaults
@@ -99,6 +118,12 @@ class Options(QDialog, Ui_Options):
         self.ui.leLocPrecRangeMin.setValidator(QDoubleValidator(bottom=0.0, decimals=1))
         self.ui.leLocPrecRangeMax.setValidator(QDoubleValidator(bottom=0.0, decimals=1))
 
+        self.ui.leZScalingFactor.setText(str(self.state.z_scaling_factor))
+        self.ui.leZScalingFactor.setValidator(QDoubleValidator(bottom=0.0, decimals=2))
+
+        self.ui.lePlotExportDPI.setText(str(self.state.plot_export_dpi))
+        self.ui.lePlotExportDPI.setValidator(QIntValidator(bottom=72))
+
         # Set signal-slot connections
         self.setup_conn()
 
@@ -121,6 +146,61 @@ class Options(QDialog, Ui_Options):
         self.ui.leLocPrecRangeMin.textChanged.connect(self.persist_loc_prec_range)
         self.ui.leLocPrecRangeMax.textChanged.connect(self.persist_loc_prec_range)
 
+        self.ui.leZScalingFactor.textChanged.connect(self.persist_z_scaling_factor)
+
+        self.ui.lePlotExportDPI.textChanged.connect(self.persist_plot_export_dpi)
+
+        self.ui.pbMinTIDNumHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Minimum number of localizations within a trace to be considered for "
+                "plotting and precision calculation."
+            )
+        )
+        self.ui.pbZScalingFactorHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Scales the z positions to compensate for the refractive index mismatch "
+                "between the coverglass and the sample."
+            )
+        )
+        self.ui.pbEFOBinSizeHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Bin size to be used for EFO distribution plotting on the Analyzer. "
+                "Set to 0 for automatic estimation."
+            )
+        )
+        self.ui.pbEFOSingleEmitterFrequencyHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Expected default frequency for single emitters to be used for automated "
+                "EFO threshold selection."
+            )
+        )
+        self.ui.pbEFORangeHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Default plot range for the EFO histogram in the Analyzer."
+            )
+        )
+        self.ui.pbCFRRangeHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Default plot range for the CFR histogram in the Analyzer."
+            )
+        )
+        self.ui.pbLocPrecRangeHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Default plot range for the localization precision histograms in the Analyzer."
+            )
+        )
+        self.ui.pbWeightAvgLocByECOHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Whether to use the ECO value as weighting factor during the calculation of the "
+                "average localization position for each trace ID."
+            )
+        )
+        self.ui.pbPlotExportDPIHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Resolution (in dots per inch) for the all plots when exported as .png images."
+            )
+        )
+
     @Slot(str, name="persist_min_num_loc_per_trace")
     def persist_min_num_loc_per_trace(self, text):
         try:
@@ -135,6 +215,30 @@ class Options(QDialog, Ui_Options):
 
         # Signal the change
         self.min_num_loc_per_trace_option_changed.emit()
+
+    @Slot(str, name="persist_z_scaling_factor")
+    def persist_z_scaling_factor(self, text):
+        try:
+            z_scaling_factor = float(text)
+        except Exception as _:
+            self.ui.leZScalingFactor.setStyleSheet("background-color: red;")
+            self.valid["leZScalingFactor"] = False
+            return
+        self.ui.leZScalingFactor.setStyleSheet("")
+        self.valid["leZScalingFactor"] = True
+        self.state.z_scaling_factor = z_scaling_factor
+
+    @Slot(str, name="persist_plot_export_dpi")
+    def persist_plot_export_dpi(self, text):
+        try:
+            plot_export_dpi = int(text)
+        except Exception as _:
+            self.ui.lePlotExportDPI.setStyleSheet("background-color: red;")
+            self.valid["lePlotExportDPI"] = False
+            return
+        self.ui.lePlotExportDPI.setStyleSheet("")
+        self.valid["lePlotExportDPI"] = True
+        self.state.plot_export_dpi = plot_export_dpi
 
     @Slot(str, name="persist_efo_bin_size_hz")
     def persist_efo_bin_size_hz(self, text):
@@ -309,6 +413,9 @@ class Options(QDialog, Ui_Options):
             "options/min_num_loc_per_trace", int(self.state.min_num_loc_per_trace)
         )
         settings.instance.setValue(
+            "options/z_scaling_factor", float(self.state.z_scaling_factor)
+        )
+        settings.instance.setValue(
             "options/efo_bin_size_hz", float(self.state.efo_bin_size_hz)
         )
         settings.instance.setValue(
@@ -332,6 +439,9 @@ class Options(QDialog, Ui_Options):
             settings.instance.setValue(
                 "options/loc_precision_range", list(self.state.loc_precision_range)
             )
+        settings.instance.setValue(
+            "options/plot_export_dpi", int(self.state.plot_export_dpi)
+        )
 
     def _validate(self, value, line_edit):
         """Check that the value in the QLineEdit is a valid float, or reset it and visually mark it otherwise."""

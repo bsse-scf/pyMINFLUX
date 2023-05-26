@@ -49,6 +49,8 @@ class State(metaclass=Singleton):
         "num_fluorophores",
         "dcr_bin_size",
         "dcr_manual_threshold",
+        "z_scaling_factor",
+        "plot_export_dpi",
     ]
 
     def __init__(self):
@@ -99,6 +101,12 @@ class State(metaclass=Singleton):
         self.dcr_bin_size: float = 0.0
         self.dcr_manual_threshold: float = 0.0
 
+        # Z scaling factor
+        self.z_scaling_factor: float = 0.7
+
+        # Resolution for exporting plots as images
+        self.plot_export_dpi: int = 600
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -121,6 +129,8 @@ class State(metaclass=Singleton):
             "num_fluorophores": self.num_fluorophores,
             "dcr_bin_size": self.dcr_bin_size,
             "dcr_manual_threshold": self.dcr_manual_threshold,
+            "z_scaling_factor": self.z_scaling_factor,
+            "plot_export_dpi": self.plot_export_dpi,
         }
 
     def reset(self):
@@ -151,6 +161,8 @@ class State(metaclass=Singleton):
         self.num_fluorophores = 1
         self.dcr_bin_size = 0.0
         self.dcr_manual_threshold = 0.0
+        self.z_scaling_factor = 0.7
+        self.plot_export_dpi = 600
 
     def __str__(self):
         """Human-readable representation."""
