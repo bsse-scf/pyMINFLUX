@@ -640,36 +640,8 @@ class MinFluxProcessor:
         # Work with currently selected rows
         df = self.filtered_dataframe
 
-        # Calculate some statistics per TID on the processed dataframe
-        df_grouped = df.groupby("tid")
-
-        tid = df_grouped["tid"].first().values
-        n = df_grouped["tid"].count().values
-        mx = df_grouped["x"].mean().values
-        my = df_grouped["y"].mean().values
-        mz = df_grouped["z"].mean().values
-        sx = df_grouped["x"].std().values
-        sy = df_grouped["y"].std().values
-        sz = df_grouped["z"].std().values
-        fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
-
-        # Prepare a dataframe with the statistics
-        df_tid = pd.DataFrame(
-            columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz", "fluo"]
-        )
-
-        df_tid["tid"] = tid
-        df_tid["n"] = n
-        df_tid["mx"] = mx
-        df_tid["my"] = my
-        df_tid["mz"] = mz
-        df_tid["sx"] = sx
-        df_tid["sy"] = sy
-        df_tid["sz"] = sz
-        df_tid["fluo"] = fluo
-
-        # sx, sy sz columns will contain np.nan if n == 1: we replace with 0.0
-        df_tid[["sx", "sy", "sz"]] = df_tid[["sx", "sy", "sz"]].fillna(value=0.0)
+        # Calculate the statistics
+        df_tid = self.calculate_statistics_on(df)
 
         # Store the results
         self.__filtered_stats_dataframe = df_tid
@@ -704,11 +676,30 @@ class MinFluxProcessor:
         sx = df_grouped["x"].std().values
         sy = df_grouped["y"].std().values
         sz = df_grouped["z"].std().values
+        tmp = np.power(sx, 2) + np.power(sy, 2)
+        sxy = np.sqrt(tmp)
+        rms_xy = np.sqrt(tmp / 2)
+        exy = sxy / np.sqrt(n)
+        ez = sz / np.sqrt(n)
         fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
 
         # Prepare a dataframe with the statistics
         df_tid = pd.DataFrame(
-            columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz", "fluo"]
+            columns=[
+                "tid",
+                "n",
+                "mx",
+                "my",
+                "mz",
+                "sx",
+                "sy",
+                "sxy",
+                "exy",
+                "rms_xy",
+                "sz",
+                "ez",
+                "fluo",
+            ]
         )
 
         df_tid["tid"] = tid
@@ -718,12 +709,19 @@ class MinFluxProcessor:
         df_tid["mz"] = mz
         df_tid["sx"] = sx
         df_tid["sy"] = sy
+        df_tid["sxy"] = sxy
+        df_tid["rms_xy"] = rms_xy
+        df_tid["exy"] = exy
         df_tid["sz"] = sz
+        df_tid["ez"] = ez
         df_tid["fluo"] = fluo
 
-        # sx, sy sz columns will contain np.nan is n == 1: we replace with 0.0
-        # @TODO: should this be changed?
-        df_tid[["sx", "sy", "sz"]] = df_tid[["sx", "sy", "sz"]].fillna(value=0.0)
+        # ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"] columns will contain np.nan is n == 1:
+        # we replace them with 0.0.
+        # @TODO: should this be changed? It could be a global option.
+        df_tid[["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"]] = df_tid[
+            ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"]
+        ].fillna(value=0.0)
 
         # Return the results
         return df_tid
