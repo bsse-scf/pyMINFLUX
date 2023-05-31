@@ -51,6 +51,7 @@
     </property>
     <addaction name="actionLoad"/>
     <addaction name="actionExport_data"/>
+    <addaction name="actionExport_stats"/>
     <addaction name="separator"/>
     <addaction name="actionOptions"/>
     <addaction name="separator"/>
@@ -180,6 +181,11 @@
   <action name="actionMailing_list">
    <property name="text">
     <string>Mailing list</string>
+   </property>
+  </action>
+  <action name="actionExport_stats">
+   <property name="text">
+    <string>Export stats</string>
    </property>
   </action>
  </widget>

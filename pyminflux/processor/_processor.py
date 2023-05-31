@@ -693,10 +693,10 @@ class MinFluxProcessor:
                 "mz",
                 "sx",
                 "sy",
-                "sz",
                 "sxy",
                 "exy",
                 "rms_xy",
+                "sz",
                 "ez",
                 "fluo",
             ]
@@ -709,18 +709,18 @@ class MinFluxProcessor:
         df_tid["mz"] = mz
         df_tid["sx"] = sx
         df_tid["sy"] = sy
-        df_tid["sz"] = sz
         df_tid["sxy"] = sxy
         df_tid["rms_xy"] = rms_xy
         df_tid["exy"] = exy
+        df_tid["sz"] = sz
         df_tid["ez"] = ez
         df_tid["fluo"] = fluo
 
-        # ["sx", "sy", "sz", "sxy", "rms_xy", "exy", "ez"] columns will contain np.nan is n == 1:
+        # ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"] columns will contain np.nan is n == 1:
         # we replace them with 0.0.
         # @TODO: should this be changed? It could be a global option.
-        df_tid[["sx", "sy", "sz", "sxy", "rms_xy", "exy", "ez"]] = df_tid[
-            ["sx", "sy", "sz", "sxy", "rms_xy", "exy", "ez"]
+        df_tid[["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"]] = df_tid[
+            ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"]
         ].fillna(value=0.0)
 
         # Return the results

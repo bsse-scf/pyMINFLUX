@@ -93,6 +93,8 @@ class Ui_MainWindow(object):
         self.actionIssues.setObjectName("actionIssues")
         self.actionMailing_list = QAction(MainWindow)
         self.actionMailing_list.setObjectName("actionMailing_list")
+        self.actionExport_stats = QAction(MainWindow)
+        self.actionExport_stats.setObjectName("actionExport_stats")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -124,6 +126,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuHelp.menuAction())
         self.menuFile.addAction(self.actionLoad)
         self.menuFile.addAction(self.actionExport_data)
+        self.menuFile.addAction(self.actionExport_stats)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionOptions)
         self.menuFile.addSeparator()
@@ -212,6 +215,9 @@ class Ui_MainWindow(object):
         )
         self.actionMailing_list.setText(
             QCoreApplication.translate("MainWindow", "Mailing list", None)
+        )
+        self.actionExport_stats.setText(
+            QCoreApplication.translate("MainWindow", "Export stats", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
