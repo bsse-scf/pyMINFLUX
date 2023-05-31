@@ -18,6 +18,7 @@ from ._analysis import (
     calculate_density_map,
     find_cutoff_near_value,
     find_first_peak_bounds,
+    get_localization_boundaries,
     get_robust_threshold,
     ideal_hist_bins,
     prepare_histogram,
