@@ -511,3 +511,78 @@ def calculate_2d_histogram(
 
     # Return histogram
     return histogram[0]
+
+
+def get_localization_boundaries(
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    alpha: float = 0.01,
+    min_range: float = 200.0,
+):
+    """Return x, y, and z localization boundaries for analysis.
+
+    Reimplemented (with modifications) from:
+
+    * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
+    * [code]  https://zenodo.org/record/6563100
+
+
+    Parameters
+    ----------
+
+    x: np.ndarray
+        Array of localization x coordinates.
+
+    y: np.ndarray
+        Array of localization y coordinates.
+
+    z: np.ndarray
+        Array of localization z coordinates.
+
+    alpha: float (default = 0.01)
+        Quantile to remove outliers. Must be 0.0 <= alpha <= 0.5.
+
+    min_range: float (default = 200.0)
+        Absolute minimum range in nm.
+
+    Returns
+    -------
+
+    rx: tuple
+        (min, max) boundaries for the x coordinates.
+
+    ry: float
+        (min, max) boundaries for the y coordinates.
+
+    rz: float
+        (min, max) boundaries for the z coordinates.
+    """
+
+    if alpha < 0 or alpha >= 0.5:
+        raise ValueError("alpha must be 0 < alpha < 0.5.")
+
+    # Make sure we are working with NumPy arrays
+    x = np.array(x)
+    y = np.array(y)
+    z = np.array(z)
+
+    # Get boundaries at the given alpha level
+    rx = np.quantile(x, (alpha, 1 - alpha))
+    ry = np.quantile(y, (alpha, 1 - alpha))
+    rz = np.quantile(z, (alpha, 1 - alpha))
+
+    # Minimal boundaries in case of drift correction
+    d_rx = float(np.diff(rx)[0])
+    if d_rx < min_range:
+        rx = rx + (min_range - d_rx) / 2 * np.array([-1, 1])
+
+    d_ry = float(np.diff(ry)[0])
+    if d_ry < min_range:
+        ry = ry + (min_range - d_ry) / 2 * np.array([-1, 1])
+
+    d_rz = float(np.diff(rz)[0])
+    if d_rz < min_range and d_rz > 1e-6:  # Only in the 3D case
+        rz = rz + (min_range - d_rz) / 2 * np.array([-1, 1])
+
+    return rx, ry, rz
