@@ -18,8 +18,13 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from scipy.io import loadmat
 
-from pyminflux.analysis import get_localization_boundaries, render_xy
+from pyminflux.analysis import (
+    get_localization_boundaries,
+    img_fourier_ring_correlation,
+    render_xy,
+)
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 from pyminflux.state import State
@@ -227,7 +232,7 @@ def test_data_boundaries(extract_raw_npy_data_files):
 
 
 def test_render_xy(extract_raw_npy_data_files):
-    """Test the analysis.render_xy function."""
+    """Test the analysis.render_xy() function."""
 
     # Initialize State
     state = State()
@@ -308,3 +313,131 @@ def test_render_xy(extract_raw_npy_data_files):
     assert m.sum() < len(
         processor.filtered_dataframe["x"].values
     ), "Unexpected number of considered elements."
+
+
+def test_fourier_ring_correlation(extract_raw_npy_data_files):
+    """Test the analysis.img_fourier_ring_correlation() function."""
+
+    # Initialize State
+    state = State()
+
+    #
+    # 2D_Only.npy
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
+
+    # 2D_ValidOnly.npy
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Get boundaries at alpha = 0.0 and min_range = 500: this gives all data back.
+    rx, ry, rz = get_localization_boundaries(
+        processor.filtered_dataframe["x"],
+        processor.filtered_dataframe["y"],
+        processor.filtered_dataframe["z"],
+        alpha=0.0,
+        min_range=500,
+    )
+
+    # Test
+    assert np.isclose(rx[0], 1647.61105813), "Unexpected lower boundary for x."
+    assert np.isclose(rx[1], 5677.04500607), "Unexpected upper boundary for x."
+    assert np.isclose(ry[0], -15659.23531582), "Unexpected lower boundary for y."
+    assert np.isclose(ry[1], -11623.81911211), "Unexpected upper boundary for y."
+    assert np.isclose(rz[0], 0.0), "Unexpected lower boundary for z."
+    assert np.isclose(rz[1], 0.0), "Unexpected upper boundary for z."
+
+    # Work on 2D data
+    x = processor.filtered_dataframe["x"].values
+    y = processor.filtered_dataframe["y"].values
+
+    # Initialize the random number generator
+    rng = np.random.default_rng(2023)
+
+    N = 5
+    expected_resolutions = np.array(
+        [7.19424460e-09, 6.99300699e-09, 6.75675676e-09, 6.99300699e-09, 6.99300699e-09]
+    )
+    resolutions = np.zeros(N)
+    for r in range(N):
+
+        # Partition the data
+        ix = rng.random(size=x.shape) < 0.5
+        c_ix = np.logical_not(ix)
+
+        # Create two images from (complementary) subsets of coordinates (x, y) using the "histogram"
+        # mode and a rendering resolution of sxy = 1.0 nm.
+        sxy = 1.0
+        h1 = render_xy(x[ix], y[ix], sxy, sxy, rx, ry)[0]
+        h2 = render_xy(x[c_ix], y[c_ix], sxy, sxy, rx, ry)[0]
+
+        # Estimate the resolution using Fourier Ring Correlation
+        estimated_resolution, fc, qi, ci = img_fourier_ring_correlation(
+            h1, h2, sx=sxy, sy=sxy
+        )
+
+        # Store the estimated resolution
+        resolutions[r] = estimated_resolution
+
+    # Test
+    assert np.allclose(
+        resolutions, expected_resolutions
+    ), "Calculated resolutions do not match the expected ones."
+
+    #
+    # Fig1a_Tom70-Dreiklang_Minflux.mat
+    #
+    # From:
+    #   * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
+    #   * [code]  https://zenodo.org/record/6563100
+
+    minflux = loadmat(
+        Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat"
+    )
+    minflux = minflux["minflux"]
+
+    # x and y coordinates
+    pos = minflux["pos"][0][0]
+    x = pos[:, 0]
+    y = pos[:, 1]
+
+    # Ranges
+    rx = (-372.5786, 318.8638)
+    ry = (-1148.8, 1006.6)
+
+    # Initialize the random number generator
+    rng = np.random.default_rng(2023)
+
+    N = 5
+    expected_resolutions = np.array(
+        [5.44959128e-09, 5.46448087e-09, 5.66572238e-09, 5.61797753e-09, 5.49450549e-09]
+    )
+    resolutions = np.zeros(N)
+    for r in range(N):
+
+        # Partition the data
+        ix = rng.random(size=x.shape) < 0.5
+        c_ix = np.logical_not(ix)
+
+        # Create two images from (complementary) subsets of coordinates (x, y) using the "histogram"
+        # mode and a rendering resolution of sxy = 1.0 nm.
+        sxy = 1.0
+        h1 = render_xy(x[ix], y[ix], sxy, sxy, rx, ry)[0]
+        h2 = render_xy(x[c_ix], y[c_ix], sxy, sxy, rx, ry)[0]
+
+        # Estimate the resolution using Fourier Ring Correlation
+        estimated_resolution, fc, qi, ci = img_fourier_ring_correlation(
+            h1, h2, sx=sxy, sy=sxy
+        )
+
+        # Store the estimated resolution
+        resolutions[r] = estimated_resolution
+
+    # Test
+    assert np.allclose(
+        resolutions, expected_resolutions
+    ), "Calculated resolutions do not match the expected ones."
