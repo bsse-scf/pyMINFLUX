@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pyminflux.analysis import get_localization_boundaries
+from pyminflux.analysis import get_localization_boundaries, render_xy
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 from pyminflux.state import State
@@ -57,6 +57,7 @@ def extract_raw_npy_data_files(tmpdir):
 
 
 def test_data_boundaries(extract_raw_npy_data_files):
+    """Test the analysis.get_localization_boundaries() function."""
 
     # Initialize State
     state = State()
@@ -223,3 +224,87 @@ def test_data_boundaries(extract_raw_npy_data_files):
     assert np.isclose(rx[1] - rx[0], 5000.0), "Unexpected range for x."
     assert np.isclose(ry[1] - ry[0], 5000.0), "Unexpected range for y."
     assert np.isclose(rz[1] - rz[0], 5000.0), "Unexpected range for z."
+
+
+def test_render_xy(extract_raw_npy_data_files):
+    """Test the analysis.render_xy function."""
+
+    # Initialize State
+    state = State()
+
+    #
+    # 2D_Only.npy
+    #
+    # min_num_loc_per_trace = 1
+    #
+
+    # Make sure not to filter anything
+    state.min_num_loc_per_trace = 1
+
+    # 2D_ValidOnly.npy
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader)
+
+    # Get boundaries at alpha = 0.0 and min_range = 500: this gives all data back.
+    rx, ry, rz = get_localization_boundaries(
+        processor.filtered_dataframe["x"],
+        processor.filtered_dataframe["y"],
+        processor.filtered_dataframe["z"],
+        alpha=0.0,
+        min_range=500,
+    )
+
+    # Test
+    assert np.isclose(rx[0], 1647.61105813), "Unexpected lower boundary for x."
+    assert np.isclose(rx[1], 5677.04500607), "Unexpected upper boundary for x."
+    assert np.isclose(ry[0], -15659.23531582), "Unexpected lower boundary for y."
+    assert np.isclose(ry[1], -11623.81911211), "Unexpected upper boundary for y."
+    assert np.isclose(rz[0], 0.0), "Unexpected lower boundary for z."
+    assert np.isclose(rz[1], 0.0), "Unexpected upper boundary for z."
+
+    # Rendering resolution (in nm)
+    sx = 1.0
+    sy = 1.0
+
+    # Render the 2D image as simple histogram
+    img, xi, yi, m = render_xy(
+        processor.filtered_dataframe["x"].values,
+        processor.filtered_dataframe["y"].values,
+        sx=sx,
+        sy=sy,
+        rx=None,
+        ry=None,
+    )
+
+    # Check the returned values
+    assert np.isclose(img.sum(), 12580.0), "Unexpected signal integral."
+    assert np.isclose(xi.min(), 1648.111058125942), "Unexpected x grid (min value)."
+    assert np.isclose(xi.max(), 5677.111058125942), "Unexpected x grid (max) value)."
+    assert np.isclose(yi.min(), -15658.73531581803), "Unexpected y grid (min value)."
+    assert np.isclose(yi.max(), -11623.73531581803), "Unexpected y grid (max value)."
+    assert m.sum() == 12580.0, "Unexpected number of considered elements."
+    assert m.sum() == len(
+        processor.filtered_dataframe["x"].values
+    ), "Unexpected number of considered elements."
+
+    # Render the 2D image as a Gaussian fit
+    img, xi, yi, m = render_xy(
+        processor.filtered_dataframe["x"],
+        processor.filtered_dataframe["y"],
+        sx=sx,
+        sy=sy,
+        rx=None,
+        ry=None,
+        render_type="fixed_gaussian",
+    )
+
+    # Check the returned values
+    assert np.isclose(img.sum(), 256250.47), "Unexpected signal integral."
+    assert np.isclose(xi.min(), 1648.111058125942), "Unexpected x grid (min value)."
+    assert np.isclose(xi.max(), 5677.111058125942), "Unexpected x grid (max) value)."
+    assert np.isclose(yi.min(), -15658.73531581803), "Unexpected y grid (min value)."
+    assert np.isclose(yi.max(), -11623.73531581803), "Unexpected y grid (max value)."
+    assert m.sum() == 12564.0, "Unexpected number of considered elements."
+    assert m.sum() < len(
+        processor.filtered_dataframe["x"].values
+    ), "Unexpected number of considered elements."

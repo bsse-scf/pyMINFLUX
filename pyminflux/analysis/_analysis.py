@@ -582,7 +582,172 @@ def get_localization_boundaries(
         ry = ry + (min_range - d_ry) / 2 * np.array([-1, 1])
 
     d_rz = float(np.diff(rz)[0])
-    if d_rz < min_range and d_rz > 1e-6:  # Only in the 3D case
+    if min_range > d_rz > 1e-6:  # Only in the 3D case
         rz = rz + (min_range - d_rz) / 2 * np.array([-1, 1])
 
     return rx, ry, rz
+
+
+def render_xy(
+    x,
+    y,
+    sx: float = 1.0,
+    sy: float = 1.0,
+    rx: Optional[tuple] = None,
+    ry: Optional[tuple] = None,
+    render_type: Optional[str] = "histogram",
+    fwhm: Optional[float] = None,
+):
+    """Renders the localizations as a 2D image with given resolution.
+
+    Reimplemented (with modifications) from:
+
+    * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
+    * [code]  https://zenodo.org/record/6563100
+
+    Parameters
+    ----------
+
+    x: np.ndarray
+        Array of localization x coordinates.
+
+    y: np.ndarray
+        Array of localization y coordinates.
+
+    sx: float (Default = 1.0)
+        Resolution of the render in the x direction.
+
+    sy: float (Default = 1.0)
+        Resolution of the render in the y direction.
+
+    rx: tuple (Optional)
+        (min, max) boundaries for the x coordinates. If omitted, it will default to (x.min(), x.max()).
+
+    ry: float (Optional)
+        (min, max) boundaries for the y coordinates. If omitted, it will default to (y.min(), y.max()).
+
+    render_type: str (Default = "histogram")
+        Type of render to be generated. It must be one of:
+            "histogram": simple 2D histogram of localization falling into each bin of size (sx, sy).
+            "fixed_gaussian": sub-pixel resolution Gaussian fit. The Gaussian full-width half maximum is required
+            (see below).
+
+    fwhm: float (Optional)
+        Requested full-width half maximum (FWHM) of the Gaussian kernel. If omitted, it is set to be
+        3 * np.sqrt(np.power(sx, 2) + np.power(sy, 2)).
+
+    Returns
+    -------
+
+    h: rendered image (as float32 2D NumPy array)
+    xi: array of x coordinates of the output x, y grid
+    yi: array of x coordinates of the output x, y grid
+    m: logical array with the positions that were considered. The False entries were rejected because they were
+       outside the rx, ry ranges (with the additional constraint of the edge effect of the Gaussian support for
+    the "fixed_gaussian" render type.
+    """
+
+    if render_type is None:
+        render_type = "histogram"
+
+    render_type = render_type.lower()
+    if render_type not in ["histogram", "fixed_gaussian"]:
+        raise ValueError("plot_type must be one of 'histogram' or 'fixed_gaussian'.'")
+
+    if render_type == "fixed_gaussian" and fwhm is None:
+        sxy = np.sqrt(np.power(sx, 2) + np.power(sy, 2))
+        fwhm = 3 * sxy
+
+    # Make sure we are working with NumPy arrays
+    x = np.array(x)
+    y = np.array(y)
+
+    # Make sure rx and ry are defined
+    if rx is None:
+        rx = (x.min(), x.max())
+    if ry is None:
+        ry = (y.min(), y.max())
+
+    # Get dimensions and allocate output array
+    Nx = int(np.ceil((rx[1] - rx[0]) / sx))
+    Ny = int(np.ceil((ry[1] - ry[0]) / sy))
+    h = np.zeros((Ny, Nx), dtype=np.float32)
+
+    # Get position in pixels
+    px = (x - rx[0]) / sx
+    py = (y - ry[0]) / sy
+
+    # Convert absolute position to image indices
+    ix = np.round(px).astype(int)
+    iy = np.round(py).astype(int)
+
+    # Remove positions outside the image
+    m = (ix >= 0) & (ix < Nx) & (iy >= 0) & (iy < Ny)
+    px = px[m]
+    py = py[m]
+    ix = ix[m]
+    iy = iy[m]
+
+    # Plot requested image type
+    if render_type == "histogram":
+        # Fill in histogram
+        for i in range(len(ix)):
+            xi = ix[i]
+            yi = Ny - iy[i] - 1  # Images have y = 0 at the top
+            try:
+                h[yi, xi] += 1
+            except IndexError as e:
+                print(
+                    f"Tried to access (y={yi}, x={xi}) in image of size (Ny={Ny}, Nx={Nx})."
+                )
+
+    elif render_type == "fixed_gaussian":
+        # Gaussian with subpixel accuracy
+        wx = fwhm / sx
+        wy = fwhm / sy
+        L = int(np.ceil(2 * max(wx, wy)))
+
+        # Small grid
+        g = np.arange(-L, L + 1)
+        xk, yk = np.meshgrid(g, g)
+
+        # Remove close to borders
+        m = (ix >= L + 1) & (ix < Nx - L - 1) & (iy > L + 1) & (iy < Ny - L - 1)
+        px = px[m]
+        py = py[m]
+        ix = ix[m]
+        iy = iy[m]
+
+        for i in range(len(ix)):
+            xi = ix[i]
+            yi = iy[i]
+            dx = px[i] - xi
+            dy = py[i] - yi
+            gx = xi + g
+            gy = yi + g
+
+            # Calculate the Gaussian kernel using the requested FWHM.
+            k = np.exp(
+                -4 * np.log(2) * ((xk - dx) ** 2 / wx**2 + (yk - dy) ** 2 / wy**2)
+            )
+
+            # Add it to the image
+            my, mx = np.meshgrid(
+                gy, gx, indexing="ij"
+            )  # We need to create meshgrid to add the k matrix
+            my = Ny - my - 1  # Images have y = 0 at the top
+            try:
+                h[my, mx] = h[my, mx] + k
+            except IndexError as e:
+                print(
+                    f"Tried to access (y={yi}, x={xi}) in image of size (Ny={Ny}, Nx={Nx})."
+                )
+
+    else:
+        raise ValueError("Unknown type")
+
+    # Define output xy grid
+    xi = rx[0] + (np.arange(Nx)) * sx + sx / 2
+    yi = ry[0] + (np.arange(Ny)) * sy + sy / 2
+
+    return h, xi, yi, m
