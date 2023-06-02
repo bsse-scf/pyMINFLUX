@@ -755,8 +755,12 @@ def render_xy(
 
 
 def img_fourier_grid(dims, type_name="float64"):
-    """
-    This grid has center of mass at (0, 0): if used to perform convolution via fft2, it will not produce any shift!
+    """This grid has center of mass at (0, 0): if used to perform convolution via fft2, it will not produce any shift!
+
+    Reimplemented (with modifications) from:
+
+    * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
+    * [code]  https://zenodo.org/record/6563100
     """
 
     number_dimensions = len(dims)
@@ -799,7 +803,7 @@ def img_fourier_ring_correlation(
 ):
     """Perform Fourier ring correlation analysis on two images.
 
-        Reimplemented (with modifications) from:
+    Reimplemented (with modifications) from:
 
     * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
     * [code]  https://zenodo.org/record/6563100
@@ -894,3 +898,107 @@ def img_fourier_ring_correlation(
     estimated_resolution = 1 / q_critical
 
     return estimated_resolution, fc, qi, ci
+
+
+def estimate_resolution_by_frc(
+    x: np.ndarray,
+    y: np.ndarray,
+    num_reps: int = 5,
+    sx: float = 1.0,
+    sy: float = 1.0,
+    rx: Optional[tuple] = None,
+    ry: Optional[tuple] = None,
+    render_type: str = "histogram",
+    fwhm: Optional[float] = None,
+    seed: Optional[int] = None,
+    return_all: bool = False,
+):
+    """Estimates signal resolution by averaging the results of Fourier Ring Correlation the required number of times.
+
+    Parameters
+    ----------
+
+    x: np.ndarray
+        Array of localization x coordinates.
+
+    y: np.ndarray
+        Array of localization y coordinates.
+
+    num_reps: int (Default = 5)
+        Number of time Fourier Ring Correlation analysis is run. The returned result will be  the average of the runs.
+
+    sx: float (Default = 1.0)
+        Resolution of the render in the x direction.
+
+    sy: float (Default = 1.0)
+        Resolution of the render in the y direction.
+
+    rx: tuple (Optional)
+        (min, max) boundaries for the x coordinates. If omitted, it will default to (x.min(), x.max()).
+
+    ry: float (Optional)
+        (min, max) boundaries for the y coordinates. If omitted, it will default to (y.min(), y.max()).
+
+    render_type: str (Default = "histogram")
+        Type of render to be generated. It must be one of:
+            "histogram": simple 2D histogram of localization falling into each bin of size (sx, sy).
+            "fixed_gaussian": sub-pixel resolution Gaussian fit. The Gaussian full-width half maximum is required
+            (see below).
+
+    fwhm: float (Optional)
+        Requested full-width half maximum (FWHM) of the Gaussian kernel. If omitted, it is set to be
+        3 * np.sqrt(np.power(sx, 2) + np.power(sy, 2)).
+
+    seed: Optional[int]
+        Seed for the random number generator if comparable runs are needed.
+
+    return_all: bool (Default = False)
+        Set to True to return all measurements along with their averages.
+
+    """
+
+    if seed is not None:
+        # Initialize the random number generator
+        rng = np.random.default_rng(seed)
+    else:
+        rng = np.random.default_rng()
+
+    # Make sure we are working with NumPy arrays
+    x = np.array(x)
+    y = np.array(y)
+
+    resolutions = np.zeros(num_reps)
+    cis = None
+    for r in range(num_reps):
+        # Partition the data
+        ix = rng.random(size=x.shape) < 0.5
+        c_ix = np.logical_not(ix)
+
+        # Create two images from (complementary) subsets of coordinates (x, y)
+        h1 = render_xy(
+            x[ix], y[ix], sx, sx, rx, ry, render_type=render_type, fwhm=fwhm
+        )[0]
+        h2 = render_xy(
+            x[c_ix], y[c_ix], sx, sx, rx, ry, render_type=render_type, fwhm=fwhm
+        )[0]
+
+        # Estimate the resolution using Fourier Ring Correlation
+        estimated_resolution, fc, qi, ci = img_fourier_ring_correlation(
+            h1, h2, sx=sx, sy=sy
+        )
+
+        # Store the estimated resolution, qis and cis
+        resolutions[r] = estimated_resolution
+        if cis is None:
+            cis = np.zeros((len(ci), num_reps), dtype=float)
+        cis[:, r] = ci
+
+    # Now calculate average values
+    resolution = np.mean(resolutions)
+    ci = np.mean(cis, axis=1)
+
+    # Return
+    if return_all:
+        return resolution, qi, ci, resolutions, cis
+    else:
+        return resolution, qi, ci
