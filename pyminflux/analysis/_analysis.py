@@ -17,8 +17,8 @@ import math
 from typing import Optional
 
 import numpy as np
-from scipy import ndimage, signal, stats
-from scipy.fftpack import fft2, ifftshift
+from scipy import signal, stats
+from scipy.fft import fft2, ifftshift
 from scipy.ndimage import median_filter
 from scipy.signal import find_peaks, savgol_filter
 
