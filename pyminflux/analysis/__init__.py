@@ -16,6 +16,7 @@
 from ._analysis import (
     calculate_2d_histogram,
     calculate_density_map,
+    estimate_resolution_by_frc,
     find_cutoff_near_value,
     find_first_peak_bounds,
     get_localization_boundaries,
