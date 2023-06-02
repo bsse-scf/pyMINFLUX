@@ -834,6 +834,12 @@ def img_fourier_ring_correlation(
     ci: @TODO Add description
     """
 
+    def bin_data(qi, data):
+        """Perform binning operation."""
+        real = np.bincount(qi, weights=data.flatten().real)
+        imag = np.bincount(qi, weights=data.flatten().imag)
+        return real + 1j * imag
+
     if frc_smoothing_kernel is None:
         frc_smoothing_kernel = np.outer(
             signal.gaussian(31, std=1), signal.gaussian(31, std=1)
@@ -869,15 +875,9 @@ def img_fourier_ring_correlation(
     qi = np.round(q / B).astype(int)
     idx = qi.flatten()  # + 1
     qi = np.arange(0, np.max(qi) + 1) * B
-    aj_real = np.bincount(idx, weights=a.flatten().real)
-    aj_imag = np.bincount(idx, weights=a.flatten().imag)
-    aj = aj_real + 1j * aj_imag
-    bj_real = np.bincount(idx, weights=b.flatten().real)
-    bj_imag = np.bincount(idx, weights=b.flatten().imag)
-    bj = bj_real + 1j * bj_imag
-    cj_real = np.bincount(idx, weights=c.flatten().real)
-    cj_imag = np.bincount(idx, weights=c.flatten().imag)
-    cj = cj_real + 1j * cj_imag
+    aj = bin_data(idx, a)
+    bj = bin_data(idx, b)
+    cj = bin_data(idx, c)
     ci = np.real(aj / np.sqrt(bj * cj))
     idx = qi < np.max(qi) * 0.8  # cut a bit
     qi = qi[idx]
