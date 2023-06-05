@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyminflux"
-version = "0.1.3"
+version = "0.2.0"
 description = "Reader, processor, and viewer of MINFLUX raw data."
 authors = ["Aaron Ponti <aaron.ponti@bsse.ethz.ch>"]
 license = "Apache-2.0"
