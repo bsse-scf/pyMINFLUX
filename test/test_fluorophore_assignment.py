@@ -126,21 +126,21 @@ class MockMinFluxReader:
         )
         y = x + 3.0
         z = 0.0 * x
-        self.__df = pd.DataFrame(columns=["tid", "x", "y", "z"])
-        self.__df["tid"] = tids
-        self.__df["x"] = x
-        self.__df["y"] = y
-        self.__df["z"] = z
-        self.__df["fluo"] = 1
+        self._df = pd.DataFrame(columns=["tid", "x", "y", "z"])
+        self._df["tid"] = tids
+        self._df["x"] = x
+        self._df["y"] = y
+        self._df["z"] = z
+        self._df["fluo"] = 1
 
     @property
     def processed_dataframe(self):
-        return self.__df
+        return self._df
 
     @property
     def num_valid_entries(self):
         """Number of valid entries."""
-        return len(self.__df.index)
+        return len(self._df.index)
 
     @property
     def num_invalid_entries(self):
@@ -206,22 +206,22 @@ class MockMinFluxReader:
 
 class MockFromRealDataMinFluxReader:
     def __init__(self):
-        self.__df = pd.read_csv(
+        self._df = pd.read_csv(
             Path(__file__).parent / "data" / "two_fluorophores_df.csv"
         )
-        self.__fluo_ids = np.load(
+        self._fluo_ids = np.load(
             str(Path(__file__).parent / "data" / "two_fluorophores_assignment.npy")
         )
-        assert len(self.__df.index) == len(self.__fluo_ids), "Inconsistent test data!"
+        assert len(self._df.index) == len(self._fluo_ids), "Inconsistent test data!"
 
     @property
     def processed_dataframe(self):
-        return self.__df
+        return self._df
 
     @property
     def num_valid_entries(self):
         """Number of valid entries."""
-        return len(self.__df.index)
+        return len(self._df.index)
 
     @property
     def num_invalid_entries(self):
@@ -231,7 +231,7 @@ class MockFromRealDataMinFluxReader:
     @property
     def test_fluorophore_ids(self):
         """Fluorophore ids to be used for testing."""
-        return self.__fluo_ids
+        return self._fluo_ids
 
 
 @pytest.fixture(autouse=False)

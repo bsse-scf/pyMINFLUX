@@ -59,14 +59,14 @@ class Plotter(PlotWidget):
         self.ROI = None
         self.line = None
         self.line_text = None
-        self.__roi_start_point = None
-        self.__roi_is_being_drawn = False
-        self.__line_start_point = None
-        self.__line_is_being_drawn = False
+        self._roi_start_point = None
+        self._roi_is_being_drawn = False
+        self._line_start_point = None
+        self._line_is_being_drawn = False
 
         # Keep track of last plot
-        self.__last_x_param = None
-        self.__last_y_param = None
+        self._last_x_param = None
+        self._last_y_param = None
 
     def enableAutoRange(self, enable: bool):
         """Enable/disable axes autorange."""
@@ -88,12 +88,12 @@ class Plotter(PlotWidget):
                 self.ROI = None
 
             # Create ROI and keep track of position
-            self.__roi_is_being_drawn = True
-            self.__roi_start_point = (
+            self._roi_is_being_drawn = True
+            self._roi_start_point = (
                 self.getPlotItem().getViewBox().mapSceneToView(ev.position())
             )
             self.ROI = ROI(
-                pos=self.__roi_start_point,
+                pos=self._roi_start_point,
                 size=(0, 0),
                 resizable=False,
                 rotatable=False,
@@ -130,13 +130,13 @@ class Plotter(PlotWidget):
                 self.line_text = None
 
             # Create ROI and keep track of position
-            self.__line_is_being_drawn = True
-            self.__line_start_point = (
+            self._line_is_being_drawn = True
+            self._line_start_point = (
                 self.getPlotItem().getViewBox().mapSceneToView(ev.position())
             )
             self.line = PlotCurveItem(
-                x=[self.__line_start_point.x(), self.__line_start_point.x()],
-                y=[self.__line_start_point.y(), self.__line_start_point.y()],
+                x=[self._line_start_point.x(), self._line_start_point.x()],
+                y=[self._line_start_point.y(), self._line_start_point.y()],
                 pen=mkPen(color=(255, 0, 0), width=2),
             )
             self.addItem(self.line)
@@ -174,13 +174,13 @@ class Plotter(PlotWidget):
         if (
             self.scatter is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
-            and self.__roi_is_being_drawn
+            and self._roi_is_being_drawn
         ):
             # Resize the ROI
             current_point = (
                 self.getPlotItem().getViewBox().mapSceneToView(ev.position())
             )
-            self.ROI.setSize(current_point - self.__roi_start_point)
+            self.ROI.setSize(current_point - self._roi_start_point)
 
             # Accept the event
             ev.accept()
@@ -188,7 +188,7 @@ class Plotter(PlotWidget):
         elif (
             self.scatter is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
-            and self.__line_is_being_drawn
+            and self._line_is_being_drawn
         ):
             # Is the user drawing a line?
 
@@ -197,8 +197,8 @@ class Plotter(PlotWidget):
                 self.getPlotItem().getViewBox().mapSceneToView(ev.position())
             )
             self.line.setData(
-                x=[self.__line_start_point.x(), current_point.x()],
-                y=[self.__line_start_point.y(), current_point.y()],
+                x=[self._line_start_point.x(), current_point.x()],
+                y=[self._line_start_point.y(), current_point.y()],
             )
 
             # Accept the event
@@ -212,7 +212,7 @@ class Plotter(PlotWidget):
         if (
             self.scatter is not None
             and ev.button() == Qt.MouseButton.LeftButton
-            and self.__roi_is_being_drawn
+            and self._roi_is_being_drawn
         ):
             # Extract the ranges
             x_range, y_range = self._get_ranges_from_roi()
@@ -228,8 +228,8 @@ class Plotter(PlotWidget):
                 )
 
             # Reset flags
-            self.__roi_start_point = None
-            self.__roi_is_being_drawn = False
+            self._roi_start_point = None
+            self._roi_is_being_drawn = False
 
             # If the ROI has 0 size (when a shift-click has been used to remove a previous ROI),
             # clean it up properly.
@@ -247,7 +247,7 @@ class Plotter(PlotWidget):
         elif (
             self.scatter is not None
             and ev.button() == Qt.MouseButton.LeftButton
-            and self.__line_is_being_drawn
+            and self._line_is_being_drawn
         ):
             # Display the measurement
             x_data, y_data = self.line.getData()
@@ -276,8 +276,8 @@ class Plotter(PlotWidget):
                     self.line = None
 
             # Reset flags
-            self.__line_start_point = None
-            self.__line_is_being_drawn = False
+            self._line_start_point = None
+            self._line_is_being_drawn = False
 
             # Accept the event
             ev.accept()
@@ -328,8 +328,8 @@ class Plotter(PlotWidget):
         self.showAxis("left")
         self.setBackground("k")
 
-        if (self.__last_x_param is None or self.__last_x_param != x_param) or (
-            self.__last_y_param is None or self.__last_y_param != y_param
+        if (self._last_x_param is None or self._last_x_param != x_param) or (
+            self._last_y_param is None or self._last_y_param != y_param
         ):
             # Update range
             self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
@@ -343,8 +343,8 @@ class Plotter(PlotWidget):
             )
 
         # Update last plotted parameters
-        self.__last_x_param = x_param
-        self.__last_y_param = y_param
+        self._last_x_param = x_param
+        self._last_y_param = y_param
 
     def crop_data_by_roi_selection(self, item):
         """Open dialog to manually set the filter ranges"""
@@ -372,7 +372,7 @@ class Plotter(PlotWidget):
         """Inform that the selection of localizations may have changed after the ROI was moved."""
 
         # If the ROI is being drawn now, do nothing
-        if self.__roi_is_being_drawn:
+        if self._roi_is_being_drawn:
             return
 
         # Extract the ranges
