@@ -280,7 +280,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.full_update_ui
         )
 
-        # Other connections
+        # Plotter
         self.plotter.locations_selected.connect(
             self.show_selected_points_by_indices_in_dataviewer
         )
@@ -291,8 +291,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter_toolbar.color_code_locs_changed.connect(
             self.plot_selected_parameters
         )
+
+        # Options
         self.options.weigh_avg_localization_by_eco_option_changed.connect(
             self.update_weighted_average_localization_option_and_plot
+        )
+        self.options.min_num_loc_per_trace_option_changed.connect(
+            self.update_min_num_loc_per_trace
         )
 
         # Wizard
@@ -472,15 +477,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             print(minfluxreader)
 
             # Add initialize the processor with the reader
-            self.minfluxprocessor = MinFluxProcessor(minfluxreader)
+            self.minfluxprocessor = MinFluxProcessor(
+                minfluxreader, self.state.min_num_loc_per_trace
+            )
 
             # Make sure to set current value of use_weighted_localizations
             self.minfluxprocessor.use_weighted_localizations = (
                 self.state.weigh_avg_localization_by_eco
             )
-
-            # Set state properties from data
-            self.set_state_from_data()
 
             # Show the filename on the main window
             self.setWindowTitle(
@@ -748,8 +752,18 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Open the options dialog."""
         if self.options is None:
             self.options = Options()
+            self.options.min_num_loc_per_trace_option_changed.connect(
+                self.update_min_num_loc_per_trace
+            )
         self.options.show()
         self.options.activateWindow()
+
+    @Slot(None, name="update_min_num_loc_per_trace")
+    def update_min_num_loc_per_trace(self):
+        if self.minfluxprocessor is not None:
+            self.minfluxprocessor.min_num_loc_per_trace = (
+                self.state.min_num_loc_per_trace
+            )
 
     @Slot(None, name="open_frc_tool")
     def open_frc_tool(self):
@@ -840,13 +854,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Signal that the external viewers and tools should be updated
         self.request_sync_external_tools.emit()
-
-    def set_state_from_data(self):
-        """Set state properties that depend on data."""
-        if self.minfluxprocessor.filtered_dataframe is not None:
-            self.state.gmm_efo_num_clusters = int(
-                self.minfluxprocessor.filtered_dataframe["dwell"].max()
-            )
 
     def update_weighted_average_localization_option_and_plot(self):
         """Update the weighted average localization option in the Processor and re-plot."""

@@ -65,21 +65,15 @@ def extract_raw_npy_data_files(tmpdir):
 def test_data_boundaries(extract_raw_npy_data_files):
     """Test the analysis.get_localization_boundaries() function."""
 
-    # Initialize State
-    state = State()
-
     #
     # 2D_Only.npy
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Get boundaries at default alpha and min_range
     rx, ry, rz = get_localization_boundaries(
@@ -151,15 +145,12 @@ def test_data_boundaries(extract_raw_npy_data_files):
     #
     # 3D_Only.npy
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Get boundaries at default alpha and min_range
     rx, ry, rz = get_localization_boundaries(
@@ -235,21 +226,15 @@ def test_data_boundaries(extract_raw_npy_data_files):
 def test_render_xy(extract_raw_npy_data_files):
     """Test the analysis.render_xy() function."""
 
-    # Initialize State
-    state = State()
-
     #
     # 2D_Only.npy
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Get boundaries at alpha = 0.0 and min_range = 500: this gives all data back.
     rx, ry, rz = get_localization_boundaries(
@@ -319,21 +304,14 @@ def test_render_xy(extract_raw_npy_data_files):
 def test_fourier_ring_correlation_all_pos(extract_raw_npy_data_files):
     """Test the analysis.img_fourier_ring_correlation() function on all positions."""
 
-    # Initialize State
-    state = State()
-
     #
     # 2D_Only.npy
     #
-    # min_num_loc_per_trace = 1
-    #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Get boundaries at alpha = 0.0 and min_range = 500: this gives all data back.
     rx, ry, rz = get_localization_boundaries(
@@ -451,21 +429,14 @@ def test_fourier_ring_correlation_all_pos_mat(extract_raw_npy_data_files):
 def test_fourier_ring_correlation_per_tid(extract_raw_npy_data_files):
     """Test the analysis.img_fourier_ring_correlation() function on average positions per TID."""
 
-    # Initialize State
-    state = State()
-
     #
     # 2D_Only.npy
     #
-    # min_num_loc_per_trace = 1
-    #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not to filter anything)
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Get boundaries at alpha = 0.0 and min_range = 500: this gives all data back.
     rx, ry, rz = get_localization_boundaries(
@@ -594,21 +565,14 @@ def test_fourier_ring_correlation_per_tid_mat(extract_raw_npy_data_files):
 def test_estimate_resolution(extract_raw_npy_data_files):
     """Test the estimate_resolution_frc() function on average positions per TID."""
 
-    # Initialize State
-    state = State()
-
     #
     # 2D_Only.npy
     #
-    # min_num_loc_per_trace = 1
-    #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Get boundaries at alpha = 0.0 and min_range = 500: this gives all data back.
     rx, ry, rz = get_localization_boundaries(

@@ -28,12 +28,13 @@ This is the documentation of the `pyminflux` core command-line API (version {__v
 Currently, `pyminflux` is compatible with python 3.10 and 3.11.
 """
 
-# Do not build the documentation for the following modules
+# Do not build the documentation for the following modules that are only used by the user interface.
 __pdoc__ = {}
 __pdoc__["base"] = False
 __pdoc__["main"] = False
 __pdoc__["resources"] = False
 __pdoc__["settings"] = False
+__pdoc__["state"] = False
 __pdoc__["threads"] = False
 __pdoc__["ui"] = False
 __pdoc__["utils"] = False
