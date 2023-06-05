@@ -955,6 +955,24 @@ def estimate_resolution_by_frc(
     return_all: bool (Default = False)
         Set to True to return all measurements along with their averages.
 
+    Returns
+    -------
+
+    resolution: float
+        Estimated resolution in nm (average over `num_reps`).
+
+    qi: np.ndarray
+        Array of frequencies.
+
+    ci: np.ndarray
+        Array of Fourier Ring Correlations (corresponding to the frequencies in qi)
+
+    resolutions: np.ndarray (num_reps, )
+        Each of the estimated `n_reps` resolutions. Only returned if `return_all` is True.
+
+    cis: np.ndarray (:, n_reps)
+        Array of Fourier Ring Correlations (corresponding to the frequencies in qi) for each of the `n_reps` runs.
+        Only returned if `return_all` is True.
     """
 
     if seed is not None:
@@ -967,8 +985,14 @@ def estimate_resolution_by_frc(
     x = np.array(x)
     y = np.array(y)
 
+    # Make sure to have the same ranges rx and ry bot both images
+    if rx is None or ry is None:
+        rx = (x.min(), x.max())
+        ry = (y.min(), y.max())
+
     resolutions = np.zeros(num_reps)
     cis = None
+    qi = None
     for r in range(num_reps):
         # Partition the data
         ix = rng.random(size=x.shape) < 0.5
@@ -976,10 +1000,17 @@ def estimate_resolution_by_frc(
 
         # Create two images from (complementary) subsets of coordinates (x, y)
         h1 = render_xy(
-            x[ix], y[ix], sx, sx, rx, ry, render_type=render_type, fwhm=fwhm
+            x[ix], y[ix], sx=sx, sy=sy, rx=rx, ry=ry, render_type=render_type, fwhm=fwhm
         )[0]
         h2 = render_xy(
-            x[c_ix], y[c_ix], sx, sx, rx, ry, render_type=render_type, fwhm=fwhm
+            x[c_ix],
+            y[c_ix],
+            sx=sx,
+            sy=sy,
+            rx=rx,
+            ry=ry,
+            render_type=render_type,
+            fwhm=fwhm,
         )[0]
 
         # Estimate the resolution using Fourier Ring Correlation

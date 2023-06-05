@@ -88,8 +88,8 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.ui.pbAreaToggleVisibility.clicked.connect(self.toggle_region_visibility)
         self.ui.pbSelectionKeepData.clicked.connect(self.keep_time_region)
         self.ui.pbSelectionCropData.clicked.connect(self.crop_time_region)
-        self.processing_started.connect(self.change_ui_for_processing)
-        self.processing_completed.connect(self.change_ui_for_idle)
+        self.processing_started.connect(self.disable_ui_elements)
+        self.processing_completed.connect(self.enable_ui_elements)
 
         # Plot the dcr histogram
         self.plot_selected()
@@ -459,7 +459,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         # Update the plot
         self.plot_selected()
 
-    def change_ui_for_processing(self):
+    def disable_ui_elements(self):
         """Disable elements and inform that a processing is ongoing."""
         self.ui.cbAnalysisSelection.setEnabled(False)
         self.ui.pbPlot.setEnabled(False)
@@ -469,7 +469,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.ui.pbSelectionKeepData.setEnabled(False)
         self.repaint()
 
-    def change_ui_for_idle(self):
+    def enable_ui_elements(self):
         """Disable elements and inform that a processing is ongoing."""
         self.ui.cbAnalysisSelection.setEnabled(True)
         self.ui.pbPlot.setEnabled(True)

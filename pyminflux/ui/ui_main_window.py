@@ -95,6 +95,8 @@ class Ui_MainWindow(object):
         self.actionMailing_list.setObjectName("actionMailing_list")
         self.actionExport_stats = QAction(MainWindow)
         self.actionExport_stats.setObjectName("actionExport_stats")
+        self.actionEstimate_resolution = QAction(MainWindow)
+        self.actionEstimate_resolution.setObjectName("actionEstimate_resolution")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -116,6 +118,8 @@ class Ui_MainWindow(object):
         self.menuView.setObjectName("menuView")
         self.menuHelp = QMenu(self.menubar)
         self.menuHelp.setObjectName("menuHelp")
+        self.menuAnalysis = QMenu(self.menubar)
+        self.menuAnalysis.setObjectName("menuAnalysis")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -123,6 +127,7 @@ class Ui_MainWindow(object):
 
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuView.menuAction())
+        self.menubar.addAction(self.menuAnalysis.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
         self.menuFile.addAction(self.actionLoad)
         self.menuFile.addAction(self.actionExport_data)
@@ -145,6 +150,7 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionMailing_list)
         self.menuHelp.addSeparator()
         self.menuHelp.addAction(self.actionAbout)
+        self.menuAnalysis.addAction(self.actionEstimate_resolution)
 
         self.retranslateUi(MainWindow)
 
@@ -219,8 +225,14 @@ class Ui_MainWindow(object):
         self.actionExport_stats.setText(
             QCoreApplication.translate("MainWindow", "Export stats", None)
         )
+        self.actionEstimate_resolution.setText(
+            QCoreApplication.translate("MainWindow", "Estimate resolution", None)
+        )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", "Help", None))
+        self.menuAnalysis.setTitle(
+            QCoreApplication.translate("MainWindow", "Analysis", None)
+        )
 
     # retranslateUi

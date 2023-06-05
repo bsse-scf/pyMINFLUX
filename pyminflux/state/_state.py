@@ -51,6 +51,9 @@ class State(metaclass=Singleton):
         "dcr_manual_threshold",
         "z_scaling_factor",
         "plot_export_dpi",
+        "frc_lateral_resolution",
+        "frc_num_repeats",
+        "frc_use_all_locs",
     ]
 
     def __init__(self):
@@ -107,6 +110,11 @@ class State(metaclass=Singleton):
         # Resolution for exporting plots as images
         self.plot_export_dpi: int = 600
 
+        # FRC analysis
+        self.frc_lateral_resolution: float = 1.0
+        self.frc_num_repeats: int = 5
+        self.frc_use_all_locs: bool = False
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -131,6 +139,9 @@ class State(metaclass=Singleton):
             "dcr_manual_threshold": self.dcr_manual_threshold,
             "z_scaling_factor": self.z_scaling_factor,
             "plot_export_dpi": self.plot_export_dpi,
+            "frc_lateral_resolution": self.frc_lateral_resolution,
+            "frc_num_repeats": self.frc_num_repeats,
+            "frc_use_all_locs": self.frc_use_all_locs,
         }
 
     def reset(self):
@@ -163,6 +174,9 @@ class State(metaclass=Singleton):
         self.dcr_manual_threshold = 0.0
         self.z_scaling_factor = 0.7
         self.plot_export_dpi = 600
+        self.frc_lateral_resolution = 1.0
+        self.frc_num_repeats = 5
+        self.frc_use_all_locs = False
 
     def __str__(self):
         """Human-readable representation."""
