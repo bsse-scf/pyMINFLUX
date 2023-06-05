@@ -59,7 +59,7 @@ class MinFluxReader:
         ----------
 
         filename: Union[Path, str]
-            Full path to the .npy file to read
+            Full path to the `.npy` or `.mat` file to read
 
         valid: bool (optional, default = True)
             Whether to load only valid localizations.
