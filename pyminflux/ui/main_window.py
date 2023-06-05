@@ -43,6 +43,7 @@ from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
+from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
@@ -99,6 +100,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter3D = None
         self.color_unmixer = None
         self.inspector = None
+        self.frc_tool = None
         self.options = Options()
 
         # Initialize widget and its dock
@@ -134,7 +136,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.toggle_console_visibility()
 
         # Set initial visibility and enabled states
-        self.disable_ui_components_on_closed_data()
+        self.enable_ui_components(False)
 
         # Set up signals and slots
         self.setup_conn()
@@ -242,6 +244,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionState.triggered.connect(self.print_current_state)
+        self.ui.actionEstimate_resolution.triggered.connect(self.open_frc_tool)
         self.ui.actionManual.triggered.connect(
             lambda _: QDesktopServices.openUrl(
                 "https://github.com/bsse-scf/pyMINFLUX/wiki/pyMINFLUX-user-manual"
@@ -305,24 +308,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.wizard.wizard_filters_run.connect(self.full_update_ui)
         self.wizard.export_data_triggered.connect(self.export_filtered_data)
 
-    def enable_ui_components_on_loaded_data(self):
-        """Enable UI components."""
+    def enable_ui_components(self, enabled: bool):
+        """Enable/disable UI components."""
         self.plotter.show()  # Always show
-        self.plotter_toolbar.show()
-        self.data_viewer.show()
-        self.ui.actionExport_data.setEnabled(True)
-        self.ui.actionExport_stats.setEnabled(True)
-        self.plotter_toolbar.show()
-
-    def disable_ui_components_on_closed_data(self):
-        """Disable UI components."""
-        self.plotter.show()  # Always show
-        self.plotter_toolbar.hide()
-        self.data_viewer.hide()
-        self.ui.actionExport_data.setEnabled(False)
-        self.ui.actionExport_data.setEnabled(False)
-        self.ui.actionExport_stats.setEnabled(False)
-        self.plotter_toolbar.hide()
+        if enabled:
+            self.plotter_toolbar.show()
+            self.data_viewer.show()
+            self.plotter_toolbar.show()
+        else:
+            self.plotter_toolbar.hide()
+            self.data_viewer.hide()
+            self.plotter_toolbar.hide()
+        self.ui.actionExport_data.setEnabled(enabled)
+        self.ui.actionExport_data.setEnabled(enabled)
+        self.ui.actionExport_stats.setEnabled(enabled)
+        self.ui.actionEstimate_resolution.setEnabled(enabled)
 
     def full_update_ui(self):
         """
@@ -387,6 +387,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.options is not None:
                 self.options.close()
                 self.options = None
+
+            if self.frc_tool is not None:
+                self.frc_tool.close()
+                self.frc_tool = None
 
             # Store the application settings
             if self.last_selected_path != "":
@@ -503,7 +507,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.wizard.set_fluorophore_list(self.minfluxprocessor.num_fluorophorses)
 
             # Enable selected ui components
-            self.enable_ui_components_on_loaded_data()
+            self.enable_ui_components(True)
 
             # Update the Analyzer
             if self.analyzer is not None:
@@ -746,6 +750,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.options = Options()
         self.options.show()
         self.options.activateWindow()
+
+    @Slot(None, name="open_frc_tool")
+    def open_frc_tool(self):
+        """Open the FRC tool."""
+        if self.frc_tool is None:
+            self.frc_tool = FRCTool(self.minfluxprocessor)
+        self.frc_tool.show()
+        self.frc_tool.activateWindow()
 
     @Slot(list, name="show_selected_points_by_indices_in_dataviewer")
     def show_selected_points_by_indices_in_dataviewer(self, points):

@@ -82,8 +82,15 @@
     <addaction name="actionCheck_for_updates"/>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuAnalysis">
+    <property name="title">
+     <string>Analysis</string>
+    </property>
+    <addaction name="actionEstimate_resolution"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
+   <addaction name="menuAnalysis"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -192,6 +199,11 @@
   <action name="actionCheck_for_updates">
    <property name="text">
     <string>Check for updates</string>
+   </property>
+  </action>
+  <action name="actionEstimate_resolution">
+   <property name="text">
+    <string>Estimate resolution</string>
    </property>
   </action>
  </widget>
