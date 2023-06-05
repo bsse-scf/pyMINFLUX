@@ -20,15 +20,11 @@ from pathlib import Path
 from PySide6.QtCore import QSettings
 
 from pyminflux import __APP_NAME__
-from pyminflux.state import State
 
 
 class Settings:
     def __init__(self):
         """Constructor."""
-
-        # Initialize the State
-        self.state = State()
 
         # Define the organization and application names
         self.org_name = "ch.ethz"

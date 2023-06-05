@@ -22,6 +22,8 @@ from scipy.io import loadmat
 
 
 class MinFluxReader:
+    __docs__ = "Reader of MINFLUX data in `.npy` or `.mat` formats."
+
     __slots__ = [
         "__filename",
         "__valid",
@@ -251,7 +253,7 @@ class MinFluxReader:
         n_iters = mat_array["itr"]["itr"][0][0].shape[-1]
 
         # Initialize an empty structure NumPy data array
-        data_array = self.create_empty_data_array(n_entries, n_iters)
+        data_array = self._create_empty_data_array(n_entries, n_iters)
 
         # Copy the data over
         data_array["vld"] = mat_array["vld"].ravel().astype(data_array.dtype["vld"])
@@ -520,7 +522,7 @@ class MinFluxReader:
                 self.__eco_index = 4
                 self.__loc_index = 4
 
-    def create_empty_data_array(self, n_entries: int, n_iters: int):
+    def _create_empty_data_array(self, n_entries: int, n_iters: int):
         """Initializes a structured data array compatible with those exported from Imspector.
 
         Parameters
@@ -590,7 +592,7 @@ class MinFluxReader:
         """Migrate the raw Imspector NumPy array into a pyMINFLUX raw array."""
 
         # Initialize the empty target array
-        new_array = self.create_empty_data_array(
+        new_array = self._create_empty_data_array(
             len(data_array), data_array["itr"].shape[-1]
         )
 

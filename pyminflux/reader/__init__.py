@@ -13,4 +13,9 @@
 #   limitations under the License.
 #
 
+__doc__ = "Reader of MINFLUX data."
+__all__ = [
+    "MinFluxReader",
+]
+
 from ._reader import MinFluxReader
