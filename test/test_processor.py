@@ -55,21 +55,21 @@ class MockMinFluxReader:
         )
         y = x + 3.0
         z = 0.0 * x
-        self.__df = pd.DataFrame(columns=["tid", "x", "y", "z"])
-        self.__df["tid"] = tids
-        self.__df["x"] = x
-        self.__df["y"] = y
-        self.__df["z"] = z
-        self.__df["fluo"] = 1
+        self._df = pd.DataFrame(columns=["tid", "x", "y", "z"])
+        self._df["tid"] = tids
+        self._df["x"] = x
+        self._df["y"] = y
+        self._df["z"] = z
+        self._df["fluo"] = 1
 
     @property
     def processed_dataframe(self):
-        return self.__df
+        return self._df
 
     @property
     def num_valid_entries(self):
         """Number of valid entries."""
-        return len(self.__df.index)
+        return len(self._df.index)
 
     @property
     def num_invalid_entries(self):

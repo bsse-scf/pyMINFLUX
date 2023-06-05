@@ -34,7 +34,6 @@ class MinFluxProcessor:
         "_minfluxreader",
         "_current_fluorophore_id",
         "_filtered_stats_dataframe",
-        "__fluorophore_ids",
         "_min_num_loc_per_trace",
         "_selected_rows_dict",
         "_stats_to_be_recomputed",
@@ -67,7 +66,7 @@ class MinFluxProcessor:
 
         # Keep separate arrays of booleans to cache selection state for all fluorophores IDs.
         self._selected_rows_dict = None
-        self.__init_selected_rows_dict()
+        self._init_selected_rows_dict()
 
         # Keep track of the selected fluorophore
         # 0 - All (default)
@@ -88,7 +87,7 @@ class MinFluxProcessor:
         # Apply the global filters
         self._apply_global_filters()
 
-    def __init_selected_rows_dict(self):
+    def _init_selected_rows_dict(self):
         """Initialize the selected rows array."""
         # How many fluorophores do we have?
         self._selected_rows_dict = {
@@ -296,7 +295,7 @@ class MinFluxProcessor:
 
         # Clear the selection per fluorophore; they will be reinitialized as
         # all selected at the first access.
-        self.__init_selected_rows_dict()
+        self._init_selected_rows_dict()
 
         # Reset the mapping to the corresponding fluorophore
         self.full_dataframe["fluo"] = 1
@@ -314,7 +313,7 @@ class MinFluxProcessor:
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
         self.full_dataframe["fluo"] = fluorophore_ids
-        self.__init_selected_rows_dict()
+        self._init_selected_rows_dict()
         self._apply_global_filters()
 
     def select_by_indices(
@@ -514,16 +513,16 @@ class MinFluxProcessor:
         """Apply filters that are defined in the global application configuration."""
 
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
-            self._selected_rows_dict[1] = self.__filter_by_tid_length(1)
+            self._selected_rows_dict[1] = self._filter_by_tid_length(1)
 
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
-            self._selected_rows_dict[2] = self.__filter_by_tid_length(2)
+            self._selected_rows_dict[2] = self._filter_by_tid_length(2)
 
         # Make sure to flag the derived data to be recomputed
         self._stats_to_be_recomputed = True
         self._weighted_localizations_to_be_recomputed = True
 
-    def __filter_by_tid_length(self, index):
+    def _filter_by_tid_length(self, index):
         # Make sure to count only currently selected rows
         df = self.full_dataframe.copy()
         df.loc[np.invert(self._selected_rows_dict[index]), "tid"] = np.nan
