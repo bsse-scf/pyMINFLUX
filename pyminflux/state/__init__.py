@@ -13,4 +13,7 @@
 #   limitations under the License.
 #
 
+__doc__ = "State machine with all settings."
+__all__ = ["ColorCode", "State"]
+
 from ._state import ColorCode, State

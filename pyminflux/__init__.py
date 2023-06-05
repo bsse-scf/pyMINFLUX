@@ -20,3 +20,20 @@ __version__ = "0.1.3"
 
 # PyQtGraph settings
 pg.setConfigOption("imageAxisOrder", "row-major")  # For best performance
+
+# Documentation
+__doc__ = f"""
+This is the documentation of the `pyminflux` core command-line API (version {__version__}).
+
+Currently, `pyminflux` is compatible with python 3.10 and 3.11.
+"""
+
+# Do not build the documentation for the following modules
+__pdoc__ = {}
+__pdoc__["base"] = False
+__pdoc__["main"] = False
+__pdoc__["resources"] = False
+__pdoc__["settings"] = False
+__pdoc__["threads"] = False
+__pdoc__["ui"] = False
+__pdoc__["utils"] = False

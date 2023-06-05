@@ -13,3 +13,4 @@ __pycache__/
 /.coverage
 /pyMINFLUX.spec
 .DS_Store
+/doc/

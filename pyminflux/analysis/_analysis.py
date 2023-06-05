@@ -146,7 +146,7 @@ def ideal_hist_bins(values: np.ndarray, scott: bool = False):
 def get_robust_threshold(values: np.ndarray, factor: float = 2.0):
     """Calculate a robust threshold for the array of values.
 
-    The threshold is defines as median + thresh * median absolute deviation.
+    The threshold is defines as `median + thresh * median absolute deviation`.
 
     The median absolute deviation is divided by 0.67449 to bring it in the
     same scale as the (non-robust) standard deviation.
@@ -640,12 +640,16 @@ def render_xy(
     Returns
     -------
 
-    h: rendered image (as float32 2D NumPy array)
-    xi: array of x coordinates of the output x, y grid
-    yi: array of x coordinates of the output x, y grid
-    m: logical array with the positions that were considered. The False entries were rejected because they were
-       outside the rx, ry ranges (with the additional constraint of the edge effect of the Gaussian support for
-    the "fixed_gaussian" render type.
+    h: np.ndarray
+        Rendered image (as float32 2D NumPy array)
+    xi: np.ndarray
+        Array of x coordinates for the output x, y grid
+    yi: np.ndarray
+        Array of x coordinates for the output x, y grid
+    m: np.ndarray
+        Logical array with the positions that were considered. The False entries were rejected because they were
+        outside the rx, ry ranges (with the additional constraint of the edge effect of the Gaussian support for
+        the "fixed_gaussian" render type.
     """
 
     if render_type is None:

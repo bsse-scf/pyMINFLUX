@@ -69,6 +69,9 @@ ordered-set = "^4.1.0"
 pytest-cov = "^4.0.0"
 pre-commit = "^3.1.1"
 pyinstaller = "5.10.1"
+pdoc3 = "^0.10.0"
+pytest-parallel = "^0.1.1"
+py = "^1.11.0"
 
 [tool.poetry.scripts]
 pyminflux = "pyminflux.main:main"
