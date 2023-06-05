@@ -266,21 +266,16 @@ def extract_raw_npy_data_files(tmpdir):
 
 
 def test_assign_fluorophore_id(extract_raw_npy_data_files):
-    # Initialize State
-    state = State()
 
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Create random fluorophore IDs (1 or 2)
     rng = np.random.default_rng(seed=42)
@@ -324,21 +319,16 @@ def test_assign_fluorophore_id(extract_raw_npy_data_files):
 
 
 def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
-    # Initialize State
-    state = State()
 
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Check counts for totally unfiltered data
     assert len(reader.processed_dataframe.index) == 40, "Wrong total number of entries"
@@ -349,9 +339,9 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
         len(processor.filtered_dataframe.index) == 40
     ), "Wrong number of filtered entries"
 
-    # Check that no traces are shorter than state.min_num_loc_per_trace
+    # Check that no traces are shorter than processor.min_num_loc_per_trace
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < state.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
 
     # Assign the test fluorophore ids
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -374,9 +364,9 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     expected_tids = np.array([51, 54, 97, 176])
     assert np.all(extracted_tids == expected_tids), "Unexpected set of filtered TIDs."
 
-    # Check that no traces are shorter than state.min_num_loc_per_trace
+    # Check that no traces are shorter than processor.min_num_loc_per_trace
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < state.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
 
     # Set the fluorophore id to 2
     processor.current_fluorophore_id = 2
@@ -396,22 +386,19 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     expected_tids = np.array([70, 102, 151, 171])
     assert np.all(extracted_tids == expected_tids), "Unexpected set of filtered TIDs."
 
-    # Check that no traces are shorter than state.min_num_loc_per_trace
+    # Check that no traces are shorter than processor.min_num_loc_per_trace
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < state.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
 
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 4
+    # min_num_loc_per_trace = 4 (filter short traces)
     #
-
-    # Filter short traces
-    state.min_num_loc_per_trace = 4
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
 
     # Check counts for totally unfiltered data
     assert len(reader.processed_dataframe.index) == 40, "Wrong total number of entries"
@@ -422,9 +409,9 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
         len(processor.filtered_dataframe.index) == 35
     ), "Wrong number of filtered entries"
 
-    # Check that no traces are shorter than state.min_num_loc_per_trace
+    # Check that no traces are shorter than processor.min_num_loc_per_trace
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < state.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
 
     # Expected TIDs
     extracted_tids = np.unique(processor.filtered_dataframe["tid"])
@@ -452,9 +439,9 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     expected_tids = np.array([54, 97, 176])
     assert np.all(extracted_tids == expected_tids), "Unexpected set of filtered TIDs."
 
-    # Check that no traces are shorter than state.min_num_loc_per_trace
+    # Check that no traces are shorter than processor.min_num_loc_per_trace
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < state.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
 
     # Set the fluorophore id to 2
     processor.current_fluorophore_id = 2
@@ -474,27 +461,22 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     expected_tids = np.array([70, 171])
     assert np.all(extracted_tids == expected_tids), "Unexpected set of filtered TIDs."
 
-    # Check that no traces are shorter than state.min_num_loc_per_trace
+    # Check that no traces are shorter than processor.min_num_loc_per_trace
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < state.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
 
 
 def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
-    # Initialize State
-    state = State()
 
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Check that fluorophore 0 (All) is selected
     assert processor.current_fluorophore_id == 0, "Default fluorophore must be 0."
@@ -813,15 +795,12 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 4
+    # min_num_loc_per_trace = 4 (filter short traces)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 4
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
 
     # Check that fluorophore 0 (All) is selected
     assert processor.current_fluorophore_id == 0, "Default fluorophore must be 0."
@@ -1049,21 +1028,16 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
 
 
 def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
-    # Initialize State
-    state = State()
 
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1102,15 +1076,12 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 4
+    # min_num_loc_per_trace = 4 (filter short traces)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 4
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1150,8 +1121,6 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
 def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     tmpdir,
 ):
-    # Initialize State
-    state = State()
 
     #
     # 2D filtering
@@ -1160,15 +1129,12 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1208,15 +1174,12 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 4
+    # min_num_loc_per_trace = 4 (filter short traces)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 4
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1260,15 +1223,12 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1306,15 +1266,12 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 4
+    # min_num_loc_per_trace = 4 (filter short traces)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 4
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1356,15 +1313,12 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1402,15 +1356,12 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 4
+    # min_num_loc_per_trace = 4 (filter short traces)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 4
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1447,21 +1398,16 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
 
 
 def test_extract_filtered_fluorophore_ids():
-    # Initialize State
-    state = State()
 
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Check that the global filters have been applied (and nothing has been dropped)
     assert (
@@ -1528,15 +1474,12 @@ def test_extract_filtered_fluorophore_ids():
     #
     # Now the same with some global filtering applied.
     #
-    # min_num_loc_per_trace = 4
+    # min_num_loc_per_trace = 4 (filter short traces)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 4
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
 
     # Reassign the fluorophore IDs
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1595,21 +1538,15 @@ def test_extract_filtered_fluorophore_ids():
 def test_assignment_by_increasing_dcr(tmpdir):
     """The fluorophore ID is sorted by increasing DCR."""
 
-    # Initialize State
-    state = State()
-
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Set the swapped fluorophore IDs
     processor.set_fluorophore_ids(reader.test_swapped_fluorophore_ids)
@@ -1645,21 +1582,16 @@ def test_assignment_by_increasing_dcr(tmpdir):
 
 
 def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
-    # Initialize State
-    state = State()
 
     #
     # MockFromRealDataMinFluxReader
     #
-    # min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockFromRealDataMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Consistency check
     assert len(reader.processed_dataframe.index) == len(reader.test_fluorophore_ids)
@@ -1703,15 +1635,12 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
     #
     # MockFromRealDataMinFluxReader
     #
-    # min_num_loc_per_trace = 4
+    # min_num_loc_per_trace = 4 (filter short traces)
     #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 4
 
     # MockMinFluxReader
     reader = MockFromRealDataMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
 
     # Consistency check
     assert len(reader.processed_dataframe.index) == len(reader.test_fluorophore_ids)
@@ -1756,21 +1685,15 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
 def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     """Test retrieving the join of the fluorophore 1 and 2 filtered datasets."""
 
-    # Initialize State
-    state = State()
-
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 1
-    #
-
-    # Make sure not to filter anything
-    state.min_num_loc_per_trace = 1
+    # min_num_loc_per_trace = 1 (do not filter anything)
+    min_num_loc_per_trace = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
 
     # Check that the global filters have been applied (and nothing has been dropped)
     assert (
@@ -1847,15 +1770,12 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     #
     # MockMinFluxReader
     #
-    # min_num_loc_per_trace = 4
+    # min_num_loc_per_trace = 4 (filter short traces)
     #
-
-    # Now we filter all short-lived traces
-    state.min_num_loc_per_trace = 4
 
     # MockMinFluxReader
     reader = MockMinFluxReader()
-    processor = MinFluxProcessor(reader)
+    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
 
     # Check that the global filters have been applied (and nothing has been dropped)
     assert (

@@ -14,7 +14,6 @@
 #
 
 from enum import IntEnum
-from pprint import pprint
 from typing import Union
 
 from ..base import Singleton
@@ -27,7 +26,11 @@ class ColorCode(IntEnum):
 
 
 class State(metaclass=Singleton):
-    """State machine (singleton class)."""
+    """State machine (singleton class).
+
+    This keeps the State for the user interface! That is, only classes under pyminflux.ui
+    should use State()! The core API must remain independent of State!
+    """
 
     __SLOTS__ = [
         "plot_average_localisations",

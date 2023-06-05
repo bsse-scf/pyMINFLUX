@@ -20,7 +20,6 @@ import pandas as pd
 from scipy.stats import mode
 
 from pyminflux.reader import MinFluxReader
-from pyminflux.state import State
 
 
 class MinFluxProcessor:
@@ -36,6 +35,7 @@ class MinFluxProcessor:
         "_current_fluorophore_id",
         "_filtered_stats_dataframe",
         "__fluorophore_ids",
+        "_min_num_loc_per_trace",
         "_selected_rows_dict",
         "_stats_to_be_recomputed",
         "_weighted_localizations",
@@ -43,21 +43,24 @@ class MinFluxProcessor:
         "_use_weighted_localizations",
     ]
 
-    def __init__(self, minfluxreader: MinFluxReader):
+    def __init__(self, reader: MinFluxReader, min_num_loc_per_trace: int = 1):
         """Constructor.
 
         Parameters
         ----------
 
-        minfluxreader: MinFluxReader
+        reader: MinFluxReader
             MinFluxReader object.
+
+        min_num_loc_per_trace: int (Default = 1)
+            Minimum number of localizations for a trace to be kept. Shorter traces are dropped.
         """
 
         # Store a reference to the MinFluxReader
-        self._minfluxreader: MinFluxReader = minfluxreader
+        self._minfluxreader: MinFluxReader = reader
 
-        # Keep a reference to the state machine
-        self.state = State()
+        # Global options
+        self._min_num_loc_per_trace: int = min_num_loc_per_trace
 
         # Cache the filtered stats dataframe
         self._filtered_stats_dataframe = None
@@ -98,6 +101,19 @@ class MinFluxProcessor:
                 index=self.full_dataframe.index,
             ),
         }
+
+    @property
+    def min_num_loc_per_trace(self):
+        """Minimum number of localizations for the trace to be kept."""
+        return self._min_num_loc_per_trace
+
+    @min_num_loc_per_trace.setter
+    def min_num_loc_per_trace(self, value):
+        if value < 1 or int(value) != value:
+            raise ValueError(
+                "MinFluxProcessor.min_num_loc_per_trace must be a positive integer!"
+            )
+        self._min_num_loc_per_trace = value
 
     @property
     def is_3d(self) -> bool:
@@ -514,7 +530,7 @@ class MinFluxProcessor:
 
         # Select all rows where the count of TIDs is larger than self._min_trace_num
         counts = df["tid"].value_counts(normalize=False)
-        return df["tid"].isin(counts[counts >= self.state.min_num_loc_per_trace].index)
+        return df["tid"].isin(counts[counts >= self.min_num_loc_per_trace].index)
 
     def filter_by_single_threshold(
         self, prop: str, threshold: Union[int, float], larger_than: bool = True
