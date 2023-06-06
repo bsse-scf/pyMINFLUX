@@ -17,6 +17,7 @@ import zipfile
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 from scipy.interpolate import CubicSpline, interp1d
 from scipy.io import loadmat
@@ -27,10 +28,9 @@ from pyminflux.analysis import (
     img_fourier_ring_correlation,
     render_xy,
 )
-from pyminflux.analysis._analysis import drift_correction_time_windows_2d
+from pyminflux.analysis._analysis import drift_correction_time_windows_2d, render_xyz
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
-from pyminflux.state import State
 
 
 @pytest.fixture(autouse=False)
@@ -270,7 +270,9 @@ def test_render_xy(extract_raw_npy_data_files):
     )
 
     # Check the returned values
-    assert np.isclose(img.sum(), 12580.0), "Unexpected signal integral."
+    assert np.isclose(
+        img.sum(), len(processor.filtered_dataframe["x"].values)
+    ), "Unexpected signal integral."
     assert np.isclose(xi.min(), 1648.111058125942), "Unexpected x grid (min value)."
     assert np.isclose(xi.max(), 5677.111058125942), "Unexpected x grid (max) value)."
     assert np.isclose(yi.min(), -15658.73531581803), "Unexpected y grid (min value)."
@@ -301,6 +303,115 @@ def test_render_xy(extract_raw_npy_data_files):
     assert m.sum() < len(
         processor.filtered_dataframe["x"].values
     ), "Unexpected number of considered elements."
+
+
+def test_render_xyz(extract_raw_npy_data_files):
+    """Test the analysis.render_xyz() function."""
+
+    #
+    # 3D_ValidOnly.npy
+    #
+    # min_num_loc_per_trace = 1 (do not filter anything)
+    #
+
+    # 3D_ValidOnly.npy
+    reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+
+    # Get boundaries at alpha = 0.0 and min_range = 500: this gives all data back.
+    rx, ry, rz = get_localization_boundaries(
+        processor.filtered_dataframe["x"],
+        processor.filtered_dataframe["y"],
+        processor.filtered_dataframe["z"],
+        alpha=0.0,
+        min_range=500,
+    )
+
+    # Test
+    assert np.isclose(rx[0], 1508.14087089), "Unexpected lower boundary for x."
+    assert np.isclose(rx[1], 5471.75772354), "Unexpected upper boundary for x."
+    assert np.isclose(ry[0], -10781.08977624), "Unexpected lower boundary for y."
+    assert np.isclose(ry[1], -6761.66793333), "Unexpected upper boundary for y."
+    assert np.isclose(rz[0], -358.31916504), "Unexpected lower boundary for z."
+    assert np.isclose(rz[1], 147.03635254), "Unexpected upper boundary for z."
+
+    # Rendering resolution (in nm)
+    sx = 5.0
+    sy = 5.0
+    sz = 5.0
+
+    # Render the 3D image as simple histogram
+    img, xi, yi, zi, m = render_xyz(
+        processor.filtered_dataframe["x"].values,
+        processor.filtered_dataframe["y"].values,
+        processor.filtered_dataframe["z"].values,
+        sx=sx,
+        sy=sy,
+        sz=sz,
+        rx=None,
+        ry=None,
+        rz=None,
+    )
+
+    # Check the returned values
+    assert np.isclose(img.sum(), 5810.0), "Unexpected signal integral."
+    assert np.isclose(xi.min(), 1510.6408708914191), "Unexpected x grid (min value)."
+    assert np.isclose(xi.max(), 5470.640870891419), "Unexpected x grid (max) value)."
+    assert np.isclose(yi.min(), -10778.589776239387), "Unexpected y grid (min value)."
+    assert np.isclose(yi.max(), -6763.589776239387), "Unexpected y grid (max value)."
+    assert np.isclose(zi.min(), -355.8191650390625), "Unexpected z grid (min value)."
+    assert np.isclose(zi.max(), 149.1808349609375), "Unexpected z grid (max value)."
+    assert m.sum() == 5810.0, "Unexpected number of considered elements."
+
+    #
+    # Fig2_U2OS_Tom70-Dreiklang_ATP5B_AB_Minflux3D.mat -> csv
+    #
+    # From:
+    #   * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
+    #   * [code]  https://zenodo.org/record/6563100
+
+    df = pd.read_csv(
+        Path(__file__).parent
+        / "data"
+        / "Fig2_U2OS_Tom70-Dreiklang_ATP5B_AB_Minflux3D.csv",
+        header=None,
+    )
+    pos = df.values
+
+    # Rendering resolution (in nm)
+    sx = 3.0
+    sy = 3.0
+    sz = 3.0
+
+    # Spatial ranges
+    rx = (-434.5609880335669, 367.8659119806681)
+    ry = (-1419.260678440071, 1801.300331041331)
+    rz = (-298.8539888427734, 90.5609084228519)
+
+    # Render the 3D image as a Gaussian fit
+    img, xi, yi, si, m = render_xyz(
+        pos[:, 0],
+        pos[:, 1],
+        pos[:, 2],
+        sx=sx,
+        sy=sy,
+        sz=sz,
+        rx=rx,
+        ry=ry,
+        rz=rz,
+        render_type="fixed_gaussian",
+        fwhm=15.0,
+    )
+
+    # Check the returned values
+    assert np.isclose(img.sum(), 1691148.8), "Unexpected signal integral."
+    assert np.isclose(xi.min(), -433.0609880335669), "Unexpected x grid (min value)."
+    assert np.isclose(xi.max(), 367.9390119664331), "Unexpected x grid (max) value)."
+    assert np.isclose(yi.min(), -1417.760678440071), "Unexpected y grid (min value)."
+    assert np.isclose(yi.max(), 1801.239321559929), "Unexpected y grid (max value)."
+    assert np.isclose(zi.min(), -355.8191650390625), "Unexpected z grid (min value)."
+    assert np.isclose(zi.max(), 149.1808349609375), "Unexpected z grid (max value)."
+    assert m.sum() == 11217.0, "Unexpected number of considered elements."
 
 
 def test_fourier_ring_correlation_all_pos(extract_raw_npy_data_files):
