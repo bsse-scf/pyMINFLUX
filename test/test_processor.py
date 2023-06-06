@@ -124,7 +124,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_All.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Check counts for totally unfiltered data
     assert (
@@ -177,7 +177,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_All.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
+    processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Check counts for totally unfiltered data
     assert (
@@ -238,7 +238,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Check counts for totally unfiltered data
     assert (
@@ -291,7 +291,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
+    processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Check counts for totally unfiltered data
     assert (
@@ -352,7 +352,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # 3D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Check counts for totally unfiltered data
     assert (
@@ -405,7 +405,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # 3D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
+    processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Check counts for totally unfiltered data
     assert (
@@ -513,7 +513,7 @@ def test_weighted_localizations(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Turn on weighted localization calculation
     processor.use_weighted_localizations = True
@@ -588,7 +588,7 @@ def test_weighted_localizations(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
+    processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Turn on weighted localization calculation
     processor.use_weighted_localizations = True
@@ -663,7 +663,7 @@ def test_weighted_localizations(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Turn on weighted localization calculation
     processor.use_weighted_localizations = True
@@ -738,7 +738,7 @@ def test_weighted_localizations(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Turn on weighted localization calculation
     processor.use_weighted_localizations = True
@@ -816,7 +816,7 @@ def test_apply_threshold(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     num_values = processor.num_values
     assert processor.num_values == 12580, "Wrong total number of entries"
@@ -845,7 +845,7 @@ def test_apply_threshold(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
+    processor = MinFluxProcessor(reader, min_trace_length=4)
 
     num_values = processor.num_values
     assert processor.num_values == 11903, "Wrong total number of entries"
@@ -880,7 +880,7 @@ def test_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     assert processor.num_values == 12580, "Wrong total number of entries"
 
@@ -903,7 +903,7 @@ def test_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
+    processor = MinFluxProcessor(reader, min_trace_length=4)
 
     assert processor.num_values == 11903, "Wrong total number of entries"
 
@@ -929,7 +929,7 @@ def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Select (that is, get a view) by range
     df = processor.select_by_2d_range(
@@ -969,7 +969,7 @@ def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=4)
+    processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Select (that is, get a view) by range
     df = processor.select_by_2d_range(
@@ -1013,7 +1013,7 @@ def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Select (that is, get a view) by range
     df = processor.select_by_1d_range("tim", x_range=(0.0, 60.0))
@@ -1039,7 +1039,7 @@ def test_proper_application_of_global_filters():
     # FILTER 1D RANGE
 
     # We expect 8 entries
-    processor = MinFluxProcessor(MockMinFluxReader(), min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(MockMinFluxReader(), min_trace_length=1)
     assert len(processor.filtered_dataframe.index) == 8
 
     # We filter out 2, and we should be left with 3 for 51 and 3 for 54 = 6
@@ -1073,7 +1073,6 @@ def test_proper_application_of_global_filters():
     processor.reset()
 
     # We expect 5 entries (51 is filtered out to begin with)
-    # processor = MinFluxProcessor(MockMinFluxReader())
     assert len(processor.filtered_dataframe.index) == 5
 
     # We filter out 2, and the remaining 3 should be suppressed by the global
@@ -1117,7 +1116,7 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
 
     # Read and process file
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Select (that is, get a view) by range
     processor.filter_by_1d_range_complement("tim", x_range=(2000, 3000))

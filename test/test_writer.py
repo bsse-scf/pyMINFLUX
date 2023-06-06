@@ -62,7 +62,7 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_All.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Assign fluorophores
     np.random.seed(42)
@@ -137,7 +137,7 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_All.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Assign fluorophores
     np.random.seed(42)
@@ -288,7 +288,7 @@ def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_All.npy")
-    processor = MinFluxProcessor(reader, min_num_loc_per_trace=1)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Assign fluorophores
     np.random.seed(42)
