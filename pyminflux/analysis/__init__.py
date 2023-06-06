@@ -28,6 +28,7 @@ __all__ = [
     "img_fourier_ring_correlation",
     "prepare_histogram",
     "render_xy",
+    "render_xyz",
 ]
 
 from ._analysis import (
@@ -43,4 +44,5 @@ from ._analysis import (
     img_fourier_ring_correlation,
     prepare_histogram,
     render_xy,
+    render_xyz,
 )
