@@ -18,8 +18,10 @@ from typing import Optional
 
 import numpy as np
 from scipy import signal, stats
-from scipy.fft import fft2, ifftshift
+from scipy.fft import fft2, fftn, ifftn, ifftshift
+from scipy.interpolate import CubicSpline, interp1d
 from scipy.ndimage import median_filter
+from scipy.optimize import minimize
 from scipy.signal import find_peaks, savgol_filter
 
 
@@ -771,7 +773,7 @@ def img_fourier_grid(dims, type_name="float64"):
 
     if number_dimensions == 1:
         gx = np.arange(1, dims[0] + 1).astype(type_name)
-        xi = np.fft.ifftshift(gx)
+        xi = ifftshift(gx)
         xi = xi - xi[0]
         return xi
 
@@ -779,9 +781,9 @@ def img_fourier_grid(dims, type_name="float64"):
         gx = np.arange(1, dims[0] + 1).astype(type_name)
         gy = np.arange(1, dims[1] + 1).astype(type_name)
         xi, yi = np.meshgrid(gx, gy, indexing="ij")
-        xi = np.fft.ifftshift(xi)
+        xi = ifftshift(xi)
         xi = xi - xi[0, 0]
-        yi = np.fft.ifftshift(yi)
+        yi = ifftshift(yi)
         yi = yi - yi[0, 0]
         return xi, yi
 
@@ -790,11 +792,11 @@ def img_fourier_grid(dims, type_name="float64"):
         gy = np.arange(1, dims[1] + 1).astype(type_name)
         gz = np.arange(1, dims[2] + 1).astype(type_name)
         xi, yi, zi = np.meshgrid(gx, gy, gz, indexing="ij")
-        xi = np.fft.ifftshift(xi)
+        xi = ifftshift(xi)
         xi = xi - xi[0, 0, 0]
-        yi = np.fft.ifftshift(yi)
+        yi = ifftshift(yi)
         yi = yi - yi[0, 0, 0]
-        zi = np.fft.ifftshift(zi)
+        zi = ifftshift(zi)
         zi = zi - zi[0, 0, 0]
         return xi, yi, zi
 
@@ -805,7 +807,7 @@ def img_fourier_grid(dims, type_name="float64"):
 def img_fourier_ring_correlation(
     image1, image2, sx: float = 1.0, sy: float = 1.0, frc_smoothing_kernel=None
 ):
-    """Perform Fourier ring correlation analysis on two images.
+    """Perform Fourier ring correlation analysis on two images and returns the estimated resolution in m.
 
     Reimplemented (with modifications) from:
 
@@ -836,10 +838,17 @@ def img_fourier_ring_correlation(
     Returns
     -------
 
-    estimated_resolution: estimated image resolution in nm.
-    fc: @TODO Add description
-    qi: @TODO Add description
-    ci: @TODO Add description
+    estimated_resolution: float
+        Estimated image resolution in m.
+
+    fc: np.ndarray
+        @TODO Add description
+
+    qi: np.ndarray
+        Array of frequencies.
+
+    ci: np.ndarray
+        Array of Fourier Ring Correlations (corresponding to the frequencies in qi)
     """
 
     def bin_data(qi, data):
@@ -894,10 +903,7 @@ def img_fourier_ring_correlation(
     # Additional smoothing
     ci = savgol_filter(ci, 7, 1)
 
-    # @TODO Make this an option:
-    # ci = ndimage.convolve(ci, np.array([1, 1, 1]) / 3, mode='nearest')
-
-    # Determine image resolution
+    # Determine image resolution (in m)
     q_critical = qi[np.where(ci < 1 / 7)[0][0]] if np.any(ci < 1 / 7) else qi[-1]
     estimated_resolution = 1 / q_critical
 
@@ -1037,3 +1043,242 @@ def estimate_resolution_by_frc(
         return resolution, qi, ci, resolutions, cis
     else:
         return resolution, qi, ci
+
+
+def drift_correction_time_windows_2d(
+    x: np.ndarray,
+    y: np.ndarray,
+    t: np.ndarray,
+    sxy: float,
+    rx: Optional[tuple] = None,
+    ry: Optional[tuple] = None,
+    T: Optional[float] = None,
+    tid: Optional[np.ndarray] = None,
+):
+    """Estimate drift correction based on auto-correlation.
+
+    Reimplemented (with modifications) from:
+
+    * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
+    * [code]  https://zenodo.org/record/6563100
+
+    Parameters
+    ----------
+
+    x: np.ndarray
+        Array of localization x coordinates.
+
+    y: np.ndarray
+        Array of localization y coordinates.
+
+    t: np.ndarray
+        Array of localization time points.
+
+    sxy: float (Default = 1.0)
+        Resolution in nm in both the x and y direction.
+
+    rx: tuple (Optional)
+        (min, max) boundaries for the x coordinates. If omitted, it will default to (x.min(), x.max()).
+
+    ry: float (Optional)
+        (min, max) boundaries for the y coordinates. If omitted, it will default to (y.min(), y.max()).
+
+    T: float (Optional)
+        Time window for analysis.
+
+    tid: np.ndarray (Optional)
+        Only used if T is None. The unique trace IDs are used to calculate the time window for
+        analysis using some heuristics.
+    """
+
+    if T is None and tid is None:
+        raise ValueError("If T is not defined, the array of TIDs must be provided.")
+
+    # Heuristics to define the length of the time window
+    if T is None:
+        rt = (t[0], t[-1])
+        T = len(np.unique(tid)) * np.diff(rx)[0] * np.diff(ry)[0] / 3e6
+        T = np.min([T, np.diff(rt)[0] / 2, 3600])  # At least two time windows
+        T = max([T, 600])  # And at least 10 minutes long
+
+    # Number of time windows to use
+    Rt = [t[0], t[-1]]
+    Ns = int(np.floor((Rt[1] - Rt[0]) / T))  # total number of time windows
+    assert Ns > 1, "At least two time windows are needed, please reduce T"
+
+    # Center of mass
+    CR = 10
+
+    # Maximum number of frames in the cross-correlation
+    D = Ns
+
+    # Weight with distance
+    w = np.linspace(1, 0.5, D)
+
+    # Regularization term (roughness)
+    l = 1e-1
+
+    # get dimensions
+    Nx = int(np.ceil((rx[1] - rx[0]) / sxy))
+    Ny = int(np.ceil((ry[1] - ry[0]) / sxy))
+    c = np.round(np.array([Ny, Nx]) / 2)
+
+    # create all the histograms
+    h = [None] * Ns
+    ti = np.zeros(Ns)  # average times of the snapshots
+    for j in range(Ns):
+        t0 = Rt[0] + j * T
+        idx = (t >= t0) & (t < t0 + T)
+        ti[j] = np.mean(t[idx])
+        hj, _, _, _ = render_xy(
+            x[idx], y[idx], sxy, sxy, rx, ry, render_type="fixed_gaussian", fwhm=3 * sxy
+        )
+        h[j] = hj
+
+    # Compute fourier transform of every histogram
+    for j in range(Ns):
+        h[j] = fftn(h[j])
+
+    # Compute cross-correlations
+    dx = np.zeros((Ns, Ns))
+    dy = np.zeros((Ns, Ns))
+    dm = np.zeros((Ns, Ns), dtype=bool)
+    dx0 = np.zeros(Ns - 1)
+    dy0 = np.zeros(Ns - 1)
+
+    for i in range(Ns - 1):
+        hi = np.conj(h[i])
+        for j in range(i + 1, min(Ns, i + D)):  # either to Ns or maximally D more
+            hj = ifftshift(np.real(ifftn(hi * h[j])))
+            yc = c[0]
+            xc = c[1]
+
+            # Centroid estimation
+            gy = np.arange(yc - 2 * CR, yc + 2 * CR + 1).astype(int)
+            gx = np.arange(xc - 2 * CR, xc + 2 * CR + 1).astype(int)
+            gy, gx = np.meshgrid(gy, gx, indexing="ij")
+            d = hj[gy, gx]
+            gy = gy.flatten()
+            gx = gx.flatten()
+            d = d.flatten() - np.min(d)
+            d = d / np.sum(d)
+            for k in range(20):
+                wc = np.exp(
+                    -4 * np.log(2) * ((xc - gx) ** 2 + (yc - gy) ** 2) / CR**2
+                )
+                n = np.sum(wc * d)
+                xc = np.sum(gx * d * wc) / n
+                yc = np.sum(gy * d * wc) / n
+            sh = np.array([-1.0, 1.0]) * (np.array([yc, xc]) - c)
+            dy[i, j] = sh[0]
+            dx[i, j] = sh[1]
+            dm[i, j] = True
+            if j == i + 1:
+                dy0[i] = sh[0]
+                dx0[i] = sh[1]
+
+    a, b = np.nonzero(dm)
+    dx = dx[dm]
+    dy = dy[dm]
+    sx0 = np.cumsum(dx0)
+    sy0 = np.cumsum(dy0)
+
+    # Minimize cost function with some kind of regularization
+    options = {"disp": False, "maxiter": 1e5}
+
+    minimizer = lambda x: lse_distance(x, a, b, dx, w, l)
+    res = minimize(minimizer, sx0, options=options, method="BFGS")
+    sx = np.concatenate(([0], res.x))
+
+    minimizer = lambda x: lse_distance(x, a, b, dy, w, l)
+    res = minimize(minimizer, sy0, options=options, method="BFGS")
+    sy = np.concatenate(([0], res.x))
+
+    # reduce by mean (so shift is minimal)
+    sx = sx - np.mean(sx)
+    sy = sy - np.mean(sy)
+
+    # multiply by pixel size
+    sx = sx * sxy
+    sy = sy * sxy
+
+    # Create cubic spline interpolation functions
+    cubic_spline_x = CubicSpline(ti, sx)
+    cubic_spline_y = CubicSpline(ti, sy)
+
+    # Create linear interpolation function for extrapolation
+    linear_interp_x = interp1d(ti, sx, kind="linear", fill_value="extrapolate")
+    linear_interp_y = interp1d(ti, sy, kind="linear", fill_value="extrapolate")
+
+    def interpolant_x(x):
+        """Use cubic spline interpolation for values within the original range
+        and linear interpolation for extrapolation outside the original range."""
+        if np.min(ti) <= x <= np.max(ti):
+            return cubic_spline_x(x)
+        else:
+            return linear_interp_x(x)
+
+    def interpolant_y(x):
+        """Use cubic spline interpolation for values within the original range
+        and linear interpolation for extrapolation outside the original range."""
+        if np.min(ti) <= x <= np.max(ti):
+            return cubic_spline_y(x)
+        else:
+            return linear_interp_y(x)
+
+    # Apply interpolation
+    Fx = np.vectorize(interpolant_x)
+    Fy = np.vectorize(interpolant_y)
+
+    # Undrift
+    dx = Fx(t)
+    dy = Fy(t)
+
+    # Apply to every frame
+    ti = np.arange(Rt[0], Rt[1], T / 10)
+    dxt = Fx(ti)
+    dyt = Fy(ti)
+
+    return dx, dy, dxt, dyt, ti
+
+
+def lse_distance(x, a, b, s, w, l):
+    """Calculate Least Squares Error (LSE) with regularization.
+
+    Reimplemented (with modifications) from:
+
+    * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
+    * [code]  https://zenodo.org/record/6563100
+
+    Parameters
+    ----------
+
+    x: np.ndarray
+
+    a: np.ndarray
+        Array of indices to be used (with b) to calculate the predicted shifts (x[b] - x[a]).
+
+    b: np.ndarray
+        Array of indices to be used (with a) to calculate the predicted shifts (x[b] - x[a]).
+
+    s: np.ndarray
+        Array of shifts to be compared.
+
+    w: float
+        Weighting factor.
+
+    l: float
+        Regularization term.
+    """
+
+    # Add shift 0 for the first frame
+    x = np.concatenate(([0], x))
+    dx = x[b] - x[a]
+    y = w[b - a] * (dx - s) ** 2
+    y = np.mean(y)
+
+    # Add regularization term (roughness)
+    r = l * np.sum(np.diff(x) ** 2)
+    y = y + r
+
+    return y

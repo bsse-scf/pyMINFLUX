@@ -18,6 +18,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from scipy.interpolate import CubicSpline, interp1d
 from scipy.io import loadmat
 
 from pyminflux.analysis import (
@@ -26,6 +27,7 @@ from pyminflux.analysis import (
     img_fourier_ring_correlation,
     render_xy,
 )
+from pyminflux.analysis._analysis import drift_correction_time_windows_2d
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 from pyminflux.state import State
@@ -752,3 +754,112 @@ def test_estimate_resolution_mat(extract_raw_npy_data_files):
     assert np.allclose(expected_ci_end, ci[-5:]), "Unexpected end of ci."
     assert np.allclose(expected_cis_start, cis[0, :]), "Unexpected array of cis."
     assert np.allclose(expected_cis_end, cis[-1, :]), "Unexpected array of cis."
+
+
+def test_estimate_drif_2d_mat(extract_raw_npy_data_files):
+    """Test the estimate_resolution_frc() function on average positions per TID (.mat file)."""
+
+    #
+    # Fig1a_Tom70-Dreiklang_Minflux.mat
+    #
+    # From:
+    #   * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
+    #   * [code]  https://zenodo.org/record/6563100
+
+    minflux = loadmat(
+        Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat"
+    )
+    minflux = minflux["minflux"]
+
+    # Extract tid, x and y coordinates
+    t = minflux["t"][0][0].ravel()
+    tid = minflux["id"][0][0].ravel()
+    pos = minflux["pos"][0][0][:, :2]
+    x = pos[:, 0]
+    y = pos[:, 1]
+
+    # Spatial tanges
+    rx = (-372.5786, 318.8638)
+    ry = (-1148.8, 1006.6)
+
+    # Resolution
+    sxy = 2
+
+    # Run the 2D drift correction
+    dx, dy, dxt, dyt, ti = drift_correction_time_windows_2d(
+        x, y, t, sxy=sxy, rx=rx, ry=ry, T=None, tid=tid
+    )
+
+    # Expected values
+    expected_dx_first = -2.1985834102242396
+    expected_dx_last = -2.5156897629823365
+    expected_dx_mean = -0.33599535786186124
+    expected_dx_std = 1.2535025778311206
+    expected_dy_first = 0.4592257965166383
+    expected_dy_last = -6.114620583136622
+    expected_dy_mean = -0.6340625191539444
+    expected_dy_std = 2.2381205961801
+    expected_dxt_first = -3.457289393547788
+    expected_dxt_last = -9.089571668662215
+    expected_dxt_mean = -1.4669533857988746
+    expected_dxt_std = 2.8544371804389628
+    expected_dyt_first = -0.6248302430747441
+    expected_dyt_last = -11.719318314815569
+    expected_dyt_mean = -2.0325129774496147
+    expected_dyt_std = 3.842593627348427
+    expected_ti_first = 0.0
+    expected_ti_last = 3634.628873523648
+    expected_ti_mean = 1817.3144367618238
+    expected_ti_std = 1075.7938918849325
+
+    # Test
+    assert np.isclose(expected_dx_first, dx[0]), "Unexpected value for dx[0]."
+    assert np.isclose(expected_dx_last, dx[-1]), "Unexpected value for dx[-1]."
+    assert np.isclose(expected_dx_mean, dx.mean()), "Unexpected value for dx.mean()."
+    assert np.isclose(expected_dx_std, dx.std()), "Unexpected value for dx.std()."
+    assert len(dx) == len(x), "Unexpected length of vector x."
+    assert np.isclose(expected_dy_first, dy[0]), "Unexpected value for dy[0]."
+    assert np.isclose(expected_dy_last, dy[-1]), "Unexpected value for dy[-1]."
+    assert np.isclose(expected_dy_mean, dy.mean()), "Unexpected value for dy.mean()."
+    assert np.isclose(expected_dy_std, dy.std()), "Unexpected value for dy.std()."
+    assert len(dy) == len(y), "Unexpected length of vector y."
+    assert np.isclose(expected_dxt_first, dxt[0]), "Unexpected value for dxt[0]."
+    assert np.isclose(expected_dxt_last, dxt[-1]), "Unexpected value for dxt[-1]."
+    assert np.isclose(expected_dxt_mean, dxt.mean()), "Unexpected value for dxt.mean()."
+    assert np.isclose(expected_dxt_std, dxt.std()), "Unexpected value for dxt.std()."
+    assert len(dxt) == 40, "Unexpected length of vector dxt."
+    assert np.isclose(expected_dyt_first, dyt[0]), "Unexpected value for dyt[0]."
+    assert np.isclose(expected_dyt_last, dyt[-1]), "Unexpected value for dyt[-1]."
+    assert np.isclose(expected_dyt_mean, dyt.mean()), "Unexpected value for dyt.mean()."
+    assert np.isclose(expected_dyt_std, dyt.std()), "Unexpected value for dyt.std()."
+    assert len(dyt) == 40, "Unexpected length of vector dyt."
+    assert np.isclose(expected_ti_first, ti[0]), "Unexpected value for ti[0]."
+    assert np.isclose(expected_ti_last, ti[-1]), "Unexpected value for ti[-1]."
+    assert np.isclose(expected_ti_mean, ti.mean()), "Unexpected value for ti.mean()."
+    assert np.isclose(expected_ti_std, ti.std()), "Unexpected value for ti.std()."
+    assert len(ti) == 40, "Unexpected length of vector ti."
+
+
+def test_adaptive_interpolation(extract_raw_npy_data_files):
+
+    # Sample data
+    ti = np.array([0, 1, 2, 3, 4])
+    sx = np.array([0, 1, 4, 9, 16])
+
+    # Create cubic spline interpolation function
+    cubic_spline = CubicSpline(ti, sx)
+
+    # Create linear interpolation function for extrapolation
+    linear_interp = interp1d(ti, sx, kind="linear", fill_value="extrapolate")
+
+    def combined_interp(x):
+        # Use cubic spline interpolation for values within the original range
+        # and linear interpolation for extrapolation
+        if np.min(ti) <= x <= np.max(ti):
+            return cubic_spline(x)
+        else:
+            return linear_interp(x)
+
+    # Test the combined_interp function
+    assert combined_interp(1.5) == 2.25, "Expected result of cubic interpolation."
+    assert combined_interp(-1) == -1.0, "Expected result of linear extrapolation."
