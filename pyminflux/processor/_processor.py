@@ -42,7 +42,7 @@ class MinFluxProcessor:
         "_use_weighted_localizations",
     ]
 
-    def __init__(self, reader: MinFluxReader, min_num_loc_per_trace: int = 1):
+    def __init__(self, reader: MinFluxReader, min_trace_length: int = 1):
         """Constructor.
 
         Parameters
@@ -51,7 +51,7 @@ class MinFluxProcessor:
         reader: MinFluxReader
             MinFluxReader object.
 
-        min_num_loc_per_trace: int (Default = 1)
+        min_trace_length: int (Default = 1)
             Minimum number of localizations for a trace to be kept. Shorter traces are dropped.
         """
 
@@ -59,7 +59,7 @@ class MinFluxProcessor:
         self._minfluxreader: MinFluxReader = reader
 
         # Global options
-        self._min_num_loc_per_trace: int = min_num_loc_per_trace
+        self._min_num_loc_per_trace: int = min_trace_length
 
         # Cache the filtered stats dataframe
         self._filtered_stats_dataframe = None

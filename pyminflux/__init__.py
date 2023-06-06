@@ -26,6 +26,17 @@ __doc__ = f"""
 This is the documentation of the `pyminflux` core command-line API (version {__version__}).
 
 Currently, `pyminflux` is compatible with python 3.10 and 3.11.
+
+Example usage:
+
+```python
+from pyminflux.reader import MinFluxReader
+from pyminflux.processor import MinFluxProcessor
+
+# Read a file and initialize the processor
+reader = MinFluxReader("imspector_file.npy")
+processor = MinFluxProcessor(reader, min_trace_length=4)
+```
 """
 
 # Do not build the documentation for the following modules that are only used by the user interface.
