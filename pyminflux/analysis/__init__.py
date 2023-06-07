@@ -18,6 +18,8 @@ __doc__ = "Analysis functions."
 __all__ = [
     "calculate_2d_histogram",
     "calculate_density_map",
+    "drift_correction_time_windows_2d",
+    "drift_correction_time_windows_3d",
     "estimate_resolution_by_frc",
     "find_cutoff_near_value",
     "find_first_peak_bounds",
@@ -34,6 +36,8 @@ __all__ = [
 from ._analysis import (
     calculate_2d_histogram,
     calculate_density_map,
+    drift_correction_time_windows_2d,
+    drift_correction_time_windows_3d,
     estimate_resolution_by_frc,
     find_cutoff_near_value,
     find_first_peak_bounds,

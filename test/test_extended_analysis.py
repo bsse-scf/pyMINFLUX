@@ -23,12 +23,14 @@ from scipy.interpolate import CubicSpline, interp1d
 from scipy.io import loadmat
 
 from pyminflux.analysis import (
+    drift_correction_time_windows_2d,
+    drift_correction_time_windows_3d,
     estimate_resolution_by_frc,
     get_localization_boundaries,
     img_fourier_ring_correlation,
     render_xy,
+    render_xyz,
 )
-from pyminflux.analysis._analysis import drift_correction_time_windows_2d, render_xyz
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 
@@ -374,9 +376,8 @@ def test_render_xyz(extract_raw_npy_data_files):
         Path(__file__).parent
         / "data"
         / "Fig2_U2OS_Tom70-Dreiklang_ATP5B_AB_Minflux3D.csv",
-        header=None,
     )
-    pos = df.values
+    pos = df[["x", "y", "z"]].values
 
     # Rendering resolution (in nm)
     sx = 3.0
@@ -492,7 +493,7 @@ def test_fourier_ring_correlation_all_pos_mat(extract_raw_npy_data_files):
     #   * [code]  https://zenodo.org/record/6563100
 
     minflux = loadmat(
-        Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat"
+        str(Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat")
     )
     minflux = minflux["minflux"]
 
@@ -618,7 +619,7 @@ def test_fourier_ring_correlation_per_tid_mat(extract_raw_npy_data_files):
     #   * [code]  https://zenodo.org/record/6563100
 
     minflux = loadmat(
-        Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat"
+        str(Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat")
     )
     minflux = minflux["minflux"]
 
@@ -782,7 +783,7 @@ def test_estimate_resolution_mat(extract_raw_npy_data_files):
     #   * [code]  https://zenodo.org/record/6563100
 
     minflux = loadmat(
-        Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat"
+        str(Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat")
     )
     minflux = minflux["minflux"]
 
@@ -878,7 +879,7 @@ def test_estimate_drift_2d_mat(extract_raw_npy_data_files):
     #   * [code]  https://zenodo.org/record/6563100
 
     minflux = loadmat(
-        Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat"
+        str(Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat")
     )
     minflux = minflux["minflux"]
 
@@ -889,7 +890,7 @@ def test_estimate_drift_2d_mat(extract_raw_npy_data_files):
     x = pos[:, 0]
     y = pos[:, 1]
 
-    # Spatial tanges
+    # Spatial ranges
     rx = (-372.5786, 318.8638)
     ry = (-1148.8, 1006.6)
 
@@ -902,22 +903,22 @@ def test_estimate_drift_2d_mat(extract_raw_npy_data_files):
     )
 
     # Expected values
-    expected_dx_first = -2.2014807027329963
-    expected_dx_last = -2.541205783291777
-    expected_dx_mean = -0.338792740699712
-    expected_dx_std = 1.2603486359616478
-    expected_dy_first = 0.46747011928077886
-    expected_dy_last = -6.16791544426064
-    expected_dy_mean = -0.6394555159441531
-    expected_dy_std = 2.2579837902399236
-    expected_dxt_first = -3.4663489361773836
-    expected_dxt_last = -9.147080766583699
-    expected_dxt_mean = -1.476706623548483
-    expected_dxt_std = 2.8720246491726518
-    expected_dyt_first = -0.6245906574247098
-    expected_dyt_last = -11.813880958051834
-    expected_dyt_mean = -2.049107728533815
-    expected_dyt_std = 3.8742259346369297
+    expected_dx_first = -2.205576196850738
+    expected_dx_last = -2.6063570587906
+    expected_dx_mean = -0.34583151863400935
+    expected_dx_std = 1.2769783723616916
+    expected_dy_first = 0.5048935277587024
+    expected_dy_last = -6.146428606993543
+    expected_dy_mean = -0.6359990326545234
+    expected_dy_std = 2.253462631007072
+    expected_dxt_first = -3.485054708859894
+    expected_dxt_last = -9.288018225459824
+    expected_dxt_mean = -1.5007376329920046
+    expected_dxt_std = 2.915040866854371
+    expected_dyt_first = -0.5700697898476204
+    expected_dyt_last = -11.702915453524087
+    expected_dyt_mean = -2.0316526617814694
+    expected_dyt_std = 3.843656518199582
     expected_ti_first = 0.0
     expected_ti_last = 3634.628873523648
     expected_ti_mean = 1817.3144367618238
@@ -949,6 +950,111 @@ def test_estimate_drift_2d_mat(extract_raw_npy_data_files):
     assert np.isclose(expected_ti_mean, ti.mean()), "Unexpected value for ti.mean()."
     assert np.isclose(expected_ti_std, ti.std()), "Unexpected value for ti.std()."
     assert len(ti) == 40, "Unexpected length of vector ti."
+
+
+def test_estimate_drift_3d_mat(extract_raw_npy_data_files):
+    """Test the estimate_resolution_frc() function on average positions per TID (.mat file)."""
+
+    #
+    # Fig2_U2OS_Tom70-Dreiklang_ATP5B_AB_Minflux3D.mat -> csv
+    #
+    # From:
+    #   * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
+    #   * [code]  https://zenodo.org/record/6563100
+
+    df = pd.read_csv(
+        Path(__file__).parent
+        / "data"
+        / "Fig2_U2OS_Tom70-Dreiklang_ATP5B_AB_Minflux3D.csv",
+    )
+
+    # Extract tid, x and y coordinates
+    tid = df["tid"].values
+    t = df["t"].values
+    pos = df[["x", "y", "z"]].values
+    x = pos[:, 0]
+    y = pos[:, 1]
+    z = pos[:, 2]
+
+    # Spatial ranges
+    rx = (-434.5609880335669, 367.8659119806681)
+    ry = (-1419.260678440071, 1801.300331041331)
+    rz = (-298.8539888427734, 90.5609084228519)
+
+    # Resolution
+    sxyz = 5
+
+    # Run the 2D drift correction
+    dx, dy, dz, dxt, dyt, dzt, ti = drift_correction_time_windows_3d(
+        x, y, z, t, sxyz=sxyz, rx=rx, ry=ry, rz=rz, T=None, tid=tid
+    )
+
+    # Expected values
+    expected_dx_first = -12.460331273589698
+    expected_dx_last = 8.009857008956743
+    expected_dx_mean = -0.2049554164290348
+    expected_dx_std = 7.232922853378957
+    expected_dy_first = -16.152128169189766
+    expected_dy_last = -1.152773064395448
+    expected_dy_mean = 0.46392007053106166
+    expected_dy_std = 7.661751807848289
+    expected_dz_first = 13.232820104945798
+    expected_dz_last = -2.9932534950048657
+    expected_dz_mean = -0.06887946563692016
+    expected_dz_std = 4.421659114855306
+    expected_dxt_first = -17.270885980721737
+    expected_dxt_last = 115.49528993457349
+    expected_dxt_mean = 7.336140722786727
+    expected_dxt_std = 24.83360089697447
+    expected_dyt_first = -30.838152077987232
+    expected_dyt_last = -106.57544466970594
+    expected_dyt_mean = -7.398183106875556
+    expected_dyt_std = 23.068469481499143
+    expected_dzt_first = 15.275605948288936
+    expected_dzt_last = -13.709107655484827
+    expected_dzt_mean = -0.8979720579559191
+    expected_dzt_std = 5.422690912517518
+    expected_ti_first = 0.0
+    expected_ti_last = 3960
+    expected_ti_mean = 1980
+    expected_ti_std = 1160.344776348823
+
+    # Test
+    assert np.isclose(expected_dx_first, dx[0]), "Unexpected value for dx[0]."
+    assert np.isclose(expected_dx_last, dx[-1]), "Unexpected value for dx[-1]."
+    assert np.isclose(expected_dx_mean, dx.mean()), "Unexpected value for dx.mean()."
+    assert np.isclose(expected_dx_std, dx.std()), "Unexpected value for dx.std()."
+    assert len(dx) == len(x), "Unexpected length of vector x."
+    assert np.isclose(expected_dy_first, dy[0]), "Unexpected value for dy[0]."
+    assert np.isclose(expected_dy_last, dy[-1]), "Unexpected value for dy[-1]."
+    assert np.isclose(expected_dy_mean, dy.mean()), "Unexpected value for dy.mean()."
+    assert np.isclose(expected_dy_std, dy.std()), "Unexpected value for dy.std()."
+    assert len(dy) == len(y), "Unexpected length of vector y."
+    assert np.isclose(expected_dz_first, dz[0]), "Unexpected value for dz[0]."
+    assert np.isclose(expected_dz_last, dz[-1]), "Unexpected value for dz[-1]."
+    assert np.isclose(expected_dz_mean, dz.mean()), "Unexpected value for dz.mean()."
+    assert np.isclose(expected_dz_std, dz.std()), "Unexpected value for dz.std()."
+    assert len(dz) == len(z), "Unexpected length of vector z."
+    assert np.isclose(expected_dxt_first, dxt[0]), "Unexpected value for dxt[0]."
+    assert np.isclose(expected_dxt_last, dxt[-1]), "Unexpected value for dxt[-1]."
+    assert np.isclose(expected_dxt_mean, dxt.mean()), "Unexpected value for dxt.mean()."
+    assert np.isclose(expected_dxt_std, dxt.std()), "Unexpected value for dxt.std()."
+    assert len(dxt) == 67, "Unexpected length of vector dxt."
+    assert np.isclose(expected_dyt_first, dyt[0]), "Unexpected value for dyt[0]."
+    assert np.isclose(expected_dyt_last, dyt[-1]), "Unexpected value for dyt[-1]."
+    assert np.isclose(expected_dyt_mean, dyt.mean()), "Unexpected value for dyt.mean()."
+    assert np.isclose(expected_dyt_std, dyt.std()), "Unexpected value for dyt.std()."
+    assert len(dyt) == 67, "Unexpected length of vector dyt."
+    assert np.isclose(expected_dzt_first, dzt[0]), "Unexpected value for dzt[0]."
+    assert np.isclose(expected_dzt_last, dzt[-1]), "Unexpected value for dzt[-1]."
+    assert np.isclose(expected_dzt_mean, dzt.mean()), "Unexpected value for dzt.mean()."
+    assert np.isclose(expected_dzt_std, dzt.std()), "Unexpected value for dzt.std()."
+    assert len(dyt) == 67, "Unexpected length of vector dyt."
+    assert np.isclose(expected_ti_first, ti[0]), "Unexpected value for ti[0]."
+    assert np.isclose(expected_ti_last, ti[-1]), "Unexpected value for ti[-1]."
+    assert np.isclose(expected_ti_mean, ti.mean()), "Unexpected value for ti.mean()."
+    assert np.isclose(expected_ti_std, ti.std()), "Unexpected value for ti.std()."
+    assert len(ti) == 67, "Unexpected length of vector ti."
 
 
 def test_adaptive_interpolation(extract_raw_npy_data_files):
