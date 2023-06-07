@@ -719,7 +719,7 @@ def render_xy(
         xk, yk = np.meshgrid(g, g)
 
         # Remove close to borders
-        m = (ix >= L + 1) & (ix < Nx - L - 1) & (iy > L + 1) & (iy < Ny - L - 1)
+        m = (ix >= L) & (ix < Nx - L) & (iy >= L) & (iy < Ny - L)
         px = px[m]
         py = py[m]
         ix = ix[m]
@@ -911,12 +911,12 @@ def render_xyz(
 
         # Remove close to borders
         m = (
-            (ix >= L + 1)
-            & (ix < Nx - L - 1)
-            & (iy > L + 1)
-            & (iy < Ny - L - 1)
-            & (iz > L + 1)
-            & (iz < Nz - L - 1)
+            (ix >= L)
+            & (ix < Nx - L)
+            & (iy >= L)
+            & (iy < Ny - L)
+            & (iz >= L)
+            & (iz < Nz - L)
         )
         px = px[m]
         py = py[m]
