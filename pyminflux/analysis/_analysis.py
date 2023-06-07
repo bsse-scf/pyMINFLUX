@@ -1330,6 +1330,13 @@ def drift_correction_time_windows_2d(
     if T is None and tid is None:
         raise ValueError("If T is not defined, the array of TIDs must be provided.")
 
+    # Make sure we have valid ranges
+    if rx is None:
+        rx = (x.min(), x.max())
+
+    if ry is None:
+        ry = (y.min(), y.max())
+
     # Heuristics to define the length of the time window
     if T is None:
         rt = (t[0], t[-1])
@@ -1541,6 +1548,16 @@ def drift_correction_time_windows_3d(
 
     if T is None and tid is None:
         raise ValueError("If T is not defined, the array of TIDs must be provided.")
+
+    # Make sure we have valid ranges
+    if rx is None:
+        rx = (x.min(), x.max())
+
+    if ry is None:
+        ry = (y.min(), y.max())
+
+    if rz is None:
+        rz = (z.min(), z.max())
 
     # Heuristics to define the length of the time window
     if T is None:
