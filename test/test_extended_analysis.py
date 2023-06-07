@@ -294,12 +294,12 @@ def test_render_xy(extract_raw_npy_data_files):
     )
 
     # Check the returned values
-    assert np.isclose(img.sum(), 256250.47), "Unexpected signal integral."
+    assert np.isclose(img.sum(), 256291.22), "Unexpected signal integral."
     assert np.isclose(xi.min(), 1648.111058125942), "Unexpected x grid (min value)."
     assert np.isclose(xi.max(), 5677.111058125942), "Unexpected x grid (max) value)."
     assert np.isclose(yi.min(), -15658.73531581803), "Unexpected y grid (min value)."
     assert np.isclose(yi.max(), -11623.73531581803), "Unexpected y grid (max value)."
-    assert m.sum() == 12564.0, "Unexpected number of considered elements."
+    assert m.sum() == 12566.0, "Unexpected number of considered elements."
     assert m.sum() < len(
         processor.filtered_dataframe["x"].values
     ), "Unexpected number of considered elements."
@@ -404,14 +404,14 @@ def test_render_xyz(extract_raw_npy_data_files):
     )
 
     # Check the returned values
-    assert np.isclose(img.sum(), 1691148.8), "Unexpected signal integral."
+    assert np.isclose(img.sum(), 1704868.5), "Unexpected signal integral."
     assert np.isclose(xi.min(), -433.0609880335669), "Unexpected x grid (min value)."
     assert np.isclose(xi.max(), 367.9390119664331), "Unexpected x grid (max) value)."
     assert np.isclose(yi.min(), -1417.760678440071), "Unexpected y grid (min value)."
     assert np.isclose(yi.max(), 1801.239321559929), "Unexpected y grid (max value)."
     assert np.isclose(zi.min(), -355.8191650390625), "Unexpected z grid (min value)."
     assert np.isclose(zi.max(), 149.1808349609375), "Unexpected z grid (max value)."
-    assert m.sum() == 11217.0, "Unexpected number of considered elements."
+    assert m.sum() == 11308.0, "Unexpected number of considered elements."
 
 
 def test_fourier_ring_correlation_all_pos(extract_raw_npy_data_files):
@@ -867,7 +867,7 @@ def test_estimate_resolution_mat(extract_raw_npy_data_files):
     assert np.allclose(expected_cis_end, cis[-1, :]), "Unexpected array of cis."
 
 
-def test_estimate_drif_2d_mat(extract_raw_npy_data_files):
+def test_estimate_drift_2d_mat(extract_raw_npy_data_files):
     """Test the estimate_resolution_frc() function on average positions per TID (.mat file)."""
 
     #
@@ -902,22 +902,22 @@ def test_estimate_drif_2d_mat(extract_raw_npy_data_files):
     )
 
     # Expected values
-    expected_dx_first = -2.1985834102242396
-    expected_dx_last = -2.5156897629823365
-    expected_dx_mean = -0.33599535786186124
-    expected_dx_std = 1.2535025778311206
-    expected_dy_first = 0.4592257965166383
-    expected_dy_last = -6.114620583136622
-    expected_dy_mean = -0.6340625191539444
-    expected_dy_std = 2.2381205961801
-    expected_dxt_first = -3.457289393547788
-    expected_dxt_last = -9.089571668662215
-    expected_dxt_mean = -1.4669533857988746
-    expected_dxt_std = 2.8544371804389628
-    expected_dyt_first = -0.6248302430747441
-    expected_dyt_last = -11.719318314815569
-    expected_dyt_mean = -2.0325129774496147
-    expected_dyt_std = 3.842593627348427
+    expected_dx_first = -2.2014807027329963
+    expected_dx_last = -2.541205783291777
+    expected_dx_mean = -0.338792740699712
+    expected_dx_std = 1.2603486359616478
+    expected_dy_first = 0.46747011928077886
+    expected_dy_last = -6.16791544426064
+    expected_dy_mean = -0.6394555159441531
+    expected_dy_std = 2.2579837902399236
+    expected_dxt_first = -3.4663489361773836
+    expected_dxt_last = -9.147080766583699
+    expected_dxt_mean = -1.476706623548483
+    expected_dxt_std = 2.8720246491726518
+    expected_dyt_first = -0.6245906574247098
+    expected_dyt_last = -11.813880958051834
+    expected_dyt_mean = -2.049107728533815
+    expected_dyt_std = 3.8742259346369297
     expected_ti_first = 0.0
     expected_ti_last = 3634.628873523648
     expected_ti_mean = 1817.3144367618238
@@ -974,3 +974,533 @@ def test_adaptive_interpolation(extract_raw_npy_data_files):
     # Test the combined_interp function
     assert combined_interp(1.5) == 2.25, "Expected result of cubic interpolation."
     assert combined_interp(-1) == -1.0, "Expected result of linear extrapolation."
+
+
+def test_coordinate_processing():
+    """Test the way coordinates are processed."""
+
+    # Coordinates
+    x = np.arange(1, 100, 5).astype(np.float32)
+    y = np.arange(1, 100, 5).astype(np.float32)
+    z = np.arange(1, 100, 5).astype(np.float32)
+
+    # Range to consider
+    rx = (10.0, 90.0)
+    ry = (10.0, 90.0)
+    rz = (10.0, 90.0)
+
+    #
+    # First resolution, no kernel
+    #
+
+    # Resolution (nm)
+    sx = 2.0
+    sy = 2.0
+    sz = 5.0
+
+    # Get target image dimension
+    nx = int(np.ceil((rx[1] - rx[0]) / sx))
+    ny = int(np.ceil((ry[1] - ry[0]) / sy))
+    nz = int(np.ceil((rz[1] - rz[0]) / sz))
+
+    # Get position in pixels
+    px = (x - rx[0]) / sx
+    py = (y - ry[0]) / sy
+    pz = (z - rz[0]) / sz
+
+    # Convert absolute position to image indices
+    ix = np.round(px).astype(int)
+    iy = np.round(py).astype(int)
+    iz = np.round(pz).astype(int)
+
+    # Remove positions outside the image
+    m = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny) & (iz >= 0) & (iz < nz)
+    px = px[m]
+    py = py[m]
+    pz = pz[m]
+    ix = ix[m]
+    iy = iy[m]
+    iz = iz[m]
+
+    # Flip iy to have 0 at the top
+    f_iy = ny - iy - 1
+
+    # Try placing all entries in the image
+    success = True
+    h = np.zeros((nz, ny, nx), dtype=np.float32)
+    for i in range(len(ix)):
+        xi = ix[i]
+        yi = f_iy[i]  # Images have y = 0 at the top
+        zi = iz[i]
+        try:
+            h[zi, yi, xi] += 1
+        except IndexError as _:
+            success = False
+            break
+
+    # Expected values
+    expected_success = True
+    expected_x = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_y = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_z = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_nx = 40
+    expected_ny = 40
+    expected_nz = 16
+    expected_px = np.array(
+        [
+            0.5,
+            3.0,
+            5.5,
+            8.0,
+            10.5,
+            13.0,
+            15.5,
+            18.0,
+            20.5,
+            23.0,
+            25.5,
+            28.0,
+            30.5,
+            33.0,
+            35.5,
+            38.0,
+        ]
+    )
+    expected_py = np.array(
+        [
+            0.5,
+            3.0,
+            5.5,
+            8.0,
+            10.5,
+            13.0,
+            15.5,
+            18.0,
+            20.5,
+            23.0,
+            25.5,
+            28.0,
+            30.5,
+            33.0,
+            35.5,
+            38.0,
+        ]
+    )
+    expected_pz = np.array(
+        [
+            0.2,
+            1.2,
+            2.2,
+            3.2,
+            4.2,
+            5.2,
+            6.2,
+            7.2,
+            8.2,
+            9.2,
+            10.2,
+            11.2,
+            12.2,
+            13.2,
+            14.2,
+            15.2,
+        ]
+    )
+    expected_ix = np.array([0, 3, 6, 8, 10, 13, 16, 18, 20, 23, 26, 28, 30, 33, 36, 38])
+    expected_iy = np.array([0, 3, 6, 8, 10, 13, 16, 18, 20, 23, 26, 28, 30, 33, 36, 38])
+    expected_iz = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+    expected_f_iy = np.array(
+        [[39, 36, 33, 31, 29, 26, 23, 21, 19, 16, 13, 11, 9, 6, 3, 1]]
+    )
+    expected_m = np.array(
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0]
+    ).astype(bool)
+
+    # Test
+    assert expected_success == success, "Could not write all pixels in the image."
+    assert np.allclose(expected_x, x), "Unexpected array y."
+    assert np.allclose(expected_y, x), "Unexpected array y."
+    assert np.allclose(expected_z, x), "Unexpected array y."
+    assert expected_nx == nx, "Unexpected value for nx."
+    assert expected_ny == ny, "Unexpected value for ny."
+    assert expected_nz == nz, "Unexpected value for nZ."
+    assert np.allclose(expected_px, px), "Unexpected array px."
+    assert np.allclose(expected_py, py), "Unexpected array py."
+    assert np.allclose(expected_pz, pz), "Unexpected array pz."
+    assert np.allclose(expected_ix, ix), "Unexpected array ix."
+    assert np.allclose(expected_iy, iy), "Unexpected array iy."
+    assert np.allclose(expected_iz, iz), "Unexpected array iz."
+    assert np.allclose(expected_f_iy, f_iy), "Unexpected array f_iy."
+    assert np.allclose(expected_m, m), "Unexpected array y."
+
+    #
+    # Second resolution, no kernel
+    #
+
+    # Resolution (nm)
+    sx = 2.5
+    sy = 2.5
+    sz = 5.0
+
+    # Get target image dimension
+    nx = int(np.ceil((rx[1] - rx[0]) / sx))
+    ny = int(np.ceil((ry[1] - ry[0]) / sy))
+    nz = int(np.ceil((rz[1] - rz[0]) / sz))
+
+    # Get position in pixels
+    px = (x - rx[0]) / sx
+    py = (y - ry[0]) / sy
+    pz = (z - rz[0]) / sz
+
+    # Convert absolute position to image indices
+    ix = np.round(px).astype(int)
+    iy = np.round(py).astype(int)
+    iz = np.round(pz).astype(int)
+
+    # Remove positions outside the image
+    m = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny) & (iz >= 0) & (iz < nz)
+    px = px[m]
+    py = py[m]
+    pz = pz[m]
+    ix = ix[m]
+    iy = iy[m]
+    iz = iz[m]
+
+    # Flip iy to have 0 at the top
+    f_iy = ny - iy - 1
+
+    # Try placing all entries in the image
+    success = True
+    h = np.zeros((nz, ny, nx), dtype=np.float32)
+    for i in range(len(ix)):
+        xi = ix[i]
+        yi = f_iy[i]  # Images have y = 0 at the top
+        zi = iz[i]
+        try:
+            h[zi, yi, xi] += 1
+        except IndexError as _:
+            success = False
+            break
+
+    # Expected values
+    expected_success = True
+    expected_x = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_y = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_z = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_nx = 32
+    expected_ny = 32
+    expected_nz = 16
+    expected_px = np.array(
+        [
+            0.4,
+            2.4,
+            4.4,
+            6.4,
+            8.4,
+            10.4,
+            12.4,
+            14.4,
+            16.4,
+            18.4,
+            20.4,
+            22.4,
+            24.4,
+            26.4,
+            28.4,
+            30.4,
+        ]
+    )
+    expected_py = np.array(
+        [
+            0.4,
+            2.4,
+            4.4,
+            6.4,
+            8.4,
+            10.4,
+            12.4,
+            14.4,
+            16.4,
+            18.4,
+            20.4,
+            22.4,
+            24.4,
+            26.4,
+            28.4,
+            30.4,
+        ]
+    )
+    expected_pz = np.array(
+        [
+            0.2,
+            1.2,
+            2.2,
+            3.2,
+            4.2,
+            5.2,
+            6.2,
+            7.2,
+            8.2,
+            9.2,
+            10.2,
+            11.2,
+            12.2,
+            13.2,
+            14.2,
+            15.2,
+        ]
+    )
+    expected_ix = np.array([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30])
+    expected_iy = np.array([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30])
+    expected_iz = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+    expected_f_iy = np.array(
+        [31, 29, 27, 25, 23, 21, 19, 17, 15, 13, 11, 9, 7, 5, 3, 1]
+    )
+    expected_m = np.array(
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0]
+    ).astype(bool)
+
+    # Test
+    assert expected_success == success, "Could not write all pixels in the image."
+    assert np.allclose(expected_x, x), "Unexpected array y."
+    assert np.allclose(expected_y, x), "Unexpected array y."
+    assert np.allclose(expected_z, x), "Unexpected array y."
+    assert expected_nx == nx, "Unexpected value for nx."
+    assert expected_ny == ny, "Unexpected value for ny."
+    assert expected_nz == nz, "Unexpected value for nZ."
+    assert np.allclose(expected_px, px), "Unexpected array px."
+    assert np.allclose(expected_py, py), "Unexpected array py."
+    assert np.allclose(expected_pz, pz), "Unexpected array pz."
+    assert np.allclose(expected_ix, ix), "Unexpected array ix."
+    assert np.allclose(expected_iy, iy), "Unexpected array iy."
+    assert np.allclose(expected_iz, iz), "Unexpected array iz."
+    assert np.allclose(expected_f_iy, f_iy), "Unexpected array f_iy."
+    assert np.allclose(expected_m, m), "Unexpected array y."
+
+    #
+    # Third resolution with kernel
+    #
+
+    # Resolution (nm)
+    sx = 2.0
+    sy = 2.0
+    sz = 5.0
+
+    # Kernel half-size
+    L = 3
+
+    # Get target image dimension
+    nx = int(np.ceil((rx[1] - rx[0]) / sx))
+    ny = int(np.ceil((ry[1] - ry[0]) / sy))
+    nz = int(np.ceil((rz[1] - rz[0]) / sz))
+
+    # Get position in pixels
+    px = (x - rx[0]) / sx
+    py = (y - ry[0]) / sy
+    pz = (z - rz[0]) / sz
+
+    # Convert absolute position to image indices
+    ix = np.round(px).astype(int)
+    iy = np.round(py).astype(int)
+    iz = np.round(pz).astype(int)
+
+    # Remove positions outside the image
+    m = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny) & (iz >= 0) & (iz < nz)
+    px = px[m]
+    py = py[m]
+    pz = pz[m]
+    ix = ix[m]
+    iy = iy[m]
+    iz = iz[m]
+
+    # Now apply the kernel filter (as a subsequent step to replicate the use in pymnflux.analysis)
+    m = (
+        (ix >= L)
+        & (ix < nx - L)
+        & (iy >= L)
+        & (iy < ny - L)
+        & (iz >= L)
+        & (iz < nz - L)
+    )
+    px = px[m]
+    py = py[m]
+    pz = pz[m]
+    ix = ix[m]
+    iy = iy[m]
+    iz = iz[m]
+
+    # Flip iy to have 0 at the top
+    f_iy = ny - iy - 1
+
+    # Try placing all entries in the image
+    success = True
+    h = np.zeros((nz, ny, nx), dtype=np.float32)
+    for i in range(len(ix)):
+        xi = ix[i]
+        yi = f_iy[i]  # Images have y = 0 at the top
+        zi = iz[i]
+        try:
+            h[zi, yi, xi] += 1
+        except IndexError as _:
+            success = False
+            break
+
+    # Expected values
+    expected_success = True
+    expected_x = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_y = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_z = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_nx = 40
+    expected_ny = 40
+    expected_nz = 16
+    expected_px = np.array([8.0, 10.5, 13.0, 15.5, 18.0, 20.5, 23.0, 25.5, 28.0, 30.5])
+    expected_py = np.array([8.0, 10.5, 13.0, 15.5, 18.0, 20.5, 23.0, 25.5, 28.0, 30.5])
+    expected_pz = np.array([3.2, 4.2, 5.2, 6.2, 7.2, 8.2, 9.2, 10.2, 11.2, 12.2])
+    expected_ix = np.array([8, 10, 13, 16, 18, 20, 23, 26, 28, 30])
+    expected_iy = np.array([8, 10, 13, 16, 18, 20, 23, 26, 28, 30])
+    expected_iz = np.array([3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+    expected_f_iy = np.array([31, 29, 26, 23, 21, 19, 16, 13, 11, 9])
+    expected_m = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]).astype(bool)
+
+    # Test
+    assert expected_success == success, "Could not write all pixels in the image."
+    assert np.allclose(expected_x, x), "Unexpected array y."
+    assert np.allclose(expected_y, x), "Unexpected array y."
+    assert np.allclose(expected_z, x), "Unexpected array y."
+    assert expected_nx == nx, "Unexpected value for nx."
+    assert expected_ny == ny, "Unexpected value for ny."
+    assert expected_nz == nz, "Unexpected value for nZ."
+    assert np.allclose(expected_px, px), "Unexpected array px."
+    assert np.allclose(expected_py, py), "Unexpected array py."
+    assert np.allclose(expected_pz, pz), "Unexpected array pz."
+    assert np.allclose(expected_ix, ix), "Unexpected array ix."
+    assert np.allclose(expected_iy, iy), "Unexpected array iy."
+    assert np.allclose(expected_iz, iz), "Unexpected array iz."
+    assert np.allclose(expected_f_iy, f_iy), "Unexpected array f_iy."
+    assert np.allclose(expected_m, m), "Unexpected array y."
+
+    #
+    # Fourth resolution with kernel
+    #
+
+    # Resolution (nm)
+    sx = 2.5
+    sy = 2.5
+    sz = 5.0
+
+    # Kernel half-size
+    L = 3
+
+    # Get target image dimension
+    nx = int(np.ceil((rx[1] - rx[0]) / sx))
+    ny = int(np.ceil((ry[1] - ry[0]) / sy))
+    nz = int(np.ceil((rz[1] - rz[0]) / sz))
+
+    # Get position in pixels
+    px = (x - rx[0]) / sx
+    py = (y - ry[0]) / sy
+    pz = (z - rz[0]) / sz
+
+    # Convert absolute position to image indices
+    ix = np.round(px).astype(int)
+    iy = np.round(py).astype(int)
+    iz = np.round(pz).astype(int)
+
+    # Remove positions outside the image
+    m = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny) & (iz >= 0) & (iz < nz)
+    px = px[m]
+    py = py[m]
+    pz = pz[m]
+    ix = ix[m]
+    iy = iy[m]
+    iz = iz[m]
+
+    # Now apply the kernel filter (as a subsequent step to replicate the use in pymnflux.analysis)
+    m = (
+        (ix >= L)
+        & (ix < nx - L)
+        & (iy >= L)
+        & (iy < ny - L)
+        & (iz >= L)
+        & (iz < nz - L)
+    )
+    px = px[m]
+    py = py[m]
+    pz = pz[m]
+    ix = ix[m]
+    iy = iy[m]
+    iz = iz[m]
+
+    # Flip iy to have 0 at the top
+    f_iy = ny - iy - 1
+
+    # Try placing all entries in the image
+    success = True
+    h = np.zeros((nz, ny, nx), dtype=np.float32)
+    for i in range(len(ix)):
+        xi = ix[i]
+        yi = f_iy[i]  # Images have y = 0 at the top
+        zi = iz[i]
+        try:
+            h[zi, yi, xi] += 1
+        except IndexError as _:
+            success = False
+            break
+
+    # Expected values
+    expected_success = True
+    expected_x = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_y = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_z = np.array(
+        [1, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96]
+    )
+    expected_nx = 32
+    expected_ny = 32
+    expected_nz = 16
+    expected_px = np.array([6.4, 8.4, 10.4, 12.4, 14.4, 16.4, 18.4, 20.4, 22.4, 24.4])
+    expected_py = np.array([6.4, 8.4, 10.4, 12.4, 14.4, 16.4, 18.4, 20.4, 22.4, 24.4])
+    expected_pz = np.array([3.2, 4.2, 5.2, 6.2, 7.2, 8.2, 9.2, 10.2, 11.2, 12.2])
+    expected_ix = np.array([6, 8, 10, 12, 14, 16, 18, 20, 22, 24])
+    expected_iy = np.array([6, 8, 10, 12, 14, 16, 18, 20, 22, 24])
+    expected_iz = np.array([3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+    expected_f_iy = np.array([25, 23, 21, 19, 17, 15, 13, 11, 9, 7])
+    expected_m = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]).astype(bool)
+
+    # Test
+    assert expected_success == success, "Could not write all pixels in the image."
+    assert np.allclose(expected_x, x), "Unexpected array y."
+    assert np.allclose(expected_y, x), "Unexpected array y."
+    assert np.allclose(expected_z, x), "Unexpected array y."
+    assert expected_nx == nx, "Unexpected value for nx."
+    assert expected_ny == ny, "Unexpected value for ny."
+    assert expected_nz == nz, "Unexpected value for nZ."
+    assert np.allclose(expected_px, px), "Unexpected array px."
+    assert np.allclose(expected_py, py), "Unexpected array py."
+    assert np.allclose(expected_pz, pz), "Unexpected array pz."
+    assert np.allclose(expected_ix, ix), "Unexpected array ix."
+    assert np.allclose(expected_iy, iy), "Unexpected array iy."
+    assert np.allclose(expected_iz, iz), "Unexpected array iz."
+    assert np.allclose(expected_f_iy, f_iy), "Unexpected array f_iy."
+    assert np.allclose(expected_m, m), "Unexpected array y."
