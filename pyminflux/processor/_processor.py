@@ -343,14 +343,35 @@ class MinFluxProcessor:
         # Make sure that the lengths match
         assert np.sum(mask.values) == len(x), "Unexpected number of elements in x."
         assert np.sum(mask.values) == len(y), "Unexpected number of elements in y."
-        if z is not None:
+        if z is not None and self.is_3d:
             assert np.sum(mask.values) == len(z), "Unexpected number of elements in z."
 
         # Re-assign the data at the reader level
-        self._reader._df.loc[mask, "x"] = x
-        self._reader._df.loc[mask, "y"] = y
-        if z is not None:
-            self._reader._df.loc[mask, "z"] = z
+        self._reader._data_df.loc[mask, "x"] = x
+        self._reader._data_df.loc[mask, "y"] = y
+        if z is not None and self.is_3d:
+            self._reader._data_df.loc[mask, "z"] = z
+
+        # Also update the raw structured NumPy array. Since NumPy
+        # will return a copy if we try to access the "loc" array
+        # directly using logical arrays, we need to iterate over
+        # all rows one by one!
+        #
+        # Furthermore, we need to scale the values by the factor
+        # self._reader._unit_scaling_factor
+        x_scaled = x / self._reader._unit_scaling_factor
+        y_scaled = y / self._reader._unit_scaling_factor
+        if z is not None and self.is_3d:
+            z_scaled = z / self._reader._unit_scaling_factor
+        idx = self._reader._loc_index
+        vld_indices = np.where(self._reader._valid_entries)[0]
+        mask_indices = np.where(mask)[0]
+        for i, I in enumerate(mask_indices):
+            if I in vld_indices:
+                self._reader._data_array[I]["itr"][idx]["loc"][0] = x_scaled[i]
+                self._reader._data_array[I]["itr"][idx]["loc"][1] = y_scaled[i]
+                if z is not None and self.is_3d:
+                    self._reader._data_array[I]["itr"][idx]["loc"][2] = z_scaled[i]
 
         # Mark derived data to be recomputed
         self._stats_to_be_recomputed = True
