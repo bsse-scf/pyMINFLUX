@@ -19,10 +19,11 @@ from typing import Optional
 import numpy as np
 from scipy import signal, stats
 from scipy.fft import fft2, fftn, ifftn, ifftshift
-from scipy.interpolate import CubicSpline, interp1d
+from scipy.interpolate import interp1d
 from scipy.ndimage import median_filter
 from scipy.optimize import minimize
 from scipy.signal import find_peaks, savgol_filter
+from sklearn.mixture import BayesianGaussianMixture
 
 
 def hist_bins(values: np.ndarray, bin_size: float) -> tuple:
@@ -1747,3 +1748,64 @@ def lse_distance(x, a, b, s, w, l):
     y = y + r
 
     return y
+
+
+def assign_data_to_clusters(
+    x: np.ndarray, num_clusters: int = 2, seed: Optional[int] = None
+):
+    """Use Gaussian Mixture Model fitting to assign data to the requested number of clusters.
+
+    Parameters
+    ----------
+
+    x: np.ndarray
+        Array of values to cluster.
+
+    num_clusters: int (Default = 2)
+        Number of clusters to be assigned.
+
+    seed: int (Optional)
+        Seed for the random number generator.
+
+    Returns
+    -------
+
+    ids: np.ndarray
+        Array of cluster ids for each value in x. The first cluster has ID 1.
+    """
+
+    # Make sure to work with a NumPy array
+    x = np.array(x)
+
+    # Make sure to work with a column vector
+    x = x.reshape(-1, 1)
+
+    # Fit a Bayesian Gaussian Mixture Model with self.state.num_fluorophores components
+    model = BayesianGaussianMixture(
+        n_components=num_clusters,
+        init_params="k-means++",
+        covariance_type="full",
+        max_iter=1000,
+        random_state=seed,
+    ).fit(x)
+
+    # Predict with the selected model
+    y_pred = model.predict(x)
+
+    # If num_clusters is > 1, sort the indices by mean values of x,
+    # from low to high (to match the assignment of the manual thresholding)
+    if num_clusters > 1:
+        means = [np.mean(x[y_pred == f_id]) for f_id in np.unique(y_pred)]
+        sorted_f = np.argsort(means)
+        for f in range(num_clusters):
+            if np.isnan(means[f]):
+                continue
+            n = sorted_f[f] + num_clusters
+            y_pred[y_pred == f] = n
+        y_pred -= num_clusters
+
+    # Now make the clusters ID start from 1 instead of 0.
+    ids = y_pred + 1
+
+    # Return
+    return ids

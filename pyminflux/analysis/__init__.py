@@ -16,6 +16,7 @@
 
 __doc__ = "Analysis functions."
 __all__ = [
+    "assign_data_to_clusters",
     "calculate_2d_histogram",
     "calculate_density_map",
     "drift_correction_time_windows_2d",
@@ -34,6 +35,7 @@ __all__ = [
 ]
 
 from ._analysis import (
+    assign_data_to_clusters,
     calculate_2d_histogram,
     calculate_density_map,
     drift_correction_time_windows_2d,
