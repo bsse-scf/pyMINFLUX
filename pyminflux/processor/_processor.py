@@ -13,7 +13,7 @@
 #   limitations under the License.
 #
 
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -31,10 +31,10 @@ class MinFluxProcessor:
 
     __slots__ = [
         "state",
-        "_minfluxreader",
+        "_reader",
         "_current_fluorophore_id",
         "_filtered_stats_dataframe",
-        "_min_num_loc_per_trace",
+        "_min_trace_length",
         "_selected_rows_dict",
         "_stats_to_be_recomputed",
         "_weighted_localizations",
@@ -56,10 +56,10 @@ class MinFluxProcessor:
         """
 
         # Store a reference to the MinFluxReader
-        self._minfluxreader: MinFluxReader = reader
+        self._reader: MinFluxReader = reader
 
         # Global options
-        self._min_num_loc_per_trace: int = min_trace_length
+        self._min_trace_length: int = min_trace_length
 
         # Cache the filtered stats dataframe
         self._filtered_stats_dataframe = None
@@ -104,7 +104,7 @@ class MinFluxProcessor:
     @property
     def min_num_loc_per_trace(self):
         """Minimum number of localizations for the trace to be kept."""
-        return self._min_num_loc_per_trace
+        return self._min_trace_length
 
     @min_num_loc_per_trace.setter
     def min_num_loc_per_trace(self, value):
@@ -112,7 +112,7 @@ class MinFluxProcessor:
             raise ValueError(
                 "MinFluxProcessor.min_num_loc_per_trace must be a positive integer!"
             )
-        self._min_num_loc_per_trace = value
+        self._min_trace_length = value
 
     @property
     def is_3d(self) -> bool:
@@ -124,7 +124,7 @@ class MinFluxProcessor:
         is_3d: bool
             True if the acquisition is 3D, False otherwise.
         """
-        return self._minfluxreader.is_3d
+        return self._reader.is_3d
 
     @property
     def num_values(self) -> int:
@@ -172,7 +172,7 @@ class MinFluxProcessor:
         """Return the raw NumPy array with applied filters (for all fluorphores)."""
 
         # Copy the raw NumPy array
-        raw_array = self._minfluxreader.valid_raw_data
+        raw_array = self._reader.valid_raw_data
         if raw_array is None:
             return None
 
@@ -214,7 +214,7 @@ class MinFluxProcessor:
         full_dataframe: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
-        return self._minfluxreader.processed_dataframe
+        return self._reader.processed_dataframe
 
     def _filtered_dataframe_all(self) -> Union[None, pd.DataFrame]:
         """Return joint dataframe for all fluorophores and with all filters applied.
@@ -305,6 +305,56 @@ class MinFluxProcessor:
 
         # Apply global filters
         self._apply_global_filters()
+
+    def update_localizations(
+        self, x: np.ndarray, y: np.ndarray, z: Optional[np.ndarray] = None
+    ):
+        """Updates the localization coordinates of current filtered dataframe.
+
+        This can be used for instance after a drift correction.
+
+        Parameters
+        ----------
+
+        x: np.ndarray
+            Array of x coordinates.
+
+        y: np.ndarray
+            Array of y coordinates.
+
+        z: np.ndarray (Optional)
+            Optional array of z coordinates. Omit it to skip.
+            If the acquisition is 2D, it will be ignored in any case.
+        """
+
+        if self.full_dataframe is None:
+            return
+
+        # Select the correct rows to update
+        if self.current_fluorophore_id == 0:
+            mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
+            mask_2 = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
+            mask = mask_1 | mask_2
+        elif self.current_fluorophore_id == 1:
+            mask = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
+        else:
+            mask = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
+
+        # Make sure that the lengths match
+        assert np.sum(mask.values) == len(x), "Unexpected number of elements in x."
+        assert np.sum(mask.values) == len(y), "Unexpected number of elements in y."
+        if z is not None:
+            assert np.sum(mask.values) == len(z), "Unexpected number of elements in z."
+
+        # Re-assign the data at the reader level
+        self._reader._df.loc[mask, "x"] = x
+        self._reader._df.loc[mask, "y"] = y
+        if z is not None:
+            self._reader._df.loc[mask, "z"] = z
+
+        # Mark derived data to be recomputed
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
 
     def set_fluorophore_ids(self, fluorophore_ids: np.ndarray[int]):
         """Assign the fluorophore IDs."""
