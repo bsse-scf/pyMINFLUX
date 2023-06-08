@@ -1330,6 +1330,13 @@ def drift_correction_time_windows_2d(
     if T is None and tid is None:
         raise ValueError("If T is not defined, the array of TIDs must be provided.")
 
+    # Make sure we are working with NumPy arrays
+    x = np.array(x)
+    y = np.array(y)
+    t = np.array(t)
+    if tid is not None:
+        tid = np.array(tid)
+
     # Make sure we have valid ranges
     if rx is None:
         rx = (x.min(), x.max())
@@ -1452,44 +1459,20 @@ def drift_correction_time_windows_2d(
     sx = sx * sxy
     sy = sy * sxy
 
-    # Create cubic spline interpolation functions
-    cubic_spline_x = CubicSpline(ti, sx)
-    cubic_spline_y = CubicSpline(ti, sy)
+    # Create interpolants
+    fx = interp1d(ti, sx, kind="slinear", fill_value="extrapolate")
+    fy = interp1d(ti, sy, kind="slinear", fill_value="extrapolate")
 
-    # Create linear interpolation function for extrapolation
-    linear_interp_x = interp1d(ti, sx, kind="linear", fill_value="extrapolate")
-    linear_interp_y = interp1d(ti, sy, kind="linear", fill_value="extrapolate")
-
-    def interpolant_x(x):
-        """Use cubic spline interpolation for values within the original range
-        and linear interpolation for extrapolation outside the original range."""
-        if np.min(ti) <= x <= np.max(ti):
-            return cubic_spline_x(x)
-        else:
-            return linear_interp_x(x)
-
-    def interpolant_y(x):
-        """Use cubic spline interpolation for values within the original range
-        and linear interpolation for extrapolation outside the original range."""
-        if np.min(ti) <= x <= np.max(ti):
-            return cubic_spline_y(x)
-        else:
-            return linear_interp_y(x)
-
-    # Apply interpolation
-    Fx = np.vectorize(interpolant_x)
-    Fy = np.vectorize(interpolant_y)
-
-    # Undrift
-    dx = Fx(t)
-    dy = Fy(t)
+    # Correct drift
+    dx = fx(t)
+    dy = fy(t)
 
     # Apply to every frame
     ti = np.arange(Rt[0], Rt[1], T / 10)
-    dxt = Fx(ti)
-    dyt = Fy(ti)
+    dxt = fx(ti)
+    dyt = fy(ti)
 
-    return dx, dy, dxt, dyt, ti
+    return dx, dy, dxt, dyt, ti, T
 
 
 def drift_correction_time_windows_3d(
@@ -1549,6 +1532,14 @@ def drift_correction_time_windows_3d(
     if T is None and tid is None:
         raise ValueError("If T is not defined, the array of TIDs must be provided.")
 
+    # Make sure we are working with NumPy arrays
+    x = np.array(x)
+    y = np.array(y)
+    z = np.array(z)
+    t = np.array(t)
+    if tid is not None:
+        tid = np.array(tid)
+
     # Make sure we have valid ranges
     if rx is None:
         rx = (x.min(), x.max())
@@ -1589,9 +1580,9 @@ def drift_correction_time_windows_3d(
     Nz = int(np.ceil((rz[1] - rz[0]) / sxyz))
     c = np.round(np.array([Nz, Ny, Nx]) / 2)
 
-    # create all the histograms
+    # Create all the histograms
     h = [None] * Ns
-    ti = np.zeros(Ns)  # average times of the snapshots
+    ti = np.zeros(Ns)  # Average times of the snapshots
     for j in range(Ns):
         t0 = Rt[0] + j * T
         idx = (t >= t0) & (t < t0 + T)
@@ -1697,57 +1688,23 @@ def drift_correction_time_windows_3d(
     sy = sy * sxyz
     sz = sz * sxyz
 
-    # Create cubic spline interpolation functions
-    cubic_spline_x = CubicSpline(ti, sx)
-    cubic_spline_y = CubicSpline(ti, sy)
-    cubic_spline_z = CubicSpline(ti, sz)
+    # Create interpolants
+    fx = interp1d(ti, sx, kind="slinear", fill_value="extrapolate")
+    fy = interp1d(ti, sy, kind="slinear", fill_value="extrapolate")
+    fz = interp1d(ti, sz, kind="slinear", fill_value="extrapolate")
 
-    # Create linear interpolation function for extrapolation
-    linear_interp_x = interp1d(ti, sx, kind="linear", fill_value="extrapolate")
-    linear_interp_y = interp1d(ti, sy, kind="linear", fill_value="extrapolate")
-    linear_interp_z = interp1d(ti, sz, kind="linear", fill_value="extrapolate")
-
-    def interpolant_x(x):
-        """Use cubic spline interpolation for values within the original range
-        and linear interpolation for extrapolation outside the original range."""
-        if np.min(ti) <= x <= np.max(ti):
-            return cubic_spline_x(x)
-        else:
-            return linear_interp_x(x)
-
-    def interpolant_y(x):
-        """Use cubic spline interpolation for values within the original range
-        and linear interpolation for extrapolation outside the original range."""
-        if np.min(ti) <= x <= np.max(ti):
-            return cubic_spline_y(x)
-        else:
-            return linear_interp_y(x)
-
-    def interpolant_z(x):
-        """Use cubic spline interpolation for values within the original range
-        and linear interpolation for extrapolation outside the original range."""
-        if np.min(ti) <= x <= np.max(ti):
-            return cubic_spline_z(x)
-        else:
-            return linear_interp_z(x)
-
-    # Apply interpolation
-    Fx = np.vectorize(interpolant_x)
-    Fy = np.vectorize(interpolant_y)
-    Fz = np.vectorize(interpolant_z)
-
-    # Undrift
-    dx = Fx(t)
-    dy = Fy(t)
-    dz = Fz(t)
+    # Correct drift
+    dx = fx(t)
+    dy = fy(t)
+    dz = fz(t)
 
     # Apply to every frame
     ti = np.arange(Rt[0], Rt[1], T / 10)
-    dxt = Fx(ti)
-    dyt = Fy(ti)
-    dzt = Fz(ti)
+    dxt = fx(ti)
+    dyt = fy(ti)
+    dzt = fz(ti)
 
-    return dx, dy, dz, dxt, dyt, dzt, ti
+    return dx, dy, dz, dxt, dyt, dzt, ti, T
 
 
 def lse_distance(x, a, b, s, w, l):

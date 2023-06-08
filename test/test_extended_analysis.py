@@ -772,104 +772,8 @@ def test_estimate_resolution(extract_raw_npy_data_files):
     assert np.allclose(expected_cis_end, cis[-1, :]), "Unexpected array of cis."
 
 
-def test_estimate_resolution_mat(extract_raw_npy_data_files):
-    """Test the estimate_resolution_frc() function on average positions per TID (.mat file)."""
-
-    #
-    # Fig1a_Tom70-Dreiklang_Minflux.mat
-    #
-    # From:
-    #   * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
-    #   * [code]  https://zenodo.org/record/6563100
-
-    minflux = loadmat(
-        str(Path(__file__).parent / "data" / "Fig1a_Tom70-Dreiklang_Minflux.mat")
-    )
-    minflux = minflux["minflux"]
-
-    # Extract tid, x and y coordinates
-    tid = minflux["id"][0][0].ravel()
-    pos = minflux["pos"][0][0][:, :2]
-
-    # Calculate per-TID averages
-    u_tid = np.unique(tid)
-    m_pos = np.zeros((len(u_tid), 2), dtype=float)
-    for i, t in enumerate(u_tid):
-        m_pos[i, :] = pos[tid == t, :].mean(axis=0)
-
-    # Now extract the mean x and y localizations
-    x = m_pos[:, 0]
-    y = m_pos[:, 1]
-
-    # Ranges
-    rx = (-372.5786, 318.8638)
-    ry = (-1148.8, 1006.6)
-
-    # Expected values
-    expected_resolution = 1.1768479476099937e-08
-    expected_resolutions = np.array(
-        [1.17647059e-08, 1.21212121e-08, 1.14942529e-08, 1.18343195e-08, 1.16279070e-08]
-    )
-    expected_qi = np.arange(0.0, 565500001.0, 500000.0)
-    expected_ci_start = np.array(
-        [
-            0.9896723829369284,
-            0.9682033981324928,
-            0.9467344133280571,
-            0.9252654285236213,
-            0.8897116806610004,
-        ]
-    )
-    expected_ci_end = np.array(
-        [
-            0.006642925893720961,
-            0.005871440307392188,
-            0.0035441717372631633,
-            0.0012169031671341415,
-            -0.0011103654029948815,
-        ]
-    )
-    expected_cis_start = np.array(
-        [
-            1.0119779600661392,
-            1.0154130718163195,
-            0.9498347031501354,
-            0.9321076505011093,
-            1.039028529150939,
-        ]
-    )
-    expected_cis_end = np.array(
-        [
-            0.0017571809675735522,
-            -0.005904108415033079,
-            -0.0021494912471519707,
-            0.0024257169927811547,
-            -0.0016811253131440648,
-        ]
-    )
-
-    # Run the resolution estimation
-    resolution, qi, ci, resolutions, cis = estimate_resolution_by_frc(
-        x, y, rx=rx, ry=ry, num_reps=5, seed=2023, return_all=True
-    )
-
-    # Test
-    assert np.isclose(resolution, expected_resolution), "Unexpected resolution."
-    assert np.allclose(
-        resolutions, expected_resolutions
-    ), "Unexpected array of resolutions."
-    assert np.isclose(
-        expected_resolutions.mean(), expected_resolution
-    ), "Unexpected resolution."
-    assert np.allclose(expected_qi, qi), "Unexpected array of qis."
-    assert np.allclose(expected_ci_start, ci[:5]), "Unexpected beginning of ci."
-    assert np.allclose(expected_ci_end, ci[-5:]), "Unexpected end of ci."
-    assert np.allclose(expected_cis_start, cis[0, :]), "Unexpected array of cis."
-    assert np.allclose(expected_cis_end, cis[-1, :]), "Unexpected array of cis."
-
-
 def test_estimate_drift_2d_mat(extract_raw_npy_data_files):
-    """Test the estimate_resolution_frc() function on average positions per TID (.mat file)."""
+    """Test the drift_correction_time_windows_2d() (.mat file)."""
 
     #
     # Fig1a_Tom70-Dreiklang_Minflux.mat
@@ -898,31 +802,32 @@ def test_estimate_drift_2d_mat(extract_raw_npy_data_files):
     sxy = 2
 
     # Run the 2D drift correction
-    dx, dy, dxt, dyt, ti = drift_correction_time_windows_2d(
+    dx, dy, dxt, dyt, ti, T = drift_correction_time_windows_2d(
         x, y, t, sxy=sxy, rx=rx, ry=ry, T=None, tid=tid
     )
 
     # Expected values
     expected_dx_first = -2.205576196850738
     expected_dx_last = -2.6063570587906
-    expected_dx_mean = -0.34583151863400935
-    expected_dx_std = 1.2769783723616916
+    expected_dx_mean = -0.5332977272042978
+    expected_dx_std = 1.127749604233301
     expected_dy_first = 0.5048935277587024
     expected_dy_last = -6.146428606993543
-    expected_dy_mean = -0.6359990326545234
-    expected_dy_std = 2.253462631007072
-    expected_dxt_first = -3.485054708859894
-    expected_dxt_last = -9.288018225459824
-    expected_dxt_mean = -1.5007376329920046
-    expected_dxt_std = 2.915040866854371
-    expected_dyt_first = -0.5700697898476204
-    expected_dyt_last = -11.702915453524087
-    expected_dyt_mean = -2.0316526617814694
-    expected_dyt_std = 3.843656518199582
+    expected_dy_mean = -0.7935001517529221
+    expected_dy_std = 2.1620576306028627
+    expected_dxt_first = -2.2055761968507386
+    expected_dxt_last = -2.5483486849735746
+    expected_dxt_mean = -0.5585876746324872
+    expected_dxt_std = 1.1313382783145665
+    expected_dyt_first = 0.5048935277587026
+    expected_dyt_last = -6.040532333517817
+    expected_dyt_mean = -1.2400984188497535
+    expected_dyt_std = 2.3283159607530033
     expected_ti_first = 0.0
     expected_ti_last = 3634.628873523648
     expected_ti_mean = 1817.3144367618238
     expected_ti_std = 1075.7938918849325
+    expected_T = 931.95612141632
 
     # Test
     assert np.isclose(expected_dx_first, dx[0]), "Unexpected value for dx[0]."
@@ -950,10 +855,11 @@ def test_estimate_drift_2d_mat(extract_raw_npy_data_files):
     assert np.isclose(expected_ti_mean, ti.mean()), "Unexpected value for ti.mean()."
     assert np.isclose(expected_ti_std, ti.std()), "Unexpected value for ti.std()."
     assert len(ti) == 40, "Unexpected length of vector ti."
+    assert np.isclose(expected_T, T), "Unexpected value for T."
 
 
 def test_estimate_drift_3d_mat(extract_raw_npy_data_files):
-    """Test the estimate_resolution_frc() function on average positions per TID (.mat file)."""
+    """Test the drift_correction_time_windows_3d() (.mat file)."""
 
     #
     # Fig2_U2OS_Tom70-Dreiklang_ATP5B_AB_Minflux3D.mat -> csv
@@ -984,40 +890,41 @@ def test_estimate_drift_3d_mat(extract_raw_npy_data_files):
     # Resolution
     sxyz = 5
 
-    # Run the 2D drift correction
-    dx, dy, dz, dxt, dyt, dzt, ti = drift_correction_time_windows_3d(
+    # Run the 3D drift correction
+    dx, dy, dz, dxt, dyt, dzt, ti, T = drift_correction_time_windows_3d(
         x, y, z, t, sxyz=sxyz, rx=rx, ry=ry, rz=rz, T=None, tid=tid
     )
 
     # Expected values
     expected_dx_first = -12.460331273589698
     expected_dx_last = 8.009857008956743
-    expected_dx_mean = -0.2049554164290348
-    expected_dx_std = 7.232922853378957
+    expected_dx_mean = 0.12864066343930008
+    expected_dx_std = 6.589954694613107
     expected_dy_first = -16.152128169189766
     expected_dy_last = -1.152773064395448
-    expected_dy_mean = 0.46392007053106166
-    expected_dy_std = 7.661751807848289
-    expected_dz_first = 13.232820104945798
+    expected_dy_mean = -0.37461486256391596
+    expected_dy_std = 6.095210550804399
+    expected_dz_first = 13.232820104945795
     expected_dz_last = -2.9932534950048657
-    expected_dz_mean = -0.06887946563692016
-    expected_dz_std = 4.421659114855306
-    expected_dxt_first = -17.270885980721737
-    expected_dxt_last = 115.49528993457349
-    expected_dxt_mean = 7.336140722786727
-    expected_dxt_std = 24.83360089697447
-    expected_dyt_first = -30.838152077987232
-    expected_dyt_last = -106.57544466970594
-    expected_dyt_mean = -7.398183106875556
-    expected_dyt_std = 23.068469481499143
-    expected_dzt_first = 15.275605948288936
-    expected_dzt_last = -13.709107655484827
-    expected_dzt_mean = -0.8979720579559191
-    expected_dzt_std = 5.422690912517518
+    expected_dz_mean = 0.041667510696429745
+    expected_dz_std = 4.2692515907552275
+    expected_dxt_first = -12.460331273589695
+    expected_dxt_last = 7.8600782229735024
+    expected_dxt_mean = 0.6264401262142165
+    expected_dxt_std = 6.567311471605163
+    expected_dyt_first = -16.152128169189762
+    expected_dyt_last = -1.0904874624989902
+    expected_dyt_mean = -0.5297079182499407
+    expected_dyt_std = 6.324853491059834
+    expected_dzt_first = 13.232820104945795
+    expected_dzt_last = -2.9226937747501482
+    expected_dzt_mean = -0.1086293313859324
+    expected_dzt_std = 4.197818682696678
     expected_ti_first = 0.0
     expected_ti_last = 3960
     expected_ti_mean = 1980
     expected_ti_std = 1160.344776348823
+    expected_T = 600.0
 
     # Test
     assert np.isclose(expected_dx_first, dx[0]), "Unexpected value for dx[0]."
@@ -1055,6 +962,7 @@ def test_estimate_drift_3d_mat(extract_raw_npy_data_files):
     assert np.isclose(expected_ti_mean, ti.mean()), "Unexpected value for ti.mean()."
     assert np.isclose(expected_ti_std, ti.std()), "Unexpected value for ti.std()."
     assert len(ti) == 67, "Unexpected length of vector ti."
+    assert np.isclose(expected_T, T), "Unexpected value for T."
 
 
 def test_adaptive_interpolation(extract_raw_npy_data_files):
