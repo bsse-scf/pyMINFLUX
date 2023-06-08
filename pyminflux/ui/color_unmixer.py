@@ -17,11 +17,10 @@ import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget
 from PySide6.QtCore import QPoint, Signal, Slot
-from PySide6.QtGui import QAction, QDoubleValidator, QIntValidator, Qt
+from PySide6.QtGui import QAction, QDoubleValidator, Qt
 from PySide6.QtWidgets import QDialog, QMenu
-from sklearn.mixture import BayesianGaussianMixture
 
-from pyminflux.analysis import prepare_histogram
+from pyminflux.analysis import assign_data_to_clusters, prepare_histogram
 from pyminflux.state import State
 from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.ui_color_unmixer import Ui_ColorUnmixer
@@ -235,23 +234,8 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         if len(dcr) == 0:
             return
 
-        # Prepare the data
-        values = dcr.reshape(-1, 1)
-
-        # Keep track of the total number of elements for normalisation
-        n_total = len(values)
-
-        # Fit a Bayesian Gaussian Mixture Model with self.state.num_fluorophores components
-        model = BayesianGaussianMixture(
-            n_components=self.state.num_fluorophores,
-            init_params="k-means++",
-            covariance_type="full",
-            max_iter=1000,
-            random_state=42,
-        ).fit(values)
-
-        # Predict with the selected model
-        y_pred = model.predict(values)
+        # Fit the data to the requested number of clusters
+        fluo_ids = assign_data_to_clusters(dcr, self.state.num_fluorophores, seed=42)
 
         # It one or more charts already exists, remove them
         for item in self.plot_widget.allChildItems():
@@ -264,21 +248,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         bar_width = 0.9 / self.state.num_fluorophores
         offset = self.dcr_bin_width / self.state.num_fluorophores
 
-        # If there is more than one fluorophore, sort the indices by mean dcr values,
-        # from low to high (to match the assignment of the manual thresholding)
-        if self.state.num_fluorophores > 1:
-            means = [np.mean(values[y_pred == f_id]) for f_id in np.unique(y_pred)]
-            sorted_f = np.argsort(means)
-            for f in range(self.state.num_fluorophores):
-                if np.isnan(means[f]):
-                    continue
-                n = sorted_f[f] + self.state.num_fluorophores
-                y_pred[y_pred == f] = n
-            y_pred -= self.state.num_fluorophores
+        # Keep track of the total number of values for histogrm normalization
+        n_values = len(dcr)
 
         # Create new histograms
-        for f in range(self.state.num_fluorophores):
-            data = values[y_pred == f]
+        for f in range(1, self.state.num_fluorophores + 1):
+            data = dcr[fluo_ids == f]
             if len(data) == 0:
                 continue
 
@@ -286,20 +261,20 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             n_dcr, _ = np.histogram(data, bins=self.dcr_bin_edges, density=False)
 
             # Normalize by the total count
-            n_dcr = n_dcr / n_total
+            n_dcr = n_dcr / n_values
 
             # Create the bar chart
             chart = pg.BarGraphItem(
                 x=self.dcr_bin_centers + f * offset,
                 height=n_dcr,
                 width=bar_width * self.dcr_bin_width,
-                brush=brushes[f],
+                brush=brushes[f - 1],
                 alpha=0.5,
             )
             self.plot_widget.addItem(chart)
 
         # Store the predictions (1-shifted)
-        self.assigned_fluorophore_ids = y_pred + 1
+        self.assigned_fluorophore_ids = fluo_ids
 
         # Make sure to enable the assign button
         self.ui.pbAssign.setEnabled(True)
