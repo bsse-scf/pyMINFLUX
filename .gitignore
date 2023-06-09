@@ -14,3 +14,4 @@ __pycache__/
 /pyMINFLUX.spec
 .DS_Store
 /doc/
+.ipynb_checkpoints/
