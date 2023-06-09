@@ -23,29 +23,23 @@ pg.setConfigOption("imageAxisOrder", "row-major")  # For best performance
 
 # Documentation
 __doc__ = f"""
-This is the documentation of the `pyminflux` core command-line API (version {__version__}).
+This is the **development** documentation of the `pyminflux` core command-line API (version {__version__}).
 
 Currently, `pyminflux` is compatible with python 3.10 and 3.11.
 
-Example usage:
+**Usage**: see [example notebook](https://github.com/bsse-scf/pyMINFLUX/blob/feature/extended_stats/examples/processing.ipynb).
 
-```python
-from pyminflux.reader import MinFluxReader
-from pyminflux.processor import MinFluxProcessor
-
-# Read a file and initialize the processor
-reader = MinFluxReader("imspector_file.npy")
-processor = MinFluxProcessor(reader, min_trace_length=4)
-```
+**Project home**: [https://pyminflux.ethz.ch](https://pyminflux.ethz.ch)
 """
 
 # Do not build the documentation for the following modules that are only used by the user interface.
-__pdoc__ = {}
-__pdoc__["base"] = False
-__pdoc__["main"] = False
-__pdoc__["resources"] = False
-__pdoc__["settings"] = False
-__pdoc__["state"] = False
-__pdoc__["threads"] = False
-__pdoc__["ui"] = False
-__pdoc__["utils"] = False
+__pdoc__ = {
+    "base": False,
+    "main": False,
+    "resources": False,
+    "settings": False,
+    "state": False,
+    "threads": False,
+    "ui": False,
+    "utils": False,
+}
