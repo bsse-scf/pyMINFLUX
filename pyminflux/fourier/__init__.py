@@ -11,28 +11,18 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
-#
 
-
-__doc__ = "Analysis functions."
+__doc__ = "Fourier-based functions."
 __all__ = [
-    "assign_data_to_clusters",
-    "calculate_2d_histogram",
-    "calculate_density_map",
-    "find_cutoff_near_value",
-    "find_first_peak_bounds",
-    "get_robust_threshold",
-    "ideal_hist_bins",
-    "prepare_histogram",
+    "img_fourier_grid",
+    "img_fourier_ring_correlation",
+    "estimate_resolution_by_frc",
+    "get_localization_boundaries",
 ]
 
-from ._analysis import (
-    assign_data_to_clusters,
-    calculate_2d_histogram,
-    calculate_density_map,
-    find_cutoff_near_value,
-    find_first_peak_bounds,
-    get_robust_threshold,
-    ideal_hist_bins,
-    prepare_histogram,
+from ._fourier import (
+    estimate_resolution_by_frc,
+    get_localization_boundaries,
+    img_fourier_grid,
+    img_fourier_ring_correlation,
 )

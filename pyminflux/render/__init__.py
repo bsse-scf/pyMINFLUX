@@ -11,28 +11,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
-#
 
-
-__doc__ = "Analysis functions."
+__doc__ = "Rendering functions."
 __all__ = [
-    "assign_data_to_clusters",
-    "calculate_2d_histogram",
-    "calculate_density_map",
-    "find_cutoff_near_value",
-    "find_first_peak_bounds",
-    "get_robust_threshold",
-    "ideal_hist_bins",
-    "prepare_histogram",
+    "render_xy",
+    "render_xyz",
 ]
 
-from ._analysis import (
-    assign_data_to_clusters,
-    calculate_2d_histogram,
-    calculate_density_map,
-    find_cutoff_near_value,
-    find_first_peak_bounds,
-    get_robust_threshold,
-    ideal_hist_bins,
-    prepare_histogram,
-)
+from ._render import render_xy, render_xyz

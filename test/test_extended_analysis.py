@@ -22,17 +22,18 @@ import pytest
 from scipy.interpolate import CubicSpline, interp1d
 from scipy.io import loadmat
 
-from pyminflux.analysis import (
+from pyminflux.correct import (
     drift_correction_time_windows_2d,
     drift_correction_time_windows_3d,
+)
+from pyminflux.fourier import (
     estimate_resolution_by_frc,
     get_localization_boundaries,
     img_fourier_ring_correlation,
-    render_xy,
-    render_xyz,
 )
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
+from pyminflux.render import render_xy, render_xyz
 
 
 @pytest.fixture(autouse=False)
@@ -228,7 +229,7 @@ def test_data_boundaries(extract_raw_npy_data_files):
 
 
 def test_render_xy(extract_raw_npy_data_files):
-    """Test the analysis.render_xy() function."""
+    """Test the render.render_xy() function."""
 
     #
     # 2D_Only.npy
@@ -308,7 +309,7 @@ def test_render_xy(extract_raw_npy_data_files):
 
 
 def test_render_xyz(extract_raw_npy_data_files):
-    """Test the analysis.render_xyz() function."""
+    """Test the render.render_xyz() function."""
 
     #
     # 3D_ValidOnly.npy

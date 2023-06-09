@@ -19,7 +19,7 @@ from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 from PySide6.QtWidgets import QDialog
 
-from ..analysis import estimate_resolution_by_frc
+from ..fourier import estimate_resolution_by_frc
 from ..processor import MinFluxProcessor
 from ..state import State
 from .ui_frc_tool import Ui_FRCTool

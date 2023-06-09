@@ -11,28 +11,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
-#
 
-
-__doc__ = "Analysis functions."
+__doc__ = "Correction/restoration functions."
 __all__ = [
-    "assign_data_to_clusters",
-    "calculate_2d_histogram",
-    "calculate_density_map",
-    "find_cutoff_near_value",
-    "find_first_peak_bounds",
-    "get_robust_threshold",
-    "ideal_hist_bins",
-    "prepare_histogram",
+    "drift_correction_time_windows_2d",
+    "drift_correction_time_windows_3d",
 ]
 
-from ._analysis import (
-    assign_data_to_clusters,
-    calculate_2d_histogram,
-    calculate_density_map,
-    find_cutoff_near_value,
-    find_first_peak_bounds,
-    get_robust_threshold,
-    ideal_hist_bins,
-    prepare_histogram,
-)
+from ._correct import drift_correction_time_windows_2d, drift_correction_time_windows_3d
