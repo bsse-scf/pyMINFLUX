@@ -79,7 +79,7 @@ class FRCTool(QDialog, Ui_FRCTool):
             self.persist_frc_lateral_resolution
         )
         self.ui.leNumRepeats.textChanged.connect(self.persist_frc_num_repeats)
-        self.ui.cbUseAllLocs.stateChanged.connect(self.persist_fcr_fcr_use_all_locs)
+        self.ui.cbUseAllLocs.stateChanged.connect(self.persist_fcr_use_all_locs)
 
         # Signals
         self.processing_started.connect(self.disable_ui_elements)
@@ -151,9 +151,9 @@ class FRCTool(QDialog, Ui_FRCTool):
             return
         self.state.frc_lateral_resolution = frc_lateral_resolution
 
-    @Slot(int, name="persist_fcr_fcr_use_all_locs")
-    def persist_fcr_fcr_use_all_locs(self, state):
-        self.state.persist_fcr_fcr_use_all_locs = state != 0
+    @Slot(int, name="persist_fcr_use_all_locs")
+    def persist_fcr_use_all_locs(self, state):
+        self.state.frc_use_all_locs = state != 0
 
     @Slot(str, name="persist_frc_num_repeats")
     def persist_frc_num_repeats(self, text):
