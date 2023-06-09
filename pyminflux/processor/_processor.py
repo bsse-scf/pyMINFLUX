@@ -330,6 +330,12 @@ class MinFluxProcessor:
         if self.full_dataframe is None:
             return
 
+        # Make sure to work with NumPy arrays
+        x = np.array(x)
+        y = np.array(y)
+        if z is not None and self.is_3d:
+            z = np.array(z)
+
         # Select the correct rows to update
         if self.current_fluorophore_id == 0:
             mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
