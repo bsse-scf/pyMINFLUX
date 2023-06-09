@@ -208,8 +208,7 @@ def drift_correction_time_windows_2d(
     dx = fx(t)
     dy = fy(t)
 
-    # Apply to every frame
-    ti = np.arange(Rt[0], Rt[1], T / 10)
+    # Apply to the time points used to estimate the correction
     dxt = fx(ti)
     dyt = fy(ti)
 
@@ -439,8 +438,7 @@ def drift_correction_time_windows_3d(
     dy = fy(t)
     dz = fz(t)
 
-    # Apply to every frame
-    ti = np.arange(Rt[0], Rt[1], T / 10)
+    # Apply to the time points used to estimate the correction
     dxt = fx(ti)
     dyt = fy(ti)
     dzt = fz(ti)
