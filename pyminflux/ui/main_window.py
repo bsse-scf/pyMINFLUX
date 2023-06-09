@@ -501,6 +501,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.inspector.close()
                 self.inspector = None
 
+            # Close the FRC Tool
+            if self.frc_tool is not None:
+                self.frc_tool.close
+                self.frc_tool = None
+
             # Update the ui
             self.full_update_ui()
 
