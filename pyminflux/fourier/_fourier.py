@@ -132,7 +132,7 @@ def img_fourier_ring_correlation(
         Estimated image resolution in m.
 
     fc: np.ndarray
-        @TODO Add description
+        Fourier Ring Correlation of `image1` and `image2`.
 
     qi: np.ndarray
         Array of frequencies.
