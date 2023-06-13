@@ -53,7 +53,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.setupUi(self)
 
         # Store the reference to the reader
-        self._minfluxprocessor = minfluxprocessor
+        self.processor = minfluxprocessor
 
         # Reference to the communications label
         self.communication_label = None
@@ -204,7 +204,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     def set_processor(self, minfluxprocessor: MinFluxProcessor):
         """Reset the internal state."""
-        self._minfluxprocessor = minfluxprocessor
+        self.processor = minfluxprocessor
         self.efo_region = None
         self.cfr_region = None
         self.efo_range = None
@@ -222,7 +222,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Calculate thresholds for EFO
         n_efo, _, b_efo, _ = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe["efo"].values,
+            self.processor.filtered_dataframe["efo"].values,
             auto_bins=efo_auto_bins,
             bin_size=self.state.efo_bin_size_hz,
         )
@@ -237,7 +237,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             return
 
         # Set the new upper bound and reset the lower bound
-        min_efo = self._minfluxprocessor.filtered_dataframe["efo"].values.min()
+        min_efo = self.processor.filtered_dataframe["efo"].values.min()
         max_efo = cutoff_frequency
         self.state.efo_thresholds = (min_efo, max_efo)
 
@@ -258,15 +258,15 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Initialize values
         if self.state.cfr_thresholds is None:
-            min_cfr = self._minfluxprocessor.filtered_dataframe["cfr"].values.min()
-            max_cfr = self._minfluxprocessor.filtered_dataframe["cfr"].values.max()
+            min_cfr = self.processor.filtered_dataframe["cfr"].values.min()
+            max_cfr = self.processor.filtered_dataframe["cfr"].values.max()
         else:
             min_cfr = self.state.cfr_thresholds[0]
             max_cfr = self.state.cfr_thresholds[1]
 
         # Calculate thresholds for CFR
         upper_thresh_cfr, lower_thresh_cfr, _, _ = get_robust_threshold(
-            self._minfluxprocessor.filtered_dataframe["cfr"].values,
+            self.processor.filtered_dataframe["cfr"].values,
             factor=self.state.cfr_threshold_factor,
         )
         if self.state.enable_cfr_lower_threshold:
@@ -313,7 +313,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Apply the EFO filter if needed
         if self.state.efo_thresholds is not None:
-            self._minfluxprocessor.filter_by_1d_range(
+            self.processor.filter_by_1d_range(
                 "efo", (self.state.efo_thresholds[0], self.state.efo_thresholds[1])
             )
 
@@ -329,7 +329,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Apply the CFR filter if needed
         if self.state.cfr_thresholds is not None:
-            self._minfluxprocessor.filter_by_1d_range(
+            self.processor.filter_by_1d_range(
                 "cfr", (self.state.cfr_thresholds[0], self.state.cfr_thresholds[1])
             )
 
@@ -361,13 +361,13 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Make sure there is data to plot
         is_data = True
-        if self._minfluxprocessor is None:
+        if self.processor is None:
             is_data = False
 
-        if self._minfluxprocessor.filtered_dataframe is None:
+        if self.processor.filtered_dataframe is None:
             is_data = False
 
-        if self._minfluxprocessor.num_values == 0:
+        if self.processor.num_values == 0:
             is_data = False
 
         # Announce that the plotting has started
@@ -399,12 +399,12 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Calculate the proper aspect ratio and view ranges for the relevant plots
         n_efo, efo_bin_edges, efo_bin_centers, efo_bin_width = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe["efo"].values,
+            self.processor.filtered_dataframe["efo"].values,
             auto_bins=efo_auto_bins,
             bin_size=self.state.efo_bin_size_hz,
         )
         n_cfr, cfr_bin_edges, cfr_bin_centers, cfr_bin_width = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe["cfr"].values,
+            self.processor.filtered_dataframe["cfr"].values,
             auto_bins=True,
             bin_size=0.0,
         )
@@ -454,7 +454,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # sx
         n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe_stats["sx"].values,
+            self.processor.filtered_dataframe_stats["sx"].values,
             auto_bins=True,
             bin_size=0.0,
         )
@@ -470,13 +470,13 @@ class Analyzer(QDialog, Ui_Analyzer):
             support_thresholding=False,
         )
         self._add_median_line(
-            self.sx_plot, self._minfluxprocessor.filtered_dataframe_stats["sx"].values
+            self.sx_plot, self.processor.filtered_dataframe_stats["sx"].values
         )
         self.sx_plot.show()
 
         # sy
         n_sy, sy_bin_edges, sy_bin_centers, sy_bin_width = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe_stats["sy"].values,
+            self.processor.filtered_dataframe_stats["sy"].values,
             auto_bins=True,
             bin_size=0.0,
         )
@@ -492,14 +492,14 @@ class Analyzer(QDialog, Ui_Analyzer):
             support_thresholding=False,
         )
         self._add_median_line(
-            self.sy_plot, self._minfluxprocessor.filtered_dataframe_stats["sy"].values
+            self.sy_plot, self.processor.filtered_dataframe_stats["sy"].values
         )
         self.sy_plot.show()
 
         # sz
-        if self._minfluxprocessor.is_3d:
+        if self.processor.is_3d:
             n_sz, sz_bin_edges, sz_bin_centers, sz_bin_width = prepare_histogram(
-                self._minfluxprocessor.filtered_dataframe_stats["sz"].values,
+                self.processor.filtered_dataframe_stats["sz"].values,
                 auto_bins=True,
                 bin_size=0.0,
             )
@@ -516,7 +516,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             )
             self._add_median_line(
                 self.sz_plot,
-                self._minfluxprocessor.filtered_dataframe_stats["sz"].values,
+                self.processor.filtered_dataframe_stats["sz"].values,
             )
             self.sz_plot.show()
         else:

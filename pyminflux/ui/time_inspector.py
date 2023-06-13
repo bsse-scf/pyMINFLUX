@@ -48,7 +48,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.state = State()
 
         # Keep a reference to the Processor
-        self._minfluxprocessor = processor
+        self.processor = processor
 
         # Constants
         self.brush = pg.mkBrush(0, 0, 0, 255)
@@ -122,10 +122,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         """Perform and plot the results of the selected analysis."""
 
         # Do we have something to plot?
-        if (
-            self._minfluxprocessor is None
-            or self._minfluxprocessor.full_dataframe is None
-        ):
+        if self.processor is None or self.processor.full_dataframe is None:
             return
 
         # Inform that processing started
@@ -196,14 +193,14 @@ class TimeInspector(QDialog, Ui_TimeInspector):
 
         # Is the data cached?
         if self.localizations_per_unit_time_cache is None:
-            if len(self._minfluxprocessor.filtered_dataframe.index) == 0:
+            if len(self.processor.filtered_dataframe.index) == 0:
                 # No data to plot
                 return
 
             # Create `time_resolution_sec` bins starting at 0.0.
             bin_edges = np.arange(
                 start=0.0,
-                stop=self._minfluxprocessor.filtered_dataframe["tim"].max()
+                stop=self.processor.filtered_dataframe["tim"].max()
                 + self.time_resolution_sec,
                 step=self.time_resolution_sec,
             )
@@ -212,7 +209,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
 
             # Calculate the histogram of localizations per unit time
             self.localizations_per_unit_time_cache, _ = np.histogram(
-                self._minfluxprocessor.filtered_dataframe["tim"].values,
+                self.processor.filtered_dataframe["tim"].values,
                 bins=bin_edges,
                 density=False,
             )
@@ -257,7 +254,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
             # Create `time_resolution_sec` bins starting at 0.0.
             bin_edges = np.arange(
                 start=0.0,
-                stop=self._minfluxprocessor.filtered_dataframe["tim"].max()
+                stop=self.processor.filtered_dataframe["tim"].max()
                 + self.time_resolution_sec,
                 step=self.time_resolution_sec,
             )
@@ -272,9 +269,9 @@ class TimeInspector(QDialog, Ui_TimeInspector):
             # Now process all bins
             for i in range(len(bin_edges) - 1):
                 time_range = (bin_edges[i], bin_edges[i + 1])
-                df = self._minfluxprocessor.select_by_1d_range("tim", time_range)
+                df = self.processor.select_by_1d_range("tim", time_range)
                 if len(df.index) > 0:
-                    stats = self._minfluxprocessor.calculate_statistics_on(df)
+                    stats = self.processor.calculate_statistics_on(df)
                     if std_err:
                         x_pr[i] = stats["sx"].mean() / np.sqrt(len(stats["sx"]))
                         y_pr[i] = stats["sy"].mean() / np.sqrt(len(stats["sy"]))
@@ -318,7 +315,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         # Get the max bin number for normalization
         n_max = np.max([x_pr.max(), y_pr.max(), z_pr.max()])
 
-        if self._minfluxprocessor.is_3d:
+        if self.processor.is_3d:
             offset = 1 / 3
             bar_width = 0.9 / 3
         else:
@@ -348,7 +345,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.plot_widget.addItem(chart)
 
         # Create the sz bar charts if needed
-        if self._minfluxprocessor.is_3d:
+        if self.processor.is_3d:
             chart = pg.BarGraphItem(
                 x=self.x_axis + 2 * offset,
                 height=z_pr,
@@ -423,7 +420,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         mx_s = mx * self.time_resolution_sec
 
         # Filter
-        self._minfluxprocessor.filter_by_1d_range_complement("tim", (mn_s, mx_s))
+        self.processor.filter_by_1d_range_complement("tim", (mn_s, mx_s))
 
         # Invalidate the cache
         self.invalidate_cache()
@@ -448,7 +445,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         mx_s = mx * self.time_resolution_sec
 
         # Filter
-        self._minfluxprocessor.filter_by_1d_range("tim", (mn_s, mx_s))
+        self.processor.filter_by_1d_range("tim", (mn_s, mx_s))
 
         # Invalidate the cache
         self.invalidate_cache()

@@ -58,7 +58,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.pen = pg.mkPen(None)
 
         # Keep a reference to the Processor
-        self._minfluxprocessor = processor
+        self.processor = processor
 
         # Keep track of the global data range and step
         self.n_dcr_max = None
@@ -117,22 +117,19 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         """Plot the dcr histogram. This is always performed assuming all data belongs to one fluorophore."""
 
         # Do we have something to plot?
-        if (
-            self._minfluxprocessor is None
-            or self._minfluxprocessor.full_dataframe is None
-        ):
+        if self.processor is None or self.processor.full_dataframe is None:
             return
 
         if self.state.dcr_bin_size == 0:
             # Calculate the dcr histogram
             n_dcr, dcr_bin_edges, dcr_bin_centers, dcr_bin_width = prepare_histogram(
-                self._minfluxprocessor.full_dataframe["dcr"].values,
+                self.processor.full_dataframe["dcr"].values,
                 auto_bins=True,
             )
         else:
             # Calculate the dcr histogram
             n_dcr, dcr_bin_edges, dcr_bin_centers, dcr_bin_width = prepare_histogram(
-                self._minfluxprocessor.full_dataframe["dcr"].values,
+                self.processor.full_dataframe["dcr"].values,
                 auto_bins=False,
                 bin_size=self.state.dcr_bin_size,
             )
@@ -173,7 +170,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         """Preview the manual assignment."""
 
         # Get the data
-        dcr = self._minfluxprocessor.full_dataframe["dcr"].values
+        dcr = self.processor.full_dataframe["dcr"].values
         if len(dcr) == 0:
             return
 
@@ -230,7 +227,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         """Detect fluorophores."""
 
         # Get the data
-        dcr = self._minfluxprocessor.full_dataframe["dcr"].values
+        dcr = self.processor.full_dataframe["dcr"].values
         if len(dcr) == 0:
             return
 
@@ -287,7 +284,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             return
 
         # Assign the IDs via the processor
-        self._minfluxprocessor.set_fluorophore_ids(self.assigned_fluorophore_ids)
+        self.processor.set_fluorophore_ids(self.assigned_fluorophore_ids)
 
         # Inform that the fluorophore IDs have been assigned
         self.fluorophore_ids_assigned.emit(
