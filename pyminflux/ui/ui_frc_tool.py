@@ -42,13 +42,13 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
     QDialog,
     QGridLayout,
     QHBoxLayout,
     QLabel,
     QLayout,
     QLineEdit,
+    QProgressBar,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
@@ -94,6 +94,20 @@ class Ui_FRCTool(object):
 
         self.hlParameters.addWidget(self.leLateralResolution)
 
+        self.lbTemporalResolution = QLabel(FRCTool)
+        self.lbTemporalResolution.setObjectName("lbTemporalResolution")
+        sizePolicy.setHeightForWidth(
+            self.lbTemporalResolution.sizePolicy().hasHeightForWidth()
+        )
+        self.lbTemporalResolution.setSizePolicy(sizePolicy)
+
+        self.hlParameters.addWidget(self.lbTemporalResolution)
+
+        self.leTemporalResolution = QLineEdit(FRCTool)
+        self.leTemporalResolution.setObjectName("leTemporalResolution")
+
+        self.hlParameters.addWidget(self.leTemporalResolution)
+
         self.lbNumRepeats = QLabel(FRCTool)
         self.lbNumRepeats.setObjectName("lbNumRepeats")
         sizePolicy.setHeightForWidth(self.lbNumRepeats.sizePolicy().hasHeightForWidth())
@@ -107,18 +121,6 @@ class Ui_FRCTool(object):
         self.leNumRepeats.setSizePolicy(sizePolicy)
 
         self.hlParameters.addWidget(self.leNumRepeats)
-
-        self.cbUseAllLocs = QCheckBox(FRCTool)
-        self.cbUseAllLocs.setObjectName("cbUseAllLocs")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(
-            self.cbUseAllLocs.sizePolicy().hasHeightForWidth()
-        )
-        self.cbUseAllLocs.setSizePolicy(sizePolicy1)
-
-        self.hlParameters.addWidget(self.cbUseAllLocs)
 
         self.pbRunFRCAnalysis = QPushButton(FRCTool)
         self.pbRunFRCAnalysis.setObjectName("pbRunFRCAnalysis")
@@ -142,6 +144,26 @@ class Ui_FRCTool(object):
 
         self.gridLayout.addLayout(self.hlPlot, 1, 0, 1, 1)
 
+        self.hlProgress = QHBoxLayout()
+        self.hlProgress.setObjectName("hlProgress")
+        self.progress_bar = QProgressBar(FRCTool)
+        self.progress_bar.setObjectName("progress_bar")
+        self.progress_bar.setValue(0)
+
+        self.hlProgress.addWidget(self.progress_bar)
+
+        self.pbInterrupt = QPushButton(FRCTool)
+        self.pbInterrupt.setObjectName("pbInterrupt")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.pbInterrupt.sizePolicy().hasHeightForWidth())
+        self.pbInterrupt.setSizePolicy(sizePolicy1)
+
+        self.hlProgress.addWidget(self.pbInterrupt)
+
+        self.gridLayout.addLayout(self.hlProgress, 2, 0, 1, 1)
+
         self.retranslateUi(FRCTool)
 
         QMetaObject.connectSlotsByName(FRCTool)
@@ -150,19 +172,20 @@ class Ui_FRCTool(object):
 
     def retranslateUi(self, FRCTool):
         FRCTool.setWindowTitle(
-            QCoreApplication.translate("FRCTool", "Resolution Estimator", None)
+            QCoreApplication.translate("FRCTool", "Resolution Monitor", None)
         )
         self.lbLateralResolution.setText(
-            QCoreApplication.translate("FRCTool", "Lateral (xy) resolution (nm)", None)
+            QCoreApplication.translate("FRCTool", "Spatial (xy) resolution (nm)", None)
+        )
+        self.lbTemporalResolution.setText(
+            QCoreApplication.translate("FRCTool", "Temporal resoluton (s)", None)
         )
         self.lbNumRepeats.setText(
             QCoreApplication.translate("FRCTool", "Number of repeats", None)
         )
-        self.cbUseAllLocs.setText(
-            QCoreApplication.translate("FRCTool", "Use all localizations", None)
-        )
         self.pbRunFRCAnalysis.setText(
-            QCoreApplication.translate("FRCTool", "Run FRC", None)
+            QCoreApplication.translate("FRCTool", "Run", None)
         )
+        self.pbInterrupt.setText(QCoreApplication.translate("FRCTool", "Cancel", None))
 
     # retranslateUi

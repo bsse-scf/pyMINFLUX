@@ -226,7 +226,7 @@ class Ui_MainWindow(object):
             QCoreApplication.translate("MainWindow", "Export stats", None)
         )
         self.actionEstimate_resolution.setText(
-            QCoreApplication.translate("MainWindow", "Estimate resolution", None)
+            QCoreApplication.translate("MainWindow", "Resolution monitor", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))

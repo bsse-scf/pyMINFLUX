@@ -15,7 +15,7 @@
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import QMutex, QMutexLocker, QThread, QWaitCondition, Signal, Slot
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 from PySide6.QtWidgets import QDialog
 
@@ -25,12 +25,81 @@ from ..state import State
 from .ui_frc_tool import Ui_FRCTool
 
 
+class LocalWorker(QThread):
+
+    # Signal progress and completion
+    started = Signal()
+    signal_progress = Signal(int)
+    finished = Signal()
+
+    def __init__(self, processor, t_start, t_steps, sxy, rx, ry, n_reps):
+        """Constructor."""
+        super().__init__()
+
+        # Set arguments
+        self.processor = processor
+        self.t_start = t_start
+        self.t_steps = t_steps
+        self.sxy = sxy
+        self.rx = rx
+        self.ry = ry
+        self.n_reps = n_reps
+        self.all_resolutions = None
+
+        # Set up mutexes and wait conditions
+        self.mutex = QMutex()
+        self.condition = QWaitCondition()
+        self.interrupt = False
+
+    def run(self):
+        """Run the computation."""
+
+        # Signal start
+        self.started.emit()
+
+        # Allocate space for the results
+        self.all_resolutions = np.zeros(len(self.t_steps))
+
+        # Process all time steps
+        for i, t in enumerate(self.t_steps):
+
+            with QMutexLocker(self.mutex):
+                if self.interrupt:
+                    break
+
+            # Extract the data
+            df = self.processor.select_by_1d_range("tim", x_range=(self.t_start, t))
+            x = df["x"].values
+            y = df["y"].values
+
+            # Extimate the resolution by FRC
+            resolution, _, _ = estimate_resolution_by_frc(
+                x=x,
+                y=y,
+                sx=self.sxy,
+                sy=self.sxy,
+                rx=self.rx,
+                ry=self.ry,
+                num_reps=self.n_reps,
+                seed=2023,
+                return_all=False,
+            )
+
+            # Store the resolution
+            self.all_resolutions[i] = 1e9 * resolution
+
+            # Signal progress
+            self.signal_progress.emit(int(np.round(100 * (i + 1) / len(self.t_steps))))
+
+        # Signal completion
+        self.finished.emit()
+
+    def stop(self):
+        with QMutexLocker(self.mutex):
+            self.interrupt = True
+
+
 class FRCTool(QDialog, Ui_FRCTool):
-
-    # Signals
-    processing_started = Signal(None, name="processing_started")
-    processing_completed = Signal(None, name="processing_completed")
-
     def __init__(self, minfluxprocessor: MinFluxProcessor, parent=None):
         """Constructor."""
 
@@ -42,7 +111,7 @@ class FRCTool(QDialog, Ui_FRCTool):
         self.ui.setupUi(self)
 
         # Store the reference to the reader
-        self._minfluxprocessor = minfluxprocessor
+        self.processor = minfluxprocessor
 
         # Keep reference to the plot
         self.frc_plot = None
@@ -53,6 +122,14 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Create widgets
         self.create_widgets()
 
+        # Keep a reference to the local worker
+        self.worker = None
+
+        # Hide the progress bar
+        self.ui.progress_bar.setValue(0)
+        self.ui.progress_bar.setVisible(False)
+        self.ui.pbInterrupt.setVisible(False)
+
         #
         # Set defaults
         #
@@ -61,12 +138,15 @@ class FRCTool(QDialog, Ui_FRCTool):
         self.ui.leLateralResolution.setText(str(self.state.frc_lateral_resolution))
         self.ui.leNumRepeats.setValidator(QDoubleValidator(bottom=0.0, decimals=2))
 
+        # Temporal (s) resolution
+        self.ui.leTemporalResolution.setText(str(self.state.frc_temporal_resolution))
+        self.ui.leTemporalResolution.setValidator(
+            QDoubleValidator(bottom=0.0, decimals=1)
+        )
+
         # Number of repeats
         self.ui.leNumRepeats.setText(str(self.state.frc_num_repeats))
         self.ui.leNumRepeats.setValidator(QIntValidator(bottom=0))
-
-        # Use all localizations
-        self.ui.cbUseAllLocs.setChecked(self.state.frc_use_all_locs)
 
         # Set signal-slot connections
         self.setup_conn()
@@ -75,15 +155,15 @@ class FRCTool(QDialog, Ui_FRCTool):
         """Set up signal-slot connections."""
 
         self.ui.pbRunFRCAnalysis.clicked.connect(self.run_frc_analysis)
+        self.ui.pbInterrupt.clicked.connect(self.stop_frc_analysis)
         self.ui.leLateralResolution.textChanged.connect(
             self.persist_frc_lateral_resolution
         )
-        self.ui.leNumRepeats.textChanged.connect(self.persist_frc_num_repeats)
-        self.ui.cbUseAllLocs.stateChanged.connect(self.persist_fcr_use_all_locs)
+        self.ui.leTemporalResolution.textChanged.connect(
+            self.persist_frc_temporal_resolution
+        )
 
-        # Signals
-        self.processing_started.connect(self.disable_ui_elements)
-        self.processing_completed.connect(self.enable_ui_elements)
+        self.ui.leNumRepeats.textChanged.connect(self.persist_frc_num_repeats)
 
     def create_widgets(self):
         """Create widgets."""
@@ -105,43 +185,51 @@ class FRCTool(QDialog, Ui_FRCTool):
 
     def set_processor(self, minfluxprocessor: MinFluxProcessor):
         """Reset the internal state."""
-        self._minfluxprocessor = minfluxprocessor
+        self.processor = minfluxprocessor
 
     @Slot(name="run_frc_analysis")
     def run_frc_analysis(self):
         """Run FRC analysis to estimate signal resolution."""
 
-        # Get the parameters and the coordinates
+        # Get the parameters
         sxy = self.state.frc_lateral_resolution
+        t_step = self.state.frc_temporal_resolution
         n_reps = self.state.frc_num_repeats
-        if self.state.frc_use_all_locs:
-            x = self._minfluxprocessor.filtered_dataframe["x"]
-            y = self._minfluxprocessor.filtered_dataframe["y"]
-        else:
-            x = self._minfluxprocessor.filtered_dataframe_stats["mx"]
-            y = self._minfluxprocessor.filtered_dataframe_stats["my"]
 
-        # Inform that processing started
-        self.processing_started.emit()
+        # Create the list of time steps to consider
+        t_start = self.processor.filtered_dataframe["tim"].min()
+        t_end = self.processor.filtered_dataframe["tim"].max()
+        n_steps = int(np.round((t_end - t_start) / t_step))
+        t_steps = np.linspace(t_start, t_end, n_steps)
+        t_steps = t_steps[1:]
 
-        # Run the resolution estimation
-        resolution, qi, ci, resolutions, cis = estimate_resolution_by_frc(
-            x,
-            y,
-            sx=sxy,
-            sy=sxy,
-            rx=None,
-            ry=None,
-            num_reps=n_reps,
-            seed=None,
-            return_all=True,
+        # Set the spatial ranges
+        rx = (
+            self.processor.filtered_dataframe["x"].min(),
+            self.processor.filtered_dataframe["x"].max(),
+        )
+        ry = (
+            self.processor.filtered_dataframe["y"].min(),
+            self.processor.filtered_dataframe["y"].max(),
         )
 
-        # Update plot
-        self.plot(resolution, qi, ci, resolutions, cis)
+        # Create a new worker
+        if self.worker is not None:
+            del self.worker
+        self.worker = LocalWorker(self.processor, t_start, t_steps, sxy, rx, ry, n_reps)
+        self.worker.started.connect(self.update_ui_on_process_start)
+        self.worker.signal_progress.connect(self.update_progress_bar)
+        self.worker.finished.connect(self.update_ui_on_process_end)
+        self.worker.finished.connect(self.collect_results_and_plot)
 
-        # Inform that processing completed
-        self.processing_completed.emit()
+        # Now process in the local worker
+        self.worker.start()
+
+    @Slot(name="stop_frc_analysis")
+    def stop_frc_analysis(self):
+        if self.worker is None:
+            return
+        self.worker.stop()
 
     @Slot(str, name="persist_frc_lateral_resolution")
     def persist_frc_lateral_resolution(self, text):
@@ -151,9 +239,13 @@ class FRCTool(QDialog, Ui_FRCTool):
             return
         self.state.frc_lateral_resolution = frc_lateral_resolution
 
-    @Slot(int, name="persist_fcr_use_all_locs")
-    def persist_fcr_use_all_locs(self, state):
-        self.state.frc_use_all_locs = state != 0
+    @Slot(str, name="persist_frc_temporal_resolution")
+    def persist_frc_temporal_resolution(self, text):
+        try:
+            frc_temporal_resolution = float(text)
+        except ValueError as _:
+            return
+        self.state.frc_temporal_resolution = frc_temporal_resolution
 
     @Slot(str, name="persist_frc_num_repeats")
     def persist_frc_num_repeats(self, text):
@@ -163,8 +255,25 @@ class FRCTool(QDialog, Ui_FRCTool):
             return
         self.state.frc_num_repeats = frc_num_repeats
 
-    def plot(self, resolution, qi, ci, resolutions, cis):
+    @Slot(int, name="update_progress_bar")
+    def update_progress_bar(self, value):
+        self.ui.progress_bar.setValue(value)
+
+    def plot(self, time_steps, resolutions):
         """Plot histograms."""
+
+        # Clear the plot
+        self.clear_plot()
+
+        # Set axis ranges
+        self.frc_plot.setXRange(time_steps[0], time_steps[-1])
+        self.frc_plot.setYRange(np.min(resolutions), np.max(resolutions))
+
+        # Plot resolution vs. time step
+        self.frc_plot.plot(time_steps, resolutions, pen=pg.mkPen("r", width=3))
+
+    def clear_plot(self):
+        """Clear the plot."""
 
         for item in self.frc_plot.allChildItems():
             print(type(item))
@@ -173,58 +282,60 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Show x and y grids
         self.frc_plot.showGrid(x=True, y=True)
 
-        # # adding legend
-        # plot_item.addLegend()
+        # Set properties of the label for y axis
+        self.frc_plot.setLabel("left", "Resolution [nm]")
 
-        # set properties of the label for y axis
-        self.frc_plot.setLabel("left", "Fourier Ring Correlation")
+        # Set properties of the label for x axis
+        self.frc_plot.setLabel("bottom", "Acquisition time", units="s")
 
-        # set properties of the label for x axis
-        self.frc_plot.setLabel("bottom", "Frequency", units="1/nm")
-
-        # Set axis ranges
-        self.frc_plot.setXRange(qi[0], qi[-1])
-        self.frc_plot.setYRange(np.min(cis), np.max(cis))
-
-        # Plot individual cis in black and width = 0.75
-        for i in range(cis.shape[1]):
-            self.frc_plot.plot(qi, cis[:, i], pen=pg.mkPen(color="k", width=0.75))
-
-        # Plot average ci in red and width = 3
-        self.frc_plot.plot(qi, ci, pen=pg.mkPen("r", width=3))
-
-        # Plot a vertical line at the estimate resolution
-        res_line = pg.InfiniteLine(
-            pos=(1.0 / resolution),
-            movable=False,
-            angle=90,
-            pen={"color": (200, 50, 50), "width": 3},
-            label=f"resolution={1e9 * resolution:.2f} nm",
-            labelOpts={
-                "position": 0.95,
-                "color": (200, 50, 50),
-                "fill": (200, 50, 50, 10),
-                "movable": True,
-            },
-        )
-        self.frc_plot.addItem(res_line)
-
-    def disable_ui_elements(self):
+    def update_ui_on_process_start(self):
         """Disable elements and inform that a processing is ongoing."""
+
+        # Disable all parameter widgets
         self.ui.lbLateralResolution.setEnabled(False)
         self.ui.leLateralResolution.setEnabled(False)
+        self.ui.lbTemporalResolution.setEnabled(False)
+        self.ui.leTemporalResolution.setEnabled(False)
         self.ui.lbNumRepeats.setEnabled(False)
         self.ui.leNumRepeats.setEnabled(False)
-        self.ui.cbUseAllLocs.setEnabled(False)
         self.ui.pbRunFRCAnalysis.setEnabled(False)
-        self.repaint()
 
-    def enable_ui_elements(self):
+        # However, we make the progress bar visible
+        self.ui.progress_bar.setValue(0)
+        self.ui.progress_bar.setVisible(True)
+        self.ui.pbInterrupt.setVisible(True)
+
+    def update_ui_on_process_end(self):
         """Disable elements and inform that a processing is ongoing."""
+
+        # Enable all parameter widgets
         self.ui.lbLateralResolution.setEnabled(True)
         self.ui.leLateralResolution.setEnabled(True)
+        self.ui.lbTemporalResolution.setEnabled(True)
+        self.ui.leTemporalResolution.setEnabled(True)
         self.ui.lbNumRepeats.setEnabled(True)
         self.ui.leNumRepeats.setEnabled(True)
-        self.ui.cbUseAllLocs.setEnabled(True)
         self.ui.pbRunFRCAnalysis.setEnabled(True)
-        self.repaint()
+
+        # However, we make the progress bar invisible
+        self.ui.progress_bar.setValue(0)
+        self.ui.progress_bar.setVisible(False)
+        self.ui.pbInterrupt.setVisible(False)
+
+    def collect_results_and_plot(self):
+        """Collect results from the local worked and plot them."""
+
+        if self.worker is None:
+            return
+
+        # Has the process completed or was it interrupted?
+        if self.worker.interrupt:
+            self.clear_plot()
+            return
+
+        # Collect the results
+        t_steps = self.worker.t_steps
+        all_resolutions = self.worker.all_resolutions
+
+        # Update plot
+        self.plot(t_steps, all_resolutions)
