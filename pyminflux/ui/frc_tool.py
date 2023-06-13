@@ -15,13 +15,22 @@
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import QMutex, QMutexLocker, QThread, QWaitCondition, Signal, Slot
-from PySide6.QtGui import QDoubleValidator, QIntValidator
-from PySide6.QtWidgets import QDialog
+from PySide6.QtCore import (
+    QMutex,
+    QMutexLocker,
+    QPoint,
+    QThread,
+    QWaitCondition,
+    Signal,
+    Slot,
+)
+from PySide6.QtGui import QAction, QDoubleValidator, QIntValidator, Qt
+from PySide6.QtWidgets import QDialog, QMenu
 
 from ..fourier import estimate_resolution_by_frc
 from ..processor import MinFluxProcessor
 from ..state import State
+from .helpers import export_plot_interactive
 from .ui_frc_tool import Ui_FRCTool
 
 
@@ -135,6 +144,9 @@ class FRCTool(QDialog, Ui_FRCTool):
         self.ui.progress_bar.setVisible(False)
         self.ui.pbInterrupt.setVisible(False)
 
+        # Keep track of whether there is a plot to export
+        self.plot_ready_to_export = False
+
         #
         # Set defaults
         #
@@ -179,6 +191,7 @@ class FRCTool(QDialog, Ui_FRCTool):
         self.frc_plot.setMenuEnabled(False)
         self.frc_plot.hideAxis("bottom")
         self.frc_plot.hideAxis("left")
+        self.frc_plot.scene().sigMouseClicked.connect(self.raise_context_menu)
         self.ui.hlPlot.addWidget(self.frc_plot)
         self.frc_plot.show()
 
@@ -195,6 +208,9 @@ class FRCTool(QDialog, Ui_FRCTool):
     @Slot(name="run_frc_analysis")
     def run_frc_analysis(self):
         """Run FRC analysis to estimate signal resolution."""
+
+        # Mark that there is no plot ready to export
+        self.plot_ready_to_export = False
 
         # Get the parameters
         sxy = self.state.frc_lateral_resolution
@@ -341,3 +357,24 @@ class FRCTool(QDialog, Ui_FRCTool):
 
         # Update plot
         self.plot(t_steps, all_resolutions)
+
+        # Mark that there is a plot ready  to export
+        self.plot_ready_to_export = True
+
+    def raise_context_menu(self, ev):
+        """Create a context menu on the plot."""
+        if ev.button() == Qt.MouseButton.RightButton:
+            if not self.plot_ready_to_export:
+                return
+
+            menu = QMenu()
+            export_action = QAction("Export plot")
+            export_action.triggered.connect(
+                lambda checked: export_plot_interactive(ev.currentItem)
+            )
+            menu.addAction(export_action)
+            pos = ev.screenPos()
+            menu.exec(QPoint(int(pos.x()), int(pos.y())))
+            ev.accept()
+        else:
+            ev.ignore()

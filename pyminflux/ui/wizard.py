@@ -51,7 +51,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.state = State()
 
         # Keep a reference (initially unset) to the processor
-        self._minfluxprocessor = None
+        self.processor = None
 
         # Disable controls
         self.enable_controls(False)
@@ -71,7 +71,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
     def set_processor(self, processor):
         """Store a reference to the processor."""
-        self._minfluxprocessor = processor
+        self.processor = processor
 
         # Prepare and fill the filter ranges
         self.prepare_filter_ranges()
@@ -114,13 +114,13 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     def prepare_filter_ranges(self):
         """Extract bounds from the EFO and CFR data and prefill the values."""
 
-        if self._minfluxprocessor is None:
+        if self.processor is None:
             return
 
         # Get the range for the EFO data
         if self.state.efo_thresholds is None:
             _, efo_bin_edges, _, _ = prepare_histogram(
-                self._minfluxprocessor.filtered_dataframe["efo"].values,
+                self.processor.filtered_dataframe["efo"].values,
                 auto_bins=self.state.efo_bin_size_hz == 0,
                 bin_size=self.state.efo_bin_size_hz,
             )
@@ -128,7 +128,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Get the range for the CFR data
         _, cfr_bin_edges, _, _ = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe["cfr"].values,
+            self.processor.filtered_dataframe["cfr"].values,
             auto_bins=True,
             bin_size=0.0,
         )
@@ -251,7 +251,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Apply the EFO filter if needed
         if self.state.efo_thresholds is not None:
-            self._minfluxprocessor.filter_by_1d_range(
+            self.processor.filter_by_1d_range(
                 "efo", (self.state.efo_thresholds[0], self.state.efo_thresholds[1])
             )
         # Signal that the external viewers should be updated
@@ -263,7 +263,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Apply the CFR filter if needed
         if self.state.cfr_thresholds is not None:
-            self._minfluxprocessor.filter_by_1d_range(
+            self.processor.filter_by_1d_range(
                 "cfr", (self.state.cfr_thresholds[0], self.state.cfr_thresholds[1])
             )
         # Signal that the external viewers should be updated
