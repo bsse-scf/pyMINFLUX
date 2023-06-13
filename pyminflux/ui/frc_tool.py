@@ -28,9 +28,10 @@ from .ui_frc_tool import Ui_FRCTool
 class LocalWorker(QThread):
 
     # Signal progress and completion
-    started = Signal()
-    signal_progress = Signal(int)
-    finished = Signal()
+    processing_started = Signal()
+    processing_progress_updated = Signal(int)
+    processing_interrupted = Signal()
+    processing_finished = Signal()
 
     def __init__(self, processor, t_start, t_steps, sxy, rx, ry, n_reps):
         """Constructor."""
@@ -49,23 +50,25 @@ class LocalWorker(QThread):
         # Set up mutexes and wait conditions
         self.mutex = QMutex()
         self.condition = QWaitCondition()
-        self.interrupt = False
+        self.is_interrupted = False
 
     def run(self):
         """Run the computation."""
 
         # Signal start
-        self.started.emit()
+        self.processing_started.emit()
 
         # Allocate space for the results
-        self.all_resolutions = np.zeros(len(self.t_steps))
+        self.all_resolutions = np.empty(len(self.t_steps), dtype=np.float32)
+        self.all_resolutions.fill(np.nan)
 
         # Process all time steps
         for i, t in enumerate(self.t_steps):
 
             with QMutexLocker(self.mutex):
-                if self.interrupt:
-                    break
+                if self.is_interrupted:
+                    self.processing_interrupted.emit()
+                    return
 
             # Extract the data
             df = self.processor.select_by_1d_range("tim", x_range=(self.t_start, t))
@@ -89,14 +92,16 @@ class LocalWorker(QThread):
             self.all_resolutions[i] = 1e9 * resolution
 
             # Signal progress
-            self.signal_progress.emit(int(np.round(100 * (i + 1) / len(self.t_steps))))
+            self.processing_progress_updated.emit(
+                int(np.round(100 * (i + 1) / len(self.t_steps)))
+            )
 
         # Signal completion
-        self.finished.emit()
+        self.processing_finished.emit()
 
     def stop(self):
         with QMutexLocker(self.mutex):
-            self.interrupt = True
+            self.is_interrupted = True
 
 
 class FRCTool(QDialog, Ui_FRCTool):
@@ -217,10 +222,12 @@ class FRCTool(QDialog, Ui_FRCTool):
         if self.worker is not None:
             del self.worker
         self.worker = LocalWorker(self.processor, t_start, t_steps, sxy, rx, ry, n_reps)
-        self.worker.started.connect(self.update_ui_on_process_start)
-        self.worker.signal_progress.connect(self.update_progress_bar)
-        self.worker.finished.connect(self.update_ui_on_process_end)
-        self.worker.finished.connect(self.collect_results_and_plot)
+        self.worker.processing_started.connect(self.update_ui_on_process_start)
+        self.worker.processing_progress_updated.connect(self.update_progress_bar)
+        self.worker.processing_interrupted.connect(self.update_ui_on_process_end)
+        self.worker.processing_interrupted.connect(self.collect_results_and_plot)
+        self.worker.processing_finished.connect(self.update_ui_on_process_end)
+        self.worker.processing_finished.connect(self.collect_results_and_plot)
 
         # Now process in the local worker
         self.worker.start()
@@ -265,9 +272,18 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Clear the plot
         self.clear_plot()
 
+        # Show x and y grids
+        self.frc_plot.showGrid(x=True, y=True)
+
+        # Set properties of the label for y axis
+        self.frc_plot.setLabel("left", "Resolution [nm]")
+
+        # Set properties of the label for x axis
+        self.frc_plot.setLabel("bottom", "Acquisition time", units="s")
+
         # Set axis ranges
         self.frc_plot.setXRange(time_steps[0], time_steps[-1])
-        self.frc_plot.setYRange(np.min(resolutions), np.max(resolutions))
+        self.frc_plot.setYRange(np.nanmin(resolutions), np.nanmax(resolutions))
 
         # Plot resolution vs. time step
         self.frc_plot.plot(time_steps, resolutions, pen=pg.mkPen("r", width=3))
@@ -278,15 +294,6 @@ class FRCTool(QDialog, Ui_FRCTool):
         for item in self.frc_plot.allChildItems():
             print(type(item))
             self.frc_plot.removeItem(item)
-
-        # Show x and y grids
-        self.frc_plot.showGrid(x=True, y=True)
-
-        # Set properties of the label for y axis
-        self.frc_plot.setLabel("left", "Resolution [nm]")
-
-        # Set properties of the label for x axis
-        self.frc_plot.setLabel("bottom", "Acquisition time", units="s")
 
     def update_ui_on_process_start(self):
         """Disable elements and inform that a processing is ongoing."""
@@ -326,11 +333,6 @@ class FRCTool(QDialog, Ui_FRCTool):
         """Collect results from the local worked and plot them."""
 
         if self.worker is None:
-            return
-
-        # Has the process completed or was it interrupted?
-        if self.worker.interrupt:
-            self.clear_plot()
             return
 
         # Collect the results
