@@ -231,7 +231,7 @@ class Ui_MainWindow(object):
         self.actionCheck_for_updates.setText(
             QCoreApplication.translate("MainWindow", "Check for updates", None)
         self.actionEstimate_resolution.setText(
-            QCoreApplication.translate("MainWindow", "Estimate resolution", None)
+            QCoreApplication.translate("MainWindow", "Resolution monitor", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))

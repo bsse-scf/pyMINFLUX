@@ -203,7 +203,7 @@
   </action>
   <action name="actionEstimate_resolution">
    <property name="text">
-    <string>Estimate resolution</string>
+    <string>Resolution monitor</string>
    </property>
   </action>
  </widget>
