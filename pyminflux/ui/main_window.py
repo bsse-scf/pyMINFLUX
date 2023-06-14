@@ -653,7 +653,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self,
             "About",
             f"{__APP_NAME__} v{__version__}\n"
-            f'"Heidelberg"\n'
             f"\n"
             f"Copyright 2022 - {datetime.now().year}\n"
             f"Single Cell Facility\n"
