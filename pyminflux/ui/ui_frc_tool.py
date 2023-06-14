@@ -178,7 +178,7 @@ class Ui_FRCTool(object):
 
     def retranslateUi(self, FRCTool):
         FRCTool.setWindowTitle(
-            QCoreApplication.translate("FRCTool", "Resolution Monitor", None)
+            QCoreApplication.translate("FRCTool", "FRC Analyzer", None)
         )
         self.lbLateralResolution.setText(
             QCoreApplication.translate("FRCTool", "Spatial (xy) resolution (nm)", None)

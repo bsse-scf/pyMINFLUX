@@ -203,7 +203,7 @@
   </action>
   <action name="actionEstimate_resolution">
    <property name="text">
-    <string>Resolution monitor</string>
+    <string>FRC Analyzer</string>
    </property>
   </action>
  </widget>
