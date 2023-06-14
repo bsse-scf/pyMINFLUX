@@ -393,9 +393,14 @@ class FRCTool(QDialog, Ui_FRCTool):
             res = mean_res[0]
             se = se_res[0]
 
+        # Calculate an appropriate y-axis range
+        mx = np.nanmax(mean_res + se_res)
+        mn = np.nanmin(mean_res - se_res)
+        margin = 0.1 * (mx - mn)
+
         # Set axis ranges
         self.frc_plot.setXRange(x_range[0], x_range[1])
-        self.frc_plot.setYRange(np.nanmin(resolutions), np.nanmax(resolutions))
+        self.frc_plot.setYRange(mn - margin, mx + margin)
 
         # Display the endpoint resolution in the plot title
         if np.any(np.isnan(mean_res)):
