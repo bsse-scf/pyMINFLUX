@@ -42,6 +42,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QDialog,
     QGridLayout,
     QHBoxLayout,
@@ -93,6 +94,11 @@ class Ui_FRCTool(object):
         self.leLateralResolution.setSizePolicy(sizePolicy)
 
         self.hlParameters.addWidget(self.leLateralResolution)
+
+        self.cbEndpoint = QCheckBox(FRCTool)
+        self.cbEndpoint.setObjectName("cbEndpoint")
+
+        self.hlParameters.addWidget(self.cbEndpoint)
 
         self.lbTemporalResolution = QLabel(FRCTool)
         self.lbTemporalResolution.setObjectName("lbTemporalResolution")
@@ -176,6 +182,9 @@ class Ui_FRCTool(object):
         )
         self.lbLateralResolution.setText(
             QCoreApplication.translate("FRCTool", "Spatial (xy) resolution (nm)", None)
+        )
+        self.cbEndpoint.setText(
+            QCoreApplication.translate("FRCTool", "Endpoint estimation", None)
         )
         self.lbTemporalResolution.setText(
             QCoreApplication.translate("FRCTool", "Temporal resoluton (s)", None)

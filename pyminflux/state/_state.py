@@ -57,6 +57,7 @@ class State(metaclass=Singleton):
         "frc_lateral_resolution",
         "frc_temporal_resolution",
         "frc_num_repeats",
+        "frc_endpoint_only",
     ]
 
     def __init__(self):
@@ -117,6 +118,7 @@ class State(metaclass=Singleton):
         self.frc_lateral_resolution: float = 4.0
         self.frc_temporal_resolution: float = 3600.0
         self.frc_num_repeats: int = 5
+        self.frc_endpoint_only: bool = False
 
     def asdict(self) -> dict:
         """Return class as dictionary."""
@@ -145,6 +147,7 @@ class State(metaclass=Singleton):
             "frc_lateral_resolution": self.frc_lateral_resolution,
             "frc_temporal_resolution": self.frc_temporal_resolution,
             "frc_num_repeats": self.frc_num_repeats,
+            "frc_endpoint_only": self.frc_endpoint_only,
         }
 
     def reset(self):
@@ -180,6 +183,7 @@ class State(metaclass=Singleton):
         self.frc_lateral_resolution = 1.0
         self.frc_temporal_resolution = 3600.0
         self.frc_num_repeats = 5
+        self.frc_endpoint_only = False
 
     def __str__(self):
         """Human-readable representation."""
