@@ -71,6 +71,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QCheckBox" name="cbEndpoint">
+       <property name="text">
+        <string>Endpoint estimation</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="lbTemporalResolution">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">

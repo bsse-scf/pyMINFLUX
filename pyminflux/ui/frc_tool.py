@@ -13,6 +13,8 @@
 #   limitations under the License.
 #
 
+import warnings
+
 import numpy as np
 import pyqtgraph as pg
 from PySide6.QtCore import (
@@ -24,7 +26,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
-from PySide6.QtGui import QAction, QDoubleValidator, QIntValidator, Qt
+from PySide6.QtGui import QAction, QDoubleValidator, QIntValidator, QPen, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 
 from ..fourier import estimate_resolution_by_frc
@@ -54,6 +56,8 @@ class LocalWorker(QThread):
         self.rx = rx
         self.ry = ry
         self.n_reps = n_reps
+
+        # Initialize output
         self.all_resolutions = None
 
         # Set up mutexes and wait conditions
@@ -68,7 +72,9 @@ class LocalWorker(QThread):
         self.processing_started.emit()
 
         # Allocate space for the results
-        self.all_resolutions = np.empty(len(self.t_steps), dtype=np.float32)
+        self.all_resolutions = np.empty(
+            (len(self.t_steps), self.n_reps), dtype=np.float32
+        )
         self.all_resolutions.fill(np.nan)
 
         # Process all time steps
@@ -81,24 +87,28 @@ class LocalWorker(QThread):
 
             # Extract the data
             df = self.processor.select_by_1d_range("tim", x_range=(self.t_start, t))
-            x = df["x"].values
-            y = df["y"].values
+            df_gr = df.groupby("tid")
+            mx = df_gr["x"].mean()
+            my = df_gr["y"].mean()
 
-            # Extimate the resolution by FRC
-            resolution, _, _ = estimate_resolution_by_frc(
-                x=x,
-                y=y,
+            # Estimate the resolution by FRC
+            _, _, _, resolutions, _ = estimate_resolution_by_frc(
+                x=mx,
+                y=my,
                 sx=self.sxy,
                 sy=self.sxy,
                 rx=self.rx,
                 ry=self.ry,
                 num_reps=self.n_reps,
-                seed=2023,
-                return_all=False,
+                seed=None,
+                return_all=True,
             )
 
+            # Convert to nm
+            resolutions = 1e9 * np.array(resolutions)
+
             # Store the resolution
-            self.all_resolutions[i] = 1e9 * resolution
+            self.all_resolutions[i, :] = resolutions
 
             # Signal progress
             self.processing_progress_updated.emit(
@@ -114,7 +124,7 @@ class LocalWorker(QThread):
 
 
 class FRCTool(QDialog, Ui_FRCTool):
-    def __init__(self, minfluxprocessor: MinFluxProcessor, parent=None):
+    def __init__(self, processor: MinFluxProcessor, parent=None):
         """Constructor."""
 
         # Call the base class
@@ -125,7 +135,7 @@ class FRCTool(QDialog, Ui_FRCTool):
         self.ui.setupUi(self)
 
         # Store the reference to the reader
-        self.processor = minfluxprocessor
+        self.processor = processor
 
         # Keep reference to the plot
         self.frc_plot = None
@@ -161,6 +171,14 @@ class FRCTool(QDialog, Ui_FRCTool):
             QDoubleValidator(bottom=0.0, decimals=1)
         )
 
+        # Endpoint estimation
+        self.ui.cbEndpoint.setChecked(self.state.frc_endpoint_only)
+        self.ui.lbTemporalResolution.setEnabled(True)
+        self.ui.leTemporalResolution.setEnabled(True)
+        if self.state.frc_endpoint_only:
+            self.ui.lbTemporalResolution.setEnabled(False)
+            self.ui.leTemporalResolution.setEnabled(False)
+
         # Number of repeats
         self.ui.leNumRepeats.setText(str(self.state.frc_num_repeats))
         self.ui.leNumRepeats.setValidator(QIntValidator(bottom=0))
@@ -179,6 +197,7 @@ class FRCTool(QDialog, Ui_FRCTool):
         self.ui.leTemporalResolution.textChanged.connect(
             self.persist_frc_temporal_resolution
         )
+        self.ui.cbEndpoint.stateChanged.connect(self.persist_frc_endpoint_only)
 
         self.ui.leNumRepeats.textChanged.connect(self.persist_frc_num_repeats)
 
@@ -205,6 +224,18 @@ class FRCTool(QDialog, Ui_FRCTool):
         """Reset the internal state."""
         self.processor = minfluxprocessor
 
+    @Slot(int, name="persist_frc_endpoint_only")
+    def persist_frc_endpoint_only(self, value):
+        """Persist the selection for plotting average positions."""
+        if value == Qt.CheckState.Checked.value:
+            self.state.frc_endpoint_only = True
+            self.ui.lbTemporalResolution.setEnabled(False)
+            self.ui.leTemporalResolution.setEnabled(False)
+        else:
+            self.state.frc_endpoint_only = False
+            self.ui.lbTemporalResolution.setEnabled(True)
+            self.ui.leTemporalResolution.setEnabled(True)
+
     @Slot(name="run_frc_analysis")
     def run_frc_analysis(self):
         """Run FRC analysis to estimate signal resolution."""
@@ -212,17 +243,9 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Mark that there is no plot ready to export
         self.plot_ready_to_export = False
 
-        # Get the parameters
+        # Get the common parameters
         sxy = self.state.frc_lateral_resolution
-        t_step = self.state.frc_temporal_resolution
         n_reps = self.state.frc_num_repeats
-
-        # Create the list of time steps to consider
-        t_start = self.processor.filtered_dataframe["tim"].min()
-        t_end = self.processor.filtered_dataframe["tim"].max()
-        n_steps = int(np.round((t_end - t_start) / t_step))
-        t_steps = np.linspace(t_start, t_end, n_steps)
-        t_steps = t_steps[1:]
 
         # Set the spatial ranges
         rx = (
@@ -234,9 +257,27 @@ class FRCTool(QDialog, Ui_FRCTool):
             self.processor.filtered_dataframe["y"].max(),
         )
 
-        # Create a new worker
+        # Delete the existing worker, if needed
         if self.worker is not None:
             del self.worker
+
+        # Prepare the arguments for the Worker
+        t_start = self.processor.filtered_dataframe["tim"].min()
+        t_end = self.processor.filtered_dataframe["tim"].max()
+
+        # Run temporal analysis or endpoint estimation?
+        if self.state.frc_endpoint_only:
+            # We only consider one step with the whole data
+            t_steps = [t_end + 1.0]
+
+        else:
+            # Create the list of time steps to consider
+            t_step = self.state.frc_temporal_resolution
+            n_steps = int(np.round((t_end - t_start) / t_step))
+            t_steps = np.linspace(t_start, t_end, n_steps)
+            t_steps = t_steps[1:]
+
+        # Create the new worker
         self.worker = LocalWorker(self.processor, t_start, t_steps, sxy, rx, ry, n_reps)
         self.worker.processing_started.connect(self.update_ui_on_process_start)
         self.worker.processing_progress_updated.connect(self.update_progress_bar)
@@ -297,12 +338,75 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Set properties of the label for x axis
         self.frc_plot.setLabel("bottom", "Acquisition time", units="s")
 
-        # Set axis ranges
-        self.frc_plot.setXRange(time_steps[0], time_steps[-1])
-        self.frc_plot.setYRange(np.nanmin(resolutions), np.nanmax(resolutions))
+        if self.state.frc_endpoint_only:
+            # Time steps to use
+            time_steps = [time_steps[0] - 1.0]
+
+        # Calculate the mean and standard error of the replicates
+        with warnings.catch_warnings():
+            # Silence the warning on np.nanmean() for the case that all
+            # columns in one or more rows are NaN because the user
+            # interrupted the processing.
+            warnings.simplefilter("ignore")
+            mean_res = np.nanmean(resolutions, axis=1)
+            std_res = np.nanstd(resolutions, axis=1, ddof=1)
+            se_res = std_res / np.sqrt(resolutions.shape[1])
 
         # Plot resolution vs. time step
-        self.frc_plot.plot(time_steps, resolutions, pen=pg.mkPen("r", width=3))
+        if len(time_steps) > 1:
+            self.frc_plot.plot(time_steps, mean_res, pen=pg.mkPen("r", width=5))
+            # Create custom error bars
+            for ti, ri, ei in zip(time_steps, mean_res, se_res):
+                if np.isnan(ri):
+                    continue
+                v_line = pg.PlotCurveItem(
+                    [ti, ti], [ri - ei, ri + ei], pen=pg.mkPen(color="k", width=3)
+                )
+                self.frc_plot.addItem(v_line)
+
+            # Set plot x range
+            x_range = [time_steps[0], time_steps[-1]]
+
+            # Extract the endpoint resolution (or the last
+            # valid if the processing was interrupted)
+            res = mean_res[np.isfinite(mean_res)][-1]
+            se = se_res[np.isfinite(mean_res)][-1]
+        else:
+            r = np.nanmean(resolutions, axis=1)[0]
+            self.frc_plot.plot(
+                [time_steps[0] - 0.1, time_steps[0] + 0.1],
+                [r, r],
+                pen=pg.mkPen("r", width=5),
+            )
+            # Create custom error bar
+            line = pg.PlotCurveItem(
+                [time_steps[0], time_steps[0]],
+                [mean_res[0] - se_res[0], mean_res[0] + se_res[0]],
+                pen=pg.mkPen(color="k", width=3),
+            )
+            self.frc_plot.addItem(line)
+
+            # Set plot x range
+            x_range = [time_steps[0] - 0.5, time_steps[0] + 0.5]
+
+            # Endpoint resolution
+            res = mean_res[0]
+            se = se_res[0]
+
+        # Set axis ranges
+        self.frc_plot.setXRange(x_range[0], x_range[1])
+        self.frc_plot.setYRange(np.nanmin(resolutions), np.nanmax(resolutions))
+
+        # Display the endpoint resolution in the plot title
+        if np.any(np.isnan(mean_res)):
+            self.frc_plot.setTitle(
+                f"Endpoint resolution (interrupted) = {res:.1f} ± {se:.1f}nm",
+                size="16px",
+            )
+        else:
+            self.frc_plot.setTitle(
+                f"Endpoint resolution = {res:.1f} ± {se:.1f}nm", size="16px"
+            )
 
     def clear_plot(self):
         """Clear the plot."""
@@ -317,16 +421,18 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Disable all parameter widgets
         self.ui.lbLateralResolution.setEnabled(False)
         self.ui.leLateralResolution.setEnabled(False)
+        self.ui.cbEndpoint.setEnabled(False)
         self.ui.lbTemporalResolution.setEnabled(False)
         self.ui.leTemporalResolution.setEnabled(False)
         self.ui.lbNumRepeats.setEnabled(False)
         self.ui.leNumRepeats.setEnabled(False)
         self.ui.pbRunFRCAnalysis.setEnabled(False)
 
-        # However, we make the progress bar visible
-        self.ui.progress_bar.setValue(0)
-        self.ui.progress_bar.setVisible(True)
-        self.ui.pbInterrupt.setVisible(True)
+        # If needed, we make the progress bar visible
+        if not self.state.frc_endpoint_only:
+            self.ui.progress_bar.setValue(0)
+            self.ui.progress_bar.setVisible(True)
+            self.ui.pbInterrupt.setVisible(True)
 
     def update_ui_on_process_end(self):
         """Disable elements and inform that a processing is ongoing."""
@@ -334,6 +440,7 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Enable all parameter widgets
         self.ui.lbLateralResolution.setEnabled(True)
         self.ui.leLateralResolution.setEnabled(True)
+        self.ui.cbEndpoint.setEnabled(True)
         self.ui.lbTemporalResolution.setEnabled(True)
         self.ui.leTemporalResolution.setEnabled(True)
         self.ui.lbNumRepeats.setEnabled(True)
