@@ -450,7 +450,7 @@ def test_fourier_ring_correlation_all_pos(extract_raw_npy_data_files):
 
     N = 5
     expected_resolutions = np.array(
-        [7.19424460e-09, 6.99300699e-09, 6.75675676e-09, 6.99300699e-09, 6.99300699e-09]
+        [7.45222930e-09, 7.21934713e-09, 7.23952096e-09, 7.19072165e-09, 7.18644739e-09]
     )
     resolutions = np.zeros(N)
     for r in range(N):
@@ -508,7 +508,7 @@ def test_fourier_ring_correlation_all_pos_mat(extract_raw_npy_data_files):
 
     N = 5
     expected_resolutions = np.array(
-        [5.44959128e-09, 5.46448087e-09, 5.66572238e-09, 5.61797753e-09, 5.49450549e-09]
+        [5.48722467e-09, 5.67730173e-09, 5.72426471e-09, 5.82600561e-09, 5.68248175e-09]
     )
     resolutions = np.zeros(N)
     for r in range(N):
@@ -575,7 +575,7 @@ def test_fourier_ring_correlation_per_tid(extract_raw_npy_data_files):
 
     N = 5
     expected_resolutions = np.array(
-        [1.32450331e-08, 1.43884892e-08, 1.40845070e-08, 1.39860140e-08, 1.36986301e-08]
+        [1.69882904e-08, 2.05962521e-08, 1.92618163e-08, 1.73457676e-08, 1.92413793e-08]
     )
 
     resolutions = np.zeros(N)
@@ -707,51 +707,39 @@ def test_estimate_resolution(extract_raw_npy_data_files):
     y = processor.filtered_dataframe_stats["my"].values
 
     # Expected values
-    expected_resolution = 1.3880534697293937e-08
+    expected_resolution = 1.4165777506568675e-08
     expected_resolutions = np.array(
-        [1.32450331e-08, 1.43884892e-08, 1.40845070e-08, 1.39860140e-08, 1.36986301e-08]
+        [1.35234899e-08, 1.53231939e-08, 1.41403509e-08, 1.39930556e-08, 1.38487973e-08]
     )
-    expected_qi = np.arange(0.0, 565500001.0, 500000.0)
+    expected_qi = np.arange(0.0, 565756824.0, 248138.95781637714)
     expected_ci_start = np.array(
         [
-            0.9336742761682728,
-            0.9121192385227754,
-            0.8905642008772781,
-            0.8690091632317805,
-            0.8392228000026671,
+            0.92576582,
+            0.91523508,
+            0.90470434,
+            0.8941736,
+            0.86787895,
         ]
     )
     expected_ci_end = np.array(
         [
-            -0.009595674622152111,
-            -0.005901680204625083,
-            -0.005055759319879996,
-            -0.004209838435134908,
-            -0.0033639175503898224,
+            -3.89768981e-03,
+            -3.35170899e-03,
+            -1.69367049e-03,
+            -3.56319873e-05,
+            1.62240652e-03,
         ]
     )
     expected_cis_start = np.array(
-        [
-            0.9341944036592993,
-            0.9352963139467972,
-            0.9355879665101374,
-            0.9366334447515838,
-            0.9266592519735464,
-        ]
+        [0.92728872, 0.93857823, 0.93308679, 0.9342086, 0.89566676]
     )
     expected_cis_end = np.array(
-        [
-            -0.021411617722575698,
-            -0.012289520386436669,
-            0.013807450817036786,
-            -0.00017335425368504923,
-            0.0032474537937115192,
-        ]
+        [-0.01705781, -0.00648206, 0.01330541, 0.00780232, 0.01054418]
     )
 
     # Run the resolution estimation
     resolution, qi, ci, resolutions, cis = estimate_resolution_by_frc(
-        x, y, rx=rx, ry=ry, num_reps=5, seed=2023, return_all=True
+        x, y, rx=rx, ry=ry, num_reps=5, seed=2023, frc_bin_size=1, return_all=True
     )
 
     # Test
@@ -763,7 +751,11 @@ def test_estimate_resolution(extract_raw_npy_data_files):
         expected_resolutions.mean(), expected_resolution
     ), "Unexpected resolution."
     assert np.allclose(expected_qi, qi), "Unexpected array of qis."
-    assert np.allclose(expected_ci_start, ci[:5]), "Unexpected beginning of ci."
+    assert np.allclose(
+        expected_ci_start, ci[:5], equal_nan=True
+    ), "Unexpected beginning of ci."
     assert np.allclose(expected_ci_end, ci[-5:]), "Unexpected end of ci."
-    assert np.allclose(expected_cis_start, cis[0, :]), "Unexpected array of cis."
+    assert np.allclose(
+        expected_cis_start, cis[0, :], equal_nan=True
+    ), "Unexpected array of cis."
     assert np.allclose(expected_cis_end, cis[-1, :]), "Unexpected array of cis."
