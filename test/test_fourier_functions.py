@@ -19,7 +19,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from scipy.interpolate import CubicSpline, interp1d
 from scipy.io import loadmat
 
 from pyminflux.fourier import (
@@ -673,6 +672,74 @@ def test_fourier_ring_correlation_per_tid_mat(extract_raw_npy_data_files):
     ), "Calculated resolutions do not match the expected ones."
 
 
+def test_fourier_ring_correlation_per_tid_mat_2(extract_raw_npy_data_files):
+    """Test the analysis.img_fourier_ring_correlation() function on average positions per TID (.mat file)."""
+
+    #
+    # Fig1b_U2OS_Zyxin-rsEGFP2_Minflux.mat
+    #
+    # From:
+    #   * [paper] Ostersehlt, L.M., Jans, D.C., Wittek, A. et al. DNA-PAINT MINFLUX nanoscopy. Nat Methods 19, 1072-1075 (2022). https://doi.org/10.1038/s41592-022-01577-1
+    #   * [code]  https://zenodo.org/record/6563100
+
+    minflux = loadmat(
+        str(Path(__file__).parent / "data" / "Fig1b_U2OS_Zyxin-rsEGFP2_Minflux.mat")
+    )
+    minflux = minflux["minflux"]
+
+    # Extract tid, x and y coordinates
+    tid = minflux["id"][0][0].ravel()
+    pos = minflux["pos"][0][0][:, :2]
+
+    # Calculate per-TID averages
+    u_tid = np.unique(tid)
+    m_pos = np.zeros((len(u_tid), 2), dtype=float)
+    for i, t in enumerate(u_tid):
+        m_pos[i, :] = pos[tid == t, :].mean(axis=0)
+
+    # Now extract the mean x and y localizations
+    x = m_pos[:, 0]
+    y = m_pos[:, 1]
+
+    # Ranges
+    rx = (-384.1294, 373.2787)
+    ry = (-1142.8, 1068.0)
+
+    # Initialize the random number generator
+    rng = np.random.default_rng(2023)
+
+    N = 5
+    expected_resolutions = np.array(
+        [4.83091787e-09, 4.79616307e-09, 4.72813239e-09, 5.26315789e-09, 5.10204082e-09]
+    )
+
+    resolutions = np.zeros(N)
+    for r in range(N):
+
+        # Partition the data
+        ix = rng.random(size=x.shape) < 0.5
+        c_ix = np.logical_not(ix)
+
+        # Create two images from (complementary) subsets of coordinates (x, y) using the "histogram"
+        # mode and a rendering resolution of sxy = 1.0 nm.
+        sxy = 1.0
+        h1 = render_xy(x[ix], y[ix], sxy, sxy, rx, ry)[0]
+        h2 = render_xy(x[c_ix], y[c_ix], sxy, sxy, rx, ry)[0]
+
+        # Estimate the resolution using Fourier Ring Correlation
+        estimated_resolution, fc, qi, ci = img_fourier_ring_correlation(
+            h1, h2, sx=sxy, sy=sxy
+        )
+
+        # Store the estimated resolution
+        resolutions[r] = estimated_resolution
+
+    # Test
+    assert np.allclose(
+        resolutions, expected_resolutions
+    ), "Calculated resolutions do not match the expected ones."
+
+
 def test_estimate_resolution(extract_raw_npy_data_files):
     """Test the estimate_resolution_frc() function on average positions per TID."""
 
@@ -759,3 +826,105 @@ def test_estimate_resolution(extract_raw_npy_data_files):
         expected_cis_start, cis[0, :], equal_nan=True
     ), "Unexpected array of cis."
     assert np.allclose(expected_cis_end, cis[-1, :]), "Unexpected array of cis."
+
+
+def test_regular_grid():
+
+    #
+    # Create points on a regular grid with known, constant step
+    #
+    end = 110.0
+
+    x, y = np.meshgrid(np.linspace(10.0, end, 21), np.linspace(10.0, end, 21))
+    x = x.ravel()
+    y = y.ravel()
+
+    # Expected resolution
+    dx = 1e-9 * (x[1] - x[0])
+
+    # Range
+    rx = (0.0, end + 10.0)
+    ry = (0.0, end + 10.0)
+
+    resolutions = []
+    for b in range(1, 31):
+        resolution, _, _ = estimate_resolution_by_frc(
+            x, y, num_reps=5, sx=1.0, sy=1.0, rx=rx, ry=ry, frc_bin_size=b
+        )
+        resolutions.append(resolution)
+
+    expected_best_resolution = 6.046511627906978e-09
+    expected_best_bin = 12
+
+    best_bin = np.arange(1, 31)[np.argmin(np.abs(np.array(resolutions) - dx))]
+    best_resolution = resolutions[best_bin]
+    assert best_bin == expected_best_bin, "Unexpected best frc_bin_size value."
+    assert np.isclose(
+        best_resolution, expected_best_resolution
+    ), "Unexpected best resolution."
+
+    #
+    # Create points on a regular grid with known, constant step
+    #
+    end = 220.0
+
+    x, y = np.meshgrid(np.linspace(10.0, end, 21), np.linspace(10.0, end, 21))
+    x = x.ravel()
+    y = y.ravel()
+
+    # Expected resolution
+    dx = 1e-9 * (x[1] - x[0])
+
+    # Range
+    rx = (0.0, end + 10.0)
+    ry = (0.0, end + 10.0)
+
+    resolutions = []
+    for b in range(1, 31):
+        resolution, _, _ = estimate_resolution_by_frc(
+            x, y, num_reps=5, sx=1.0, sy=1.0, rx=rx, ry=ry, frc_bin_size=b
+        )
+        resolutions.append(resolution)
+
+    expected_best_resolution = 1.1589147286821705e-08
+    expected_best_bin = 12
+
+    best_bin = np.arange(1, 31)[np.argmin(np.abs(np.array(resolutions) - dx))]
+    best_resolution = resolutions[best_bin]
+    assert best_bin == expected_best_bin, "Unexpected best frc_bin_size value."
+    assert np.isclose(
+        best_resolution, expected_best_resolution
+    ), "Unexpected best resolution."
+
+    #
+    # Create points on a regular grid with known, constant step
+    #
+    end = 440.0
+
+    x, y = np.meshgrid(np.linspace(10.0, end, 21), np.linspace(10.0, end, 21))
+    x = x.ravel()
+    y = y.ravel()
+
+    # Expected resolution
+    dx = 1e-9 * (x[1] - x[0])
+
+    # Range
+    rx = (0.0, end + 10.0)
+    ry = (0.0, end + 10.0)
+
+    resolutions = []
+    for b in range(1, 31):
+        resolution, _, _ = estimate_resolution_by_frc(
+            x, y, num_reps=5, sx=1.0, sy=1.0, rx=rx, ry=ry, frc_bin_size=b
+        )
+        resolutions.append(resolution)
+
+    expected_best_resolution = 2.2712933753943217e-08
+    expected_best_bin = 15
+
+    best_bin = np.arange(1, 31)[np.argmin(np.abs(np.array(resolutions) - dx))]
+    best_resolution = resolutions[best_bin]
+    assert best_bin == expected_best_bin, "Unexpected best frc_bin_size value."
+    assert np.isclose(
+        best_resolution, expected_best_resolution
+    ), "Unexpected best resolution."
