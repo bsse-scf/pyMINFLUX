@@ -99,7 +99,7 @@ def img_fourier_ring_correlation(
     sx: float = 1.0,
     sy: float = 1.0,
     kernel: Optional[np.ndarray] = None,
-    frc_bin_size: int = 9,
+    frc_bin_size: int = 11,
 ):
     """Perform Fourier ring correlation analysis on two images and returns the estimated resolution in m.
 
@@ -126,7 +126,7 @@ def img_fourier_ring_correlation(
     kernel: np.ndarray (Optional)
         2D kernel for low-pass filtering the FRC. If omitted, a 31x31 Gaussian kernel with sigma = 1.0 will be used.
 
-    frc_bin_size: int (Default = 9)
+    frc_bin_size: int (Default = 11)
         Step size used to bin the frequencies of the Fourier Ring Correlation.
 
     Returns
@@ -214,7 +214,7 @@ def estimate_resolution_by_frc(
     ry: Optional[tuple] = None,
     render_type: str = "histogram",
     fwhm: Optional[float] = None,
-    frc_bin_size: int = 9,
+    frc_bin_size: int = 11,
     seed: Optional[int] = None,
     return_all: bool = False,
 ):
@@ -254,7 +254,7 @@ def estimate_resolution_by_frc(
         Requested full-width half maximum (FWHM) of the Gaussian kernel. If omitted, it is set to be
         3 * np.sqrt(np.power(sx, 2) + np.power(sy, 2)).
 
-    frc_bin_size: int (Default = 9)
+    frc_bin_size: int (Default = 11)
         Step size used to bin the frequencies of the Fourier Ring Correlation.
 
     seed: Optional[int]
