@@ -798,22 +798,23 @@ class MinFluxProcessor:
             ]
         )
 
-        df_tid["tid"] = tid
-        df_tid["n"] = n
-        df_tid["mx"] = mx
-        df_tid["my"] = my
-        df_tid["mz"] = mz
-        df_tid["sx"] = sx
-        df_tid["sy"] = sy
-        df_tid["sxy"] = sxy
-        df_tid["rms_xy"] = rms_xy
-        df_tid["exy"] = exy
-        df_tid["sz"] = sz
-        df_tid["ez"] = ez
-        df_tid["fluo"] = fluo
+        # Store trace stats
+        df_tid["tid"] = tid         # Trace ID
+        df_tid["n"] = n             # Number of traces for given ID
+        df_tid["mx"] = mx           # x mean localization
+        df_tid["my"] = my           # y mean localization
+        df_tid["mz"] = mz           # z mean localization
+        df_tid["sx"] = sx           # x localization precision
+        df_tid["sy"] = sy           # y localization precision
+        df_tid["sxy"] = sxy         # Lateral (x, y) localization precision
+        df_tid["rms_xy"] = rms_xy   # Lateral root mean square
+        df_tid["exy"] = exy         # Standard error of sxy
+        df_tid["sz"] = sz           # z localization precision
+        df_tid["ez"] = ez           # Standard error of ez
+        df_tid["fluo"] = fluo       # Assigned fluorophore ID
 
-        # ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"] columns will contain np.nan is n == 1:
-        # we replace them with 0.0.
+        # ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"] columns will contain
+        # np.nan if n == 1: we replace them with 0.0.
         # @TODO: should this be changed? It could be a global option.
         df_tid[["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"]] = df_tid[
             ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"]
