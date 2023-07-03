@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 
+
+### New features
+
+* Calculate additional per-trace statistics and allow exporting all stats to csv file.
+* Add Fourier Ring Correlation tool to follow resolution progression.
+* Allow complete access to the API for command-line/notebook processing: https://pyminflux.ethz.ch/api/.
+* Add menu action to check for application updates.
+* Implement communication with Paraview [in progress].
+
+### Fixed
+
+* Fix issue with the fluorophore drop-down menu not being refreshed after global reset button is pressed.
+
 ## [0.1.3] - 2023-05-26
 
 ### New features
