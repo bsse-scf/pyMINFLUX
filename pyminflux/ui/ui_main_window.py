@@ -97,6 +97,8 @@ class Ui_MainWindow(object):
         self.actionExport_stats.setObjectName("actionExport_stats")
         self.actionEstimate_resolution = QAction(MainWindow)
         self.actionEstimate_resolution.setObjectName("actionEstimate_resolution")
+        self.actionCheck_for_updates = QAction(MainWindow)
+        self.actionCheck_for_updates.setObjectName("actionCheck_for_updates")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -149,6 +151,7 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionIssues)
         self.menuHelp.addAction(self.actionMailing_list)
         self.menuHelp.addSeparator()
+        self.menuHelp.addAction(self.actionCheck_for_updates)
         self.menuHelp.addAction(self.actionAbout)
         self.menuAnalysis.addAction(self.actionEstimate_resolution)
 
@@ -227,6 +230,9 @@ class Ui_MainWindow(object):
         )
         self.actionEstimate_resolution.setText(
             QCoreApplication.translate("MainWindow", "FRC Analyzer", None)
+        )
+        self.actionCheck_for_updates.setText(
+            QCoreApplication.translate("MainWindow", "Check for updates", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
