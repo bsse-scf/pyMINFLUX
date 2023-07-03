@@ -22,11 +22,15 @@ from PySide6 import QtGui
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import (
+    QDialog,
     QDockWidget,
     QFileDialog,
     QMainWindow,
     QMessageBox,
+    QPushButton,
+    QTextBrowser,
     QTextEdit,
+    QVBoxLayout,
 )
 
 import pyminflux.resources
@@ -46,6 +50,7 @@ from pyminflux.ui.plotter_toolbar import PlotterToolbar
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.wizard import WizardDialog
+from pyminflux.utils import check_for_updates
 from pyminflux.writer import MinFluxWriter
 
 
@@ -258,6 +263,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "https://sympa.ethz.ch/sympa/subscribe/pyminflux"
             )
         )
+        self.ui.actionCheck_for_updates.triggered.connect(self.check_four_updates)
         self.ui.actionAbout.triggered.connect(self.about)
 
         # Plotter toolbar
@@ -642,6 +648,45 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             f"ETH Zurich\n"
             f"Switzerland",
         )
+
+    @Slot(None, name="check_four_updates")
+    def check_four_updates(self):
+        """Check for application updates."""
+
+        # Check for updates
+        code, version, error = check_for_updates()
+
+        # Process the output
+        if code == -1:
+            # Something went wrong: report
+            html = f"<b>Error! {error}</b><br /><br /><br />Please make sure you are connected to the internet.<br />If this error persists, please <a href='https://github.com/bsse-scf/pyMINFLUX/issues/'>report it</a>."
+
+        elif code == 0:
+            # No new version
+            html = f"<b>Congratulations!</b><br /><br />You are running the latest version ({pyminflux.__version__}) of {pyminflux.__APP_NAME__}."
+
+        elif code == 1:
+            # Show a dialog with a link to the download page
+            html = f"<b>There is a new version ({version}) of {pyminflux.__APP_NAME__}!</b><br /><br />You can download it from the <a href='https://github.com/bsse-scf/pyMINFLUX/releases/latest'>release page</a>."
+
+        else:
+            raise ValueError("Unexpected code!")
+
+        # Show the dialog
+        dialog = QDialog()
+        dialog.setWindowTitle("Check for updates")
+        dialog.setMinimumSize(400, 180)
+        dialog.setFixedHeight(180)
+        layout = QVBoxLayout(dialog)
+        text_browser = QTextBrowser()
+        text_browser.setStyleSheet("background-color: transparent;")
+        text_browser.setOpenExternalLinks(True)
+        text_browser.insertHtml(html)
+        layout.addWidget(text_browser)
+        button = QPushButton("OK")
+        button.clicked.connect(dialog.close)
+        layout.addWidget(button)
+        dialog.exec_()
 
     @Slot(None, name="open_analyzer")
     def open_analyzer(self):

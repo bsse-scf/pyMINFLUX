@@ -79,6 +79,7 @@
     <addaction name="actionIssues"/>
     <addaction name="actionMailing_list"/>
     <addaction name="separator"/>
+    <addaction name="actionCheck_for_updates"/>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuFile"/>
@@ -186,6 +187,11 @@
   <action name="actionExport_stats">
    <property name="text">
     <string>Export stats</string>
+   </property>
+  </action>
+  <action name="actionCheck_for_updates">
+   <property name="text">
+    <string>Check for updates</string>
    </property>
   </action>
  </widget>
