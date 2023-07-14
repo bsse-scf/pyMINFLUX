@@ -230,6 +230,7 @@ class Ui_MainWindow(object):
         )
         self.actionCheck_for_updates.setText(
             QCoreApplication.translate("MainWindow", "Check for updates", None)
+        )
         self.actionEstimate_resolution.setText(
             QCoreApplication.translate("MainWindow", "FRC Analyzer", None)
         )
