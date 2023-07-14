@@ -116,7 +116,7 @@ class State(metaclass=Singleton):
 
         # FRC analysis
         self.frc_lateral_resolution: float = 4.0
-        self.frc_temporal_resolution: float = 3600.0
+        self.frc_temporal_resolution: float = 1800.0
         self.frc_num_repeats: int = 5
         self.frc_endpoint_only: bool = False
 
@@ -180,8 +180,8 @@ class State(metaclass=Singleton):
         self.dcr_manual_threshold = 0.0
         self.z_scaling_factor = 0.7
         self.plot_export_dpi = 600
-        self.frc_lateral_resolution = 1.0
-        self.frc_temporal_resolution = 3600.0
+        self.frc_lateral_resolution = 4.0
+        self.frc_temporal_resolution = 1800.0
         self.frc_num_repeats = 5
         self.frc_endpoint_only = False
 
