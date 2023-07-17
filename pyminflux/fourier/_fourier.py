@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
+import warnings
 from typing import Optional
 
 import numpy as np
@@ -189,8 +190,16 @@ def img_fourier_ring_correlation(
     aj = bin_data(idx, a)
     bj = bin_data(idx, b)
     cj = bin_data(idx, c)
-    ci = np.real(aj / np.sqrt(bj * cj))
-    idx = qi < np.max(qi) * 0.8  # cut a bit
+
+    # Calculate correlation
+    with warnings.catch_warnings():
+        # Any attempt to prevent divide-by-zero errors sets a hard boundary to the
+        # lowest value of resolution that can be estimated.
+        warnings.simplefilter("ignore")
+        ci = np.real(aj / np.sqrt(bj * cj))
+
+    # Clip at 80%
+    idx = qi < np.max(qi) * 0.8
     qi = qi[idx]
     ci = ci[idx]
 
