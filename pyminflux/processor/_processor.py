@@ -25,7 +25,7 @@ from pyminflux.reader import MinFluxReader
 class MinFluxProcessor:
     """Processor of MINFLUX data."""
 
-    __doc__ = """Allows to filter and select data read by the underlying `MinFluxReader`. Please notice that
+    __doc__ = """Allows for filtering and selecting data read by the underlying `MinFluxReader`. Please notice that
      `MinFluxProcessor` makes use of `State.min_num_loc_per_trace` to make sure that at load and after every
       filtering step, short traces are dropped."""
 
@@ -799,19 +799,19 @@ class MinFluxProcessor:
         )
 
         # Store trace stats
-        df_tid["tid"] = tid         # Trace ID
-        df_tid["n"] = n             # Number of traces for given ID
-        df_tid["mx"] = mx           # x mean localization
-        df_tid["my"] = my           # y mean localization
-        df_tid["mz"] = mz           # z mean localization
-        df_tid["sx"] = sx           # x localization precision
-        df_tid["sy"] = sy           # y localization precision
-        df_tid["sxy"] = sxy         # Lateral (x, y) localization precision
-        df_tid["rms_xy"] = rms_xy   # Lateral root mean square
-        df_tid["exy"] = exy         # Standard error of sxy
-        df_tid["sz"] = sz           # z localization precision
-        df_tid["ez"] = ez           # Standard error of ez
-        df_tid["fluo"] = fluo       # Assigned fluorophore ID
+        df_tid["tid"] = tid  # Trace ID
+        df_tid["n"] = n  # Number of traces for given ID
+        df_tid["mx"] = mx  # x mean localization
+        df_tid["my"] = my  # y mean localization
+        df_tid["mz"] = mz  # z mean localization
+        df_tid["sx"] = sx  # x localization precision
+        df_tid["sy"] = sy  # y localization precision
+        df_tid["sxy"] = sxy  # Lateral (x, y) localization precision
+        df_tid["rms_xy"] = rms_xy  # Lateral root mean square
+        df_tid["exy"] = exy  # Standard error of sxy
+        df_tid["sz"] = sz  # z localization precision
+        df_tid["ez"] = ez  # Standard error of ez
+        df_tid["fluo"] = fluo  # Assigned fluorophore ID
 
         # ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"] columns will contain
         # np.nan if n == 1: we replace them with 0.0.
