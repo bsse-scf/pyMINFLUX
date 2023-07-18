@@ -417,7 +417,6 @@ class FRCTool(QDialog, Ui_FRCTool):
         """Clear the plot."""
 
         for item in self.frc_plot.allChildItems():
-            print(type(item))
             self.frc_plot.removeItem(item)
 
     def update_ui_on_process_start(self):

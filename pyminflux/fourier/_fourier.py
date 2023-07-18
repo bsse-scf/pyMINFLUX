@@ -100,7 +100,6 @@ def img_fourier_ring_correlation(
     sx: float = 1.0,
     sy: float = 1.0,
     kernel: Optional[np.ndarray] = None,
-    frc_bin_size: int = 11,
 ):
     """Perform Fourier ring correlation analysis on two images and returns the estimated resolution in m.
 
@@ -126,9 +125,6 @@ def img_fourier_ring_correlation(
 
     kernel: np.ndarray (Optional)
         2D kernel for low-pass filtering the FRC. If omitted, a 31x31 Gaussian kernel with sigma = 1.0 will be used.
-
-    frc_bin_size: int (Default = 11)
-        Step size used to bin the frequencies of the Fourier Ring Correlation.
 
     Returns
     -------
@@ -180,10 +176,10 @@ def img_fourier_ring_correlation(
     qy = qy / physical_image_size[1]
     q = np.sqrt(qx**2 + qy**2)
 
-    # Calculate bin a, b, c in dependence of q and frc_bin_size
-    dq_x = q[0][1] - q[0][0]
-    dq_y = q[0][1] - q[0][0]
-    B = np.min((dq_x, dq_y)) / frc_bin_size  # bin size (in pixel in fourier space)
+    # Calculate bin a, b, c in dependence of q and hardcoded value B = 5e5. This value seems to give
+    # more stable results than when making it a function of the frequency.
+    # See original MATLAB code.
+    B = 5e5  # bin size (in pixel in fourier space)
     qi = np.round(q / B).astype(int)
     idx = qi.flatten()
     qi = np.arange(0, np.max(qi) + 1) * B
@@ -223,7 +219,6 @@ def estimate_resolution_by_frc(
     ry: Optional[tuple] = None,
     render_type: str = "histogram",
     fwhm: Optional[float] = None,
-    frc_bin_size: int = 11,
     seed: Optional[int] = None,
     return_all: bool = False,
 ):
@@ -262,9 +257,6 @@ def estimate_resolution_by_frc(
     fwhm: float (Optional)
         Requested full-width half maximum (FWHM) of the Gaussian kernel. If omitted, it is set to be
         3 * np.sqrt(np.power(sx, 2) + np.power(sy, 2)).
-
-    frc_bin_size: int (Default = 11)
-        Step size used to bin the frequencies of the Fourier Ring Correlation.
 
     seed: Optional[int]
         Seed for the random number generator if comparable runs are needed.
@@ -332,7 +324,7 @@ def estimate_resolution_by_frc(
 
         # Estimate the resolution using Fourier Ring Correlation
         estimated_resolution, fc, qi, ci = img_fourier_ring_correlation(
-            h1, h2, sx=sx, sy=sy, frc_bin_size=frc_bin_size
+            h1, h2, sx=sx, sy=sy
         )
 
         # Store the estimated resolution, qis and cis

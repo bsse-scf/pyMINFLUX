@@ -774,39 +774,39 @@ def test_estimate_resolution(extract_raw_npy_data_files):
     y = processor.filtered_dataframe_stats["my"].values
 
     # Expected values
-    expected_resolution = 1.4165777506568675e-08
+    expected_resolution = 1.3880534697293937e-08
     expected_resolutions = np.array(
-        [1.35234899e-08, 1.53231939e-08, 1.41403509e-08, 1.39930556e-08, 1.38487973e-08]
+        [1.32450331e-08, 1.43884892e-08, 1.40845070e-08, 1.39860140e-08, 1.36986301e-08]
     )
-    expected_qi = np.arange(0.0, 565756824.0, 248138.95781637714)
+    expected_qi = np.arange(0.0, 565500000.0 + 1.0, 500000.0)
     expected_ci_start = np.array(
         [
-            0.92576582,
-            0.91523508,
-            0.90470434,
-            0.8941736,
-            0.86787895,
+            0.93367428,
+            0.91211924,
+            0.8905642,
+            0.86900916,
+            0.8392228,
         ]
     )
     expected_ci_end = np.array(
         [
-            -3.89768981e-03,
-            -3.35170899e-03,
-            -1.69367049e-03,
-            -3.56319873e-05,
-            1.62240652e-03,
+            -0.00959567,
+            -0.00590168,
+            -0.00505576,
+            -0.00420984,
+            -0.00336392,
         ]
     )
     expected_cis_start = np.array(
-        [0.92728872, 0.93857823, 0.93308679, 0.9342086, 0.89566676]
+        [0.9341944, 0.93529632, 0.93558797, 0.93663346, 0.92665925]
     )
     expected_cis_end = np.array(
-        [-0.01705781, -0.00648206, 0.01330541, 0.00780232, 0.01054418]
+        [-0.02141162, -0.01228952, 0.01380745, -0.00017335, 0.00324745]
     )
 
     # Run the resolution estimation
     resolution, qi, ci, resolutions, cis = estimate_resolution_by_frc(
-        x, y, rx=rx, ry=ry, num_reps=5, seed=2023, frc_bin_size=1, return_all=True
+        x, y, rx=rx, ry=ry, num_reps=5, seed=2023, return_all=True
     )
 
     # Test
@@ -818,113 +818,7 @@ def test_estimate_resolution(extract_raw_npy_data_files):
         expected_resolutions.mean(), expected_resolution
     ), "Unexpected resolution."
     assert np.allclose(expected_qi, qi), "Unexpected array of qis."
-    assert np.allclose(
-        expected_ci_start, ci[:5], equal_nan=True
-    ), "Unexpected beginning of ci."
+    assert np.allclose(expected_ci_start, ci[:5]), "Unexpected beginning of ci."
     assert np.allclose(expected_ci_end, ci[-5:]), "Unexpected end of ci."
-    assert np.allclose(
-        expected_cis_start, cis[0, :], equal_nan=True
-    ), "Unexpected array of cis."
+    assert np.allclose(expected_cis_start, cis[0, :]), "Unexpected array of cis."
     assert np.allclose(expected_cis_end, cis[-1, :]), "Unexpected array of cis."
-
-
-def test_regular_grid():
-
-    #
-    # Create points on a regular grid with known, constant step
-    #
-    end = 110.0
-
-    x, y = np.meshgrid(np.linspace(10.0, end, 21), np.linspace(10.0, end, 21))
-    x = x.ravel()
-    y = y.ravel()
-
-    # Expected resolution
-    dx = 1e-9 * (x[1] - x[0])
-
-    # Range
-    rx = (0.0, end + 10.0)
-    ry = (0.0, end + 10.0)
-
-    resolutions = []
-    for b in range(1, 31):
-        resolution, _, _ = estimate_resolution_by_frc(
-            x, y, num_reps=5, sx=1.0, sy=1.0, rx=rx, ry=ry, frc_bin_size=b
-        )
-        resolutions.append(resolution)
-
-    expected_best_resolution = 6.046511627906978e-09
-    expected_best_bin = 12
-
-    best_bin = np.arange(1, 31)[np.argmin(np.abs(np.array(resolutions) - dx))]
-    best_resolution = resolutions[best_bin]
-    assert best_bin == expected_best_bin, "Unexpected best frc_bin_size value."
-    assert np.isclose(
-        best_resolution, expected_best_resolution
-    ), "Unexpected best resolution."
-
-    #
-    # Create points on a regular grid with known, constant step
-    #
-    end = 220.0
-
-    x, y = np.meshgrid(np.linspace(10.0, end, 21), np.linspace(10.0, end, 21))
-    x = x.ravel()
-    y = y.ravel()
-
-    # Expected resolution
-    dx = 1e-9 * (x[1] - x[0])
-
-    # Range
-    rx = (0.0, end + 10.0)
-    ry = (0.0, end + 10.0)
-
-    resolutions = []
-    for b in range(1, 31):
-        resolution, _, _ = estimate_resolution_by_frc(
-            x, y, num_reps=5, sx=1.0, sy=1.0, rx=rx, ry=ry, frc_bin_size=b
-        )
-        resolutions.append(resolution)
-
-    expected_best_resolution = 1.1589147286821705e-08
-    expected_best_bin = 12
-
-    best_bin = np.arange(1, 31)[np.argmin(np.abs(np.array(resolutions) - dx))]
-    best_resolution = resolutions[best_bin]
-    assert best_bin == expected_best_bin, "Unexpected best frc_bin_size value."
-    assert np.isclose(
-        best_resolution, expected_best_resolution
-    ), "Unexpected best resolution."
-
-    #
-    # Create points on a regular grid with known, constant step
-    #
-    end = 440.0
-
-    x, y = np.meshgrid(np.linspace(10.0, end, 21), np.linspace(10.0, end, 21))
-    x = x.ravel()
-    y = y.ravel()
-
-    # Expected resolution
-    dx = 1e-9 * (x[1] - x[0])
-
-    # Range
-    rx = (0.0, end + 10.0)
-    ry = (0.0, end + 10.0)
-
-    resolutions = []
-    for b in range(1, 31):
-        resolution, _, _ = estimate_resolution_by_frc(
-            x, y, num_reps=5, sx=1.0, sy=1.0, rx=rx, ry=ry, frc_bin_size=b
-        )
-        resolutions.append(resolution)
-
-    expected_best_resolution = 2.2712933753943217e-08
-    expected_best_bin = 15
-
-    best_bin = np.arange(1, 31)[np.argmin(np.abs(np.array(resolutions) - dx))]
-    best_resolution = resolutions[best_bin]
-    assert best_bin == expected_best_bin, "Unexpected best frc_bin_size value."
-    assert np.isclose(
-        best_resolution, expected_best_resolution
-    ), "Unexpected best resolution."
