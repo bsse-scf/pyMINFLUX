@@ -266,6 +266,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "https://sympa.ethz.ch/sympa/subscribe/pyminflux"
             )
         )
+        self.ui.actionWhat_s_new.triggered.connect(
+            lambda _: QDesktopServices.openUrl(
+                "https://github.com/bsse-scf/pyMINFLUX/blob/master/CHANGELOG.md"
+            )
+        )
         self.ui.actionCheck_for_updates.triggered.connect(self.check_four_updates)
         self.ui.actionAbout.triggered.connect(self.about)
 

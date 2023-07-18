@@ -79,6 +79,7 @@
     <addaction name="actionIssues"/>
     <addaction name="actionMailing_list"/>
     <addaction name="separator"/>
+    <addaction name="actionWhat_s_new"/>
     <addaction name="actionCheck_for_updates"/>
     <addaction name="actionAbout"/>
    </widget>
@@ -204,6 +205,11 @@
   <action name="actionEstimate_resolution">
    <property name="text">
     <string>FRC Analyzer</string>
+   </property>
+  </action>
+  <action name="actionWhat_s_new">
+   <property name="text">
+    <string>What's new?</string>
    </property>
   </action>
  </widget>
