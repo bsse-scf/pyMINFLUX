@@ -13,7 +13,7 @@
 #   limitations under the License.
 #
 
-from PySide6.QtCore import QSignalBlocker, Signal, Slot
+from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
 from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import QDialog
 
@@ -76,6 +76,14 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Set up connections
         self.setup_conn()
+
+    def keyPressEvent(self, event):
+        """Intercept key-press events."""
+        if event.key() == Qt.Key_Escape:
+            # Do not allow the wizard to be closed by pressing the ESC key.
+            event.ignore()
+        else:
+            super().keyPressEvent(event)
 
     def set_processor(self, processor):
         """Store a reference to the processor."""
