@@ -16,7 +16,30 @@
 import pyqtgraph as pg
 
 __APP_NAME__ = "pyMINFLUX"
-__version__ = "0.1.3"
+__version__ = "0.2.0"
 
 # PyQtGraph settings
 pg.setConfigOption("imageAxisOrder", "row-major")  # For best performance
+
+# Documentation
+__doc__ = f"""
+This is the **development** documentation of the `pyminflux` core command-line API (version {__version__}).
+
+Currently, `pyminflux` is compatible with python 3.10 and 3.11.
+
+**Usage**: see [example notebook](https://github.com/bsse-scf/pyMINFLUX/blob/feature/extended_stats/examples/processing.ipynb).
+
+**Project home**: [https://pyminflux.ethz.ch](https://pyminflux.ethz.ch)
+"""
+
+# Do not build the documentation for the following modules that are only used by the user interface.
+__pdoc__ = {
+    "base": False,
+    "main": False,
+    "resources": False,
+    "settings": False,
+    "state": False,
+    "threads": False,
+    "ui": False,
+    "utils": False,
+}

@@ -93,6 +93,14 @@ class Ui_MainWindow(object):
         self.actionIssues.setObjectName("actionIssues")
         self.actionMailing_list = QAction(MainWindow)
         self.actionMailing_list.setObjectName("actionMailing_list")
+        self.actionExport_stats = QAction(MainWindow)
+        self.actionExport_stats.setObjectName("actionExport_stats")
+        self.actionCheck_for_updates = QAction(MainWindow)
+        self.actionCheck_for_updates.setObjectName("actionCheck_for_updates")
+        self.actionEstimate_resolution = QAction(MainWindow)
+        self.actionEstimate_resolution.setObjectName("actionEstimate_resolution")
+        self.actionWhat_s_new = QAction(MainWindow)
+        self.actionWhat_s_new.setObjectName("actionWhat_s_new")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -114,6 +122,8 @@ class Ui_MainWindow(object):
         self.menuView.setObjectName("menuView")
         self.menuHelp = QMenu(self.menubar)
         self.menuHelp.setObjectName("menuHelp")
+        self.menuAnalysis = QMenu(self.menubar)
+        self.menuAnalysis.setObjectName("menuAnalysis")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -121,9 +131,11 @@ class Ui_MainWindow(object):
 
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuView.menuAction())
+        self.menubar.addAction(self.menuAnalysis.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
         self.menuFile.addAction(self.actionLoad)
         self.menuFile.addAction(self.actionExport_data)
+        self.menuFile.addAction(self.actionExport_stats)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionOptions)
         self.menuFile.addSeparator()
@@ -141,7 +153,10 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionIssues)
         self.menuHelp.addAction(self.actionMailing_list)
         self.menuHelp.addSeparator()
+        self.menuHelp.addAction(self.actionWhat_s_new)
+        self.menuHelp.addAction(self.actionCheck_for_updates)
         self.menuHelp.addAction(self.actionAbout)
+        self.menuAnalysis.addAction(self.actionEstimate_resolution)
 
         self.retranslateUi(MainWindow)
 
@@ -213,8 +228,23 @@ class Ui_MainWindow(object):
         self.actionMailing_list.setText(
             QCoreApplication.translate("MainWindow", "Mailing list", None)
         )
+        self.actionExport_stats.setText(
+            QCoreApplication.translate("MainWindow", "Export stats", None)
+        )
+        self.actionCheck_for_updates.setText(
+            QCoreApplication.translate("MainWindow", "Check for updates", None)
+        )
+        self.actionEstimate_resolution.setText(
+            QCoreApplication.translate("MainWindow", "FRC Analyzer", None)
+        )
+        self.actionWhat_s_new.setText(
+            QCoreApplication.translate("MainWindow", "What's new?", None)
+        )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", "Help", None))
+        self.menuAnalysis.setTitle(
+            QCoreApplication.translate("MainWindow", "Analysis", None)
+        )
 
     # retranslateUi

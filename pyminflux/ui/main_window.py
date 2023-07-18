@@ -22,11 +22,15 @@ from PySide6 import QtGui
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import (
+    QDialog,
     QDockWidget,
     QFileDialog,
     QMainWindow,
     QMessageBox,
+    QPushButton,
+    QTextBrowser,
     QTextEdit,
+    QVBoxLayout,
 )
 
 import pyminflux.resources
@@ -39,6 +43,7 @@ from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
+from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
@@ -46,6 +51,7 @@ from pyminflux.ui.plotter_toolbar import PlotterToolbar
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.wizard import WizardDialog
+from pyminflux.utils import check_for_updates
 from pyminflux.writer import MinFluxWriter
 
 
@@ -94,6 +100,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter3D = None
         self.color_unmixer = None
         self.inspector = None
+        self.frc_tool = None
         self.options = Options()
 
         # Initialize widget and its dock
@@ -129,10 +136,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.toggle_console_visibility()
 
         # Set initial visibility and enabled states
-        self.plotter.show()
-        self.plotter_toolbar.hide()
-        self.data_viewer.show()
-        self.ui.actionExport_data.setEnabled(False)
+        self.enable_ui_components(False)
 
         # Set up signals and slots
         self.setup_conn()
@@ -233,12 +237,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Menu actions
         self.ui.actionLoad.triggered.connect(self.select_and_open_data_file)
         self.ui.actionExport_data.triggered.connect(self.export_filtered_data)
+        self.ui.actionExport_stats.triggered.connect(self.export_filtered_stats)
         self.ui.actionOptions.triggered.connect(self.open_options_dialog)
         self.ui.actionQuit.triggered.connect(self.quit_application)
         self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionState.triggered.connect(self.print_current_state)
+        self.ui.actionEstimate_resolution.triggered.connect(self.open_frc_tool)
         self.ui.actionManual.triggered.connect(
             lambda _: QDesktopServices.openUrl(
                 "https://github.com/bsse-scf/pyMINFLUX/wiki/pyMINFLUX-user-manual"
@@ -260,6 +266,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "https://sympa.ethz.ch/sympa/subscribe/pyminflux"
             )
         )
+        self.ui.actionWhat_s_new.triggered.connect(
+            lambda _: QDesktopServices.openUrl(
+                "https://github.com/bsse-scf/pyMINFLUX/blob/master/CHANGELOG.md"
+            )
+        )
+        self.ui.actionCheck_for_updates.triggered.connect(self.check_four_updates)
         self.ui.actionAbout.triggered.connect(self.about)
 
         # Plotter toolbar
@@ -273,7 +285,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.full_update_ui
         )
 
-        # Other connections
+        # Plotter
         self.plotter.locations_selected.connect(
             self.show_selected_points_by_indices_in_dataviewer
         )
@@ -284,8 +296,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter_toolbar.color_code_locs_changed.connect(
             self.plot_selected_parameters
         )
+
+        # Options
         self.options.weigh_avg_localization_by_eco_option_changed.connect(
             self.update_weighted_average_localization_option_and_plot
+        )
+        self.options.min_num_loc_per_trace_option_changed.connect(
+            self.update_min_num_loc_per_trace
         )
 
         # Wizard
@@ -301,15 +318,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.wizard.wizard_filters_run.connect(self.full_update_ui)
         self.wizard.export_data_triggered.connect(self.export_filtered_data)
 
-    def enable_ui_components_on_loaded_data(self):
-        """Enable UI components."""
-        self.ui.actionExport_data.setEnabled(True)
-        self.plotter_toolbar.show()
-
-    def disable_ui_components_on_closed_data(self):
-        """Disable UI components."""
-        self.ui.actionExport_data.setEnabled(False)
-        self.plotter_toolbar.hide()
+    def enable_ui_components(self, enabled: bool):
+        """Enable/disable UI components."""
+        self.plotter.show()  # Always show
+        if enabled:
+            self.plotter_toolbar.show()
+            self.data_viewer.show()
+            self.plotter_toolbar.show()
+        else:
+            self.plotter_toolbar.hide()
+            self.data_viewer.hide()
+            self.plotter_toolbar.hide()
+        self.ui.actionExport_data.setEnabled(enabled)
+        self.ui.actionExport_data.setEnabled(enabled)
+        self.ui.actionExport_stats.setEnabled(enabled)
+        self.ui.actionEstimate_resolution.setEnabled(enabled)
 
     def full_update_ui(self):
         """
@@ -374,6 +397,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.options is not None:
                 self.options.close()
                 self.options = None
+
+            if self.frc_tool is not None:
+                self.frc_tool.close()
+                self.frc_tool = None
 
             # Store the application settings
             if self.last_selected_path != "":
@@ -455,15 +482,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             print(minfluxreader)
 
             # Add initialize the processor with the reader
-            self.minfluxprocessor = MinFluxProcessor(minfluxreader)
+            self.minfluxprocessor = MinFluxProcessor(
+                minfluxreader, self.state.min_num_loc_per_trace
+            )
 
             # Make sure to set current value of use_weighted_localizations
             self.minfluxprocessor.use_weighted_localizations = (
                 self.state.weigh_avg_localization_by_eco
             )
-
-            # Set state properties from data
-            self.set_state_from_data()
 
             # Show the filename on the main window
             self.setWindowTitle(
@@ -480,6 +506,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.inspector.close()
                 self.inspector = None
 
+            # Close the FRC Tool
+            if self.frc_tool is not None:
+                self.frc_tool.close
+                self.frc_tool = None
+
             # Update the ui
             self.full_update_ui()
 
@@ -490,7 +521,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.wizard.set_fluorophore_list(self.minfluxprocessor.num_fluorophorses)
 
             # Enable selected ui components
-            self.enable_ui_components_on_loaded_data()
+            self.enable_ui_components(True)
 
             # Update the Analyzer
             if self.analyzer is not None:
@@ -562,6 +593,53 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"Could not export filtered data to {Path(filename).name}.",
             )
 
+    @Slot(None, name="export_filtered_stats")
+    def export_filtered_stats(self):
+        """Export filtered, per-trace statistics as CSV file."""
+        if (
+            self.minfluxprocessor is None
+            or len(self.minfluxprocessor.filtered_dataframe.index) == 0
+        ):
+            return
+
+        # Ask the user to pick a name
+        filename, ext = QFileDialog.getSaveFileName(
+            self,
+            "Export filtered statistics",
+            str(self.last_selected_path),
+            "Comma-separated value files (*.csv)",
+        )
+
+        # Did the user cancel?
+        if filename == "":
+            return
+
+        # Does the file name have the .csv extension?
+        if ext != "Comma-separated value files (*.csv)":
+            return
+
+        if not filename.lower().endswith(".csv"):
+            filename = Path(filename)
+            filename = filename.parent / f"{filename.stem}.csv"
+
+        # Collect stats
+        stats = self.minfluxprocessor.filtered_dataframe_stats
+        if stats is None:
+            return
+
+        # Write stats to disk
+        try:
+            stats.to_csv(filename, index=False)
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Could not export filtered stats to {Path(filename).name}.\n\n{str(e)}.",
+            )
+            return
+
+        print(f"Successfully exported stats for {len(stats.index)} localizations.")
+
     @Slot(None, name="print_current_state")
     def print_current_state(self):
         """Print current contents of the state machine (DEBUG)."""
@@ -580,7 +658,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self,
             "About",
             f"{__APP_NAME__} v{__version__}\n"
-            f'"Heidelberg"\n'
             f"\n"
             f"Copyright 2022 - {datetime.now().year}\n"
             f"Single Cell Facility\n"
@@ -588,6 +665,45 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             f"ETH Zurich\n"
             f"Switzerland",
         )
+
+    @Slot(None, name="check_four_updates")
+    def check_four_updates(self):
+        """Check for application updates."""
+
+        # Check for updates
+        code, version, error = check_for_updates()
+
+        # Process the output
+        if code == -1:
+            # Something went wrong: report
+            html = f"<b>Error! {error}</b><br /><br /><br />Please make sure you are connected to the internet.<br />If this error persists, please <a href='https://github.com/bsse-scf/pyMINFLUX/issues/'>report it</a>."
+
+        elif code == 0:
+            # No new version
+            html = f"<b>Congratulations!</b><br /><br />You are running the latest version ({pyminflux.__version__}) of {pyminflux.__APP_NAME__}."
+
+        elif code == 1:
+            # Show a dialog with a link to the download page
+            html = f"<b>There is a new version ({version}) of {pyminflux.__APP_NAME__}!</b><br /><br />You can download it from the <a href='https://github.com/bsse-scf/pyMINFLUX/releases/latest'>release page</a>."
+
+        else:
+            raise ValueError("Unexpected code!")
+
+        # Show the dialog
+        dialog = QDialog()
+        dialog.setWindowTitle("Check for updates")
+        dialog.setMinimumSize(400, 180)
+        dialog.setFixedHeight(180)
+        layout = QVBoxLayout(dialog)
+        text_browser = QTextBrowser()
+        text_browser.setStyleSheet("background-color: transparent;")
+        text_browser.setOpenExternalLinks(True)
+        text_browser.insertHtml(html)
+        layout.addWidget(text_browser)
+        button = QPushButton("OK")
+        button.clicked.connect(dialog.close)
+        layout.addWidget(button)
+        dialog.exec_()
 
     @Slot(None, name="open_analyzer")
     def open_analyzer(self):
@@ -645,8 +761,26 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Open the options dialog."""
         if self.options is None:
             self.options = Options()
+            self.options.min_num_loc_per_trace_option_changed.connect(
+                self.update_min_num_loc_per_trace
+            )
         self.options.show()
         self.options.activateWindow()
+
+    @Slot(None, name="update_min_num_loc_per_trace")
+    def update_min_num_loc_per_trace(self):
+        if self.minfluxprocessor is not None:
+            self.minfluxprocessor.min_num_loc_per_trace = (
+                self.state.min_num_loc_per_trace
+            )
+
+    @Slot(None, name="open_frc_tool")
+    def open_frc_tool(self):
+        """Open the FRC tool."""
+        if self.frc_tool is None:
+            self.frc_tool = FRCTool(self.minfluxprocessor)
+        self.frc_tool.show()
+        self.frc_tool.activateWindow()
 
     @Slot(list, name="show_selected_points_by_indices_in_dataviewer")
     def show_selected_points_by_indices_in_dataviewer(self, points):
@@ -729,13 +863,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Signal that the external viewers and tools should be updated
         self.request_sync_external_tools.emit()
-
-    def set_state_from_data(self):
-        """Set state properties that depend on data."""
-        if self.minfluxprocessor.filtered_dataframe is not None:
-            self.state.gmm_efo_num_clusters = int(
-                self.minfluxprocessor.filtered_dataframe["dwell"].max()
-            )
 
     def update_weighted_average_localization_option_and_plot(self):
         """Update the weighted average localization option in the Processor and re-plot."""

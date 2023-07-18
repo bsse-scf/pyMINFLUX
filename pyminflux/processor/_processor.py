@@ -13,78 +13,84 @@
 #   limitations under the License.
 #
 
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
 from scipy.stats import mode
 
 from pyminflux.reader import MinFluxReader
-from pyminflux.state import State
 
 
 class MinFluxProcessor:
     """Processor of MINFLUX data."""
 
+    __doc__ = """Allows for filtering and selecting data read by the underlying `MinFluxReader`. Please notice that
+     `MinFluxProcessor` makes use of `State.min_num_loc_per_trace` to make sure that at load and after every
+      filtering step, short traces are dropped."""
+
     __slots__ = [
         "state",
-        "__minfluxreader",
-        "__current_fluorophore_id",
-        "__filtered_stats_dataframe",
-        "__fluorophore_ids",
-        "__selected_rows_dict",
-        "__stats_to_be_recomputed",
-        "__weighted_localizations",
-        "__weighted_localizations_to_be_recomputed",
-        "__use_weighted_localizations",
+        "_reader",
+        "_current_fluorophore_id",
+        "_filtered_stats_dataframe",
+        "_min_trace_length",
+        "_selected_rows_dict",
+        "_stats_to_be_recomputed",
+        "_weighted_localizations",
+        "_weighted_localizations_to_be_recomputed",
+        "_use_weighted_localizations",
     ]
 
-    def __init__(self, minfluxreader: MinFluxReader):
+    def __init__(self, reader: MinFluxReader, min_trace_length: int = 1):
         """Constructor.
 
         Parameters
         ----------
 
-        minfluxreader: pyminflux.reader.MinFluxReader
+        reader: MinFluxReader
             MinFluxReader object.
+
+        min_trace_length: int (Default = 1)
+            Minimum number of localizations for a trace to be kept. Shorter traces are dropped.
         """
 
         # Store a reference to the MinFluxReader
-        self.__minfluxreader = minfluxreader
+        self._reader: MinFluxReader = reader
 
-        # Keep a reference to the state machine
-        self.state = State()
+        # Global options
+        self._min_trace_length: int = min_trace_length
 
         # Cache the filtered stats dataframe
-        self.__filtered_stats_dataframe = None
+        self._filtered_stats_dataframe = None
 
         # Keep separate arrays of booleans to cache selection state for all fluorophores IDs.
-        self.__selected_rows_dict = None
-        self.__init_selected_rows_dict()
+        self._selected_rows_dict = None
+        self._init_selected_rows_dict()
 
         # Keep track of the selected fluorophore
         # 0 - All (default)
         # 1 - Fluorophore 1
         # 2 - Fluorophore 2
-        self.__current_fluorophore_id = 0
+        self._current_fluorophore_id = 0
 
         # Cache the weighted, averaged TID positions
-        self.__weighted_localizations = None
+        self._weighted_localizations = None
 
         # Keep track whether the statistics and the weighted localizations need to be recomputed
-        self.__stats_to_be_recomputed = False
-        self.__weighted_localizations_to_be_recomputed = False
+        self._stats_to_be_recomputed = False
+        self._weighted_localizations_to_be_recomputed = False
 
         # Whether to use weighted average for localizations
-        self.__use_weighted_localizations = False
+        self._use_weighted_localizations = False
 
         # Apply the global filters
         self._apply_global_filters()
 
-    def __init_selected_rows_dict(self):
+    def _init_selected_rows_dict(self):
         """Initialize the selected rows array."""
         # How many fluorophores do we have?
-        self.__selected_rows_dict = {
+        self._selected_rows_dict = {
             1: pd.Series(
                 data=np.ones(len(self.full_dataframe.index), dtype=bool),
                 index=self.full_dataframe.index,
@@ -96,6 +102,19 @@ class MinFluxProcessor:
         }
 
     @property
+    def min_num_loc_per_trace(self):
+        """Minimum number of localizations for the trace to be kept."""
+        return self._min_trace_length
+
+    @min_num_loc_per_trace.setter
+    def min_num_loc_per_trace(self, value):
+        if value < 1 or int(value) != value:
+            raise ValueError(
+                "MinFluxProcessor.min_num_loc_per_trace must be a positive integer!"
+            )
+        self._min_trace_length = value
+
+    @property
     def is_3d(self) -> bool:
         """Return True if the acquisition is 3D.
 
@@ -105,7 +124,7 @@ class MinFluxProcessor:
         is_3d: bool
             True if the acquisition is 3D, False otherwise.
         """
-        return self.__minfluxreader.is_3d
+        return self._reader.is_3d
 
     @property
     def num_values(self) -> int:
@@ -125,7 +144,7 @@ class MinFluxProcessor:
     @property
     def current_fluorophore_id(self) -> int:
         """Return current fluorophore ID (0 for all)."""
-        return self.__current_fluorophore_id
+        return self._current_fluorophore_id
 
     @current_fluorophore_id.setter
     def current_fluorophore_id(self, fluorophore_id: int) -> None:
@@ -135,13 +154,13 @@ class MinFluxProcessor:
             raise ValueError(f"Only 1 or 2 are valid fluorophore IDs.")
 
         # Set the new fluorophore_id
-        self.__current_fluorophore_id = fluorophore_id
+        self._current_fluorophore_id = fluorophore_id
 
         # Apply the global filters
         self._apply_global_filters()
 
         # Flag stats to be recomputed
-        self.__stats_to_be_recomputed = True
+        self._stats_to_be_recomputed = True
 
     @property
     def num_fluorophorses(self) -> int:
@@ -153,7 +172,7 @@ class MinFluxProcessor:
         """Return the raw NumPy array with applied filters (for all fluorphores)."""
 
         # Copy the raw NumPy array
-        raw_array = self.__minfluxreader.valid_raw_data
+        raw_array = self._reader.valid_raw_data
         if raw_array is None:
             return None
 
@@ -161,8 +180,8 @@ class MinFluxProcessor:
         raw_array["fluo"] = self.full_dataframe["fluo"].astype(np.uint8)
 
         # Extract combination of fluorophore 1 and 2 filtered dataframes
-        mask_1 = (self.full_dataframe["fluo"] == 1) & self.__selected_rows_dict[1]
-        mask_2 = (self.full_dataframe["fluo"] == 2) & self.__selected_rows_dict[2]
+        mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
+        mask_2 = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
         return raw_array[mask_1 | mask_2]
 
     @property
@@ -195,7 +214,7 @@ class MinFluxProcessor:
         full_dataframe: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
-        return self.__minfluxreader.processed_dataframe
+        return self._reader.processed_dataframe
 
     def _filtered_dataframe_all(self) -> Union[None, pd.DataFrame]:
         """Return joint dataframe for all fluorophores and with all filters applied.
@@ -210,8 +229,8 @@ class MinFluxProcessor:
             return None
 
         # Extract combination of fluorophore 1 and 2 filtered dataframes
-        mask_1 = (self.full_dataframe["fluo"] == 1) & self.__selected_rows_dict[1]
-        mask_2 = (self.full_dataframe["fluo"] == 2) & self.__selected_rows_dict[2]
+        mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
+        mask_2 = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
         return self.full_dataframe.loc[mask_1 | mask_2]
 
     @property
@@ -232,7 +251,7 @@ class MinFluxProcessor:
             df = self.full_dataframe.loc[
                 self.full_dataframe["fluo"] == self.current_fluorophore_id
             ]
-            return df.loc[self.__selected_rows_dict[self.current_fluorophore_id]]
+            return df.loc[self._selected_rows_dict[self.current_fluorophore_id]]
 
     @property
     def filtered_dataframe_stats(self) -> Union[None, pd.DataFrame]:
@@ -244,27 +263,27 @@ class MinFluxProcessor:
         filtered_dataframe_stats: Union[None, pd.DataFrame]
             A Pandas dataframe with all data statistics or None if no file was loaded.
         """
-        if self.__stats_to_be_recomputed:
+        if self._stats_to_be_recomputed:
             self._calculate_statistics()
-        return self.__filtered_stats_dataframe
+        return self._filtered_stats_dataframe
 
     @property
     def weighted_localizations(self) -> Union[None, pd.DataFrame]:
         """Return the average (x, y, z) position per TID weighted by the relative photon count."""
-        if self.__weighted_localizations_to_be_recomputed:
+        if self._weighted_localizations_to_be_recomputed:
             self._calculate_weighted_positions()
-        return self.__weighted_localizations
+        return self._weighted_localizations
 
     @property
     def use_weighted_localizations(self) -> bool:
         """Whether to use weighted average to calculate the mean localization per TID."""
-        return self.__use_weighted_localizations
+        return self._use_weighted_localizations
 
     @use_weighted_localizations.setter
     def use_weighted_localizations(self, value: bool):
         """Whether to use weighted average to calculate the mean localization per TID."""
-        self.__use_weighted_localizations = value
-        self.__weighted_localizations_to_be_recomputed = True
+        self._use_weighted_localizations = value
+        self._weighted_localizations_to_be_recomputed = True
 
     @classmethod
     def processed_properties(cls):
@@ -276,7 +295,7 @@ class MinFluxProcessor:
 
         # Clear the selection per fluorophore; they will be reinitialized as
         # all selected at the first access.
-        self.__init_selected_rows_dict()
+        self._init_selected_rows_dict()
 
         # Reset the mapping to the corresponding fluorophore
         self.full_dataframe["fluo"] = 1
@@ -287,6 +306,83 @@ class MinFluxProcessor:
         # Apply global filters
         self._apply_global_filters()
 
+    def update_localizations(
+        self, x: np.ndarray, y: np.ndarray, z: Optional[np.ndarray] = None
+    ):
+        """Updates the localization coordinates of current filtered dataframe.
+
+        This can be used for instance after a drift correction.
+
+        Parameters
+        ----------
+
+        x: np.ndarray
+            Array of x coordinates.
+
+        y: np.ndarray
+            Array of y coordinates.
+
+        z: np.ndarray (Optional)
+            Optional array of z coordinates. Omit it to skip.
+            If the acquisition is 2D, it will be ignored in any case.
+        """
+
+        if self.full_dataframe is None:
+            return
+
+        # Make sure to work with NumPy arrays
+        x = np.array(x)
+        y = np.array(y)
+        if z is not None and self.is_3d:
+            z = np.array(z)
+
+        # Select the correct rows to update
+        if self.current_fluorophore_id == 0:
+            mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
+            mask_2 = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
+            mask = mask_1 | mask_2
+        elif self.current_fluorophore_id == 1:
+            mask = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
+        else:
+            mask = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
+
+        # Make sure that the lengths match
+        assert np.sum(mask.values) == len(x), "Unexpected number of elements in x."
+        assert np.sum(mask.values) == len(y), "Unexpected number of elements in y."
+        if z is not None and self.is_3d:
+            assert np.sum(mask.values) == len(z), "Unexpected number of elements in z."
+
+        # Re-assign the data at the reader level
+        self._reader._data_df.loc[mask, "x"] = x
+        self._reader._data_df.loc[mask, "y"] = y
+        if z is not None and self.is_3d:
+            self._reader._data_df.loc[mask, "z"] = z
+
+        # Also update the raw structured NumPy array. Since NumPy
+        # will return a copy if we try to access the "loc" array
+        # directly using logical arrays, we need to iterate over
+        # all rows one by one!
+        #
+        # Furthermore, we need to scale the values by the factor
+        # self._reader._unit_scaling_factor
+        x_scaled = x / self._reader._unit_scaling_factor
+        y_scaled = y / self._reader._unit_scaling_factor
+        if z is not None and self.is_3d:
+            z_scaled = z / self._reader._unit_scaling_factor
+        idx = self._reader._loc_index
+        vld_indices = np.where(self._reader._valid_entries)[0]
+        mask_indices = np.where(mask)[0]
+        for i, I in enumerate(mask_indices):
+            if I in vld_indices:
+                self._reader._data_array[I]["itr"][idx]["loc"][0] = x_scaled[i]
+                self._reader._data_array[I]["itr"][idx]["loc"][1] = y_scaled[i]
+                if z is not None and self.is_3d:
+                    self._reader._data_array[I]["itr"][idx]["loc"][2] = z_scaled[i]
+
+        # Mark derived data to be recomputed
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
+
     def set_fluorophore_ids(self, fluorophore_ids: np.ndarray[int]):
         """Assign the fluorophore IDs."""
         if len(fluorophore_ids) != len(self.full_dataframe.index):
@@ -294,7 +390,7 @@ class MinFluxProcessor:
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
         self.full_dataframe["fluo"] = fluorophore_ids
-        self.__init_selected_rows_dict()
+        self._init_selected_rows_dict()
         self._apply_global_filters()
 
     def select_by_indices(
@@ -320,9 +416,9 @@ class MinFluxProcessor:
             A view on a subset of the dataframe defined by the passed indices, or None if no file was loaded.
         """
         if from_weighted_locs:
-            if self.__weighted_localizations is None:
+            if self._weighted_localizations is None:
                 return None
-            return self.__weighted_localizations.iloc[indices]
+            return self._weighted_localizations.iloc[indices]
         else:
             if self.filtered_dataframe is None:
                 return None
@@ -362,9 +458,9 @@ class MinFluxProcessor:
             x_max, x_min = x_min, x_max
 
         if from_weighted_locs:
-            return self.__weighted_localizations.loc[
-                (self.__weighted_localizations[x_prop] >= x_min)
-                & (self.__weighted_localizations[x_prop] < x_max)
+            return self._weighted_localizations.loc[
+                (self._weighted_localizations[x_prop] >= x_min)
+                & (self._weighted_localizations[x_prop] < x_max)
             ]
         else:
             # Work with currently selected rows
@@ -418,11 +514,11 @@ class MinFluxProcessor:
             y_max, y_min = y_min, y_max
 
         if from_weighted_locs:
-            return self.__weighted_localizations.loc[
-                (self.__weighted_localizations[x_prop] >= x_min)
-                & (self.__weighted_localizations[x_prop] < x_max)
-                & (self.__weighted_localizations[y_prop] >= y_min)
-                & (self.__weighted_localizations[y_prop] < y_max)
+            return self._weighted_localizations.loc[
+                (self._weighted_localizations[x_prop] >= x_min)
+                & (self._weighted_localizations[x_prop] < x_max)
+                & (self._weighted_localizations[y_prop] >= y_min)
+                & (self._weighted_localizations[y_prop] < y_max)
             ]
         else:
             # Work with currently selected rows
@@ -466,8 +562,8 @@ class MinFluxProcessor:
             y_max, y_min = y_min, y_max
 
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
-            self.__selected_rows_dict[1] = (
-                self.__selected_rows_dict[1]
+            self._selected_rows_dict[1] = (
+                self._selected_rows_dict[1]
                 & (self.filtered_dataframe[x_prop] >= x_min)
                 & (self.filtered_dataframe[x_prop] < x_max)
                 & (self.filtered_dataframe[y_prop] >= y_min)
@@ -475,8 +571,8 @@ class MinFluxProcessor:
             )
 
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
-            self.__selected_rows_dict[2] = (
-                self.__selected_rows_dict[2]
+            self._selected_rows_dict[2] = (
+                self._selected_rows_dict[2]
                 & (self.filtered_dataframe[x_prop] >= x_min)
                 & (self.filtered_dataframe[x_prop] < x_max)
                 & (self.filtered_dataframe[y_prop] >= y_min)
@@ -487,30 +583,30 @@ class MinFluxProcessor:
         self._apply_global_filters()
 
         # Make sure to flag the derived data to be recomputed
-        self.__stats_to_be_recomputed = True
-        self.__weighted_localizations_to_be_recomputed = True
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
 
     def _apply_global_filters(self):
         """Apply filters that are defined in the global application configuration."""
 
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
-            self.__selected_rows_dict[1] = self.__filter_by_tid_length(1)
+            self._selected_rows_dict[1] = self._filter_by_tid_length(1)
 
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
-            self.__selected_rows_dict[2] = self.__filter_by_tid_length(2)
+            self._selected_rows_dict[2] = self._filter_by_tid_length(2)
 
         # Make sure to flag the derived data to be recomputed
-        self.__stats_to_be_recomputed = True
-        self.__weighted_localizations_to_be_recomputed = True
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
 
-    def __filter_by_tid_length(self, index):
+    def _filter_by_tid_length(self, index):
         # Make sure to count only currently selected rows
         df = self.full_dataframe.copy()
-        df.loc[np.invert(self.__selected_rows_dict[index]), "tid"] = np.nan
+        df.loc[np.invert(self._selected_rows_dict[index]), "tid"] = np.nan
 
         # Select all rows where the count of TIDs is larger than self._min_trace_num
         counts = df["tid"].value_counts(normalize=False)
-        return df["tid"].isin(counts[counts >= self.state.min_num_loc_per_trace].index)
+        return df["tid"].isin(counts[counts >= self.min_num_loc_per_trace].index)
 
     def filter_by_single_threshold(
         self, prop: str, threshold: Union[int, float], larger_than: bool = True
@@ -520,21 +616,21 @@ class MinFluxProcessor:
         # Apply filter
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
             if larger_than:
-                self.__selected_rows_dict[1] = self.__selected_rows_dict[1] & (
+                self._selected_rows_dict[1] = self._selected_rows_dict[1] & (
                     self.filtered_dataframe[prop] >= threshold
                 )
             else:
-                self.__selected_rows_dict[1] = self.__selected_rows_dict[1] & (
+                self._selected_rows_dict[1] = self._selected_rows_dict[1] & (
                     self.filtered_dataframe[prop] < threshold
                 )
 
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
             if larger_than:
-                self.__selected_rows_dict[2] = self.__selected_rows_dict[2] & (
+                self._selected_rows_dict[2] = self._selected_rows_dict[2] & (
                     self.filtered_dataframe[prop] >= threshold
                 )
             else:
-                self.__selected_rows_dict[2] = self.__selected_rows_dict[2] & (
+                self._selected_rows_dict[2] = self._selected_rows_dict[2] & (
                     self.filtered_dataframe[prop] < threshold
                 )
 
@@ -542,8 +638,8 @@ class MinFluxProcessor:
         self._apply_global_filters()
 
         # Make sure to flag the derived data to be recomputed
-        self.__stats_to_be_recomputed = True
-        self.__weighted_localizations_to_be_recomputed = True
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
 
     def filter_by_1d_range(self, x_prop: str, x_range: tuple):
         """Apply min and max thresholding to the given property.
@@ -566,15 +662,15 @@ class MinFluxProcessor:
 
         # Apply filter
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
-            self.__selected_rows_dict[1] = (
-                self.__selected_rows_dict[1]
+            self._selected_rows_dict[1] = (
+                self._selected_rows_dict[1]
                 & (self.filtered_dataframe[x_prop] >= x_min)
                 & (self.filtered_dataframe[x_prop] < x_max)
             )
 
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
-            self.__selected_rows_dict[2] = (
-                self.__selected_rows_dict[2]
+            self._selected_rows_dict[2] = (
+                self._selected_rows_dict[2]
                 & (self.filtered_dataframe[x_prop] >= x_min)
                 & (self.filtered_dataframe[x_prop] < x_max)
             )
@@ -583,8 +679,8 @@ class MinFluxProcessor:
         self._apply_global_filters()
 
         # Make sure to flag the derived data to be recomputed
-        self.__stats_to_be_recomputed = True
-        self.__weighted_localizations_to_be_recomputed = True
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
 
     def filter_by_1d_range_complement(self, prop: str, x_range: tuple):
         """Apply min and max thresholding to the given property but keep the
@@ -608,13 +704,13 @@ class MinFluxProcessor:
 
         # Apply filter
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
-            self.__selected_rows_dict[1] = self.__selected_rows_dict[1] & (
+            self._selected_rows_dict[1] = self._selected_rows_dict[1] & (
                 (self.filtered_dataframe[prop] < x_min)
                 | (self.filtered_dataframe[prop] >= x_max)
             )
 
         if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
-            self.__selected_rows_dict[2] = self.__selected_rows_dict[2] & (
+            self._selected_rows_dict[2] = self._selected_rows_dict[2] & (
                 (self.filtered_dataframe[prop] < x_min)
                 | (self.filtered_dataframe[prop] >= x_max)
             )
@@ -623,8 +719,8 @@ class MinFluxProcessor:
         self._apply_global_filters()
 
         # Make sure to flag the derived data to be recomputed
-        self.__stats_to_be_recomputed = True
-        self.__weighted_localizations_to_be_recomputed = True
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
 
     def _calculate_statistics(self):
         """Calculate per-trace statistics."""
@@ -634,48 +730,20 @@ class MinFluxProcessor:
             return
 
         # Only recompute statistics if needed
-        if not self.__stats_to_be_recomputed:
+        if not self._stats_to_be_recomputed:
             return
 
         # Work with currently selected rows
         df = self.filtered_dataframe
 
-        # Calculate some statistics per TID on the processed dataframe
-        df_grouped = df.groupby("tid")
-
-        tid = df_grouped["tid"].first().values
-        n = df_grouped["tid"].count().values
-        mx = df_grouped["x"].mean().values
-        my = df_grouped["y"].mean().values
-        mz = df_grouped["z"].mean().values
-        sx = df_grouped["x"].std().values
-        sy = df_grouped["y"].std().values
-        sz = df_grouped["z"].std().values
-        fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
-
-        # Prepare a dataframe with the statistics
-        df_tid = pd.DataFrame(
-            columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz", "fluo"]
-        )
-
-        df_tid["tid"] = tid
-        df_tid["n"] = n
-        df_tid["mx"] = mx
-        df_tid["my"] = my
-        df_tid["mz"] = mz
-        df_tid["sx"] = sx
-        df_tid["sy"] = sy
-        df_tid["sz"] = sz
-        df_tid["fluo"] = fluo
-
-        # sx, sy sz columns will contain np.nan if n == 1: we replace with 0.0
-        df_tid[["sx", "sy", "sz"]] = df_tid[["sx", "sy", "sz"]].fillna(value=0.0)
+        # Calculate the statistics
+        df_tid = self.calculate_statistics_on(df)
 
         # Store the results
-        self.__filtered_stats_dataframe = df_tid
+        self._filtered_stats_dataframe = df_tid
 
         # Flag the statistics to be computed
-        self.__stats_to_be_recomputed = False
+        self._stats_to_be_recomputed = False
 
     @staticmethod
     def calculate_statistics_on(df: pd.DataFrame) -> pd.DataFrame:
@@ -704,26 +772,53 @@ class MinFluxProcessor:
         sx = df_grouped["x"].std().values
         sy = df_grouped["y"].std().values
         sz = df_grouped["z"].std().values
+        tmp = np.power(sx, 2) + np.power(sy, 2)
+        sxy = np.sqrt(tmp)
+        rms_xy = np.sqrt(tmp / 2)
+        exy = sxy / np.sqrt(n)
+        ez = sz / np.sqrt(n)
         fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
 
         # Prepare a dataframe with the statistics
         df_tid = pd.DataFrame(
-            columns=["tid", "n", "mx", "my", "mz", "sx", "sy", "sz", "fluo"]
+            columns=[
+                "tid",
+                "n",
+                "mx",
+                "my",
+                "mz",
+                "sx",
+                "sy",
+                "sxy",
+                "exy",
+                "rms_xy",
+                "sz",
+                "ez",
+                "fluo",
+            ]
         )
 
-        df_tid["tid"] = tid
-        df_tid["n"] = n
-        df_tid["mx"] = mx
-        df_tid["my"] = my
-        df_tid["mz"] = mz
-        df_tid["sx"] = sx
-        df_tid["sy"] = sy
-        df_tid["sz"] = sz
-        df_tid["fluo"] = fluo
+        # Store trace stats
+        df_tid["tid"] = tid  # Trace ID
+        df_tid["n"] = n  # Number of traces for given ID
+        df_tid["mx"] = mx  # x mean localization
+        df_tid["my"] = my  # y mean localization
+        df_tid["mz"] = mz  # z mean localization
+        df_tid["sx"] = sx  # x localization precision
+        df_tid["sy"] = sy  # y localization precision
+        df_tid["sxy"] = sxy  # Lateral (x, y) localization precision
+        df_tid["rms_xy"] = rms_xy  # Lateral root mean square
+        df_tid["exy"] = exy  # Standard error of sxy
+        df_tid["sz"] = sz  # z localization precision
+        df_tid["ez"] = ez  # Standard error of ez
+        df_tid["fluo"] = fluo  # Assigned fluorophore ID
 
-        # sx, sy sz columns will contain np.nan is n == 1: we replace with 0.0
-        # @TODO: should this be changed?
-        df_tid[["sx", "sy", "sz"]] = df_tid[["sx", "sy", "sz"]].fillna(value=0.0)
+        # ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"] columns will contain
+        # np.nan if n == 1: we replace them with 0.0.
+        # @TODO: should this be changed? It could be a global option.
+        df_tid[["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"]] = df_tid[
+            ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"]
+        ].fillna(value=0.0)
 
         # Return the results
         return df_tid
@@ -736,14 +831,14 @@ class MinFluxProcessor:
             return
 
         # Only recompute weighted localizations if needed
-        if not self.__weighted_localizations_to_be_recomputed:
+        if not self._weighted_localizations_to_be_recomputed:
             return
 
         # Work with currently selected rows
         df = self.filtered_dataframe
 
         # Normal or weighted averaging?
-        if self.__use_weighted_localizations:
+        if self._use_weighted_localizations:
             # Calculate weighing factors for TIDs
             df = df.assign(
                 eco_rel=df["eco"].groupby(df["tid"]).transform(lambda x: x / x.sum())
@@ -784,7 +879,7 @@ class MinFluxProcessor:
         df_loc["fluo"] = fluo
 
         # Store the results
-        self.__weighted_localizations = df_loc
+        self._weighted_localizations = df_loc
 
         # Make sure to flag the derived data to be recomputed
-        self.__weighted_localizations_to_be_recomputed = False
+        self._weighted_localizations_to_be_recomputed = False

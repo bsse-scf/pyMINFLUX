@@ -22,26 +22,28 @@ from scipy.io import loadmat
 
 
 class MinFluxReader:
+    __docs__ = "Reader of MINFLUX data in `.npy` or `.mat` formats."
+
     __slots__ = [
-        "__filename",
-        "__valid",
-        "__unit_scaling_factor",
-        "__data_array",
-        "__data_df",
-        "__data_full_df",
-        "__valid_entries",
-        "__is_3d",
-        "__is_aggregated",
-        "__reps",
-        "__efo_index",
-        "__cfr_index",
-        "__eco_index",
-        "__dcr_index",
-        "__loc_index",
-        "__tid_index",
-        "__tim_index",
-        "__vld_index",
-        "__z_scaling_factor",
+        "_filename",
+        "_valid",
+        "_unit_scaling_factor",
+        "_data_array",
+        "_data_df",
+        "_data_full_df",
+        "_valid_entries",
+        "_is_3d",
+        "_is_aggregated",
+        "_reps",
+        "_efo_index",
+        "_cfr_index",
+        "_eco_index",
+        "_dcr_index",
+        "_loc_index",
+        "_tid_index",
+        "_tim_index",
+        "_vld_index",
+        "_z_scaling_factor",
     ]
 
     def __init__(
@@ -57,7 +59,7 @@ class MinFluxReader:
         ----------
 
         filename: Union[Path, str]
-            Full path to the .npy file to read
+            Full path to the `.npy` or `.mat` file to read
 
         valid: bool (optional, default = True)
             Whether to load only valid localizations.
@@ -71,43 +73,43 @@ class MinFluxReader:
         """
 
         # Store the filename
-        self.__filename: Path = Path(filename)
-        if not self.__filename.is_file():
-            raise IOError(f"The file {self.__filename} does not seem to exist.")
+        self._filename: Path = Path(filename)
+        if not self._filename.is_file():
+            raise IOError(f"The file {self._filename} does not seem to exist.")
 
         # Store the valid flag
-        self.__valid: bool = valid
+        self._valid: bool = valid
 
         # Store the scaling factor
-        self.__unit_scaling_factor: float = unit_scaling_factor
+        self._unit_scaling_factor: float = unit_scaling_factor
 
         # Store the z correction factor
-        self.__z_scaling_factor: float = z_scaling_factor
+        self._z_scaling_factor: float = z_scaling_factor
 
         # Initialize the data
-        self.__data_array = None
-        self.__data_df = None
-        self.__data_full_df = None
-        self.__valid_entries = None
+        self._data_array = None
+        self._data_df = None
+        self._data_full_df = None
+        self._valid_entries = None
 
         # Whether the acquisition is 2D or 3D
-        self.__is_3d: bool = False
+        self._is_3d: bool = False
 
         # Whether the file contains aggregate measurements
-        self.__is_aggregated: bool = False
+        self._is_aggregated: bool = False
 
         # Indices dependent on 2D or 3D acquisition
-        self.__reps: int = -1
-        self.__efo_index: int = -1
-        self.__cfr_index: int = -1
-        self.__dcr_index: int = -1
-        self.__eco_index: int = -1
-        self.__loc_index: int = -1
+        self._reps: int = -1
+        self._efo_index: int = -1
+        self._cfr_index: int = -1
+        self._dcr_index: int = -1
+        self._eco_index: int = -1
+        self._loc_index: int = -1
 
         # Constant indices
-        self.__tid_index: int = 0
-        self.__tim_index: int = 0
-        self.__vld_index: int = 0
+        self._tid_index: int = 0
+        self._tim_index: int = 0
+        self._vld_index: int = 0
 
         # Load the file
         self._load()
@@ -115,50 +117,50 @@ class MinFluxReader:
     @property
     def is_3d(self):
         """Returns True is the acquisition is 3D, False otherwise."""
-        return self.__is_3d
+        return self._is_3d
 
     @property
     def is_aggregated(self):
         """Returns True is the acquisition is aggregated, False otherwise."""
-        return self.__is_aggregated
+        return self._is_aggregated
 
     @property
     def num_valid_entries(self):
         """Number of valid entries."""
-        if self.__data_array is None:
+        if self._data_array is None:
             return 0
-        return self.__valid_entries.sum()
+        return self._valid_entries.sum()
 
     @property
     def num_invalid_entries(self):
         """Number of valid entries."""
-        if self.__data_array is None:
+        if self._data_array is None:
             return 0
-        return np.logical_not(self.__valid_entries).sum()
+        return np.logical_not(self._valid_entries).sum()
 
     @property
     def valid_raw_data(self) -> Union[None, np.ndarray]:
         """Return the raw data."""
-        if self.__data_array is None:
+        if self._data_array is None:
             return None
-        return self.__data_array[self.__valid_entries].copy()
+        return self._data_array[self._valid_entries].copy()
 
     @property
     def processed_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return the raw data as dataframe (some properties only)."""
-        if self.__data_df is not None:
-            return self.__data_df
+        if self._data_df is not None:
+            return self._data_df
 
-        self.__data_df = self._process()
-        return self.__data_df
+        self._data_df = self._process()
+        return self._data_df
 
     @property
     def raw_data_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return the raw data as dataframe (some properties only)."""
-        if self.__data_full_df is not None:
-            return self.__data_full_df
-        self.__data_full_df = self._raw_data_to_full_dataframe()
-        return self.__data_full_df
+        if self._data_full_df is not None:
+            return self._data_full_df
+        self._data_full_df = self._raw_data_to_full_dataframe()
+        return self._data_full_df
 
     @classmethod
     def processed_properties(cls):
@@ -185,46 +187,46 @@ class MinFluxReader:
     def _load(self) -> bool:
         """Load the file."""
 
-        if not self.__filename.is_file():
-            print(f"File {self.__filename} does not exist.")
+        if not self._filename.is_file():
+            print(f"File {self._filename} does not exist.")
             return False
 
         # Call the specialized _load_*() function
-        if self.__filename.name.lower().endswith(".npy"):
+        if self._filename.name.lower().endswith(".npy"):
             try:
-                data_array = np.load(str(self.__filename))
+                data_array = np.load(str(self._filename))
                 if "fluo" in data_array.dtype.names:
-                    self.__data_array = data_array
+                    self._data_array = data_array
                 else:
-                    self.__data_array = self._migrate_npy_array(data_array)
+                    self._data_array = self._migrate_npy_array(data_array)
             except ValueError as e:
-                print(f"Could not open {self.__filename}: {e}")
+                print(f"Could not open {self._filename}: {e}")
                 return False
 
-        elif self.__filename.name.lower().endswith(".mat"):
+        elif self._filename.name.lower().endswith(".mat"):
             try:
-                self.__data_array = self._convert_from_mat()
+                self._data_array = self._convert_from_mat()
             except ValueError as e:
-                print(f"Could not open {self.__filename}: {e}")
+                print(f"Could not open {self._filename}: {e}")
                 return False
         else:
-            print(f"Unexpected file {self.__filename}.")
+            print(f"Unexpected file {self._filename}.")
             return False
 
         # Store a logical array with the valid entries
-        self.__valid_entries = self.__data_array["vld"]
+        self._valid_entries = self._data_array["vld"]
 
         # Cache whether the data is 2D or 3D and whether is aggregated
-        num_locs = self.__data_array["itr"].shape[1]
+        num_locs = self._data_array["itr"].shape[1]
         if num_locs == 10:
-            self.__is_aggregated = False
-            self.__is_3d = True
+            self._is_aggregated = False
+            self._is_3d = True
         elif num_locs == 5:
-            self.__is_aggregated = False
-            self.__is_3d = False
+            self._is_aggregated = False
+            self._is_3d = False
         elif num_locs == 1:
-            self.__is_aggregated = True
-            self.__is_3d = np.nanmean(self.__data_array["itr"]["loc"][:, :, 2]) != 0.0
+            self._is_aggregated = True
+            self._is_3d = np.nanmean(self._data_array["itr"]["loc"][:, :, 2]) != 0.0
         else:
             print(f"Unexpected number of localizations per trace ({num_locs}).")
             return False
@@ -239,9 +241,9 @@ class MinFluxReader:
         """Load the MAT file."""
 
         try:
-            mat_array = loadmat(str(self.__filename))
+            mat_array = loadmat(str(self._filename))
         except ValueError as e:
-            print(f"Could not open {self.__filename}: {e}")
+            print(f"Could not open {self._filename}: {e}")
             return None
 
         # Number of entries
@@ -251,7 +253,7 @@ class MinFluxReader:
         n_iters = mat_array["itr"]["itr"][0][0].shape[-1]
 
         # Initialize an empty structure NumPy data array
-        data_array = self.create_empty_data_array(n_entries, n_iters)
+        data_array = self._create_empty_data_array(n_entries, n_iters)
 
         # Copy the data over
         data_array["vld"] = mat_array["vld"].ravel().astype(data_array.dtype["vld"])
@@ -340,25 +342,25 @@ class MinFluxReader:
         """
 
         # Do we have a data array to work on?
-        if self.__data_array is None:
+        if self._data_array is None:
             return None
 
-        if self.__valid:
-            indices = self.__valid_entries
+        if self._valid:
+            indices = self._valid_entries
         else:
-            indices = np.logical_not(self.__valid_entries)
+            indices = np.logical_not(self._valid_entries)
 
         # Extract the valid iterations
-        itr = self.__data_array["itr"][indices]
+        itr = self._data_array["itr"][indices]
 
         # Extract the valid identifiers
-        tid = self.__data_array["tid"][indices]
+        tid = self._data_array["tid"][indices]
 
         # Extract the valid time points
-        tim = self.__data_array["tim"][indices]
+        tim = self._data_array["tim"][indices]
 
         # Extract the fluorophore IDs
-        fluo = self.__data_array["fluo"][indices]
+        fluo = self._data_array["fluo"][indices]
         if np.all(fluo) == 0:
             fluo = np.ones(fluo.shape, dtype=fluo.dtype)
 
@@ -366,8 +368,8 @@ class MinFluxReader:
         # acquisition is normal or aggregated
         if self.is_aggregated:
             # Extract the locations
-            loc = itr["loc"].squeeze() * self.__unit_scaling_factor
-            loc[:, 2] = loc[:, 2] * self.__z_scaling_factor
+            loc = itr["loc"].squeeze() * self._unit_scaling_factor
+            loc[:, 2] = loc[:, 2] * self._z_scaling_factor
 
             # Extract EFO
             efo = itr["efo"]
@@ -386,20 +388,20 @@ class MinFluxReader:
 
         else:
             # Extract the locations
-            loc = itr[:, self.__loc_index]["loc"] * self.__unit_scaling_factor
-            loc[:, 2] = loc[:, 2] * self.__z_scaling_factor
+            loc = itr[:, self._loc_index]["loc"] * self._unit_scaling_factor
+            loc[:, 2] = loc[:, 2] * self._z_scaling_factor
 
             # Extract EFO
-            efo = itr[:, self.__efo_index]["efo"]
+            efo = itr[:, self._efo_index]["efo"]
 
             # Extract CFR
-            cfr = itr[:, self.__cfr_index]["cfr"]
+            cfr = itr[:, self._cfr_index]["cfr"]
 
             # Extract ECO
-            eco = itr[:, self.__eco_index]["eco"]
+            eco = itr[:, self._eco_index]["eco"]
 
             # Extract DCR
-            dcr = itr[:, self.__dcr_index]["dcr"]
+            dcr = itr[:, self._dcr_index]["dcr"]
 
             # Calculate dwell
             dwell = np.around(eco / (efo / 1000.0), decimals=0)
@@ -427,55 +429,55 @@ class MinFluxReader:
 
     def _raw_data_to_full_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return raw data arranged into a dataframe."""
-        if self.__data_array is None:
+        if self._data_array is None:
             return None
 
         # Intialize output dataframe
         df = pd.DataFrame(columns=MinFluxReader.raw_properties())
 
         # Allocate space for the columns
-        n_rows = len(self.__data_array) * self.__reps
+        n_rows = len(self._data_array) * self._reps
 
         # Get all unique TIDs and their counts
-        _, tid_counts = np.unique(self.__data_array["tid"], return_counts=True)
+        _, tid_counts = np.unique(self._data_array["tid"], return_counts=True)
 
         # Get all tids (repeated over the repetitions)
-        tid = np.repeat(self.__data_array["tid"], self.__reps)
+        tid = np.repeat(self._data_array["tid"], self._reps)
 
         # Create virtual IDs to mark the measurements of repeated tids
         # @TODO Optimize this!
         aid = np.zeros((n_rows, 1), dtype=np.int32)
         index = 0
         for c in np.nditer(tid_counts):
-            tmp = np.repeat(np.arange(c), self.__reps)
+            tmp = np.repeat(np.arange(c), self._reps)
             n = len(tmp)
             aid[index : index + n, 0] = tmp
             index += n
 
         # Get all valid flags (repeated over the repetitions)
-        vld = np.repeat(self.__data_array["vld"], self.__reps)
+        vld = np.repeat(self._data_array["vld"], self._reps)
 
         # Get all timepoints (repeated over the repetitions)
-        tim = np.repeat(self.__data_array["tim"], self.__reps)
+        tim = np.repeat(self._data_array["tim"], self._reps)
 
         # Get all localizations (reshaped to drop the first dimension)
         loc = (
-            self.__data_array["itr"]["loc"].reshape((n_rows, 3))
-            * self.__unit_scaling_factor
+            self._data_array["itr"]["loc"].reshape((n_rows, 3))
+            * self._unit_scaling_factor
         )
-        loc[:, 2] = loc[:, 2] * self.__z_scaling_factor
+        loc[:, 2] = loc[:, 2] * self._z_scaling_factor
 
         # Get all efos (reshaped to drop the first dimension)
-        efo = self.__data_array["itr"]["efo"].reshape((n_rows, 1))
+        efo = self._data_array["itr"]["efo"].reshape((n_rows, 1))
 
         # Get all cfrs (reshaped to drop the first dimension)
-        cfr = self.__data_array["itr"]["cfr"].reshape((n_rows, 1))
+        cfr = self._data_array["itr"]["cfr"].reshape((n_rows, 1))
 
         # Get all ecos (reshaped to drop the first dimension)
-        eco = self.__data_array["itr"]["eco"].reshape((n_rows, 1))
+        eco = self._data_array["itr"]["eco"].reshape((n_rows, 1))
 
         # Get all dcrs (reshaped to drop the first dimension)
-        dcr = self.__data_array["itr"]["dcr"].reshape((n_rows, 1))
+        dcr = self._data_array["itr"]["dcr"].reshape((n_rows, 1))
 
         # Build the dataframe
         df["tid"] = tid.astype(np.int32)
@@ -494,33 +496,33 @@ class MinFluxReader:
 
     def _set_all_indices(self):
         """Set indices of properties to be read."""
-        if self.__data_array is None:
+        if self._data_array is None:
             return False
 
         if self.is_aggregated:
-            self.__reps = 1
-            self.__efo_index = -1  # Not used
-            self.__cfr_index = -1  # Not used
-            self.__dcr_index = -1  # Not used
-            self.__eco_index = -1  # Not used
-            self.__loc_index = -1  # Not used
+            self._reps = 1
+            self._efo_index = -1  # Not used
+            self._cfr_index = -1  # Not used
+            self._dcr_index = -1  # Not used
+            self._eco_index = -1  # Not used
+            self._loc_index = -1  # Not used
         else:
             if self.is_3d:
-                self.__reps = 10
-                self.__efo_index = 9
-                self.__cfr_index = 6
-                self.__dcr_index = 9
-                self.__eco_index = 9
-                self.__loc_index = 9
+                self._reps = 10
+                self._efo_index = 9
+                self._cfr_index = 6
+                self._dcr_index = 9
+                self._eco_index = 9
+                self._loc_index = 9
             else:
-                self.__reps = 5
-                self.__efo_index = 4
-                self.__cfr_index = 4
-                self.__dcr_index = 4
-                self.__eco_index = 4
-                self.__loc_index = 4
+                self._reps = 5
+                self._efo_index = 4
+                self._cfr_index = 4
+                self._dcr_index = 4
+                self._eco_index = 4
+                self._loc_index = 4
 
-    def create_empty_data_array(self, n_entries: int, n_iters: int):
+    def _create_empty_data_array(self, n_entries: int, n_iters: int):
         """Initializes a structured data array compatible with those exported from Imspector.
 
         Parameters
@@ -590,7 +592,7 @@ class MinFluxReader:
         """Migrate the raw Imspector NumPy array into a pyMINFLUX raw array."""
 
         # Initialize the empty target array
-        new_array = self.create_empty_data_array(
+        new_array = self._create_empty_data_array(
             len(data_array), data_array["itr"].shape[-1]
         )
 
@@ -603,12 +605,12 @@ class MinFluxReader:
 
     def __repr__(self):
         """String representation of the object."""
-        if self.__data_array is None:
+        if self._data_array is None:
             return "No file loaded."
 
         str_valid = (
             "all valid"
-            if len(self.__data_array) == self.num_valid_entries
+            if len(self._data_array) == self.num_valid_entries
             else f"{self.num_valid_entries} valid and {self.num_invalid_entries} non valid"
         )
 
@@ -616,8 +618,8 @@ class MinFluxReader:
         aggr_str = "aggregated" if self.is_aggregated else "normal"
 
         return (
-            f"File: {self.__filename.name}: "
-            f"{str_acq} {aggr_str} acquisition with {len(self.__data_array)} entries ({str_valid})."
+            f"File: {self._filename.name}: "
+            f"{str_acq} {aggr_str} acquisition with {len(self._data_array)} entries ({str_valid})."
         )
 
     def __str__(self):

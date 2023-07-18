@@ -13,4 +13,9 @@
 #   limitations under the License.
 #
 
+__doc__ = "Processor of MINFLUX data."
+__all__ = [
+    "MinFluxProcessor",
+]
+
 from ._processor import MinFluxProcessor

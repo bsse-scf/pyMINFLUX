@@ -22,6 +22,8 @@ from pyminflux.processor import MinFluxProcessor
 
 
 class MinFluxWriter:
+    __docs__ = "Writer of processed MINFLUX data tp `.npy` or `.csv` formats."
+
     @staticmethod
     def write_npy(processor: MinFluxProcessor, file_name: Union[Path, str]) -> bool:
         """Write an Imspector-compatible NumPy structured array."""

@@ -13,7 +13,21 @@
 #   limitations under the License.
 #
 
+
+__doc__ = "Analysis functions."
+__all__ = [
+    "assign_data_to_clusters",
+    "calculate_2d_histogram",
+    "calculate_density_map",
+    "find_cutoff_near_value",
+    "find_first_peak_bounds",
+    "get_robust_threshold",
+    "ideal_hist_bins",
+    "prepare_histogram",
+]
+
 from ._analysis import (
+    assign_data_to_clusters,
     calculate_2d_histogram,
     calculate_density_map,
     find_cutoff_near_value,

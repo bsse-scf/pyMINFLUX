@@ -13,7 +13,7 @@
 #   limitations under the License.
 #
 
-from PySide6.QtCore import QSignalBlocker, Signal, Slot
+from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
 from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import QDialog
 
@@ -51,10 +51,18 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.state = State()
 
         # Keep a reference (initially unset) to the processor
-        self._minfluxprocessor = None
+        self.processor = None
 
         # Disable controls
         self.enable_controls(False)
+
+        # Keep track of the validity of dependent input fields
+        self.valid = {
+            "leEFOLowerBound": True,
+            "leEFOUpperBound": True,
+            "leCFRLowerBound": True,
+            "leCFRUpperBound": True,
+        }
 
         # Fill the fields
         self.ui.leEFOLowerBound.setText("")
@@ -69,16 +77,24 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Set up connections
         self.setup_conn()
 
+    def keyPressEvent(self, event):
+        """Intercept key-press events."""
+        if event.key() == Qt.Key_Escape:
+            # Do not allow the wizard to be closed by pressing the ESC key.
+            event.ignore()
+        else:
+            super().keyPressEvent(event)
+
     def set_processor(self, processor):
         """Store a reference to the processor."""
-        self._minfluxprocessor = processor
+        self.processor = processor
 
         # Prepare and fill the filter ranges
         self.prepare_filter_ranges()
 
     def setup_conn(self):
         self.ui.pbLoadData.clicked.connect(lambda _: self.load_data_triggered.emit())
-        self.ui.pbReset.clicked.connect(lambda _: self.reset_filters_triggered.emit())
+        self.ui.pbReset.clicked.connect(self.reset_filters)
         self.ui.pbSingleColor.clicked.connect(self.reset_fluorophores)
         self.ui.pbColorUnmixer.clicked.connect(
             lambda _: self.open_unmixer_triggered.emit()
@@ -94,16 +110,16 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             self.fluorophore_index_changed
         )
         self.ui.leEFOLowerBound.textChanged.connect(
-            self.efo_change_lower_bound_and_broadcast
+            self.efo_change_bounds_and_broadcast
         )
         self.ui.leEFOUpperBound.textChanged.connect(
-            self.efo_change_upper_bound_and_broadcast
+            self.efo_change_bounds_and_broadcast
         )
         self.ui.leCFRLowerBound.textChanged.connect(
-            self.cfr_change_lower_bound_and_broadcast
+            self.cfr_change_bounds_and_broadcast
         )
         self.ui.leCFRUpperBound.textChanged.connect(
-            self.cfr_change_upper_bound_and_broadcast
+            self.cfr_change_bounds_and_broadcast
         )
         self.ui.pbEFOFilter.clicked.connect(self.run_efo_filter_and_broadcast)
         self.ui.pbCFRFilter.clicked.connect(self.run_cfr_filter_and_broadcast)
@@ -114,13 +130,13 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     def prepare_filter_ranges(self):
         """Extract bounds from the EFO and CFR data and prefill the values."""
 
-        if self._minfluxprocessor is None:
+        if self.processor is None:
             return
 
         # Get the range for the EFO data
         if self.state.efo_thresholds is None:
             _, efo_bin_edges, _, _ = prepare_histogram(
-                self._minfluxprocessor.filtered_dataframe["efo"].values,
+                self.processor.filtered_dataframe["efo"].values,
                 auto_bins=self.state.efo_bin_size_hz == 0,
                 bin_size=self.state.efo_bin_size_hz,
             )
@@ -128,17 +144,39 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Get the range for the CFR data
         _, cfr_bin_edges, _, _ = prepare_histogram(
-            self._minfluxprocessor.filtered_dataframe["cfr"].values,
+            self.processor.filtered_dataframe["cfr"].values,
             auto_bins=True,
             bin_size=0.0,
         )
         self.state.cfr_thresholds = (cfr_bin_edges[0], cfr_bin_edges[-1])
 
-        # Fill the fields
+        # Set the filter ranges from {efo|cfr}_thresholds
+        self.set_filter_ranges_from_state()
+
+    def set_filter_ranges_from_state(self):
+        """Set the filter ranges from current content of self.state.{efo|cfr}_thresholds."""
+
+        # Block signals
+        efo_lower_bound_blocker = QSignalBlocker(self.ui.leEFOLowerBound)
+        efo_upper_bound_blocker = QSignalBlocker(self.ui.leEFOUpperBound)
+        cfr_lower_bound_blocker = QSignalBlocker(self.ui.leCFRLowerBound)
+        cfr_upper_bound_blocker = QSignalBlocker(self.ui.leCFRUpperBound)
+        efo_lower_bound_blocker.reblock()
+        efo_upper_bound_blocker.reblock()
+        cfr_lower_bound_blocker.reblock()
+        cfr_upper_bound_blocker.reblock()
+
+        # Set the EFO and CFR bound values
         self.ui.leEFOLowerBound.setText(f"{self.state.efo_thresholds[0]:.0f}")
         self.ui.leEFOUpperBound.setText(f"{self.state.efo_thresholds[1]:.0f}")
         self.ui.leCFRLowerBound.setText(f"{self.state.cfr_thresholds[0]:.2f}")
         self.ui.leCFRUpperBound.setText(f"{self.state.cfr_thresholds[1]:.2f}")
+
+        # Restore signals
+        efo_lower_bound_blocker.unblock()
+        efo_upper_bound_blocker.unblock()
+        cfr_lower_bound_blocker.unblock()
+        cfr_upper_bound_blocker.unblock()
 
     def enable_controls(self, enabled: bool = False):
         # The Load data button is always visible
@@ -249,9 +287,13 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     def run_efo_filter_and_broadcast(self):
         """Run the EFO filter and broadcast the changes."""
 
+        # Make sure that we have valid bounds
+        if not (self.valid["leEFOLowerBound"] and self.valid["leEFOUpperBound"]):
+            return
+
         # Apply the EFO filter if needed
         if self.state.efo_thresholds is not None:
-            self._minfluxprocessor.filter_by_1d_range(
+            self.processor.filter_by_1d_range(
                 "efo", (self.state.efo_thresholds[0], self.state.efo_thresholds[1])
             )
         # Signal that the external viewers should be updated
@@ -261,82 +303,155 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     def run_cfr_filter_and_broadcast(self):
         """Run the CFR filter and broadcast the changes."""
 
+        # Make sure that we have valid bounds
+        if not (self.valid["leCFRLowerBound"] and self.valid["leCFRUpperBound"]):
+            return
+
         # Apply the CFR filter if needed
         if self.state.cfr_thresholds is not None:
-            self._minfluxprocessor.filter_by_1d_range(
+            self.processor.filter_by_1d_range(
                 "cfr", (self.state.cfr_thresholds[0], self.state.cfr_thresholds[1])
             )
         # Signal that the external viewers should be updated
         self.wizard_filters_run.emit()
 
-    @Slot(None, name="efo_change_lower_bound_and_broadcast")
-    def efo_change_lower_bound_and_broadcast(self, text):
-        """Update the EFO lower bound and broadcast changes."""
+    @Slot(None, name="efo_change_bounds_and_broadcast")
+    def efo_change_bounds_and_broadcast(self, text):
+        """Update the EFO bounds and broadcast changes."""
 
-        # Get the new value
+        # Initialize the status to valid
+        self.valid["leEFOLowerBound"] = True
+        self.valid["leEFOUpperBound"] = True
+
+        # Enable the filter push button
+        self.ui.pbEFOFilter.setEnabled(True)
+
+        # Get current values
+        efo_min = self.ui.leEFOLowerBound.text()
+        efo_max = self.ui.leEFOUpperBound.text()
+
+        # Validate them
+        efo_min = self._validate_int(efo_min, self.ui.leEFOLowerBound)
+        efo_max = self._validate_int(efo_max, self.ui.leEFOUpperBound)
+
+        # Check that min and max values are consistent
+        if efo_min != "" and efo_max != "":
+            if efo_min < efo_max:
+                self.state.efo_thresholds = (efo_min, efo_max)
+                stylesheet = ""
+            else:
+                stylesheet = "background-color: red;"
+                self.valid["leEFOLowerBound"] = False
+                self.valid["leEFOUpperBound"] = False
+                self.state.efo_thresholds = None
+            self.ui.leEFOLowerBound.setStyleSheet(stylesheet)
+            self.ui.leEFOUpperBound.setStyleSheet(stylesheet)
+        elif efo_min == "" and efo_max == "":
+            self.state.efo_thresholds = None
+        else:
+            self.state.efo_thresholds = None
+            if efo_min == "":
+                self.ui.leEFOLowerBound.setStyleSheet("background-color: red;")
+                self.valid["leEFOLowerBound"] = False
+            if efo_max == "":
+                self.ui.leEFOUpperBound.setStyleSheet("background-color: red;")
+                self.valid["leEFOUpperBound"] = False
+
+        if self.valid["leEFOLowerBound"] and self.valid["leEFOUpperBound"]:
+            # Broadcast
+            self.efo_bounds_modified.emit()
+        else:
+            # Disable the filter push button
+            self.ui.pbEFOFilter.setEnabled(False)
+
+    @Slot(None, name="cfr_change_bounds_and_broadcast")
+    def cfr_change_bounds_and_broadcast(self, text):
+        """Update the CFR bounds and broadcast changes."""
+
+        # Initialize the status to valid
+        self.valid["leCFRLowerBound"] = True
+        self.valid["leCFRUpperBound"] = True
+
+        # Enable the filter push button
+        self.ui.pbCFRFilter.setEnabled(True)
+
+        # Get current values
+        cfr_min = self.ui.leCFRLowerBound.text()
+        cfr_max = self.ui.leCFRUpperBound.text()
+
+        # Validate them
+        cfr_min = self._validate_float(cfr_min, self.ui.leCFRLowerBound)
+        cfr_max = self._validate_float(cfr_max, self.ui.leCFRUpperBound)
+
+        # Check that min and max values are consistent
+        if cfr_min != "" and cfr_max != "":
+            if cfr_min < cfr_max:
+                self.state.cfr_thresholds = (cfr_min, cfr_max)
+                stylesheet = ""
+            else:
+                stylesheet = "background-color: red;"
+                self.valid["leCFRLowerBound"] = False
+                self.valid["leCFRUpperBound"] = False
+                self.state.cfr_thresholds = None
+            self.ui.leCFRLowerBound.setStyleSheet(stylesheet)
+            self.ui.leCFRUpperBound.setStyleSheet(stylesheet)
+        elif cfr_min == "" and cfr_max == "":
+            self.state.cfr_thresholds = None
+        else:
+            self.state.cfr_thresholds = None
+            if cfr_min == "":
+                self.ui.leCFRLowerBound.setStyleSheet("background-color: red;")
+                self.valid["leCFRLowerBound"] = False
+            if cfr_max == "":
+                self.ui.leCFRUpperBound.setStyleSheet("background-color: red;")
+                self.valid["leCFRUpperBound"] = False
+
+        if self.valid["leCFRLowerBound"] and self.valid["leCFRUpperBound"]:
+            # Broadcast
+            self.cfr_bounds_modified.emit()
+        else:
+            # Disable the filter push button
+            self.ui.pbCFRFilter.setEnabled(False)
+
+    @Slot(None, name="reset_filters")
+    def reset_filters(self):
+        """Reset fluorophores pull-down menu in the wizard and broadcast changes to other tools."""
+
+        # Reset the fluorophore ID pull-down menu
+        self.reset_fluorophores()
+
+        # Broadcast change
+        self.reset_filters_triggered.emit()
+
+        # Reset the filter ranges from state
+        self.set_filter_ranges_from_state()
+
+    def _validate_int(self, value, line_edit):
+        """Check that the value in the QLineEdit is a valid float, or reset it and visually mark it otherwise."""
+        if value == "":
+            line_edit.setStyleSheet("")
+            return value
+
         try:
-            efo_lower_bound = float(text)
-        except ValueError as _:
-            return
-        if self.state.efo_thresholds[0] == efo_lower_bound:
-            return
+            value = int(value)
+            line_edit.setStyleSheet("")
+        except ValueError:
+            value = ""
+            line_edit.setText("")
+            line_edit.setStyleSheet("background-color: red;")
+        return value
 
-        # Update
-        self.state.efo_thresholds = (efo_lower_bound, self.state.efo_thresholds[1])
+    def _validate_float(self, value, line_edit):
+        """Check that the value in the QLineEdit is a valid float, or reset it and visually mark it otherwise."""
+        if value == "":
+            line_edit.setStyleSheet("")
+            return value
 
-        # Broadcast
-        self.efo_bounds_modified.emit()
-
-    @Slot(None, name="efo_change_upper_bound_and_broadcast")
-    def efo_change_upper_bound_and_broadcast(self, text):
-        """Update the EFO upper bound and broadcast changes."""
-
-        # Get the new value
         try:
-            efo_upper_bound = float(text)
-        except ValueError as _:
-            return
-        if self.state.efo_thresholds[1] == efo_upper_bound:
-            return
-
-        # Update
-        self.state.efo_thresholds = (self.state.efo_thresholds[0], efo_upper_bound)
-
-        # Broadcast
-        self.efo_bounds_modified.emit()
-
-    @Slot(None, name="cfr_change_lower_bound_and_broadcast")
-    def cfr_change_lower_bound_and_broadcast(self, text):
-        """Update the CFR lower bound and broadcast changes."""
-
-        # Get the new value
-        try:
-            cfr_lower_bound = float(text)
-        except ValueError as _:
-            return
-        if self.state.cfr_thresholds[0] == cfr_lower_bound:
-            return
-
-        # Update
-        self.state.cfr_thresholds = (cfr_lower_bound, self.state.cfr_thresholds[1])
-
-        # Broadcast
-        self.cfr_bounds_modified.emit()
-
-    @Slot(None, name="cfr_change_upper_bound_and_broadcast")
-    def cfr_change_upper_bound_and_broadcast(self, text):
-        """Update the CFR upper bound and broadcast changes."""
-
-        # Get the new value
-        try:
-            cfr_upper_bound = float(text)
-        except ValueError as _:
-            return
-        if self.state.cfr_thresholds[1] == cfr_upper_bound:
-            return
-
-        # Update
-        self.state.cfr_thresholds = (self.state.cfr_thresholds[0], cfr_upper_bound)
-
-        # Broadcast
-        self.cfr_bounds_modified.emit()
+            value = float(value)
+            line_edit.setStyleSheet("")
+        except ValueError:
+            value = ""
+            line_edit.setText("")
+            line_edit.setStyleSheet("background-color: red;")
+        return value

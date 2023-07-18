@@ -14,7 +14,6 @@
 #
 
 from enum import IntEnum
-from pprint import pprint
 from typing import Union
 
 from ..base import Singleton
@@ -27,7 +26,11 @@ class ColorCode(IntEnum):
 
 
 class State(metaclass=Singleton):
-    """State machine (singleton class)."""
+    """State machine (singleton class).
+
+    This keeps the State for the user interface! That is, only classes under pyminflux.ui
+    should use State()! The core API must remain independent of State!
+    """
 
     __SLOTS__ = [
         "plot_average_localisations",
@@ -51,6 +54,10 @@ class State(metaclass=Singleton):
         "dcr_manual_threshold",
         "z_scaling_factor",
         "plot_export_dpi",
+        "frc_lateral_resolution",
+        "frc_temporal_resolution",
+        "frc_num_repeats",
+        "frc_endpoint_only",
     ]
 
     def __init__(self):
@@ -107,6 +114,12 @@ class State(metaclass=Singleton):
         # Resolution for exporting plots as images
         self.plot_export_dpi: int = 600
 
+        # FRC analysis
+        self.frc_lateral_resolution: float = 4.0
+        self.frc_temporal_resolution: float = 1800.0
+        self.frc_num_repeats: int = 5
+        self.frc_endpoint_only: bool = False
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -131,6 +144,10 @@ class State(metaclass=Singleton):
             "dcr_manual_threshold": self.dcr_manual_threshold,
             "z_scaling_factor": self.z_scaling_factor,
             "plot_export_dpi": self.plot_export_dpi,
+            "frc_lateral_resolution": self.frc_lateral_resolution,
+            "frc_temporal_resolution": self.frc_temporal_resolution,
+            "frc_num_repeats": self.frc_num_repeats,
+            "frc_endpoint_only": self.frc_endpoint_only,
         }
 
     def reset(self):
@@ -163,6 +180,10 @@ class State(metaclass=Singleton):
         self.dcr_manual_threshold = 0.0
         self.z_scaling_factor = 0.7
         self.plot_export_dpi = 600
+        self.frc_lateral_resolution = 4.0
+        self.frc_temporal_resolution = 1800.0
+        self.frc_num_repeats = 5
+        self.frc_endpoint_only = False
 
     def __str__(self):
         """Human-readable representation."""

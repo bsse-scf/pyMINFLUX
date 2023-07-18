@@ -13,72 +13,77 @@
 #   limitations under the License.
 #
 
-import numpy as np
+import re
 
-from pyminflux.analysis import ideal_hist_bins
+import requests
+
+import pyminflux
 
 
-def calculate_common_bins(first_array_values, second_array_values):
-    """Calculate bins commons to both sets of values.
-
-    Parameters
-    ----------
-
-    first_array_values: np.ndarray
-        First array of values. It may contain NaNs.
-
-    second_array_values: np.ndarray
-        Second array of values. It may contain NaNs.
+def check_for_updates():
+    """Check for pyMINFLUX updates.
 
     Returns
     -------
 
-    bin_edges: np.ndarray
-        Array of bin edges (compatible with NumPy.histogram())
-
-    bin_centers: np.ndarray
-        Array of bin centers
-
-    bin_width: float
-        Bin width.
-    """
-    num_first = np.sum(np.logical_not(np.isnan(first_array_values)))
-    num_second = np.sum(np.logical_not(np.isnan(second_array_values)))
-    if num_first == 0 and num_second == 0:
-        raise ValueError("No usable data.")
-    elif num_first >= num_second:
-        bin_edges, bin_centers, bin_width = ideal_hist_bins(first_array_values)
-    elif num_first < num_second:
-        bin_edges, bin_centers, bin_width = ideal_hist_bins(second_array_values)
-    else:
-        raise ValueError("Unexpected case.")
-
-    return bin_edges, bin_centers, bin_width
-
-
-def print_summary_statistics(values: np.ndarray):
-    """Prints summary statistics.
-
-    Parameters
-    ----------
-
-    values: np.ndarray
-        Array of values. It may contain NaNs.
+    code: int
+        Success code:
+        -1: something went wrong retrieving version information.
+         0: there are no new versions.
+         1: there is a new version.
+    version: str
+        Version on the server (in the format x.y.z). Set if code is 0 or 1.
+    error: str
+        Error message. Only set if code is -1.
     """
 
-    # Count number of valid entries
-    num_valid = np.logical_not(np.isnan(values)).sum()
+    # Initialize outputs
+    code = -1
+    version = ""
+    error = ""
 
-    if num_valid == 0:
-        print("Nothing to summarize.")
-        return
-
-    print(
-        f"Num valid entries = {num_valid}/{len(values)} ({100 * num_valid / len(values):.2f}%)\n"
-        f"Min               = {np.nanmin(values)}\n"
-        f"25% percentile    = {np.nanpercentile(values, 25)}\n"
-        f"Median            = {np.nanmedian(values)}\n"
-        f"Mean              = {np.nanmean(values):.2f}\n"
-        f"75% percentile    = {np.nanpercentile(values, 75)}\n"
-        f"Max               = {np.nanmax(values)}"
+    # Get the redirect from the latest release URL
+    response = requests.get(
+        "https://github.com/bsse-scf/pyMINFLUX/releases/latest", allow_redirects=False
     )
+
+    # This should redirect (status code 301 or 302)
+    if response.status_code in (301, 302):
+        redirect_url = response.headers["Location"]
+    else:
+        error = "Could not check for updates!"
+        return code, version, error
+
+    # Try retrieving the version string
+    match = re.search(r"\b(\d+)\.(\d+)\.(\d+)$", redirect_url)
+    if match:
+        x, y, z = match.groups()
+    else:
+        error = "Could not retrieve version information from server!"
+        return code, version, error
+
+    # Set the version
+    version = f"{x}.{y}.{z}"
+
+    # Transform new version into an integer
+    new_version = 10000 * int(x) + 100 * int(y) + int(z)
+
+    # Current version
+    parts = pyminflux.__version__.split(".")
+
+    # Make sure that we have three parts
+    if len(parts) != 3:
+        error = "Could not retrieve current app information!"
+        return code, version, error
+
+    # Transform current version into an integer
+    current_version = 10000 * int(parts[0]) + 100 * int(parts[1]) + int(parts[2])
+
+    # Now check
+    if new_version > current_version:
+        code = 1
+    else:
+        code = 0
+
+    # Return
+    return code, version, error

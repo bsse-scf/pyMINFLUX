@@ -51,6 +51,7 @@
     </property>
     <addaction name="actionLoad"/>
     <addaction name="actionExport_data"/>
+    <addaction name="actionExport_stats"/>
     <addaction name="separator"/>
     <addaction name="actionOptions"/>
     <addaction name="separator"/>
@@ -78,10 +79,19 @@
     <addaction name="actionIssues"/>
     <addaction name="actionMailing_list"/>
     <addaction name="separator"/>
+    <addaction name="actionWhat_s_new"/>
+    <addaction name="actionCheck_for_updates"/>
     <addaction name="actionAbout"/>
+   </widget>
+   <widget class="QMenu" name="menuAnalysis">
+    <property name="title">
+     <string>Analysis</string>
+    </property>
+    <addaction name="actionEstimate_resolution"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
+   <addaction name="menuAnalysis"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -180,6 +190,26 @@
   <action name="actionMailing_list">
    <property name="text">
     <string>Mailing list</string>
+   </property>
+  </action>
+  <action name="actionExport_stats">
+   <property name="text">
+    <string>Export stats</string>
+   </property>
+  </action>
+  <action name="actionCheck_for_updates">
+   <property name="text">
+    <string>Check for updates</string>
+   </property>
+  </action>
+  <action name="actionEstimate_resolution">
+   <property name="text">
+    <string>FRC Analyzer</string>
+   </property>
+  </action>
+  <action name="actionWhat_s_new">
+   <property name="text">
+    <string>What's new?</string>
    </property>
   </action>
  </widget>

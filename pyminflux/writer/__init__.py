@@ -13,4 +13,9 @@
 #   limitations under the License.
 #
 
+__doc__ = "Writer of processed MINFLUX data."
+__all__ = [
+    "MinFluxWriter",
+]
+
 from ._writer import MinFluxWriter
