@@ -57,12 +57,17 @@ $ conda install pyopengl       # This is specific to macOS
 $ python -m pip install -e .
 ```
 
-### Running pyMinFlux from console
+### Running pyMINFLUX from console
 
 ```sh
 $ cd /path/to/pyminflux
-$ python pyminflux/main.py
+$ python pyminflux/main.py  # As a Python script, or
+$ pyminflux                 # as a standalone tool
 ```
+
+### Using the pyMINFLUX API from Python scripts or Jupyter Notebooks
+
+The graphical user interface is not the only way to use pyMINFLUX. Indeed, the pyMINFLUX core library can be integrated in Python scripts or Jupyter Notebooks. The documentation for the pyMIMFLUX core API can be found on [https://pyminflux.ethz.ch/api/pyminflux/](https://pyminflux.ethz.ch/api/pyminflux/); an example Jupyter Notebook is [bundled with the code](/examples/processing.ipynb).
 
 ## User manual
 

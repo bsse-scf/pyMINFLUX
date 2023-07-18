@@ -9,8 +9,8 @@ All notable changes to this project will be documented in this file.
 * Calculate additional per-trace statistics and allow exporting all stats to csv file.
 * Add Fourier Ring Correlation tool to follow resolution progression.
 * Allow complete access to the API for command-line/notebook processing: https://pyminflux.ethz.ch/api/.
+  * [Example notebook](examples/processing.ipynb)
 * Add menu action to check for application updates.
-* Implement communication with Paraview [in progress].
 
 ### Fixed
 
