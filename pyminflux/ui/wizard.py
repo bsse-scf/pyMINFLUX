@@ -167,10 +167,12 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         cfr_upper_bound_blocker.reblock()
 
         # Set the EFO and CFR bound values
-        self.ui.leEFOLowerBound.setText(f"{self.state.efo_thresholds[0]:.0f}")
-        self.ui.leEFOUpperBound.setText(f"{self.state.efo_thresholds[1]:.0f}")
-        self.ui.leCFRLowerBound.setText(f"{self.state.cfr_thresholds[0]:.2f}")
-        self.ui.leCFRUpperBound.setText(f"{self.state.cfr_thresholds[1]:.2f}")
+        if self.state.efo_thresholds is not None:
+            self.ui.leEFOLowerBound.setText(f"{self.state.efo_thresholds[0]:.0f}")
+            self.ui.leEFOUpperBound.setText(f"{self.state.efo_thresholds[1]:.0f}")
+        if self.state.cfr_thresholds is not None:
+            self.ui.leCFRLowerBound.setText(f"{self.state.cfr_thresholds[0]:.2f}")
+            self.ui.leCFRUpperBound.setText(f"{self.state.cfr_thresholds[1]:.2f}")
 
         # Restore signals
         efo_lower_bound_blocker.unblock()
@@ -274,14 +276,38 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     @Slot(None, name="change_efo_bounds")
     def change_efo_bounds(self):
         """Update the EFO bounds."""
+
+        # Block signals from self.ui.leEFOLowerBound and self.ui.leEFOUpperBound
+        efo_lower_bound_blocker = QSignalBlocker(self.ui.leEFOLowerBound)
+        efo_upper_bound_blocker = QSignalBlocker(self.ui.leEFOUpperBound)
+        efo_lower_bound_blocker.reblock()
+        efo_upper_bound_blocker.reblock()
+
+        # Update the thresholds for the EFO histogram.
         self.ui.leEFOLowerBound.setText(f"{self.state.efo_thresholds[0]:.0f}")
         self.ui.leEFOUpperBound.setText(f"{self.state.efo_thresholds[1]:.0f}")
+
+        # Unblock the signals
+        efo_lower_bound_blocker.unblock()
+        efo_upper_bound_blocker.unblock()
 
     @Slot(None, name="change_cfr_bounds")
     def change_cfr_bounds(self):
         """Update the CFR bounds."""
+
+        # Block signals from self.ui.leEFOLowerBound and self.ui.leEFOUpperBound
+        cfr_lower_bound_blocker = QSignalBlocker(self.ui.leCFRLowerBound)
+        cfr_upper_bound_blocker = QSignalBlocker(self.ui.leCFRUpperBound)
+        cfr_lower_bound_blocker.reblock()
+        cfr_upper_bound_blocker.reblock()
+
+        # Update the thresholds for the CFR histogram.
         self.ui.leCFRLowerBound.setText(f"{self.state.cfr_thresholds[0]:.2f}")
         self.ui.leCFRUpperBound.setText(f"{self.state.cfr_thresholds[1]:.2f}")
+
+        # Unblock the signals
+        cfr_lower_bound_blocker.unblock()
+        cfr_upper_bound_blocker.unblock()
 
     @Slot(None, name="run_efo_filter_and_broadcast")
     def run_efo_filter_and_broadcast(self):
