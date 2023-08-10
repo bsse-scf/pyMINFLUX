@@ -635,17 +635,6 @@ files = [
 ]
 
 [[package]]
-name = "pyopengl"
-version = "3.1.7"
-description = "Standard OpenGL bindings for Python"
-optional = false
-python-versions = "*"
-files = [
-    {file = "PyOpenGL-3.1.7-py3-none-any.whl", hash = "sha256:a6ab19cf290df6101aaf7470843a9c46207789855746399d0af92521a0a92b7a"},
-    {file = "PyOpenGL-3.1.7.tar.gz", hash = "sha256:eef31a3888e6984fd4d8e6c9961b184c9813ca82604d37fe3da80eb000a76c86"},
-]
-
-[[package]]
 name = "pyqtgraph"
 version = "0.13.3"
 description = "Scientific Graphics and GUI Library for Python"
@@ -1044,4 +1033,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "caa3cac3c163ebae8ec9734c790814813c32bcef18272261d4af0a8a4baaca56"
+content-hash = "bddf65819a2e67996932ca4fc1dab431676de533e0ab0515a3bc77ac06e60fbd"

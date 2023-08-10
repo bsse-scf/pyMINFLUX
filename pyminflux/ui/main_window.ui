@@ -64,7 +64,6 @@
     <addaction name="actionData_viewer"/>
     <addaction name="actionConsole"/>
     <addaction name="separator"/>
-    <addaction name="action3D_Plotter"/>
     <addaction name="separator"/>
     <addaction name="separator"/>
     <addaction name="actionState"/>

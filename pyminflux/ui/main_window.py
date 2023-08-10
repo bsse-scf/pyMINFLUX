@@ -46,7 +46,6 @@ from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
-from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.ui_main_window import Ui_MainWindow
@@ -97,7 +96,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.data_viewer = None
         self.analyzer = None
         self.plotter = None
-        self.plotter3D = None
         self.color_unmixer = None
         self.inspector = None
         self.frc_tool = None
@@ -242,7 +240,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionQuit.triggered.connect(self.quit_application)
         self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
-        self.ui.action3D_Plotter.triggered.connect(self.open_3d_plotter)
         self.ui.actionState.triggered.connect(self.print_current_state)
         self.ui.actionEstimate_resolution.triggered.connect(self.open_frc_tool)
         self.ui.actionManual.triggered.connect(
@@ -375,12 +372,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             event.ignore()
         else:
             # @TODO Shutdown threads if any are running
-
-            # Close the external dialogs
-            if self.plotter3D is not None:
-                self.plotter3D.hide_on_close = False
-                self.plotter3D.close()
-                self.plotter3D = None
 
             if self.analyzer is not None:
                 self.analyzer.close()
@@ -849,12 +840,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # No need to update
             pass
 
-        # Update the 3D plotter
-        if self.plotter3D is not None and self.plotter.isVisible():
-            self.plotter3D.plot(
-                self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
-            )
-
         # Update the ui
         self.full_update_ui()
 
@@ -894,10 +879,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 # Get the (potentially filtered) full dataframe
                 dataframe = self.minfluxprocessor.filtered_dataframe
 
-            # If the 3D plotter is open, also plot the coordinates in the 3D plotter.
-            if self.plotter3D is not None and self.plotter3D.isVisible():
-                self.plot_localizations_3d(dataframe[["x", "y", "z"]].values)
-
         else:
             # Get the (potentially filtered) full dataframe
             dataframe = self.minfluxprocessor.filtered_dataframe
@@ -917,48 +898,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             x_param=self.state.x_param,
             y_param=self.state.y_param,
         )
-
-    def plot_localizations_3d(self, coords=None):
-        """If the acquisition is 3D and the Show Plotter menu is checked, show the 3D plotter.
-
-        If coords is None, filters may be applied.
-        """
-
-        # Only plot if the View 3D Plotter is open
-        if self.plotter3D is None:
-            return
-
-        if coords is None:
-            dataframe = self.minfluxprocessor.filtered_dataframe
-            if dataframe is None:
-                return
-            coords = dataframe[["x", "y", "z"]].values
-
-        # Plot new data (old data will be dropped)
-        self.plotter3D.plot(coords)
-
-        # Show the plotter
-        self.plotter3D.show()
-
-    @Slot(None, name="open_3d_plotter")
-    def open_3d_plotter(self):
-        """Open 3D plotter."""
-
-        """Initialize and open the analyzer."""
-        if self.plotter3D is None:
-            self.plotter3D = Plotter3D()
-            self.plotter3D.hide_on_close = True
-        if self.minfluxprocessor is not None and self.minfluxprocessor.num_values > 0:
-            if self.state.plot_average_localisations:
-                self.plot_localizations_3d(
-                    self.minfluxprocessor.weighted_localizations[["x", "y", "z"]].values
-                )
-            else:
-                self.plot_localizations_3d(
-                    self.minfluxprocessor.filtered_dataframe[["x", "y", "z"]].values
-                )
-        self.plotter3D.show()
-        self.plotter3D.activateWindow()
 
     def show_processed_dataframe(self, dataframe=None):
         """

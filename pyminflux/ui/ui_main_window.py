@@ -143,7 +143,6 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionData_viewer)
         self.menuView.addAction(self.actionConsole)
         self.menuView.addSeparator()
-        self.menuView.addAction(self.action3D_Plotter)
         self.menuView.addSeparator()
         self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
