@@ -1,11 +1,14 @@
+import pandas as pd
 from paraview.simple import (
-    CSVReader,
+    FindSource,
     GetActiveViewOrCreate,
     GetColorTransferFunction,
+    Hide,
     Render,
     ResetCamera,
     Show,
     TableToPoints,
+    TrivialProducer,
     UpdatePipeline,
     servermanager,
 )
@@ -16,7 +19,8 @@ from paraview.util.vtkAlgorithm import (
     smproperty,
     smproxy,
 )
-from vtkmodules.vtkCommonDataModel import vtkPolyData
+from vtkmodules.vtkCommonCore import vtkFloatArray, vtkPoints
+from vtkmodules.vtkCommonDataModel import vtkPolyData, vtkTable
 
 
 @smproxy.reader(
@@ -46,11 +50,11 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
 
     def RequestData(self, request, inInfo, outInfo):
 
-        # Read the file
-        csv_reader = CSVReader(FileName=self._filename)
+        # Read the file into a table compatible with TableToPoints
+        table = self.file_to_table(self._filename)
 
-        # Convert the CSV table to points
-        table_to_points = TableToPoints(Input=csv_reader)
+        # Convert the table to points
+        table_to_points = TableToPoints(Input=table)
         table_to_points.XColumn = self._x_column
         table_to_points.YColumn = self._y_column
         table_to_points.ZColumn = self._z_column
@@ -66,6 +70,9 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
 
         # Change the point size
         point_display.PointSize = 5.0
+
+        # Render points as spheres
+        point_display.RenderPointsAsSpheres = 1
 
         # Set the Coloring based on a specific attribute
         # Replace 'attribute_name' with the name of the attribute you want to use
@@ -101,3 +108,29 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         output.ShallowCopy(table_to_points.GetClientSideObject().GetOutputDataObject(0))
 
         return 1
+
+    def file_to_table(self, filename):
+        """Read the file and convert it to a vtkTable."""
+
+        # Read the data frame
+        df = pd.read_csv(filename)
+
+        # Populate the vtkTable
+        table = vtkTable()
+
+        for column_name in df.columns:
+            array = vtkFloatArray()
+            array.SetName(column_name)
+            array.SetNumberOfComponents(1)
+            array.SetNumberOfTuples(len(df))
+
+            for i, value in enumerate(df[column_name]):
+                array.SetValue(i, float(value))
+
+            table.AddColumn(array)
+
+        # Now wrap it to be compatible with TableToPoints()
+        producer = TrivialProducer()
+        producer.GetClientSideObject().SetOutput(table)
+
+        return producer
