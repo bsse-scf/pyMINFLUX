@@ -10,6 +10,7 @@ from paraview.simple import (
     GetOpacityTransferFunction,
     Hide,
     RemoveLayout,
+    RenameSource,
     Render,
     ResetCamera,
     SetActiveView,
@@ -64,11 +65,17 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         # Read the file into a table compatible with TableToPoints
         table = self.file_to_table(self._filename)
 
+        # Rename the table object
+        RenameSource("Dataframe", proxy=table)
+
         # Convert the table to points
         table_to_points = TableToPoints(Input=table)
         table_to_points.XColumn = self._x_column
         table_to_points.YColumn = self._y_column
         table_to_points.ZColumn = self._z_column
+
+        # Rename the points object
+        RenameSource("Localizations", proxy=table_to_points)
 
         # Show the points in the render view
         point_display = Show(table_to_points, render_view)
