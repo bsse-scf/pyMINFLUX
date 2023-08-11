@@ -92,6 +92,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Read the application settings and update the state
         self.read_settings()
 
+        # Set the menu state based on the settings
+        self.ui.actionConsole.setChecked(self.state.open_console_at_start)
+
         # Dialogs and widgets
         self.data_viewer = None
         self.analyzer = None
@@ -228,6 +231,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "options/plot_export_dpi", self.state.plot_export_dpi
             )
         )
+
+        # Read and set 'open_console_at_start' option
+        value = settings.instance.value(
+            "options/open_console_at_start",
+            self.state.open_console_at_start,
+        )
+        open_console_at_start = (
+            value.lower() == "true" if isinstance(value, str) else bool(value)
+        )
+        self.state.open_console_at_start = open_console_at_start
 
     def setup_conn(self):
         """Set up signals and slots."""

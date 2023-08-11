@@ -58,6 +58,7 @@ class State(metaclass=Singleton):
         "frc_temporal_resolution",
         "frc_num_repeats",
         "frc_endpoint_only",
+        "open_console_at_start",
     ]
 
     def __init__(self):
@@ -120,6 +121,9 @@ class State(metaclass=Singleton):
         self.frc_num_repeats: int = 5
         self.frc_endpoint_only: bool = False
 
+        # Whether to open the console at application start
+        self.open_console_at_start: bool = False
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -148,6 +152,7 @@ class State(metaclass=Singleton):
             "frc_temporal_resolution": self.frc_temporal_resolution,
             "frc_num_repeats": self.frc_num_repeats,
             "frc_endpoint_only": self.frc_endpoint_only,
+            "open_console_at_start": self.open_console_at_start,
         }
 
     def reset(self):
@@ -184,6 +189,7 @@ class State(metaclass=Singleton):
         self.frc_temporal_resolution = 1800.0
         self.frc_num_repeats = 5
         self.frc_endpoint_only = False
+        self.open_console_at_start = False
 
     def __str__(self):
         """Human-readable representation."""

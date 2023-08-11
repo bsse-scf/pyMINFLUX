@@ -124,6 +124,8 @@ class Options(QDialog, Ui_Options):
         self.ui.lePlotExportDPI.setText(str(self.state.plot_export_dpi))
         self.ui.lePlotExportDPI.setValidator(QIntValidator(bottom=72))
 
+        self.ui.cbOpenConsoleAtStart.setChecked(self.state.open_console_at_start)
+
         # Set signal-slot connections
         self.setup_conn()
 
@@ -132,7 +134,7 @@ class Options(QDialog, Ui_Options):
         self.ui.leMinTIDNum.textChanged.connect(self.persist_min_num_loc_per_trace)
         self.ui.pbSetDefault.clicked.connect(self.set_as_new_default)
         self.ui.cbWeightAvgLocByECO.stateChanged.connect(
-            self.weigh_avg_localization_by_eco
+            self.persist_weigh_avg_localization_by_eco
         )
         self.ui.leEFOBinSize.textChanged.connect(self.persist_efo_bin_size_hz)
         self.ui.leEFOSingleEmitterFrequency.textChanged.connect(
@@ -149,6 +151,10 @@ class Options(QDialog, Ui_Options):
         self.ui.leZScalingFactor.textChanged.connect(self.persist_z_scaling_factor)
 
         self.ui.lePlotExportDPI.textChanged.connect(self.persist_plot_export_dpi)
+
+        self.ui.cbOpenConsoleAtStart.stateChanged.connect(
+            self.persist_open_console_at_start
+        )
 
         self.ui.pbMinTIDNumHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
@@ -198,6 +204,11 @@ class Options(QDialog, Ui_Options):
         self.ui.pbPlotExportDPIHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
                 "Resolution (in dots per inch) for the all plots when exported as .png images."
+            )
+        )
+        self.ui.pbOpenConsoleAtStartHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Whether to open the console at application start."
             )
         )
 
@@ -384,12 +395,16 @@ class Options(QDialog, Ui_Options):
                 self.ui.leLocPrecRangeMax.setStyleSheet("background-color: red;")
                 self.valid["leLocPrecRangeMax"] = False
 
-    @Slot(str, name="weigh_avg_localization_by_eco")
-    def weigh_avg_localization_by_eco(self, state):
+    @Slot(str, name="persist_weigh_avg_localization_by_eco")
+    def persist_weigh_avg_localization_by_eco(self, state):
         self.state.weigh_avg_localization_by_eco = state != 0
 
         # Signal the change
         self.weigh_avg_localization_by_eco_option_changed.emit()
+
+    @Slot(str, name="persist_open_console_at_start")
+    def persist_open_console_at_start(self, state):
+        self.state.open_console_at_start = state != 0
 
     @Slot(str, name="set_as_new_default")
     def set_as_new_default(self, text):
@@ -439,6 +454,10 @@ class Options(QDialog, Ui_Options):
             settings.instance.setValue(
                 "options/loc_precision_range", list(self.state.loc_precision_range)
             )
+        settings.instance.setValue(
+            "options/open_console_at_start",
+            self.state.open_console_at_start,
+        )
         settings.instance.setValue(
             "options/plot_export_dpi", int(self.state.plot_export_dpi)
         )
