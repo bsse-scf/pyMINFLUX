@@ -7,6 +7,7 @@ from paraview.simple import (
     GetActiveViewOrCreate,
     GetColorTransferFunction,
     GetLayouts,
+    GetMaterialLibrary,
     GetOpacityTransferFunction,
     Hide,
     RemoveLayout,
@@ -109,6 +110,9 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         # Read the data frame
         df = pd.read_csv(filename)
 
+        # Create a new column loc_z (that can be used for coloring)
+        df["loc z"] = df["z"]
+
         # Populate the vtkTable
         table = vtkTable()
 
@@ -139,6 +143,9 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         # Create a render view
         render_view = CreateView("RenderView", "Localizations")
         render_view.AxesGrid = "GridAxes3DActor"
+        render_view.Background = [0.0, 0.0, 0.0]
+        render_view.UseColorPaletteForBackground = 0
+        render_view.OSPRayMaterialLibrary = GetMaterialLibrary()
 
         # Create a new spreadsheet view
         spreadsheet_view = CreateView("SpreadSheetView", "Data Viewer")
