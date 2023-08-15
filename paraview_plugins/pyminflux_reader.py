@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 from paraview.simple import (
     CreateLayout,
@@ -97,6 +99,10 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         # Output the poly data to the pipeline
         output = vtkPolyData.GetData(outInfo)
         output.ShallowCopy(table_to_points.GetClientSideObject().GetOutputDataObject(0))
+
+        # Hide the rendering of the reader itself
+        source = FindSource(Path(self._filename).name)
+        Hide(source)
 
         return 1
 
