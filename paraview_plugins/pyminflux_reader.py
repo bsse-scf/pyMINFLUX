@@ -61,7 +61,7 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
     def RequestData(self, request, inInfo, outInfo):
 
         # Create a new "pyMINFLUX" layout
-        layout, render_view, spreadsheet_view = self.create_new_layout()
+        layout, render_view = self.create_new_layout()
 
         # Read the file into a table compatible with TableToPoints
         table = self.file_to_table(self._filename)
@@ -87,10 +87,6 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
 
         # Update the pipeline
         UpdatePipeline(proxy=point_display)
-
-        # Show the table object in the spreadsheet view
-        Show(table, spreadsheet_view)
-        Render(spreadsheet_view)
 
         # Focus on the render view
         SetActiveView(render_view)
@@ -138,7 +134,6 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
 
         # Create a new layout
         layout = CreateLayout("pyMINFLUX")
-        layout.SplitHorizontal(0, 0.70)
 
         # Create a render view
         render_view = CreateView("RenderView", "Localizations")
@@ -147,16 +142,11 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         render_view.UseColorPaletteForBackground = 0
         render_view.OSPRayMaterialLibrary = GetMaterialLibrary()
 
-        # Create a new spreadsheet view
-        spreadsheet_view = CreateView("SpreadSheetView", "Data Viewer")
-        spreadsheet_view.FieldAssociation = "Row Data"
-
-        # Assign the views to the new layout
-        layout.AssignView(1, render_view)
-        layout.AssignView(2, spreadsheet_view)
+        # Assign the view to the new layout
+        layout.AssignView(0, render_view)
 
         # Return the created objects
-        return layout, render_view, spreadsheet_view
+        return layout, render_view
 
     def set_render_view_display_properties(self, display, table_to_points):
         """Sets the display properties of passed view."""
