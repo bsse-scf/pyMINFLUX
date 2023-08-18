@@ -86,7 +86,11 @@
     <property name="title">
      <string>Analysis</string>
     </property>
-    <addaction name="actionEstimate_resolution"/>
+    <addaction name="actionUnmixer"/>
+    <addaction name="actionTime_Inspector"/>
+    <addaction name="actionAnalyzer"/>
+    <addaction name="separator"/>
+    <addaction name="actionFRC_analyzer"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -201,7 +205,7 @@
     <string>Check for updates</string>
    </property>
   </action>
-  <action name="actionEstimate_resolution">
+  <action name="actionFRC_analyzer">
    <property name="text">
     <string>FRC Analyzer</string>
    </property>
@@ -209,6 +213,21 @@
   <action name="actionWhat_s_new">
    <property name="text">
     <string>What's new?</string>
+   </property>
+  </action>
+  <action name="actionUnmixer">
+   <property name="text">
+    <string>Unmixer</string>
+   </property>
+  </action>
+  <action name="actionTime_Inspector">
+   <property name="text">
+    <string>Time Inspector</string>
+   </property>
+  </action>
+  <action name="actionAnalyzer">
+   <property name="text">
+    <string>Analyzer</string>
    </property>
   </action>
  </widget>

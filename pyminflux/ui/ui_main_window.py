@@ -97,10 +97,16 @@ class Ui_MainWindow(object):
         self.actionExport_stats.setObjectName("actionExport_stats")
         self.actionCheck_for_updates = QAction(MainWindow)
         self.actionCheck_for_updates.setObjectName("actionCheck_for_updates")
-        self.actionEstimate_resolution = QAction(MainWindow)
-        self.actionEstimate_resolution.setObjectName("actionEstimate_resolution")
+        self.actionFRC_analyzer = QAction(MainWindow)
+        self.actionFRC_analyzer.setObjectName("actionFRC_analyzer")
         self.actionWhat_s_new = QAction(MainWindow)
         self.actionWhat_s_new.setObjectName("actionWhat_s_new")
+        self.actionUnmixer = QAction(MainWindow)
+        self.actionUnmixer.setObjectName("actionUnmixer")
+        self.actionTime_Inspector = QAction(MainWindow)
+        self.actionTime_Inspector.setObjectName("actionTime_Inspector")
+        self.actionAnalyzer = QAction(MainWindow)
+        self.actionAnalyzer.setObjectName("actionAnalyzer")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -155,7 +161,11 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionWhat_s_new)
         self.menuHelp.addAction(self.actionCheck_for_updates)
         self.menuHelp.addAction(self.actionAbout)
-        self.menuAnalysis.addAction(self.actionEstimate_resolution)
+        self.menuAnalysis.addAction(self.actionUnmixer)
+        self.menuAnalysis.addAction(self.actionTime_Inspector)
+        self.menuAnalysis.addAction(self.actionAnalyzer)
+        self.menuAnalysis.addSeparator()
+        self.menuAnalysis.addAction(self.actionFRC_analyzer)
 
         self.retranslateUi(MainWindow)
 
@@ -233,11 +243,20 @@ class Ui_MainWindow(object):
         self.actionCheck_for_updates.setText(
             QCoreApplication.translate("MainWindow", "Check for updates", None)
         )
-        self.actionEstimate_resolution.setText(
+        self.actionFRC_analyzer.setText(
             QCoreApplication.translate("MainWindow", "FRC Analyzer", None)
         )
         self.actionWhat_s_new.setText(
             QCoreApplication.translate("MainWindow", "What's new?", None)
+        )
+        self.actionUnmixer.setText(
+            QCoreApplication.translate("MainWindow", "Unmixer", None)
+        )
+        self.actionTime_Inspector.setText(
+            QCoreApplication.translate("MainWindow", "Time Inspector", None)
+        )
+        self.actionAnalyzer.setText(
+            QCoreApplication.translate("MainWindow", "Analyzer", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))

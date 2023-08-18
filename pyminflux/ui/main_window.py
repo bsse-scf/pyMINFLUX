@@ -254,7 +254,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.actionState.triggered.connect(self.print_current_state)
-        self.ui.actionEstimate_resolution.triggered.connect(self.open_frc_tool)
+        self.ui.actionUnmixer.triggered.connect(self.open_color_unmixer)
+        self.ui.actionTime_Inspector.triggered.connect(self.open_inspector)
+        self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
+        self.ui.actionFRC_analyzer.triggered.connect(self.open_frc_tool)
         self.ui.actionManual.triggered.connect(
             lambda _: QDesktopServices.openUrl(
                 "https://github.com/bsse-scf/pyMINFLUX/wiki/pyMINFLUX-user-manual"
@@ -342,7 +345,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionExport_data.setEnabled(enabled)
         self.ui.actionExport_data.setEnabled(enabled)
         self.ui.actionExport_stats.setEnabled(enabled)
-        self.ui.actionEstimate_resolution.setEnabled(enabled)
+        self.ui.actionUnmixer.setEnabled(enabled)
+        self.ui.actionTime_Inspector.setEnabled(enabled)
+        self.ui.actionAnalyzer.setEnabled(enabled)
+        self.ui.actionFRC_analyzer.setEnabled(enabled)
 
     def full_update_ui(self):
         """
