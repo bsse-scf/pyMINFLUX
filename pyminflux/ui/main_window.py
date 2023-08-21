@@ -48,6 +48,7 @@ from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
 from pyminflux.ui.time_inspector import TimeInspector
+from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.wizard import WizardDialog
 from pyminflux.utils import check_for_updates
@@ -100,7 +101,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.analyzer = None
         self.plotter = None
         self.color_unmixer = None
-        self.inspector = None
+        self.time_inspector = None
+        self.trace_stats_viewer = None
         self.frc_tool = None
         self.options = Options()
 
@@ -255,8 +257,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.actionState.triggered.connect(self.print_current_state)
         self.ui.actionUnmixer.triggered.connect(self.open_color_unmixer)
-        self.ui.actionTime_Inspector.triggered.connect(self.open_inspector)
+        self.ui.actionTime_Inspector.triggered.connect(self.open_time_inspector)
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
+        self.ui.actionTrace_Stats_Viewer.triggered.connect(self.open_trace_stats_viewer)
         self.ui.actionFRC_analyzer.triggered.connect(self.open_frc_tool)
         self.ui.actionManual.triggered.connect(
             lambda _: QDesktopServices.openUrl(
@@ -322,7 +325,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.wizard.load_data_triggered.connect(self.select_and_open_data_file)
         self.wizard.reset_filters_triggered.connect(self.reset_filters_and_broadcast)
         self.wizard.open_unmixer_triggered.connect(self.open_color_unmixer)
-        self.wizard.open_time_inspector_triggered.connect(self.open_inspector)
+        self.wizard.open_time_inspector_triggered.connect(self.open_time_inspector)
         self.wizard.open_analyzer_triggered.connect(self.open_analyzer)
         self.wizard.fluorophore_id_changed.connect(
             self.update_fluorophore_id_in_processor_and_broadcast
@@ -348,6 +351,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionUnmixer.setEnabled(enabled)
         self.ui.actionTime_Inspector.setEnabled(enabled)
         self.ui.actionAnalyzer.setEnabled(enabled)
+        self.ui.actionTrace_Stats_Viewer.setEnabled(enabled)
         self.ui.actionFRC_analyzer.setEnabled(enabled)
 
     def full_update_ui(self):
@@ -400,13 +404,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.color_unmixer.close()
                 self.color_unmixer = None
 
-            if self.inspector is not None:
-                self.inspector.close()
-                self.inspector = None
+            if self.time_inspector is not None:
+                self.time_inspector.close()
+                self.time_inspector = None
 
             if self.options is not None:
                 self.options.close()
                 self.options = None
+
+            if self.trace_stats_viewer is not None:
+                self.trace_stats_viewer.close()
+                self.trace_stats_viewer = None
 
             if self.frc_tool is not None:
                 self.frc_tool.close()
@@ -512,13 +520,18 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.color_unmixer = None
 
             # Close the Temporal Inspector
-            if self.inspector is not None:
-                self.inspector.close()
-                self.inspector = None
+            if self.time_inspector is not None:
+                self.time_inspector.close()
+                self.time_inspector = None
+
+            # Close the Trace Stats Viewer
+            if self.trace_stats_viewer is not None:
+                self.trace_stats_viewer.close()
+                self.trace_stats_viewer = None
 
             # Close the FRC Tool
             if self.frc_tool is not None:
-                self.frc_tool.close
+                self.frc_tool.close()
                 self.frc_tool = None
 
             # Update the ui
@@ -610,12 +623,18 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.minfluxprocessor is None
             or len(self.minfluxprocessor.filtered_dataframe.index) == 0
         ):
+            # Inform and return
+            QMessageBox.information(
+                self,
+                "Info",
+                f"Sorry, nothing to export.",
+            )
             return
 
         # Ask the user to pick a name
         filename, ext = QFileDialog.getSaveFileName(
             self,
-            "Export filtered statistics",
+            "Export trace statistics",
             str(self.last_selected_path),
             "Comma-separated value files (*.csv)",
         )
@@ -644,11 +663,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.critical(
                 self,
                 "Error",
-                f"Could not export filtered stats to {Path(filename).name}.\n\n{str(e)}.",
+                f"Could not export trace statistics to {Path(filename).name}.\n\n{str(e)}.",
             )
             return
 
-        print(f"Successfully exported stats for {len(stats.index)} localizations.")
+        print(f"Successfully exported statistics for {len(stats.index)} traces.")
 
     @Slot(None, name="print_current_state")
     def print_current_state(self):
@@ -730,26 +749,36 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             self.analyzer.efo_bounds_changed.connect(self.wizard.change_efo_bounds)
             self.analyzer.cfr_bounds_changed.connect(self.wizard.change_cfr_bounds)
-            if self.inspector is not None:
-                self.analyzer.data_filters_changed.connect(self.inspector.update)
+            if self.time_inspector is not None:
+                self.analyzer.data_filters_changed.connect(self.time_inspector.update)
+            if self.trace_stats_viewer is not None:
+                self.analyzer.data_filters_changed.connect(
+                    self.trace_stats_viewer.update
+                )
             self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
 
-    @Slot(None, name="open_inspector")
-    def open_inspector(self):
-        """Initialize and open the temporal inspector."""
-        if self.inspector is None:
-            self.inspector = TimeInspector(self.minfluxprocessor, parent=self)
-            self.inspector.dataset_time_filtered.connect(self.full_update_ui)
-            self.plotter_toolbar.fluorophore_id_changed.connect(self.inspector.update)
-            self.wizard.wizard_filters_run.connect(self.inspector.update)
-            self.request_sync_external_tools.connect(self.inspector.update)
-            if self.analyzer is not None:
-                self.analyzer.data_filters_changed.connect(self.inspector.update)
-                self.inspector.dataset_time_filtered.connect(self.analyzer.plot)
-        self.inspector.show()
-        self.inspector.activateWindow()
+    @Slot(None, name="open_time_inspector")
+    def open_time_inspector(self):
+        """Initialize and open the Time Inspector."""
+        if self.time_inspector is None:
+            self.time_inspector = TimeInspector(self.minfluxprocessor, parent=self)
+            self.time_inspector.dataset_time_filtered.connect(self.full_update_ui)
+            self.plotter_toolbar.fluorophore_id_changed.connect(
+                self.time_inspector.update
+            )
+            self.wizard.wizard_filters_run.connect(self.time_inspector.update)
+            self.request_sync_external_tools.connect(self.time_inspector.update)
+        if self.analyzer is not None:
+            self.analyzer.data_filters_changed.connect(self.time_inspector.update)
+            self.time_inspector.dataset_time_filtered.connect(self.analyzer.plot)
+        if self.trace_stats_viewer is not None:
+            self.time_inspector.dataset_time_filtered.connect(
+                self.trace_stats_viewer.update
+            )
+        self.time_inspector.show()
+        self.time_inspector.activateWindow()
 
     @Slot(None, name="open_color_unmixer")
     def open_color_unmixer(self):
@@ -763,6 +792,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.plot_selected_parameters
             )
             self.wizard.wizard_filters_run.connect(self.plot_selected_parameters)
+        if self.trace_stats_viewer is not None:
+            self.color_unmixer.fluorophore_ids_assigned.connect(
+                self.trace_stats_viewer.update
+            )
         self.color_unmixer.show()
         self.color_unmixer.activateWindow()
 
@@ -783,6 +816,32 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.minfluxprocessor.min_num_loc_per_trace = (
                 self.state.min_num_loc_per_trace
             )
+
+    @Slot(None, name="open_trace_stats_viewer")
+    def open_trace_stats_viewer(self):
+        """Open the trace stats viewer."""
+        if self.trace_stats_viewer is None:
+            self.trace_stats_viewer = TraceStatsViewer(
+                self.minfluxprocessor, parent=self
+            )
+            self.request_sync_external_tools.connect(self.trace_stats_viewer.update)
+            self.wizard.request_fluorophore_ids_reset.connect(
+                self.trace_stats_viewer.update
+            )
+            self.wizard.wizard_filters_run.connect(self.trace_stats_viewer.update)
+            self.trace_stats_viewer.export_trace_stats_requested.connect(
+                self.export_filtered_stats
+            )
+        if self.time_inspector is not None:
+            self.time_inspector.dataset_time_filtered.connect(self.analyzer.plot)
+        if self.color_unmixer is not None:
+            self.color_unmixer.fluorophore_ids_assigned.connect(
+                self.trace_stats_viewer.update
+            )
+        if self.analyzer is not None:
+            self.analyzer.data_filters_changed.connect(self.trace_stats_viewer.update)
+        self.trace_stats_viewer.show()
+        self.trace_stats_viewer.activateWindow()
 
     @Slot(None, name="open_frc_tool")
     def open_frc_tool(self):
@@ -855,7 +914,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             pass
 
         # Update the Temporal Inspector?
-        if self.inspector is not None:
+        if self.time_inspector is not None:
             # No need to update
             pass
 

@@ -290,6 +290,25 @@ class MinFluxProcessor:
         """Return the processed dataframe columns."""
         return MinFluxReader.processed_properties()
 
+    @classmethod
+    def trace_stats_properties(cls):
+        """Return the columns of the filtered_dataframe_stats."""
+        return [
+            "tid",
+            "n",
+            "mx",
+            "my",
+            "mz",
+            "sx",
+            "sy",
+            "sxy",
+            "exy",
+            "rms_xy",
+            "sz",
+            "ez",
+            "fluo",
+        ]
+
     def reset(self):
         """Drops all dynamic filters and resets the data to the processed data frame with global filters."""
 
@@ -780,23 +799,7 @@ class MinFluxProcessor:
         fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
 
         # Prepare a dataframe with the statistics
-        df_tid = pd.DataFrame(
-            columns=[
-                "tid",
-                "n",
-                "mx",
-                "my",
-                "mz",
-                "sx",
-                "sy",
-                "sxy",
-                "exy",
-                "rms_xy",
-                "sz",
-                "ez",
-                "fluo",
-            ]
-        )
+        df_tid = pd.DataFrame(columns=MinFluxProcessor.trace_stats_properties())
 
         # Store trace stats
         df_tid["tid"] = tid  # Trace ID

@@ -107,6 +107,8 @@ class Ui_MainWindow(object):
         self.actionTime_Inspector.setObjectName("actionTime_Inspector")
         self.actionAnalyzer = QAction(MainWindow)
         self.actionAnalyzer.setObjectName("actionAnalyzer")
+        self.actionTrace_Stats_Viewer = QAction(MainWindow)
+        self.actionTrace_Stats_Viewer.setObjectName("actionTrace_Stats_Viewer")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -165,6 +167,7 @@ class Ui_MainWindow(object):
         self.menuAnalysis.addAction(self.actionTime_Inspector)
         self.menuAnalysis.addAction(self.actionAnalyzer)
         self.menuAnalysis.addSeparator()
+        self.menuAnalysis.addAction(self.actionTrace_Stats_Viewer)
         self.menuAnalysis.addAction(self.actionFRC_analyzer)
 
         self.retranslateUi(MainWindow)
@@ -238,7 +241,7 @@ class Ui_MainWindow(object):
             QCoreApplication.translate("MainWindow", "Mailing list", None)
         )
         self.actionExport_stats.setText(
-            QCoreApplication.translate("MainWindow", "Export stats", None)
+            QCoreApplication.translate("MainWindow", "Export trace stats", None)
         )
         self.actionCheck_for_updates.setText(
             QCoreApplication.translate("MainWindow", "Check for updates", None)
@@ -257,6 +260,9 @@ class Ui_MainWindow(object):
         )
         self.actionAnalyzer.setText(
             QCoreApplication.translate("MainWindow", "Analyzer", None)
+        )
+        self.actionTrace_Stats_Viewer.setText(
+            QCoreApplication.translate("MainWindow", "Trace Stats Viewer", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))

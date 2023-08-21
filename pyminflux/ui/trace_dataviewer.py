@@ -22,9 +22,9 @@ from ..state import State
 from .pandas_datamodel import PandasDataModel
 
 
-class DataViewer(QTableView):
+class TraceDataViewer(QTableView):
     """
-    A QTableWidget to display track data.
+    A QTableWidget to display trace statistics data.
     """
 
     def __init__(self, *args):
@@ -39,10 +39,10 @@ class DataViewer(QTableView):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-        self.setWindowTitle("Parameters")
+        self.setWindowTitle("Trace Statistics")
 
         # Initialize the model with an empty dataframe with the correct columns
-        self.set_data(pd.DataFrame(columns=MinFluxProcessor.processed_properties()))
+        self.set_data(pd.DataFrame(columns=MinFluxProcessor.trace_stats_properties()))
 
         # Keep a reference to the singleton State class
         self.state = State()
@@ -64,9 +64,9 @@ class DataViewer(QTableView):
 
     def clear(self):
         """Clear the model."""
-        if self.model() is not None:
+        if self.model() is None:
             self.model().clear()
 
         # Pass an empty dataframe with correct columns
-        df = pd.DataFrame(columns=MinFluxProcessor.processed_properties())
+        df = pd.DataFrame(columns=MinFluxProcessor.trace_stats_properties())
         self.set_data(df)
