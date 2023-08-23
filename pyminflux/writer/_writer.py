@@ -22,11 +22,11 @@ from pyminflux.processor import MinFluxProcessor
 
 
 class MinFluxWriter:
-    __docs__ = "Writer of processed MINFLUX data tp `.npy` or `.csv` formats."
+    __docs__ = "Writer of (filtered) MINFLUX data to either `.npy` or `.csv` formats."
 
     @staticmethod
     def write_npy(processor: MinFluxProcessor, file_name: Union[Path, str]) -> bool:
-        """Write an Imspector-compatible NumPy structured array."""
+        """Write (filtered) data as a NumPy structured array with the same structure as in the Imspector `.npy` file."""
 
         # Get the raw data
         filtered_array = processor.filtered_numpy_array
@@ -44,7 +44,7 @@ class MinFluxWriter:
 
     @staticmethod
     def write_csv(processor: MinFluxProcessor, file_name: Union[Path, str]) -> bool:
-        """Write a comma-separated-value file."""
+        """Write (filtered) data as a comma-separated-value `.csv` file."""
 
         # Save the filtered dataframe to disk
         try:

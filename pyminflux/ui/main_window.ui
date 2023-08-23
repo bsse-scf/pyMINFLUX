@@ -91,6 +91,7 @@
     <addaction name="actionAnalyzer"/>
     <addaction name="separator"/>
     <addaction name="actionTrace_Stats_Viewer"/>
+    <addaction name="actionTrace_Length_Viewer"/>
     <addaction name="actionFRC_analyzer"/>
    </widget>
    <addaction name="menuFile"/>
@@ -234,6 +235,11 @@
   <action name="actionTrace_Stats_Viewer">
    <property name="text">
     <string>Trace Stats Viewer</string>
+   </property>
+  </action>
+  <action name="actionTrace_Length_Viewer">
+   <property name="text">
+    <string>Trace Length Viewer</string>
    </property>
   </action>
  </widget>

@@ -109,6 +109,8 @@ class Ui_MainWindow(object):
         self.actionAnalyzer.setObjectName("actionAnalyzer")
         self.actionTrace_Stats_Viewer = QAction(MainWindow)
         self.actionTrace_Stats_Viewer.setObjectName("actionTrace_Stats_Viewer")
+        self.actionTrace_Length_Viewer = QAction(MainWindow)
+        self.actionTrace_Length_Viewer.setObjectName("actionTrace_Length_Viewer")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -168,6 +170,7 @@ class Ui_MainWindow(object):
         self.menuAnalysis.addAction(self.actionAnalyzer)
         self.menuAnalysis.addSeparator()
         self.menuAnalysis.addAction(self.actionTrace_Stats_Viewer)
+        self.menuAnalysis.addAction(self.actionTrace_Length_Viewer)
         self.menuAnalysis.addAction(self.actionFRC_analyzer)
 
         self.retranslateUi(MainWindow)
@@ -263,6 +266,9 @@ class Ui_MainWindow(object):
         )
         self.actionTrace_Stats_Viewer.setText(
             QCoreApplication.translate("MainWindow", "Trace Stats Viewer", None)
+        )
+        self.actionTrace_Length_Viewer.setText(
+            QCoreApplication.translate("MainWindow", "Trace Length Viewer", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))

@@ -21,6 +21,7 @@ from PySide6.QtGui import QAction, QDoubleValidator, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 
 from pyminflux.analysis import assign_data_to_clusters, prepare_histogram
+from pyminflux.processor import MinFluxProcessor
 from pyminflux.state import State
 from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.ui_color_unmixer import Ui_ColorUnmixer
@@ -34,7 +35,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     # Signal that the fluorophore IDs have been assigned
     fluorophore_ids_assigned = Signal(int, name="fluorophore_ids_assigned")
 
-    def __init__(self, processor, parent):
+    def __init__(self, processor: MinFluxProcessor, parent):
         # Call the base class
         super().__init__(parent=parent)
 
