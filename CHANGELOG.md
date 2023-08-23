@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - TBD
+
+* FRC Analysis now runs in parallel over all CPU cores
+* Add new Trace Statistics Viewer
+* Add all tools to the Analysis menu
+* Add companion ParaView reader plug-in
+* Remove 3D Plotter
+
 ## [0.2.0] - 2023-07-19
 
 ### New features

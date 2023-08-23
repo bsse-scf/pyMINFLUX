@@ -13,7 +13,7 @@
 #  limitations under the License.
 #
 
-VERSION=0.2.0
+VERSION=0.3.0
 
 if [[ -z "$ANACONDA_HOME" ]]; then
     echo "Please set environment variable ANACONDA_HOME." 1>&2
