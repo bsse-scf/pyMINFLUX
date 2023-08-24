@@ -16,13 +16,14 @@
 from pathlib import Path
 from typing import Union
 
+import h5py
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
 
 class MinFluxReader:
-    __docs__ = "Reader of MINFLUX data in `.npy` or `.mat` formats."
+    __docs__ = "Reader of MINFLUX data in ~.pmx`, `.npy` or `.mat` formats."
 
     __slots__ = [
         "_filename",
@@ -209,6 +210,14 @@ class MinFluxReader:
             except ValueError as e:
                 print(f"Could not open {self._filename}: {e}")
                 return False
+
+        elif self._filename.name.lower().endswith(".pmx"):
+            try:
+                self._data_array = self._read_from_pmx()
+            except ValueError as e:
+                print(f"Could not open {self._filename}: {e}")
+                return False
+
         else:
             print(f"Unexpected file {self._filename}.")
             return False
@@ -329,6 +338,23 @@ class MinFluxReader:
         )
 
         # Return success
+        return data_array
+
+    def _read_from_pmx(self) -> Union[np.ndarray, None]:
+        """Load the PMX file."""
+
+        # Check that the file_version attribute exists and is correctly set
+        with h5py.File(self._filename, "r") as f:
+
+            # Read the file_version attribute
+            file_version = f.attrs["file_version"]
+
+            if file_version != "1.0":
+                return False
+
+            # We only read the raw NumPy array, all the rest will work as usual
+            data_array = f["raw/npy"][:]
+
         return data_array
 
     def _process(self) -> Union[None, pd.DataFrame]:

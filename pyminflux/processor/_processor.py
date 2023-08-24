@@ -186,7 +186,7 @@ class MinFluxProcessor:
 
     @property
     def filtered_numpy_array(self):
-        """Return the raw NumPy array wit applied filters for the selected fluorophores."""
+        """Return the raw NumPy array with applied filters for the selected fluorophores."""
 
         # Copy the raw NumPy array
         full_array = self.filtered_numpy_array_all

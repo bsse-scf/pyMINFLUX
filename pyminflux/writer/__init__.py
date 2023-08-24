@@ -14,8 +14,7 @@
 #
 
 __doc__ = "Writer of processed MINFLUX data."
-__all__ = [
-    "MinFluxWriter",
-]
+__all__ = ["MinFluxWriter", "PyMinFluxNativeWriter"]
 
+from ._native_writer import PyMinFluxNativeWriter
 from ._writer import MinFluxWriter
