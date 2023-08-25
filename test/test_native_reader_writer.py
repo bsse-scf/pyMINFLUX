@@ -23,7 +23,13 @@ import pandas as pd
 import pytest
 
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.reader import MinFluxReader
+from pyminflux.reader import (
+    MinFluxReader,
+    NativeArrayReader,
+    NativeDataFrameReader,
+    NativeMetadataReader,
+)
+from pyminflux.state import State
 from pyminflux.writer import PyMinFluxNativeWriter
 
 
@@ -117,17 +123,21 @@ def dataframes_equal(df1, df2):
 
 def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
+    # Initialize State
+    state = State()
+
     #
     # 2D_All.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
+    state.min_trace_length = 1
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(
         Path(__file__).parent / "data" / "2D_All.npy", z_scaling_factor=0.7
     )
-    processor = MinFluxProcessor(reader, min_trace_length=1)
+    processor = MinFluxProcessor(reader, min_trace_length=state.min_trace_length)
 
     # Assign fluorophores
     np.random.seed(42)
@@ -145,10 +155,42 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
         # Write to disk
         assert writer.write(file_name) is True, "Could not save .pmx file."
 
-        # Read the Pandas DataFrame explicitly with h5py
-        df_read = pd.read_hdf(file_name, key="/paraview/dataframe")
+        # Read the dataframe back from the file
+        df_read = NativeDataFrameReader().read(file_name)
+
+        # Check that the datatypes of columns are preserved
+        for col in processor.filtered_dataframe.columns:
+            assert (
+                processor.filtered_dataframe[col].dtype == df_read[col].dtype
+            ), f"Mismatch of column datatype {col}: {processor.filtered_dataframe[col].dtype} vs. {df_read[col].dtype}"
+
+        # Check that the index data type is the same
+        assert (
+            processor.filtered_dataframe.index.dtype == df_read.index.dtype
+        ), f"Index data types are different: {processor.filtered_dataframe.index.dtype} vs {df_read.index.dtype}"
+
+        # Check if there are NaN in different locations
+        assert (
+            (processor.filtered_dataframe.isna() == df_read.isna()).all().all()
+        ), "NaN locations are different"
+
+        # Other attributes
+        assert (
+            processor.filtered_dataframe.index.name == df_read.index.name
+        ), "Index names are different"
+
+        # Column names
+        assert (
+            processor.filtered_dataframe.columns.names == df_read.columns.names
+        ), "Column names are different"
+
+        # Use pd.compare()
+        differences = processor.filtered_dataframe.compare(df_read)
+        assert len(differences.columns) == 0, "Found differences."
+        assert len(differences.index) == 0, "Found differences."
 
         # Check that the dataframes in the HDF5 file is identical to the original file
+        # It the following fails, use `dataframes_equal(processor.filtered_dataframe, df_read)` instead.
         assert processor.filtered_dataframe.equals(
             df_read
         ), "Mismatch between original dataframe and the copy read from the .pmx file!"
@@ -176,19 +218,53 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             ), "Mismatch in raw NumPy arrays' content!"
 
             # Test the parameters
-            unit_scaling_factor = f["parameters/unit_scaling_factor"][()]
-            assert (
-                unit_scaling_factor == processor._reader._unit_scaling_factor
-            ), "Unexpected value for unit_scaling_factor!"
-
             z_scaling_factor = f["parameters/z_scaling_factor"][()]
             assert (
-                z_scaling_factor == processor._reader._z_scaling_factor
+                z_scaling_factor == processor.z_scaling_factor
             ), "Unexpected value for z_scaling_factor!"
+            min_trace_length = f["parameters/min_trace_length"][()]
+            assert (
+                min_trace_length == state.min_trace_length
+            ), "Unexpected value for min_trace_length!"
+            num_fluorophores = f["parameters/num_fluorophores"][()]
+            assert (
+                num_fluorophores == processor.num_fluorophores
+            ), "Unexpected value for num_fluorophores!"
+
+        # Read the array using the native reader
+        data_array_native = NativeArrayReader().read(file_name)
+
+        # Check that the read NumPy array is identical to the original
+        assert (
+            data_array_native.shape == processor.filtered_numpy_array.shape
+        ), "NumPy arrays' shape mismatch!"
+        assert (
+            data_array_native.dtype == processor.filtered_numpy_array.dtype
+        ), "Mismatch in raw NumPy arrays' shape!"
+
+        assert structured_arrays_equal(
+            data_array_native, processor.filtered_numpy_array
+        ), "Mismatch in raw NumPy arrays' content!"
+
+        # Read the metadata via the NativeMetadataReader instead
+        metadata = NativeMetadataReader.scan(file_name)
+        assert (
+            metadata.z_scaling_factor == processor.z_scaling_factor
+        ), "Unexpected value for z_scaling_factor!"
+        assert (
+            metadata.min_trace_length == state.min_trace_length
+        ), "Unexpected value for min_trace_length!"
+        assert (
+            metadata.num_fluorophores == processor.num_fluorophores
+        ), "Unexpected value for num_fluorophores!"
+        assert metadata.efo_thresholds is None, "Unexpected value for efo_thresholds!"
+        assert metadata.cfr_thresholds is None, "Unexpected value for cfr_thresholds!"
 
         # Now test the MinFluxReader
         reader = MinFluxReader(file_name, z_scaling_factor=0.7)
-        processor_new = MinFluxProcessor(reader, min_trace_length=1)
+        processor_new = MinFluxProcessor(
+            reader, min_trace_length=state.min_trace_length
+        )
 
         # Compare the data from the original and the new file after processing with the MinFluxProcessor
         #
@@ -209,14 +285,15 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
     #
     # 2D_All.npy
     #
-    # min_num_loc_per_trace = 4 (filter short-lived traces)
+    # min_trace_length = 4 (filter short-lived traces)
     #
+    state.min_trace_length = 4
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(
         Path(__file__).parent / "data" / "2D_All.npy", z_scaling_factor=0.7
     )
-    processor = MinFluxProcessor(reader, min_trace_length=4)
+    processor = MinFluxProcessor(reader, min_trace_length=state.min_trace_length)
 
     # Assign fluorophores
     np.random.seed(42)
@@ -234,8 +311,44 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
         # Write to disk
         assert writer.write(file_name) is True, "Could not save .pmx file."
 
-        # Read the Pandas DataFrame explicitly with h5py
-        df_read = pd.read_hdf(file_name, key="/paraview/dataframe")
+        # Read the dataframe back from the file
+        df_read = NativeDataFrameReader().read(file_name)
+
+        # Make sure the number of entries is the same
+        assert len(processor.filtered_dataframe.index) == len(
+            df_read.index
+        ), "Mismatch in the number of entries!"
+
+        # Check that the datatypes of columns are preserved
+        for col in processor.filtered_dataframe.columns:
+            assert (
+                processor.filtered_dataframe[col].dtype == df_read[col].dtype
+            ), f"Mismatch of column datatype {col}: {processor.filtered_dataframe[col].dtype} vs. {df_read[col].dtype}"
+
+        # Check that the index data type is the same
+        assert (
+            processor.filtered_dataframe.index.dtype == df_read.index.dtype
+        ), f"Index data types are different: {processor.filtered_dataframe.index.dtype} vs {df_read.index.dtype}"
+
+        # Check if there are NaN in different locations
+        assert (
+            (processor.filtered_dataframe.isna() == df_read.isna()).all().all()
+        ), "NaN locations are different"
+
+        # Other attributes
+        assert (
+            processor.filtered_dataframe.index.name == df_read.index.name
+        ), "Index names are different"
+
+        # Column names
+        assert (
+            processor.filtered_dataframe.columns.names == df_read.columns.names
+        ), "Column names are different"
+
+        # Use pd.compare()
+        differences = processor.filtered_dataframe.compare(df_read)
+        assert len(differences.columns) == 0, "Found differences."
+        assert len(differences.index) == 0, "Found differences."
 
         # Check that the dataframes in the HDF5 file is identical to the original file
         assert processor.filtered_dataframe.equals(
@@ -265,19 +378,53 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             ), "Mismatch in raw NumPy arrays' content!"
 
             # Test the parameters
-            unit_scaling_factor = f["parameters/unit_scaling_factor"][()]
-            assert (
-                unit_scaling_factor == processor._reader._unit_scaling_factor
-            ), "Unexpected value for unit_scaling_factor!"
-
             z_scaling_factor = f["parameters/z_scaling_factor"][()]
             assert (
-                z_scaling_factor == processor._reader._z_scaling_factor
+                z_scaling_factor == processor.z_scaling_factor
             ), "Unexpected value for z_scaling_factor!"
+            min_trace_length = f["parameters/min_trace_length"][()]
+            assert (
+                min_trace_length == state.min_trace_length
+            ), "Unexpected value for min_trace_length!"
+            num_fluorophores = f["parameters/num_fluorophores"][()]
+            assert (
+                num_fluorophores == processor.num_fluorophores
+            ), "Unexpected value for num_fluorophores!"
+
+        # Read the array using the native reader
+        data_array_native = NativeArrayReader().read(file_name)
+
+        # Check that the read NumPy array is identical to the original
+        assert (
+            data_array_native.shape == processor.filtered_numpy_array.shape
+        ), "NumPy arrays' shape mismatch!"
+        assert (
+            data_array_native.dtype == processor.filtered_numpy_array.dtype
+        ), "Mismatch in raw NumPy arrays' shape!"
+
+        assert structured_arrays_equal(
+            data_array_native, processor.filtered_numpy_array
+        ), "Mismatch in raw NumPy arrays' content!"
+
+        # Read the metadata via the NativeMetadataReader instead
+        metadata = NativeMetadataReader.scan(file_name)
+        assert (
+            metadata.z_scaling_factor == processor.z_scaling_factor
+        ), "Unexpected value for z_scaling_factor!"
+        assert (
+            metadata.min_trace_length == state.min_trace_length
+        ), "Unexpected value for min_trace_length!"
+        assert (
+            metadata.num_fluorophores == processor.num_fluorophores
+        ), "Unexpected value for num_fluorophores!"
+        assert metadata.efo_thresholds is None, "Unexpected value for efo_thresholds!"
+        assert metadata.cfr_thresholds is None, "Unexpected value for cfr_thresholds!"
 
         # Now test the MinFluxReader
         reader = MinFluxReader(file_name, z_scaling_factor=0.7)
-        processor_new = MinFluxProcessor(reader, min_trace_length=1)
+        processor_new = MinFluxProcessor(
+            reader, min_trace_length=state.min_trace_length
+        )
 
         # Compare the data from the original and the new file after processing with the MinFluxProcessor
         #

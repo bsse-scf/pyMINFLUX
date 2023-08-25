@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
 import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.reader import MetadataReader, MinFluxReader
+from pyminflux.reader import MinFluxReader, NativeMetadataReader
 from pyminflux.settings import Settings
 from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
@@ -164,12 +164,30 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             settings.instance.value("io/last_selected_path", ".")
         )
 
-        # Read and set 'min_num_loc_per_trace' option
-        self.state.min_num_loc_per_trace = int(
+        # Read and set 'min_trace_length' option
+        self.state.min_trace_length = int(
             settings.instance.value(
-                "options/min_num_loc_per_trace", self.state.min_num_loc_per_trace
+                "options/min_trace_length", self.state.min_trace_length
             )
         )
+
+        # @SUPERSEDED: Read 'min_trace_length' and set as 'min_trace_length'
+        # This property will be removed from the file the next time the user hits
+        # the "Set as new default" in the Options dialog.
+        if settings.instance.contains("options/min_trace_length"):
+            self.state.min_trace_length = int(
+                settings.instance.value(
+                    "options/min_trace_length", self.state.min_trace_length
+                )
+            )
+
+        # Current option name: "options/min_trace_length"
+        if settings.instance.contains("options/min_trace_length"):
+            self.state.min_trace_length = int(
+                settings.instance.value(
+                    "options/min_trace_length", self.state.min_trace_length
+                )
+            )
 
         # Read and set 'z_scaling_factor' option
         self.state.z_scaling_factor = float(
@@ -320,8 +338,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.options.weigh_avg_localization_by_eco_option_changed.connect(
             self.update_weighted_average_localization_option_and_plot
         )
-        self.options.min_num_loc_per_trace_option_changed.connect(
-            self.update_min_num_loc_per_trace
+        self.options.min_trace_length_option_changed.connect(
+            self.update_min_trace_length
         )
 
         # Wizard
@@ -556,7 +574,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # If we have a `.pmx` file, we first scan the metadata and update
             # the State
             if ext == ".pmx":
-                metadata = MetadataReader.scan(filename)
+                metadata = NativeMetadataReader.scan(filename)
                 if metadata is None:
                     # Could not read the metadata. Abort loading.
                     QMessageBox.critical(
@@ -584,7 +602,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Add initialize the processor with the reader
             self.minfluxprocessor = MinFluxProcessor(
-                reader, self.state.min_num_loc_per_trace
+                reader, self.state.min_trace_length
             )
 
             # Make sure to set current value of use_weighted_localizations
@@ -896,18 +914,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Open the options dialog."""
         if self.options is None:
             self.options = Options()
-            self.options.min_num_loc_per_trace_option_changed.connect(
-                self.update_min_num_loc_per_trace
+            self.options.min_trace_length_option_changed.connect(
+                self.update_min_trace_length
             )
         self.options.show()
         self.options.activateWindow()
 
-    @Slot(None, name="update_min_num_loc_per_trace")
-    def update_min_num_loc_per_trace(self):
+    @Slot(None, name="update_min_trace_length")
+    def update_min_trace_length(self):
         if self.minfluxprocessor is not None:
-            self.minfluxprocessor.min_num_loc_per_trace = (
-                self.state.min_num_loc_per_trace
-            )
+            self.minfluxprocessor.min_trace_length = self.state.min_trace_length
 
     @Slot(None, name="open_trace_stats_viewer")
     def open_trace_stats_viewer(self):

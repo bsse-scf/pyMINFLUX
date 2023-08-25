@@ -20,6 +20,7 @@ from PySide6.QtWidgets import QDialog
 from pyminflux.state import State
 
 from ..analysis import prepare_histogram
+from ..utils import intersect_2d_ranges
 from .ui_wizard import Ui_WizardDialog
 
 
@@ -322,6 +323,15 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             self.processor.filter_by_1d_range(
                 "efo", (self.state.efo_thresholds[0], self.state.efo_thresholds[1])
             )
+
+        # Update State.applied_efo_thresholds
+        if self.state.applied_efo_thresholds is None:
+            self.state.applied_efo_thresholds = self.state.efo_thresholds
+        else:
+            self.state.applied_efo_thresholds = intersect_2d_ranges(
+                self.state.efo_thresholds, self.state.applied_efo_thresholds
+            )
+
         # Signal that the external viewers should be updated
         self.wizard_filters_run.emit()
 
@@ -338,6 +348,15 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             self.processor.filter_by_1d_range(
                 "cfr", (self.state.cfr_thresholds[0], self.state.cfr_thresholds[1])
             )
+
+        # Update State.applied_cfr_thresholds
+        if self.state.applied_cfr_thresholds is None:
+            self.state.applied_cfr_thresholds = self.state.cfr_thresholds
+        else:
+            self.state.applied_cfr_thresholds = intersect_2d_ranges(
+                self.state.cfr_thresholds, self.state.applied_cfr_thresholds
+            )
+
         # Signal that the external viewers should be updated
         self.wizard_filters_run.emit()
 

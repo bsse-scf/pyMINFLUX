@@ -341,7 +341,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_trace_length].values) == 0
 
     # Assign the test fluorophore ids
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -366,7 +366,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_trace_length].values) == 0
 
     # Set the fluorophore id to 2
     processor.current_fluorophore_id = 2
@@ -388,7 +388,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_trace_length].values) == 0
 
     #
     # MockMinFluxReader
@@ -411,7 +411,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_trace_length].values) == 0
 
     # Expected TIDs
     extracted_tids = np.unique(processor.filtered_dataframe["tid"])
@@ -441,7 +441,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_trace_length].values) == 0
 
     # Set the fluorophore id to 2
     processor.current_fluorophore_id = 2
@@ -463,7 +463,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_num_loc_per_trace].values) == 0
+    assert len(counts[counts < processor.min_trace_length].values) == 0
 
 
 def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
@@ -1689,7 +1689,7 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     # MockMinFluxReader
     #
     # min_trace_length = 1 (do not filter anything)
-    min_num_loc_per_trace = 1
+    min_trace_length = 1
 
     # MockMinFluxReader
     reader = MockMinFluxReader()

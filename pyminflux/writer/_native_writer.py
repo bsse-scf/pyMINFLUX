@@ -43,7 +43,7 @@ class PyMinFluxNativeWriter:
 
                 # Create groups
                 raw_data_group = f.create_group("raw")
-                _ = f.create_group("paraview")
+                paraview_group = f.create_group("paraview")
                 parameters_group = f.create_group("parameters")
 
                 # Store the filtered numpy array (with fluorophores)
@@ -51,28 +51,14 @@ class PyMinFluxNativeWriter:
                     "npy", data=self._processor.filtered_numpy_array, compression="gzip"
                 )
 
-                # Store important parameters
-                parameters_group.create_dataset(
-                    "z_scaling_factor", data=self._processor.z_scaling_factor
-                )
-                parameters_group.create_dataset(
-                    "min_trace_length", data=self._processor.min_num_loc_per_trace
-                )
-                parameters_group.create_dataset(
-                    "efo_thresholds", data=self._state.efo_thresholds
-                )
-                parameters_group.create_dataset(
-                    "cfr_thresholds", data=self._state.cfr_thresholds
-                )
-                parameters_group.create_dataset(
-                    "num_fluorophores", data=self._processor.num_fluorophores
-                )
+                # Store the pandas dataframe: to make sure not to depend on additional
+                # dependencies (like "tables") that are not bundled with ParaView, we
+                # save the dataframe as a NumPy array and save the column names and types
+                # as attributes.
+                self._store_dataframe(paraview_group)
 
-            # Append (mode = "a") the filtered dataframe as a proper Pandas DataFrame
-            # to be used by the ParaView plugin
-            self._processor.filtered_dataframe.to_hdf(
-                file_name, key="/paraview/dataframe", mode="a"
-            )
+                # Store important parameters
+                self._store_parameters(parameters_group)
 
             # No error
             self._message = ""
@@ -91,3 +77,48 @@ class PyMinFluxNativeWriter:
     def message(self):
         """Return last error message."""
         return self._message
+
+    def _store_dataframe(self, group):
+        """Write the Pandas DataFrame in a way that it can be reloaded without external dependencies."""
+
+        dataset = group.create_dataset(
+            "dataframe",
+            data=self._processor.filtered_dataframe.to_numpy(),
+            compression="gzip",
+        )
+
+        # Convert the column names to a list of strings
+        column_names = self._processor.filtered_dataframe.columns.tolist()
+
+        # Convert column data types to a list of strings
+        column_types = [
+            str(self._processor.filtered_dataframe[col].dtype)
+            for col in self._processor.filtered_dataframe.columns
+        ]
+
+        # Store the column names as an attribute of the dataset
+        dataset.attrs["column_names"] = column_names
+
+        # Store column data types as attribute of the dataset
+        dataset.attrs["column_types"] = column_types
+
+        # We preserve the index as well (as a Dataset, since it can be large)
+        index_data = np.array(self._processor.filtered_dataframe.index)
+        group.create_dataset("dataframe_index", data=index_data, compression="gzip")
+
+    def _store_parameters(self, group):
+        """Write important parameters."""
+
+        group.create_dataset("z_scaling_factor", data=self._processor.z_scaling_factor)
+        group.create_dataset("min_trace_length", data=self._processor.min_trace_length)
+        if self._state.applied_efo_thresholds is not None:
+            group.create_dataset(
+                "applied_efo_thresholds",
+                data=self._state.applied_efo_thresholds,
+            )
+        if self._state.applied_cfr_thresholds is not None:
+            group.create_dataset(
+                "applied_cfr_thresholds",
+                data=self._state.applied_cfr_thresholds,
+            )
+        group.create_dataset("num_fluorophores", data=self._processor.num_fluorophores)

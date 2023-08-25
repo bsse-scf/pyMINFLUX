@@ -26,9 +26,7 @@ from .ui_options import Ui_Options
 
 class Options(QDialog, Ui_Options):
     # Signal that the options have changed
-    min_num_loc_per_trace_option_changed = Signal(
-        name="min_num_loc_per_trace_option_changed"
-    )
+    min_trace_length_option_changed = Signal(name="min_trace_length_option_changed")
     efo_bin_size_hz_option_changed = Signal(name="efo_bin_size_hz_option_changed")
     weigh_avg_localization_by_eco_option_changed = Signal(
         name="weigh_avg_localization_by_eco_option_changed"
@@ -81,7 +79,7 @@ class Options(QDialog, Ui_Options):
         }
 
         # Set defaults
-        self.ui.leMinTIDNum.setText(str(self.state.min_num_loc_per_trace))
+        self.ui.leMinTIDNum.setText(str(self.state.min_trace_length))
         self.ui.leMinTIDNum.setValidator(QIntValidator(bottom=0))
         self.ui.leEFOBinSize.setText(str(self.state.efo_bin_size_hz))
         self.ui.leEFOBinSize.setValidator(QDoubleValidator(bottom=0.0))
@@ -131,7 +129,7 @@ class Options(QDialog, Ui_Options):
 
     def setup_conn(self):
         """Set up signal-slot connections."""
-        self.ui.leMinTIDNum.textChanged.connect(self.persist_min_num_loc_per_trace)
+        self.ui.leMinTIDNum.textChanged.connect(self.persist_min_trace_length)
         self.ui.pbSetDefault.clicked.connect(self.set_as_new_default)
         self.ui.cbWeightAvgLocByECO.stateChanged.connect(
             self.persist_weigh_avg_localization_by_eco
@@ -212,20 +210,20 @@ class Options(QDialog, Ui_Options):
             )
         )
 
-    @Slot(str, name="persist_min_num_loc_per_trace")
-    def persist_min_num_loc_per_trace(self, text):
+    @Slot(str, name="persist_min_trace_length")
+    def persist_min_trace_length(self, text):
         try:
-            min_num_loc_per_trace = int(text)
+            min_trace_length = int(text)
         except Exception as _:
             self.ui.leMinTIDNum.setStyleSheet("background-color: red;")
             self.valid["leMinTIDNum"] = False
             return
         self.ui.leMinTIDNum.setStyleSheet("")
         self.valid["leMinTIDNum"] = True
-        self.state.min_num_loc_per_trace = min_num_loc_per_trace
+        self.state.min_trace_length = min_trace_length
 
         # Signal the change
-        self.min_num_loc_per_trace_option_changed.emit()
+        self.min_trace_length_option_changed.emit()
 
     @Slot(str, name="persist_z_scaling_factor")
     def persist_z_scaling_factor(self, text):
@@ -425,7 +423,7 @@ class Options(QDialog, Ui_Options):
         # Update the application settings
         settings = Settings()
         settings.instance.setValue(
-            "options/min_num_loc_per_trace", int(self.state.min_num_loc_per_trace)
+            "options/min_trace_length", int(self.state.min_trace_length)
         )
         settings.instance.setValue(
             "options/z_scaling_factor", float(self.state.z_scaling_factor)
@@ -461,6 +459,13 @@ class Options(QDialog, Ui_Options):
         settings.instance.setValue(
             "options/plot_export_dpi", int(self.state.plot_export_dpi)
         )
+
+        # This property was superseded by "options/min_trace_length"
+        if settings.instance.contains("options/min_num_loc_per_trace"):
+            settings.instance.remove("options/min_num_loc_per_trace")
+
+        # Sync the settings with file
+        settings.instance.sync()
 
     def _validate(self, value, line_edit):
         """Check that the value in the QLineEdit is a valid float, or reset it and visually mark it otherwise."""

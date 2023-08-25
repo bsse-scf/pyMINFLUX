@@ -102,7 +102,7 @@ class MinFluxProcessor:
         }
 
     @property
-    def min_num_loc_per_trace(self):
+    def min_trace_length(self):
         """Minimum number of localizations for the trace to be kept."""
         return self._min_trace_length
 
@@ -111,8 +111,8 @@ class MinFluxProcessor:
         """Returns the scaling factor for the z coordinates from the underlying MinFluxReader."""
         return self._reader.z_scaling_factor
 
-    @min_num_loc_per_trace.setter
-    def min_num_loc_per_trace(self, value):
+    @min_trace_length.setter
+    def min_trace_length(self, value):
         if value < 1 or int(value) != value:
             raise ValueError(
                 "MinFluxProcessor.min_trace_length must be a positive integer!"
@@ -630,7 +630,7 @@ class MinFluxProcessor:
 
         # Select all rows where the count of TIDs is larger than self._min_trace_num
         counts = df["tid"].value_counts(normalize=False)
-        return df["tid"].isin(counts[counts >= self.min_num_loc_per_trace].index)
+        return df["tid"].isin(counts[counts >= self.min_trace_length].index)
 
     def filter_by_single_threshold(
         self, prop: str, threshold: Union[int, float], larger_than: bool = True

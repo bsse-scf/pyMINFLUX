@@ -39,7 +39,9 @@ class State(metaclass=Singleton):
         "min_trace_length",
         "efo_expected_frequency",
         "efo_thresholds",
+        "applied_efo_thresholds",
         "cfr_thresholds",
+        "applied_cfr_thresholds",
         "efo_range",
         "cfr_range",
         "loc_precision_range",
@@ -85,6 +87,10 @@ class State(metaclass=Singleton):
         # Lower and upper (absolute) thresholds for the EFO and CFR values
         self.efo_thresholds: Union[None, tuple] = None
         self.cfr_thresholds: Union[None, tuple] = None
+
+        # Applied lower and upper (absolute) thresholds for the EFO and CFR values
+        self.applied_efo_thresholds: Union[None, tuple] = None
+        self.applied_cfr_thresholds: Union[None, tuple] = None
 
         # Histogram ranges
         self.efo_range: Union[None, tuple] = None
@@ -133,7 +139,9 @@ class State(metaclass=Singleton):
             "color_code": str(ColorCode(self.color_code)),
             "efo_expected_frequency": self.efo_expected_frequency,
             "efo_thresholds": self.efo_thresholds,
+            "applied_efo_thresholds": self.applied_efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
+            "applied_cfr_threshold": self.applied_cfr_thresholds,
             "efo_range": self.efo_range,
             "cfr_range": self.cfr_range,
             "loc_precision_range": self.loc_precision_range,
@@ -160,7 +168,9 @@ class State(metaclass=Singleton):
         """Reset to data-specific settings."""
 
         self.efo_thresholds = None
+        self.applied_efo_thresholds = None
         self.cfr_thresholds = None
+        self.applied_cfr_thresholds = None
 
     def full_reset(self):
         """Reset to defaults."""
@@ -170,7 +180,9 @@ class State(metaclass=Singleton):
         self.color_code: ColorCode = ColorCode.NONE
         self.efo_expected_frequency = 0.0
         self.efo_thresholds = None
+        self.applied_efo_thresholds = None
         self.cfr_thresholds = None
+        self.applied_cfr_thresholds = None
         self.efo_range = None
         self.cfr_range = None
         self.loc_precision_range = None
@@ -196,7 +208,9 @@ class State(metaclass=Singleton):
         """Update State from the Metadata parameters from a `.pmx` file."""
         self.min_trace_length = metadata.min_trace_length
         self.efo_thresholds = metadata.efo_thresholds
+        self.applied_efo_thresholds = metadata.efo_thresholds
         self.cfr_thresholds = metadata.cfr_thresholds
+        self.applied_cfr_thresholds = metadata.cfr_thresholds
         self.num_fluorophores = metadata.num_fluorophores
         self.z_scaling_factor = metadata.z_scaling_factor
 

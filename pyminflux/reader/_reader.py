@@ -21,6 +21,8 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
+from pyminflux.reader import NativeArrayReader
+
 
 class MinFluxReader:
     __docs__ = "Reader of MINFLUX data in ~.pmx`, `.npy` or `.mat` formats."
@@ -214,7 +216,10 @@ class MinFluxReader:
 
         elif self._filename.name.lower().endswith(".pmx"):
             try:
-                self._data_array = self._read_from_pmx()
+                self._data_array = NativeArrayReader().read(self._filename)
+                if self._data_array is None:
+                    print(f"Could not open {self._filename}.")
+                    return False
             except ValueError as e:
                 print(f"Could not open {self._filename}: {e}")
                 return False
