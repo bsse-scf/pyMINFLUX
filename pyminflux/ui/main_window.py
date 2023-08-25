@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
 import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.reader import MinFluxReader, PyMinFluxNativeReader
+from pyminflux.reader import MetadataReader, MinFluxReader
 from pyminflux.settings import Settings
 from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
@@ -402,6 +402,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         else:
             # @TODO Shutdown threads if any are running
 
+            if self.options is not None:
+                self.options.close()
+                self.options = None
+
             if self.analyzer is not None:
                 self.analyzer.close()
                 self.analyzer = None
@@ -540,6 +544,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         filename = res[0]
         if filename != "":
+
             # Reset the state machine
             self.state.reset()
 
@@ -547,6 +552,23 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if len(filename) < 5:
                 return
             ext = filename.lower()[-4:]
+
+            # If we have a `.pmx` file, we first scan the metadata and update
+            # the State
+            if ext == ".pmx":
+                metadata = MetadataReader.scan(filename)
+                if metadata is None:
+                    # Could not read the metadata. Abort loading.
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        f"Could not load {filename}.",
+                    )
+                    return
+
+                # Update the State from the read metadata
+                self.state.update_from_metadata(metadata)
+
             if ext in [".pmx", ".npy", ".mat"]:
                 reader = MinFluxReader(
                     filename, z_scaling_factor=self.state.z_scaling_factor
@@ -574,6 +596,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.setWindowTitle(
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
+
+            # Close the Options
+            if self.options is not None:
+                self.options.close()
+                self.options = None
 
             # Close the Color Unmixer
             if self.color_unmixer is not None:
@@ -606,7 +633,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plotter.enableAutoRange(enable=True)
 
             # Reset the fluorophore list in the wizard
-            self.wizard.set_fluorophore_list(self.minfluxprocessor.num_fluorophorses)
+            self.wizard.set_fluorophore_list(self.minfluxprocessor.num_fluorophores)
 
             # Enable selected ui components
             self.enable_ui_components(True)

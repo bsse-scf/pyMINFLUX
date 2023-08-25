@@ -17,6 +17,7 @@ from enum import IntEnum
 from typing import Union
 
 from ..base import Singleton
+from ..reader import Metadata
 
 
 class ColorCode(IntEnum):
@@ -190,6 +191,14 @@ class State(metaclass=Singleton):
         self.frc_num_repeats = 5
         self.frc_endpoint_only = False
         self.open_console_at_start = False
+
+    def update_from_metadata(self, metadata: Metadata):
+        """Update State from the Metadata parameters from a `.pmx` file."""
+        self.min_num_loc_per_trace = metadata.min_trace_length
+        self.efo_thresholds = metadata.efo_thresholds
+        self.cfr_thresholds = metadata.cfr_thresholds
+        self.num_fluorophores = metadata.num_fluorophores
+        self.z_scaling_factor = metadata.z_scaling_factor
 
     def __str__(self):
         """Human-readable representation."""

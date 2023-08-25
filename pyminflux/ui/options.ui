@@ -14,6 +14,199 @@
    <string>Options</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="2" column="0">
+    <layout class="QHBoxLayout" name="hlZScalingFactor">
+     <item>
+      <widget class="QPushButton" name="pbZScalingFactorHelp">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>20</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
+       <property name="text">
+        <string>?</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="lbZScalingFactor">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>Z scaling factor</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="hsZScalingFactor">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="leZScalingFactor">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="16" column="0">
+    <layout class="QHBoxLayout" name="hlPlotExportDPI">
+     <item>
+      <widget class="QPushButton" name="pbPlotExportDPIHelp">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>20</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
+       <property name="text">
+        <string>?</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="lbPlotExportDPI">
+       <property name="text">
+        <string>Resolution (DPI) for exporting plots</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="hsPlotExportDPI">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lePlotExportDPI">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="5" column="0">
+    <layout class="QHBoxLayout" name="hlEFORange">
+     <item>
+      <widget class="QPushButton" name="pbEFORangeHelp">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>20</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
+       <property name="text">
+        <string>?</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="lbEFORange">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>EFO default plot range</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="hsEFORange">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="leEFORangeMin">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="leEFORangeMax">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
    <item row="13" column="0">
     <layout class="QHBoxLayout" name="hlWeightAvgLocByECO">
      <item>
@@ -50,74 +243,12 @@
      </item>
     </layout>
    </item>
-   <item row="10" column="0">
-    <widget class="Line" name="hl_immediate">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+   <item row="24" column="0">
+    <widget class="QTextEdit" name="teHelp">
+     <property name="focusPolicy">
+      <enum>Qt::NoFocus</enum>
      </property>
     </widget>
-   </item>
-   <item row="4" column="0">
-    <layout class="QHBoxLayout" name="hlExpectedEFOFrequency">
-     <item>
-      <widget class="QPushButton" name="pbEFOSingleEmitterFrequencyHelp">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>20</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="focusPolicy">
-        <enum>Qt::NoFocus</enum>
-       </property>
-       <property name="text">
-        <string>?</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="lbEFOSingleEmitterFrequency">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>EFO expected frequency for single emitters (Hz)</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="hsEFOSingleEmitterFrequency">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="leEFOSingleEmitterFrequency">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="toolTip">
-        <string/>
-       </property>
-      </widget>
-     </item>
-    </layout>
    </item>
    <item row="3" column="0">
     <layout class="QHBoxLayout" name="hlEFOBinSize">
@@ -193,22 +324,10 @@
      </property>
     </widget>
    </item>
-   <item row="11" column="0">
-    <widget class="QLabel" name="lbInfoImmediate">
-     <property name="font">
-      <font>
-       <italic>true</italic>
-      </font>
-     </property>
-     <property name="text">
-      <string>Changes below will be applied immediately to all open views.</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <layout class="QHBoxLayout" name="hlZScalingFactor">
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="hlMinNumTraces">
      <item>
-      <widget class="QPushButton" name="pbZScalingFactorHelp">
+      <widget class="QPushButton" name="pbMinTIDNumHelp">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -230,17 +349,17 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="lbZScalingFactor">
+      <widget class="QLabel" name="lbMinTIDNum">
        <property name="toolTip">
         <string/>
        </property>
        <property name="text">
-        <string>Z scaling factor</string>
+        <string>Minimum number of trace localizations</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="hsZScalingFactor">
+      <spacer name="hsMinTIDNum">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -253,7 +372,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLineEdit" name="leZScalingFactor">
+      <widget class="QLineEdit" name="leMinTIDNum">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -267,50 +386,24 @@
      </item>
     </layout>
    </item>
-   <item row="21" column="0">
-    <widget class="QLabel" name="lbQuickHelp">
+   <item row="11" column="0">
+    <widget class="QLabel" name="lbInfoImmediate">
      <property name="font">
       <font>
-       <bold>true</bold>
+       <italic>true</italic>
       </font>
      </property>
      <property name="text">
-      <string>Quick help</string>
+      <string>Changes below will be applied immediately to all open views.</string>
      </property>
     </widget>
    </item>
-   <item row="20" column="0">
-    <layout class="QHBoxLayout" name="hlShowConsoleAtStart">
-     <item>
-      <widget class="QPushButton" name="pbOpenConsoleAtStartHelp">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>20</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="focusPolicy">
-        <enum>Qt::NoFocus</enum>
-       </property>
-       <property name="text">
-        <string>?</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QCheckBox" name="cbOpenConsoleAtStart">
-       <property name="text">
-        <string>Show console at start</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+   <item row="25" column="0">
+    <widget class="QPushButton" name="pbSetDefault">
+     <property name="text">
+      <string>Set as new default</string>
+     </property>
+    </widget>
    </item>
    <item row="6" column="0">
     <layout class="QHBoxLayout" name="hlCFRRange">
@@ -387,80 +480,29 @@
      </item>
     </layout>
    </item>
-   <item row="17" column="0">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+   <item row="19" column="0">
+    <widget class="QLabel" name="lbInfoAtStart">
+     <property name="font">
+      <font>
+       <italic>true</italic>
+      </font>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
+     <property name="text">
+      <string>Changes below will be applied at application start.</string>
      </property>
-    </spacer>
+    </widget>
    </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="hlMinNumTraces">
-     <item>
-      <widget class="QPushButton" name="pbMinTIDNumHelp">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>20</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="focusPolicy">
-        <enum>Qt::NoFocus</enum>
-       </property>
-       <property name="text">
-        <string>?</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="lbMinTIDNum">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>Minimum number of trace localizations</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="hsMinTIDNum">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="leMinTIDNum">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="toolTip">
-        <string/>
-       </property>
-      </widget>
-     </item>
-    </layout>
+   <item row="22" column="0">
+    <widget class="QLabel" name="lbQuickHelp">
+     <property name="font">
+      <font>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Quick help</string>
+     </property>
+    </widget>
    </item>
    <item row="18" column="0">
     <widget class="Line" name="hl_at_start">
@@ -544,10 +586,17 @@
      </item>
     </layout>
    </item>
-   <item row="5" column="0">
-    <layout class="QHBoxLayout" name="hlEFORange">
+   <item row="10" column="0">
+    <widget class="Line" name="hl_immediate">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <layout class="QHBoxLayout" name="hlExpectedEFOFrequency">
      <item>
-      <widget class="QPushButton" name="pbEFORangeHelp">
+      <widget class="QPushButton" name="pbEFOSingleEmitterFrequencyHelp">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -569,17 +618,17 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="lbEFORange">
+      <widget class="QLabel" name="lbEFOSingleEmitterFrequency">
        <property name="toolTip">
         <string/>
        </property>
        <property name="text">
-        <string>EFO default plot range</string>
+        <string>EFO expected frequency for single emitters (Hz)</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="hsEFORange">
+      <spacer name="hsEFOSingleEmitterFrequency">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -592,22 +641,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLineEdit" name="leEFORangeMin">
+      <widget class="QLineEdit" name="leEFOSingleEmitterFrequency">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="toolTip">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="leEFORangeMax">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -619,24 +655,10 @@
      </item>
     </layout>
    </item>
-   <item row="22" column="0">
-    <widget class="QTextEdit" name="teHelp">
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="23" column="0">
-    <widget class="QPushButton" name="pbSetDefault">
-     <property name="text">
-      <string>Set as new default</string>
-     </property>
-    </widget>
-   </item>
-   <item row="16" column="0">
-    <layout class="QHBoxLayout" name="hlPlotExportDPI">
+   <item row="20" column="0">
+    <layout class="QHBoxLayout" name="hlShowConsoleAtStart">
      <item>
-      <widget class="QPushButton" name="pbPlotExportDPIHelp">
+      <widget class="QPushButton" name="pbOpenConsoleAtStartHelp">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -658,48 +680,26 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="lbPlotExportDPI">
+      <widget class="QCheckBox" name="cbOpenConsoleAtStart">
        <property name="text">
-        <string>Resolution (DPI) for exporting plots</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="hsPlotExportDPI">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="lePlotExportDPI">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+        <string>Show console at start</string>
        </property>
       </widget>
      </item>
     </layout>
    </item>
-   <item row="19" column="0">
-    <widget class="QLabel" name="lbInfoAtStart">
-     <property name="font">
-      <font>
-       <italic>true</italic>
-      </font>
+   <item row="21" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
-     <property name="text">
-      <string>Changes below will be applied at application start.</string>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>10</height>
+      </size>
      </property>
-    </widget>
+    </spacer>
    </item>
   </layout>
  </widget>

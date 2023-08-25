@@ -106,6 +106,11 @@ class MinFluxProcessor:
         """Minimum number of localizations for the trace to be kept."""
         return self._min_trace_length
 
+    @property
+    def z_scaling_factor(self):
+        """Returns the scaling factor for the z coordinates from the underlying MinFluxReader."""
+        return self._reader.z_scaling_factor
+
     @min_num_loc_per_trace.setter
     def min_num_loc_per_trace(self, value):
         if value < 1 or int(value) != value:
@@ -163,13 +168,13 @@ class MinFluxProcessor:
         self._stats_to_be_recomputed = True
 
     @property
-    def num_fluorophorses(self) -> int:
+    def num_fluorophores(self) -> int:
         """Return the number of fluorophores."""
         return len(np.unique(self.full_dataframe["fluo"].values))
 
     @property
     def filtered_numpy_array_all(self):
-        """Return the raw NumPy array with applied filters (for all fluorphores)."""
+        """Return the raw NumPy array with applied filters (for all fluorophores)."""
 
         # Copy the raw NumPy array
         raw_array = self._reader.valid_raw_data

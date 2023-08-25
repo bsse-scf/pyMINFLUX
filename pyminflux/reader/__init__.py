@@ -15,7 +15,10 @@
 
 __doc__ = "Reader of MINFLUX data."
 __all__ = [
+    "Metadata",
+    "MetadataReader",
     "MinFluxReader",
 ]
 
+from ._metadata_reader import Metadata, MetadataReader
 from ._reader import MinFluxReader

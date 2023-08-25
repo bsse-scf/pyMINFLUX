@@ -51,16 +51,25 @@ class PyMinFluxNativeWriter:
                     "npy", data=self._processor.filtered_numpy_array, compression="gzip"
                 )
 
-                # @TODO: Retrieve parameters from Reader if needed
+                # Store important parameters
                 parameters_group.create_dataset(
-                    "unit_scaling_factor",
-                    data=self._processor._reader._unit_scaling_factor,
+                    "z_scaling_factor", data=self._processor.z_scaling_factor
                 )
                 parameters_group.create_dataset(
-                    "z_scaling_factor", data=self._processor._reader._z_scaling_factor
+                    "min_trace_length", data=self._processor.min_num_loc_per_trace
+                )
+                parameters_group.create_dataset(
+                    "efo_thresholds", data=self._state.efo_thresholds
+                )
+                parameters_group.create_dataset(
+                    "cfr_thresholds", data=self._state.cfr_thresholds
+                )
+                parameters_group.create_dataset(
+                    "num_fluorophores", data=self._processor.num_fluorophores
                 )
 
             # Append (mode = "a") the filtered dataframe as a proper Pandas DataFrame
+            # to be used by the ParaView plugin
             self._processor.filtered_dataframe.to_hdf(
                 file_name, key="/paraview/dataframe", mode="a"
             )

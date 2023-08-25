@@ -51,7 +51,6 @@ class MinFluxReader:
         self,
         filename: Union[Path, str],
         valid: bool = True,
-        unit_scaling_factor: float = 1e9,
         z_scaling_factor: float = 1.0,
     ):
         """Constructor.
@@ -65,10 +64,6 @@ class MinFluxReader:
         valid: bool (optional, default = True)
             Whether to load only valid localizations.
 
-        unit_scaling_factor: float (optional, default = 1e9)
-            Measurement are stored in meters, and by default they are
-            scaled to be in nanometers.
-
         z_scaling_factor: float (optional, default = 1.0)
             Refractive index mismatch correction factor to apply to the z coordinates.
         """
@@ -81,8 +76,9 @@ class MinFluxReader:
         # Store the valid flag
         self._valid: bool = valid
 
-        # Store the scaling factor
-        self._unit_scaling_factor: float = unit_scaling_factor
+        # The localizations are stored in meters in the Imspector files and by
+        # design also in the `.pmx` format. Here, we scale them to be in nm
+        self._unit_scaling_factor: float = 1e9
 
         # Store the z correction factor
         self._z_scaling_factor: float = z_scaling_factor
@@ -116,24 +112,29 @@ class MinFluxReader:
         self._load()
 
     @property
-    def is_3d(self):
+    def z_scaling_factor(self) -> float:
+        """Returns the scaling factor for the z coordinates."""
+        return self._z_scaling_factor
+
+    @property
+    def is_3d(self) -> bool:
         """Returns True is the acquisition is 3D, False otherwise."""
         return self._is_3d
 
     @property
-    def is_aggregated(self):
+    def is_aggregated(self) -> bool:
         """Returns True is the acquisition is aggregated, False otherwise."""
         return self._is_aggregated
 
     @property
-    def num_valid_entries(self):
+    def num_valid_entries(self) -> int:
         """Number of valid entries."""
         if self._data_array is None:
             return 0
         return self._valid_entries.sum()
 
     @property
-    def num_invalid_entries(self):
+    def num_invalid_entries(self) -> int:
         """Number of valid entries."""
         if self._data_array is None:
             return 0
@@ -164,7 +165,7 @@ class MinFluxReader:
         return self._data_full_df
 
     @classmethod
-    def processed_properties(cls):
+    def processed_properties(cls) -> list:
         """Returns the properties read from the file that correspond to the processed dataframe column names."""
         return [
             "tid",
@@ -181,7 +182,7 @@ class MinFluxReader:
         ]
 
     @classmethod
-    def raw_properties(cls):
+    def raw_properties(cls) -> list:
         """Returns the properties read from the file and dynamic that correspond to the raw dataframe column names."""
         return ["tid", "aid", "vld", "tim", "x", "y", "z", "efo", "cfr", "eco", "dcr"]
 
@@ -343,7 +344,7 @@ class MinFluxReader:
     def _read_from_pmx(self) -> Union[np.ndarray, None]:
         """Load the PMX file."""
 
-        # Check that the file_version attribute exists and is correctly set
+        # Open the file and read the data
         with h5py.File(self._filename, "r") as f:
 
             # Read the file_version attribute
@@ -352,7 +353,7 @@ class MinFluxReader:
             if file_version != "1.0":
                 return False
 
-            # We only read the raw NumPy array, all the rest will work as usual
+            # We only read the raw NumPy array
             data_array = f["raw/npy"][:]
 
         return data_array
@@ -548,7 +549,7 @@ class MinFluxReader:
                 self._eco_index = 4
                 self._loc_index = 4
 
-    def _create_empty_data_array(self, n_entries: int, n_iters: int):
+    def _create_empty_data_array(self, n_entries: int, n_iters: int) -> np.ndarray:
         """Initializes a structured data array compatible with those exported from Imspector.
 
         Parameters
@@ -614,7 +615,7 @@ class MinFluxReader:
             ),
         )
 
-    def _migrate_npy_array(self, data_array):
+    def _migrate_npy_array(self, data_array) -> np.ndarray:
         """Migrate the raw Imspector NumPy array into a pyMINFLUX raw array."""
 
         # Initialize the empty target array
@@ -629,7 +630,7 @@ class MinFluxReader:
         # Return the migrated array
         return new_array
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """String representation of the object."""
         if self._data_array is None:
             return "No file loaded."
@@ -648,6 +649,6 @@ class MinFluxReader:
             f"{str_acq} {aggr_str} acquisition with {len(self._data_array)} entries ({str_valid})."
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Human-friendly representation of the object."""
         return self.__repr__()
