@@ -36,7 +36,7 @@ class State(metaclass=Singleton):
     __SLOTS__ = [
         "plot_average_localisations",
         "color_code",
-        "min_num_loc_per_trace",
+        "min_trace_length",
         "efo_expected_frequency",
         "efo_thresholds",
         "cfr_thresholds",
@@ -74,7 +74,7 @@ class State(metaclass=Singleton):
         self.color_code: ColorCode = ColorCode.NONE
 
         # Minimum number of localizations to consider a trace
-        self.min_num_loc_per_trace: int = 1
+        self.min_trace_length: int = 1
 
         # EFO bin size in Hz (if 0.0, the bin size will be automatically estimated)
         self.efo_bin_size_hz: float = 1000.0
@@ -128,7 +128,7 @@ class State(metaclass=Singleton):
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
-            "min_num_loc_per_trace": self.min_num_loc_per_trace,
+            "min_trace_length": self.min_trace_length,
             "plot_average_localisations": self.plot_average_localisations,
             "color_code": str(ColorCode(self.color_code)),
             "efo_expected_frequency": self.efo_expected_frequency,
@@ -165,7 +165,7 @@ class State(metaclass=Singleton):
     def full_reset(self):
         """Reset to defaults."""
 
-        self.min_num_loc_per_trace = 1
+        self.min_trace_length = 1
         self.plot_average_localisations = False
         self.color_code: ColorCode = ColorCode.NONE
         self.efo_expected_frequency = 0.0
@@ -194,7 +194,7 @@ class State(metaclass=Singleton):
 
     def update_from_metadata(self, metadata: Metadata):
         """Update State from the Metadata parameters from a `.pmx` file."""
-        self.min_num_loc_per_trace = metadata.min_trace_length
+        self.min_trace_length = metadata.min_trace_length
         self.efo_thresholds = metadata.efo_thresholds
         self.cfr_thresholds = metadata.cfr_thresholds
         self.num_fluorophores = metadata.num_fluorophores

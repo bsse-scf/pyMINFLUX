@@ -26,7 +26,7 @@ class MinFluxProcessor:
     """Processor of MINFLUX data."""
 
     __doc__ = """Allows for filtering and selecting data read by the underlying `MinFluxReader`. Please notice that
-     `MinFluxProcessor` makes use of `State.min_num_loc_per_trace` to make sure that at load and after every
+     `MinFluxProcessor` makes use of `State.min_trace_length` to make sure that at load and after every
       filtering step, short traces are dropped."""
 
     __slots__ = [
@@ -115,7 +115,7 @@ class MinFluxProcessor:
     def min_num_loc_per_trace(self, value):
         if value < 1 or int(value) != value:
             raise ValueError(
-                "MinFluxProcessor.min_num_loc_per_trace must be a positive integer!"
+                "MinFluxProcessor.min_trace_length must be a positive integer!"
             )
         self._min_trace_length = value
 

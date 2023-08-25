@@ -68,7 +68,7 @@ def test_data_boundaries(extract_raw_npy_data_files):
     #
     # 2D_Only.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # 2D_ValidOnly.npy
@@ -145,7 +145,7 @@ def test_data_boundaries(extract_raw_npy_data_files):
     #
     # 3D_Only.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # 2D_ValidOnly.npy
@@ -229,7 +229,7 @@ def test_render_xy(extract_raw_npy_data_files):
     #
     # 2D_Only.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # 2D_ValidOnly.npy
@@ -309,7 +309,7 @@ def test_render_xyz(extract_raw_npy_data_files):
     #
     # 3D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # 3D_ValidOnly.npy
@@ -417,7 +417,7 @@ def test_fourier_ring_correlation_all_pos(extract_raw_npy_data_files):
     #
     # 2D_Only.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
@@ -542,7 +542,7 @@ def test_fourier_ring_correlation_per_tid(extract_raw_npy_data_files):
     #
     # 2D_Only.npy
     #
-    # min_num_loc_per_trace = 1 (do not to filter anything)
+    # min_trace_length = 1 (do not to filter anything)
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
@@ -746,7 +746,7 @@ def test_estimate_resolution(extract_raw_npy_data_files):
     #
     # 2D_Only.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
