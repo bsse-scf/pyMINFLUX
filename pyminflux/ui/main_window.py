@@ -668,23 +668,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self,
             "Export filtered data",
             str(self.last_selected_path),
-            "NumPy binary files (*.npy);;Comma-separated value files (*.csv)",
+            "Comma-separated value files (*.csv)",
         )
 
         # Did the user cancel?
         if filename == "":
             return
 
-        if ext == "NumPy binary files (*.npy)":
-            # Does the file name have the .npy extension?
-            if not filename.lower().endswith(".npy"):
-                filename = Path(filename)
-                filename = filename.parent / f"{filename.stem}.npy"
-
-            # Write to disk
-            result = MinFluxWriter.write_npy(self.minfluxprocessor, filename)
-
-        elif ext == "Comma-separated value files (*.csv)":
+        if ext == "Comma-separated value files (*.csv)":
             # Does the file name have the .csv extension?
             if not filename.lower().endswith(".csv"):
                 filename = Path(filename)
