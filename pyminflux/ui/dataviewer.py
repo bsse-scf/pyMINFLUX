@@ -41,6 +41,9 @@ class DataViewer(QTableView):
         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self.setWindowTitle("Parameters")
 
+        # Enable sorting
+        self.setSortingEnabled(True)
+
         # Initialize the model with an empty dataframe with the correct columns
         self.set_data(pd.DataFrame(columns=MinFluxProcessor.processed_properties()))
 

@@ -41,6 +41,9 @@ class TraceDataViewer(QTableView):
         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self.setWindowTitle("Trace Statistics")
 
+        # Enable sorting
+        self.setSortingEnabled(True)
+
         # Initialize the model with an empty dataframe with the correct columns
         self.set_data(pd.DataFrame(columns=MinFluxProcessor.trace_stats_properties()))
 
