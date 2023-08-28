@@ -513,11 +513,20 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         ):
             return
 
+        # Get current filename to build the suggestion output
+        if self.minfluxprocessor.filename is None:
+            out_filename = str(self.last_selected_path)
+        else:
+            out_filename = str(
+                self.minfluxprocessor.filename.parent
+                / f"{self.minfluxprocessor.filename.stem}.pmx"
+            )
+
         # Ask the user to pick a name (and format)
         filename, ext = QFileDialog.getSaveFileName(
             self,
             "Save pyMINFLUX dataset",
-            str(self.last_selected_path),
+            out_filename,
             "pyMINFLUX files (*.pmx)",
         )
 
@@ -682,11 +691,20 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         ):
             return
 
+        # Get current filename to build the suggestion output
+        if self.minfluxprocessor.filename is None:
+            out_filename = str(self.last_selected_path)
+        else:
+            out_filename = str(
+                self.minfluxprocessor.filename.parent
+                / f"{self.minfluxprocessor.filename.stem}.csv"
+            )
+
         # Ask the user to pick a name (and format)
         filename, ext = QFileDialog.getSaveFileName(
             self,
             "Export filtered data",
-            str(self.last_selected_path),
+            out_filename,
             "Comma-separated value files (*.csv)",
         )
 
@@ -733,11 +751,20 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             return
 
+        # Get current filename to build the suggestion output
+        if self.minfluxprocessor.filename is None:
+            out_filename = str(self.last_selected_path)
+        else:
+            out_filename = str(
+                self.minfluxprocessor.filename.parent
+                / f"{self.minfluxprocessor.filename.stem}_stats.csv"
+            )
+
         # Ask the user to pick a name
         filename, ext = QFileDialog.getSaveFileName(
             self,
             "Export trace statistics",
-            str(self.last_selected_path),
+            out_filename,
             "Comma-separated value files (*.csv)",
         )
 

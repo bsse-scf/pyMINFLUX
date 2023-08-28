@@ -166,6 +166,13 @@ class MinFluxReader:
         self._data_full_df = self._raw_data_to_full_dataframe()
         return self._data_full_df
 
+    @property
+    def filename(self) -> Union[Path, None]:
+        """Return the filename if set."""
+        if self._filename is None:
+            return None
+        return Path(self._filename)
+
     @classmethod
     def processed_properties(cls) -> list:
         """Returns the properties read from the file that correspond to the processed dataframe column names."""

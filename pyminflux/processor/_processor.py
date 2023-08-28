@@ -13,6 +13,7 @@
 #   limitations under the License.
 #
 
+from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
@@ -220,6 +221,13 @@ class MinFluxProcessor:
             A Pandas dataframe or None if no file was loaded.
         """
         return self._reader.processed_dataframe
+
+    @property
+    def filename(self) -> Union[Path, None]:
+        """Return the filename if set."""
+        if self._reader is None:
+            return None
+        return self._reader.filename
 
     def _filtered_dataframe_all(self) -> Union[None, pd.DataFrame]:
         """Return joint dataframe for all fluorophores and with all filters applied.
