@@ -193,14 +193,17 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
     def set_render_view_display_properties(self, display, table_to_points):
         """Sets the display properties of passed view."""
 
-        # Change the representation to 'Points'
-        display.Representation = "Points"
+        # Change the representation to "Point Gaussian"
+        display.Representation = "Point Gaussian"
 
-        # Change the point size
-        display.PointSize = 5.0
+        # Change the Gaussian radius
+        display.GaussianRadius = 3.0
 
-        # Render points as spheres
-        display.RenderPointsAsSpheres = 1
+        # Set the opacity
+        display.Opacity = 0.4
+
+        # Finally set the shader present
+        display.ShaderPreset = "Plain circle"
 
         # Set the Coloring based on a specific attribute
         # Replace 'attribute_name' with the name of the attribute you want to use
