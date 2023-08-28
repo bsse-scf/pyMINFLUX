@@ -4,12 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [0.3.0] - TBD
 
-* FRC Analysis now runs in parallel over all CPU cores
-* Add new Trace Statistics Viewer
-* Add new Trace Length Viewer
-* Add all analysis tools to the main window's Analysis menu
-* Add companion ParaView reader plug-in
-* Remove 3D Plotter (in favor of using ParaView)
+* Add native pyMINFLUX file format `.pmx`.
+* FRC Analysis now runs in parallel over all CPU cores.
+* Add new Trace Statistics Viewer.
+* Add new Trace Length Viewer.
+* Add all analysis tools to the main window's Analysis menu.
+* Add companion ParaView reader plug-in.
+* Remove 3D Plotter (in favor of using ParaView).
 
 ## [0.2.0] - 2023-07-19
 
