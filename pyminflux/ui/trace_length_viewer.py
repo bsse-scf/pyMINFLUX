@@ -13,14 +13,14 @@
 #   limitations under the License.
 #
 
-import numpy as np
 import pyqtgraph as pg
-from pyqtgraph import PlotWidget
+from pyqtgraph import BarGraphItem, PlotWidget
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import QPoint, Slot
 from PySide6.QtGui import QAction, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 
+from pyminflux.analysis import prepare_histogram
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.state import State
 from pyminflux.ui.helpers import export_plot_interactive
@@ -40,63 +40,6 @@ class CustomTooltip(QtWidgets.QLabel):
             font-weight: bold;
         """
         )
-
-
-class HoverableBarGraphItem(pg.BarGraphItem):
-    def __init__(self, **kwds):
-        super().__init__(**kwds)
-        self.current_bar_index = None
-        self.processingHover = False
-        self.lastHoveredBar = None  # Store the index of the last hovered bar
-        self.setAcceptHoverEvents(True)
-        self.tooltip = CustomTooltip()
-
-    def hoverEvent(self, event):
-        # Are already processing a hover event?
-        if self.processingHover:
-            return
-
-        # There seems to be an issue in pyQtGraph: the position of the event
-        # is not always set.
-        if not hasattr(event, "_scenePos"):
-            return
-
-        # Set the processingHover flag
-        self.processingHover = True
-
-        # Is the event an exit event?
-        if event.isExit():
-            self.current_bar_index = None
-            self.tooltip.hide()
-            self.processingHover = False
-            return
-
-        # Get the event position here and use it throughout
-        curr_event_pos = event.pos()
-
-        # Closest integer x-coordinate to the event position
-        bar_index = round(curr_event_pos.x())
-
-        # Convert from scene coordinates to global screen coordinates
-        point_in_scene = self.mapToScene(QtCore.QPointF(bar_index, curr_event_pos.y()))
-        point_on_screen = self.getViewWidget().mapToGlobal(point_in_scene.toPoint())
-
-        # Adjust the x-coordinate for the tooltip width
-        adjusted_x = point_on_screen.x() - self.tooltip.width() // 2
-
-        # Check if we are hovering over a new bar
-        if bar_index != self.current_bar_index:
-            self.current_bar_index = bar_index
-            if 0 <= bar_index < len(self.opts["height"]):
-                tid = self.opts.get("data", [])[bar_index]
-                self.tooltip.setText(f"tid = {tid}")
-                self.tooltip.move(adjusted_x, point_on_screen.y())
-                self.tooltip.show()
-            else:
-                self.current_bar_index = None
-                self.tooltip.hide()
-
-        self.processingHover = False
 
 
 class TraceLengthViewer(QDialog, Ui_TraceLengthViewer):
@@ -123,7 +66,9 @@ class TraceLengthViewer(QDialog, Ui_TraceLengthViewer):
         self.processor = processor
 
         # Create the plot elements
-        self.plot_widget = PlotWidget(parent=self, background="w", title="Trace Length")
+        self.plot_widget = PlotWidget(
+            parent=self, background="w", title="Trace Length Distribution"
+        )
 
         # Plot the dcr histogram
         self.plot_trace_lengths()
@@ -139,30 +84,47 @@ class TraceLengthViewer(QDialog, Ui_TraceLengthViewer):
         if self.processor is None or self.processor.full_dataframe is None:
             return
 
-        # Prepare the data to plot
-        x = np.arange(0, len(self.processor.filtered_dataframe_stats["tid"]))
-        y = self.processor.filtered_dataframe_stats["n"]
-        x_range = (0, x[-1])
-        y_range = (0, y.max())
+        # Prepare the histogram to plot
+        all_counts, _, all_trace_lengths, _ = prepare_histogram(
+            self.processor.filtered_dataframe_stats["n"],
+            normalize=False,
+            auto_bins=False,
+            bin_size=1.0,
+        )
+
+        # Remove empty trace lengths
+        to_keep = all_counts > 0
+        counts = all_counts[to_keep]
+        trace_lengths = all_trace_lengths[to_keep]
+
+        # Set x and y ranges
+        x_range = (0, trace_lengths.max())
+        y_range = (0, counts.max())
 
         # It one or more charts already exists, remove them
         for item in self.plot_widget.allChildItems():
             self.plot_widget.removeItem(item)
 
+        # Calculate mean trace length
+        mean_trace_length = (trace_lengths * counts).sum() / counts.sum()
+
         # Create the bar chart
-        chart = HoverableBarGraphItem(
-            x=x,
-            height=y,
-            data=self.processor.filtered_dataframe_stats["tid"],
+        chart = BarGraphItem(
+            x=trace_lengths,
+            height=counts,
             width=0.9,
             brush=self.brush,
         )
         self.plot_widget.setMouseEnabled(x=True, y=False)
         self.plot_widget.setXRange(x_range[0], x_range[1])
         self.plot_widget.setYRange(y_range[0], y_range[1])
-        self.plot_widget.setLabel("bottom", "Trace number")
+        self.plot_widget.setLabel("bottom", "Trace length")
+        self.plot_widget.setLabel("left", "Trace count")
         self.plot_widget.setMenuEnabled(False)
         self.plot_widget.addItem(chart)
+        self.plot_widget.setTitle(
+            f"Average trace length = {mean_trace_length:.2f} localizations"
+        )
         self.plot_widget.scene().sigMouseClicked.connect(
             self.histogram_raise_context_menu
         )
