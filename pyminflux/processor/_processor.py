@@ -26,7 +26,7 @@ class MinFluxProcessor:
     """Processor of MINFLUX data."""
 
     __doc__ = """Allows for filtering and selecting data read by the underlying `MinFluxReader`. Please notice that
-     `MinFluxProcessor` makes use of `State.min_num_loc_per_trace` to make sure that at load and after every
+     `MinFluxProcessor` makes use of `State.min_trace_length` to make sure that at load and after every
       filtering step, short traces are dropped."""
 
     __slots__ = [
@@ -102,15 +102,20 @@ class MinFluxProcessor:
         }
 
     @property
-    def min_num_loc_per_trace(self):
+    def min_trace_length(self):
         """Minimum number of localizations for the trace to be kept."""
         return self._min_trace_length
 
-    @min_num_loc_per_trace.setter
-    def min_num_loc_per_trace(self, value):
+    @property
+    def z_scaling_factor(self):
+        """Returns the scaling factor for the z coordinates from the underlying MinFluxReader."""
+        return self._reader.z_scaling_factor
+
+    @min_trace_length.setter
+    def min_trace_length(self, value):
         if value < 1 or int(value) != value:
             raise ValueError(
-                "MinFluxProcessor.min_num_loc_per_trace must be a positive integer!"
+                "MinFluxProcessor.min_trace_length must be a positive integer!"
             )
         self._min_trace_length = value
 
@@ -163,13 +168,13 @@ class MinFluxProcessor:
         self._stats_to_be_recomputed = True
 
     @property
-    def num_fluorophorses(self) -> int:
+    def num_fluorophores(self) -> int:
         """Return the number of fluorophores."""
         return len(np.unique(self.full_dataframe["fluo"].values))
 
     @property
     def filtered_numpy_array_all(self):
-        """Return the raw NumPy array with applied filters (for all fluorphores)."""
+        """Return the raw NumPy array with applied filters (for all fluorophores)."""
 
         # Copy the raw NumPy array
         raw_array = self._reader.valid_raw_data
@@ -186,7 +191,7 @@ class MinFluxProcessor:
 
     @property
     def filtered_numpy_array(self):
-        """Return the raw NumPy array wit applied filters for the selected fluorophores."""
+        """Return the raw NumPy array with applied filters for the selected fluorophores."""
 
         # Copy the raw NumPy array
         full_array = self.filtered_numpy_array_all
@@ -625,7 +630,7 @@ class MinFluxProcessor:
 
         # Select all rows where the count of TIDs is larger than self._min_trace_num
         counts = df["tid"].value_counts(normalize=False)
-        return df["tid"].isin(counts[counts >= self.min_num_loc_per_trace].index)
+        return df["tid"].isin(counts[counts >= self.min_trace_length].index)
 
     def filter_by_single_threshold(
         self, prop: str, threshold: Union[int, float], larger_than: bool = True

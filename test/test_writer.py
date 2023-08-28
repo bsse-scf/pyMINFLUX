@@ -57,7 +57,7 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
     #
     # 2D_All.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # 2D_ValidOnly.npy
@@ -132,7 +132,7 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
     #
     # 2D_All.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # 2D_ValidOnly.npy
@@ -283,7 +283,7 @@ def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
     #
     # 2D_All.npy
     #
-    # min_num_loc_per_trace = 1
+    # min_trace_length = 1
     #
 
     # 2D_ValidOnly.npy

@@ -17,6 +17,7 @@ from enum import IntEnum
 from typing import Union
 
 from ..base import Singleton
+from ..reader import Metadata
 
 
 class ColorCode(IntEnum):
@@ -35,10 +36,12 @@ class State(metaclass=Singleton):
     __SLOTS__ = [
         "plot_average_localisations",
         "color_code",
-        "min_num_loc_per_trace",
+        "min_trace_length",
         "efo_expected_frequency",
         "efo_thresholds",
+        "applied_efo_thresholds",
         "cfr_thresholds",
+        "applied_cfr_thresholds",
         "efo_range",
         "cfr_range",
         "loc_precision_range",
@@ -73,7 +76,7 @@ class State(metaclass=Singleton):
         self.color_code: ColorCode = ColorCode.NONE
 
         # Minimum number of localizations to consider a trace
-        self.min_num_loc_per_trace: int = 1
+        self.min_trace_length: int = 1
 
         # EFO bin size in Hz (if 0.0, the bin size will be automatically estimated)
         self.efo_bin_size_hz: float = 1000.0
@@ -84,6 +87,10 @@ class State(metaclass=Singleton):
         # Lower and upper (absolute) thresholds for the EFO and CFR values
         self.efo_thresholds: Union[None, tuple] = None
         self.cfr_thresholds: Union[None, tuple] = None
+
+        # Applied lower and upper (absolute) thresholds for the EFO and CFR values
+        self.applied_efo_thresholds: Union[None, tuple] = None
+        self.applied_cfr_thresholds: Union[None, tuple] = None
 
         # Histogram ranges
         self.efo_range: Union[None, tuple] = None
@@ -127,12 +134,14 @@ class State(metaclass=Singleton):
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
-            "min_num_loc_per_trace": self.min_num_loc_per_trace,
+            "min_trace_length": self.min_trace_length,
             "plot_average_localisations": self.plot_average_localisations,
             "color_code": str(ColorCode(self.color_code)),
             "efo_expected_frequency": self.efo_expected_frequency,
             "efo_thresholds": self.efo_thresholds,
+            "applied_efo_thresholds": self.applied_efo_thresholds,
             "cfr_thresholds": self.cfr_thresholds,
+            "applied_cfr_threshold": self.applied_cfr_thresholds,
             "efo_range": self.efo_range,
             "cfr_range": self.cfr_range,
             "loc_precision_range": self.loc_precision_range,
@@ -159,17 +168,21 @@ class State(metaclass=Singleton):
         """Reset to data-specific settings."""
 
         self.efo_thresholds = None
+        self.applied_efo_thresholds = None
         self.cfr_thresholds = None
+        self.applied_cfr_thresholds = None
 
     def full_reset(self):
         """Reset to defaults."""
 
-        self.min_num_loc_per_trace = 1
+        self.min_trace_length = 1
         self.plot_average_localisations = False
         self.color_code: ColorCode = ColorCode.NONE
         self.efo_expected_frequency = 0.0
         self.efo_thresholds = None
+        self.applied_efo_thresholds = None
         self.cfr_thresholds = None
+        self.applied_cfr_thresholds = None
         self.efo_range = None
         self.cfr_range = None
         self.loc_precision_range = None
@@ -190,6 +203,16 @@ class State(metaclass=Singleton):
         self.frc_num_repeats = 5
         self.frc_endpoint_only = False
         self.open_console_at_start = False
+
+    def update_from_metadata(self, metadata: Metadata):
+        """Update State from the Metadata parameters from a `.pmx` file."""
+        self.min_trace_length = metadata.min_trace_length
+        self.efo_thresholds = metadata.efo_thresholds
+        self.applied_efo_thresholds = metadata.efo_thresholds
+        self.cfr_thresholds = metadata.cfr_thresholds
+        self.applied_cfr_thresholds = metadata.cfr_thresholds
+        self.num_fluorophores = metadata.num_fluorophores
+        self.z_scaling_factor = metadata.z_scaling_factor
 
     def __str__(self):
         """Human-readable representation."""

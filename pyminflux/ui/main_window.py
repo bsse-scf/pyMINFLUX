@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
 import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.reader import MinFluxReader
+from pyminflux.reader import MinFluxReader, NativeMetadataReader
 from pyminflux.settings import Settings
 from pyminflux.state import State
 from pyminflux.ui.analyzer import Analyzer
@@ -53,7 +53,7 @@ from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.wizard import WizardDialog
 from pyminflux.utils import check_for_updates
-from pyminflux.writer import MinFluxWriter
+from pyminflux.writer import MinFluxWriter, PyMinFluxNativeWriter
 
 
 class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
@@ -164,12 +164,30 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             settings.instance.value("io/last_selected_path", ".")
         )
 
-        # Read and set 'min_num_loc_per_trace' option
-        self.state.min_num_loc_per_trace = int(
+        # Read and set 'min_trace_length' option
+        self.state.min_trace_length = int(
             settings.instance.value(
-                "options/min_num_loc_per_trace", self.state.min_num_loc_per_trace
+                "options/min_trace_length", self.state.min_trace_length
             )
         )
+
+        # @SUPERSEDED: Read 'min_trace_length' and set as 'min_trace_length'
+        # This property will be removed from the file the next time the user hits
+        # the "Set as new default" in the Options dialog.
+        if settings.instance.contains("options/min_trace_length"):
+            self.state.min_trace_length = int(
+                settings.instance.value(
+                    "options/min_trace_length", self.state.min_trace_length
+                )
+            )
+
+        # Current option name: "options/min_trace_length"
+        if settings.instance.contains("options/min_trace_length"):
+            self.state.min_trace_length = int(
+                settings.instance.value(
+                    "options/min_trace_length", self.state.min_trace_length
+                )
+            )
 
         # Read and set 'z_scaling_factor' option
         self.state.z_scaling_factor = float(
@@ -250,7 +268,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Set up signals and slots."""
 
         # Menu actions
-        self.ui.actionLoad.triggered.connect(self.select_and_open_data_file)
+        self.ui.actionLoad.triggered.connect(self.select_and_load_or_import_data_file)
+        self.ui.actionSave.triggered.connect(self.save_native_file)
         self.ui.actionExport_data.triggered.connect(self.export_filtered_data)
         self.ui.actionExport_stats.triggered.connect(self.export_filtered_stats)
         self.ui.actionOptions.triggered.connect(self.open_options_dialog)
@@ -319,12 +338,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.options.weigh_avg_localization_by_eco_option_changed.connect(
             self.update_weighted_average_localization_option_and_plot
         )
-        self.options.min_num_loc_per_trace_option_changed.connect(
-            self.update_min_num_loc_per_trace
+        self.options.min_trace_length_option_changed.connect(
+            self.update_min_trace_length
         )
 
         # Wizard
-        self.wizard.load_data_triggered.connect(self.select_and_open_data_file)
+        self.wizard.load_data_triggered.connect(
+            self.select_and_load_or_import_data_file
+        )
         self.wizard.reset_filters_triggered.connect(self.reset_filters_and_broadcast)
         self.wizard.open_unmixer_triggered.connect(self.open_color_unmixer)
         self.wizard.open_time_inspector_triggered.connect(self.open_time_inspector)
@@ -347,7 +368,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plotter_toolbar.hide()
             self.data_viewer.hide()
             self.plotter_toolbar.hide()
-        self.ui.actionExport_data.setEnabled(enabled)
+        self.ui.actionSave.setEnabled(enabled)
         self.ui.actionExport_data.setEnabled(enabled)
         self.ui.actionExport_stats.setEnabled(enabled)
         self.ui.actionUnmixer.setEnabled(enabled)
@@ -398,6 +419,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             event.ignore()
         else:
             # @TODO Shutdown threads if any are running
+
+            if self.options is not None:
+                self.options.close()
+                self.options = None
 
             if self.analyzer is not None:
                 self.analyzer.close()
@@ -478,37 +503,106 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             else:
                 self.data_viewer.hide()
 
-    @Slot(None, name="select_and_open_data_file")
-    def select_and_open_data_file(self):
+    @Slot(None, name="save_native_file")
+    def save_native_file(self):
+        """Save data to native pyMINFLUX `.pmx` file."""
+        if (
+            self.minfluxprocessor is None
+            or len(self.minfluxprocessor.filtered_dataframe.index) == 0
+        ):
+            return
+
+        # Ask the user to pick a name (and format)
+        filename, ext = QFileDialog.getSaveFileName(
+            self,
+            "Save pyMINFLUX dataset",
+            str(self.last_selected_path),
+            "pyMINFLUX files (*.pmx)",
+        )
+
+        # Did the user cancel?
+        if filename == "":
+            return
+
+        # Does the file name have the .pmx extension?
+        if not filename.lower().endswith(".pmx"):
+            filename = Path(filename)
+            filename = filename.parent / f"{filename.stem}.pmx"
+
+        # Write to disk
+        writer = PyMinFluxNativeWriter(self.minfluxprocessor)
+        result = writer.write(filename)
+
+        # Save
+        if result:
+            print(f"Successfully saved {filename}.")
+        else:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Could not save file {Path(filename).name}!\n\nThe error was:\n{writer.message}",
+            )
+
+    @Slot(None, name="select_and_load_or_import_data_file")
+    def select_and_load_or_import_data_file(self):
         """
-        Pick a MINFLUX data file to open.
+        Pick a MINFLUX `.pmx` file to load, or an Imspector `.npy' or '.mat' file to import.
         :return: void
         """
 
-        # Open a file dialog for the user to pick an .npy file
+        # Open a file dialog for the user to pick a .pmx, .npy or .mat file
         res = QFileDialog.getOpenFileName(
             self,
-            "Open MINFLUX data file",
+            "Load file",
             str(self.last_selected_path),
-            "NumPy binary files (*.npy);;MATLAB mat files(*.mat)",
+            "All Supported Files (*.pmx *.npy *.mat);;"
+            "pyMINFLUX file (*.pmx);;"
+            "Imspector NumPy files (*.npy);;"
+            "Imspector MATLAB mat files (*.mat)",
         )
         filename = res[0]
         if filename != "":
+
             # Reset the state machine
             self.state.reset()
 
+            # Pick the right reader
+            if len(filename) < 5:
+                return
+            ext = filename.lower()[-4:]
+
+            # If we have a `.pmx` file, we first scan the metadata and update
+            # the State
+            if ext == ".pmx":
+                metadata = NativeMetadataReader.scan(filename)
+                if metadata is None:
+                    # Could not read the metadata. Abort loading.
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        f"Could not load {filename}.",
+                    )
+                    return
+
+                # Update the State from the read metadata
+                self.state.update_from_metadata(metadata)
+
+            if ext in [".pmx", ".npy", ".mat"]:
+                reader = MinFluxReader(
+                    filename, z_scaling_factor=self.state.z_scaling_factor
+                )
+            else:
+                return
+
             # Open the file
             self.last_selected_path = Path(filename).parent
-            minfluxreader = MinFluxReader(
-                filename, z_scaling_factor=self.state.z_scaling_factor
-            )
 
             # Show some info
-            print(minfluxreader)
+            print(reader)
 
             # Add initialize the processor with the reader
             self.minfluxprocessor = MinFluxProcessor(
-                minfluxreader, self.state.min_num_loc_per_trace
+                reader, self.state.min_trace_length
             )
 
             # Make sure to set current value of use_weighted_localizations
@@ -520,6 +614,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.setWindowTitle(
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
+
+            # Close the Options
+            if self.options is not None:
+                self.options.close()
+                self.options = None
 
             # Close the Color Unmixer
             if self.color_unmixer is not None:
@@ -552,7 +651,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plotter.enableAutoRange(enable=True)
 
             # Reset the fluorophore list in the wizard
-            self.wizard.set_fluorophore_list(self.minfluxprocessor.num_fluorophorses)
+            self.wizard.set_fluorophore_list(self.minfluxprocessor.num_fluorophores)
 
             # Enable selected ui components
             self.enable_ui_components(True)
@@ -587,23 +686,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self,
             "Export filtered data",
             str(self.last_selected_path),
-            "NumPy binary files (*.npy);;Comma-separated value files (*.csv)",
+            "Comma-separated value files (*.csv)",
         )
 
         # Did the user cancel?
         if filename == "":
             return
 
-        if ext == "NumPy binary files (*.npy)":
-            # Does the file name have the .npy extension?
-            if not filename.lower().endswith(".npy"):
-                filename = Path(filename)
-                filename = filename.parent / f"{filename.stem}.npy"
-
-            # Write to disk
-            result = MinFluxWriter.write_npy(self.minfluxprocessor, filename)
-
-        elif ext == "Comma-separated value files (*.csv)":
+        if ext == "Comma-separated value files (*.csv)":
             # Does the file name have the .csv extension?
             if not filename.lower().endswith(".csv"):
                 filename = Path(filename)
@@ -824,18 +914,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Open the options dialog."""
         if self.options is None:
             self.options = Options()
-            self.options.min_num_loc_per_trace_option_changed.connect(
-                self.update_min_num_loc_per_trace
+            self.options.min_trace_length_option_changed.connect(
+                self.update_min_trace_length
             )
         self.options.show()
         self.options.activateWindow()
 
-    @Slot(None, name="update_min_num_loc_per_trace")
-    def update_min_num_loc_per_trace(self):
+    @Slot(None, name="update_min_trace_length")
+    def update_min_trace_length(self):
         if self.minfluxprocessor is not None:
-            self.minfluxprocessor.min_num_loc_per_trace = (
-                self.state.min_num_loc_per_trace
-            )
+            self.minfluxprocessor.min_trace_length = self.state.min_trace_length
 
     @Slot(None, name="open_trace_stats_viewer")
     def open_trace_stats_viewer(self):

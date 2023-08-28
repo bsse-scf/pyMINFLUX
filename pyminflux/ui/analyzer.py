@@ -26,6 +26,7 @@ from PySide6.QtWidgets import QDialog, QFileDialog, QLabel, QMenu
 from ..analysis import find_cutoff_near_value, get_robust_threshold, prepare_histogram
 from ..processor import MinFluxProcessor
 from ..state import State
+from ..utils import intersect_2d_ranges
 from .helpers import export_plot_interactive
 from .roi_ranges import ROIRanges
 from .ui_analyzer import Ui_Analyzer
@@ -317,6 +318,14 @@ class Analyzer(QDialog, Ui_Analyzer):
                 "efo", (self.state.efo_thresholds[0], self.state.efo_thresholds[1])
             )
 
+        # Update State.applied_efo_thresholds
+        if self.state.applied_efo_thresholds is None:
+            self.state.applied_efo_thresholds = self.state.efo_thresholds
+        else:
+            self.state.applied_efo_thresholds = intersect_2d_ranges(
+                self.state.efo_thresholds, self.state.applied_efo_thresholds
+            )
+
         # Update the histograms
         self.plot()
 
@@ -331,6 +340,14 @@ class Analyzer(QDialog, Ui_Analyzer):
         if self.state.cfr_thresholds is not None:
             self.processor.filter_by_1d_range(
                 "cfr", (self.state.cfr_thresholds[0], self.state.cfr_thresholds[1])
+            )
+
+        # Update State.applied_cfr_thresholds
+        if self.state.applied_cfr_thresholds is None:
+            self.state.applied_cfr_thresholds = self.state.cfr_thresholds
+        else:
+            self.state.applied_cfr_thresholds = intersect_2d_ranges(
+                self.state.cfr_thresholds, self.state.applied_cfr_thresholds
             )
 
         # Update the histograms

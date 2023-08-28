@@ -87,3 +87,12 @@ def check_for_updates():
 
     # Return
     return code, version, error
+
+
+def intersect_2d_ranges(first_range, second_range):
+    """Intersect two 1D ranges (min, max) to get the combined results of two consecutive filtering events."""
+    out_range = (
+        max(first_range[0], second_range[0]),
+        min(first_range[1], second_range[1]),
+    )
+    return out_range

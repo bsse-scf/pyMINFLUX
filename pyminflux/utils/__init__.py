@@ -13,4 +13,4 @@
 #   limitations under the License.
 #
 
-from ._utils import check_for_updates
+from ._utils import check_for_updates, intersect_2d_ranges

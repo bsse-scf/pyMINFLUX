@@ -60,8 +60,6 @@ class Ui_MainWindow(object):
             MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1000, 800)
         MainWindow.setMinimumSize(QSize(640, 480))
-        self.actionLoad = QAction(MainWindow)
-        self.actionLoad.setObjectName("actionLoad")
         self.actionQuit = QAction(MainWindow)
         self.actionQuit.setObjectName("actionQuit")
         self.actionConsole = QAction(MainWindow)
@@ -72,9 +70,6 @@ class Ui_MainWindow(object):
         self.actionData_viewer.setObjectName("actionData_viewer")
         self.actionData_viewer.setCheckable(True)
         self.actionData_viewer.setChecked(True)
-        self.action3D_Plotter = QAction(MainWindow)
-        self.action3D_Plotter.setObjectName("action3D_Plotter")
-        self.action3D_Plotter.setCheckable(False)
         self.actionState = QAction(MainWindow)
         self.actionState.setObjectName("actionState")
         self.actionOptions = QAction(MainWindow)
@@ -111,6 +106,10 @@ class Ui_MainWindow(object):
         self.actionTrace_Stats_Viewer.setObjectName("actionTrace_Stats_Viewer")
         self.actionTrace_Length_Viewer = QAction(MainWindow)
         self.actionTrace_Length_Viewer.setObjectName("actionTrace_Length_Viewer")
+        self.actionLoad = QAction(MainWindow)
+        self.actionLoad.setObjectName("actionLoad")
+        self.actionSave = QAction(MainWindow)
+        self.actionSave.setObjectName("actionSave")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -144,6 +143,8 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuAnalysis.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
         self.menuFile.addAction(self.actionLoad)
+        self.menuFile.addAction(self.actionSave)
+        self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionExport_data)
         self.menuFile.addAction(self.actionExport_stats)
         self.menuFile.addSeparator()
@@ -152,8 +153,6 @@ class Ui_MainWindow(object):
         self.menuFile.addAction(self.actionQuit)
         self.menuView.addAction(self.actionData_viewer)
         self.menuView.addAction(self.actionConsole)
-        self.menuView.addSeparator()
-        self.menuView.addSeparator()
         self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
         self.menuHelp.addAction(self.actionManual)
@@ -183,21 +182,6 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(
             QCoreApplication.translate("MainWindow", "MainWindow", None)
         )
-        self.actionLoad.setText(
-            QCoreApplication.translate("MainWindow", "&Load data", None)
-        )
-        # if QT_CONFIG(tooltip)
-        self.actionLoad.setToolTip(
-            QCoreApplication.translate(
-                "MainWindow", "Load MinFlux binary NumPy data", None
-            )
-        )
-        # endif // QT_CONFIG(tooltip)
-        # if QT_CONFIG(shortcut)
-        self.actionLoad.setShortcut(
-            QCoreApplication.translate("MainWindow", "Ctrl+L", None)
-        )
-        # endif // QT_CONFIG(shortcut)
         self.actionQuit.setText(QCoreApplication.translate("MainWindow", "Quit", None))
         # if QT_CONFIG(tooltip)
         self.actionQuit.setToolTip(
@@ -212,9 +196,6 @@ class Ui_MainWindow(object):
         )
         self.actionData_viewer.setText(
             QCoreApplication.translate("MainWindow", "Data viewer", None)
-        )
-        self.action3D_Plotter.setText(
-            QCoreApplication.translate("MainWindow", "3D plotter", None)
         )
         self.actionState.setText(
             QCoreApplication.translate("MainWindow", "[DEBUG] Show state", None)
@@ -270,6 +251,18 @@ class Ui_MainWindow(object):
         self.actionTrace_Length_Viewer.setText(
             QCoreApplication.translate("MainWindow", "Trace Length Viewer", None)
         )
+        self.actionLoad.setText(QCoreApplication.translate("MainWindow", "Load", None))
+        # if QT_CONFIG(shortcut)
+        self.actionLoad.setShortcut(
+            QCoreApplication.translate("MainWindow", "Ctrl+L", None)
+        )
+        # endif // QT_CONFIG(shortcut)
+        self.actionSave.setText(QCoreApplication.translate("MainWindow", "Save", None))
+        # if QT_CONFIG(shortcut)
+        self.actionSave.setShortcut(
+            QCoreApplication.translate("MainWindow", "Ctrl+S", None)
+        )
+        # endif // QT_CONFIG(shortcut)
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", "Help", None))

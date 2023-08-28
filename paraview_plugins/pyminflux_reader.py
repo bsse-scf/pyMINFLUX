@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import h5py
 import pandas as pd
 from paraview.simple import (
     CreateLayout,
@@ -50,6 +51,7 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         self._x_column = "x"
         self._y_column = "y"
         self._z_column = "z"
+        self._message = ""
 
     @smproperty.stringvector(name="FileName", panel_visibility="never")
     @smdomain.filelist()
@@ -67,6 +69,11 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
 
         # Read the file into a table compatible with TableToPoints
         table = self.file_to_table(self._filename)
+        if table is None:
+            # Inform ParaView that opening the file failed.
+            raise RuntimeError(
+                f"Could not open {self._filename}: error was {self._message}"
+            )
 
         # Rename the table object
         RenameSource("Dataframe", proxy=table)
@@ -104,13 +111,42 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         source = FindSource(Path(self._filename).name)
         Hide(source)
 
+        # Return success
         return 1
 
     def file_to_table(self, filename):
         """Read the file and convert it to a vtkTable."""
 
-        # Read the data frame
-        df = pd.read_csv(filename)
+        with h5py.File(filename, "r") as f:
+
+            # Read the file_version attribute
+            file_version = f.attrs["file_version"]
+
+            if file_version != "1.0":
+                self._message = "Incompatible file version."
+                return None
+
+            # Read dataset
+            dataset = f["/paraview/dataframe"]
+
+            # Read the NumPy data
+            data_array = dataset[:]
+
+            # Read column names
+            column_names = dataset.attrs["column_names"]
+
+            # Read column data types
+            column_types = dataset.attrs["column_types"]
+
+            # Read the index
+            index_data = f["/paraview/dataframe_index"][:]
+
+            # Create DataFrame with specified columns
+            df = pd.DataFrame(data_array, index=index_data, columns=column_names)
+
+            # Apply column data types
+            for col, dtype in zip(column_names, column_types):
+                df[col] = df[col].astype(dtype)
 
         # Create a new column loc_z (that can be used for coloring)
         df["loc z"] = df["z"]
@@ -157,14 +193,17 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
     def set_render_view_display_properties(self, display, table_to_points):
         """Sets the display properties of passed view."""
 
-        # Change the representation to 'Points'
-        display.Representation = "Points"
+        # Change the representation to "Point Gaussian"
+        display.Representation = "Point Gaussian"
 
-        # Change the point size
-        display.PointSize = 5.0
+        # Change the Gaussian radius
+        display.GaussianRadius = 3.0
 
-        # Render points as spheres
-        display.RenderPointsAsSpheres = 1
+        # Set the opacity
+        display.Opacity = 0.4
+
+        # Finally set the shader present
+        display.ShaderPreset = "Plain circle"
 
         # Set the Coloring based on a specific attribute
         # Replace 'attribute_name' with the name of the attribute you want to use
