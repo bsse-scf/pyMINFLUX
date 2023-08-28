@@ -13,6 +13,7 @@
 #   limitations under the License.
 #
 
+import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import BarGraphItem, PlotWidget
 from PySide6 import QtCore, QtWidgets
@@ -25,21 +26,6 @@ from pyminflux.processor import MinFluxProcessor
 from pyminflux.state import State
 from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.ui_trace_length_viewer import Ui_TraceLengthViewer
-
-
-class CustomTooltip(QtWidgets.QLabel):
-    def __init__(self, text=""):
-        super().__init__(text)
-        self.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.setWindowFlags(QtCore.Qt.ToolTip)
-        self.setStyleSheet(
-            """
-            background-color: red;
-            border: 1px solid white;
-            color: white;
-            font-weight: bold;
-        """
-        )
 
 
 class TraceLengthViewer(QDialog, Ui_TraceLengthViewer):
@@ -105,8 +91,8 @@ class TraceLengthViewer(QDialog, Ui_TraceLengthViewer):
         for item in self.plot_widget.allChildItems():
             self.plot_widget.removeItem(item)
 
-        # Calculate mean trace length
-        mean_trace_length = (trace_lengths * counts).sum() / counts.sum()
+        # Calculate median trace length
+        median_trace_length = np.median(self.processor.filtered_dataframe_stats["n"])
 
         # Create the bar chart
         chart = BarGraphItem(
@@ -123,11 +109,27 @@ class TraceLengthViewer(QDialog, Ui_TraceLengthViewer):
         self.plot_widget.setMenuEnabled(False)
         self.plot_widget.addItem(chart)
         self.plot_widget.setTitle(
-            f"Average trace length = {mean_trace_length:.2f} localizations"
+            f"Median trace length = {median_trace_length:.1f} localizations"
         )
         self.plot_widget.scene().sigMouseClicked.connect(
             self.histogram_raise_context_menu
         )
+
+        # Add the mean value as a vertical red line
+        line = pg.InfiniteLine(
+            pos=median_trace_length,
+            movable=False,
+            angle=90,
+            pen={"color": (200, 50, 50), "width": 3},
+            label=f"median={median_trace_length:.1f}",
+            labelOpts={
+                "position": 0.95,
+                "color": (200, 50, 50),
+                "fill": (200, 50, 50, 10),
+                "movable": True,
+            },
+        )
+        self.plot_widget.addItem(line)
 
     def histogram_raise_context_menu(self, ev):
         """Create a context menu on the plot."""
