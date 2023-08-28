@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'wizard.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -275,12 +275,32 @@ class Ui_WizardDialog(object):
 
         self.mainLayout.addItem(self.verticalSpacer_5)
 
+        self.pbSaveData = QPushButton(WizardDialog)
+        self.pbSaveData.setObjectName("pbSaveData")
+
+        self.mainLayout.addWidget(self.pbSaveData)
+
         self.pbExportData = QPushButton(WizardDialog)
         self.pbExportData.setObjectName("pbExportData")
 
         self.mainLayout.addWidget(self.pbExportData)
 
         self.gridLayout.addLayout(self.mainLayout, 0, 0, 1, 1)
+
+        QWidget.setTabOrder(self.pbLoadData, self.pbReset)
+        QWidget.setTabOrder(self.pbReset, self.pbSingleColor)
+        QWidget.setTabOrder(self.pbSingleColor, self.pbColorUnmixer)
+        QWidget.setTabOrder(self.pbColorUnmixer, self.cmActiveColor)
+        QWidget.setTabOrder(self.cmActiveColor, self.pbTimeInspector)
+        QWidget.setTabOrder(self.pbTimeInspector, self.pbAnalyzer)
+        QWidget.setTabOrder(self.pbAnalyzer, self.leEFOLowerBound)
+        QWidget.setTabOrder(self.leEFOLowerBound, self.leEFOUpperBound)
+        QWidget.setTabOrder(self.leEFOUpperBound, self.pbEFOFilter)
+        QWidget.setTabOrder(self.pbEFOFilter, self.leCFRLowerBound)
+        QWidget.setTabOrder(self.leCFRLowerBound, self.leCFRUpperBound)
+        QWidget.setTabOrder(self.leCFRUpperBound, self.pbCFRFilter)
+        QWidget.setTabOrder(self.pbCFRFilter, self.pbSaveData)
+        QWidget.setTabOrder(self.pbSaveData, self.pbExportData)
 
         self.retranslateUi(WizardDialog)
 
@@ -344,6 +364,9 @@ class Ui_WizardDialog(object):
         )
         self.pbCFRFilter.setText(
             QCoreApplication.translate("WizardDialog", "FIlter CFR", None)
+        )
+        self.pbSaveData.setText(
+            QCoreApplication.translate("WizardDialog", "Save", None)
         )
         self.pbExportData.setText(
             QCoreApplication.translate("WizardDialog", "Export", None)

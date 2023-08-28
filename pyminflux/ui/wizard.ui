@@ -330,6 +330,13 @@
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="pbSaveData">
+       <property name="text">
+        <string>Save</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="pbExportData">
        <property name="text">
         <string>Export</string>
@@ -340,6 +347,23 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>pbLoadData</tabstop>
+  <tabstop>pbReset</tabstop>
+  <tabstop>pbSingleColor</tabstop>
+  <tabstop>pbColorUnmixer</tabstop>
+  <tabstop>cmActiveColor</tabstop>
+  <tabstop>pbTimeInspector</tabstop>
+  <tabstop>pbAnalyzer</tabstop>
+  <tabstop>leEFOLowerBound</tabstop>
+  <tabstop>leEFOUpperBound</tabstop>
+  <tabstop>pbEFOFilter</tabstop>
+  <tabstop>leCFRLowerBound</tabstop>
+  <tabstop>leCFRUpperBound</tabstop>
+  <tabstop>pbCFRFilter</tabstop>
+  <tabstop>pbSaveData</tabstop>
+  <tabstop>pbExportData</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

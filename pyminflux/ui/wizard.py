@@ -26,6 +26,7 @@ from .ui_wizard import Ui_WizardDialog
 
 class WizardDialog(QDialog, Ui_WizardDialog):
     load_data_triggered = Signal(None, name="load_data_triggered")
+    save_data_triggered = Signal(None, name="save_data_triggered")
     reset_filters_triggered = Signal(None, name="reset_filters_triggered")
     open_unmixer_triggered = Signal(None, name="open_unmixer_triggered")
     open_time_inspector_triggered = Signal(None, name="open_time_inspector_triggered")
@@ -124,6 +125,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         )
         self.ui.pbEFOFilter.clicked.connect(self.run_efo_filter_and_broadcast)
         self.ui.pbCFRFilter.clicked.connect(self.run_cfr_filter_and_broadcast)
+        self.ui.pbSaveData.clicked.connect(lambda _: self.save_data_triggered.emit())
         self.ui.pbExportData.clicked.connect(
             lambda _: self.export_data_triggered.emit()
         )
@@ -218,7 +220,8 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.ui.leCFRUpperBound.setVisible(enabled)
         self.ui.pbCFRFilter.setVisible(enabled)
 
-        # Export data
+        # Save/Export data
+        self.ui.pbSaveData.setVisible(enabled)
         self.ui.pbExportData.setVisible(enabled)
 
     def reset_fluorophores(self):

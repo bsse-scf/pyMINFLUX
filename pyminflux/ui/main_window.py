@@ -355,6 +355,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         self.wizard.request_fluorophore_ids_reset.connect(self.reset_fluorophore_ids)
         self.wizard.wizard_filters_run.connect(self.full_update_ui)
+        self.wizard.save_data_triggered.connect(self.save_native_file)
         self.wizard.export_data_triggered.connect(self.export_filtered_data)
 
     def enable_ui_components(self, enabled: bool):
