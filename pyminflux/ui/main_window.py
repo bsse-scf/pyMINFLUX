@@ -92,7 +92,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.processor = None
 
         # Read the application settings and update the state
-        self.read_settings()
+        self.load_and_apply_settings()
 
         # Set the menu state based on the settings
         self.ui.actionConsole.setChecked(self.state.open_console_at_start)
@@ -153,7 +153,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Print a welcome message to the console
         print(f"Welcome to {__APP_NAME__}.")
 
-    def read_settings(self):
+    def load_and_apply_settings(self):
         """Read the application settings and update the State."""
 
         # Open settings file
@@ -588,8 +588,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 )
                 return
 
-            # Reset the state machine
-            self.state.reset()
+            # Reload the default settings
+            self.load_and_apply_settings()
+
+            # Inform
+            print("Reloaded default settings.")
 
             # If we have a `.pmx` file, we first scan the metadata and update
             # the State
@@ -606,6 +609,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
                 # Update the State from the read metadata
                 self.state.update_from_metadata(metadata)
+
+                # Inform
+                print("Applied settings from file.")
 
             # Now pass the filename to the MinFluxReader
             reader = MinFluxReader(
