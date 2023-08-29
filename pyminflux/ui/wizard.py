@@ -13,9 +13,11 @@
 #   limitations under the License.
 #
 
+from pathlib import Path
+
 from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
 from PySide6.QtGui import QDoubleValidator
-from PySide6.QtWidgets import QDialog
+from PySide6.QtWidgets import QDialog, QMessageBox
 
 from pyminflux.state import State
 
@@ -26,6 +28,7 @@ from .ui_wizard import Ui_WizardDialog
 
 class WizardDialog(QDialog, Ui_WizardDialog):
     load_data_triggered = Signal(None, name="load_data_triggered")
+    load_filename_triggered = Signal(str, name="load_filename_triggered")
     save_data_triggered = Signal(None, name="save_data_triggered")
     reset_filters_triggered = Signal(None, name="reset_filters_triggered")
     open_unmixer_triggered = Signal(None, name="open_unmixer_triggered")
@@ -49,11 +52,14 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.ui = Ui_WizardDialog()
         self.ui.setupUi(self)
 
+        # Accept drops
+        self.setAcceptDrops(True)
+
         # Keep a reference to the singleton State class
         self.state = State()
 
         # Keep a reference (initially unset) to the processor
-        self.processor = None
+        self._processor = None
 
         # Disable controls
         self.enable_controls(False)
@@ -79,6 +85,15 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Set up connections
         self.setup_conn()
 
+    def dragEnterEvent(self, event):
+        """Process drag events. Ignore drag events that are not file paths."""
+
+        # Does the event contains URLs (file paths)?
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
     def keyPressEvent(self, event):
         """Intercept key-press events."""
         if event.key() == Qt.Key_Escape:
@@ -87,9 +102,44 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         else:
             super().keyPressEvent(event)
 
+    def dropEvent(self, event):
+
+        # Retrieve urls
+        urls = event.mimeData().urls()
+        if len(urls) == 0:
+            return
+
+        # Make sure that we have only one file
+        if len(urls) > 1:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Cannot open multiple files.",
+            )
+            return
+
+        # Check the file
+        try:
+            filename = urls[0].toLocalFile()
+        except Exception as _:
+            return
+
+        # Make sure it is of the right format
+        if len(filename) < 5:
+            return
+        ext = filename.lower()[-4:]
+        if ext in [".pmx", ".npy", ".mat"]:
+            self.load_filename_triggered.emit(str(filename))
+        else:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Unsupported file {filename}.",
+            )
+
     def set_processor(self, processor):
         """Store a reference to the processor."""
-        self.processor = processor
+        self._processor = processor
 
         # Prepare and fill the filter ranges
         self.prepare_filter_ranges()
@@ -133,13 +183,13 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     def prepare_filter_ranges(self):
         """Extract bounds from the EFO and CFR data and prefill the values."""
 
-        if self.processor is None:
+        if self._processor is None:
             return
 
         # Get the range for the EFO data
         if self.state.efo_thresholds is None:
             _, efo_bin_edges, _, _ = prepare_histogram(
-                self.processor.filtered_dataframe["efo"].values,
+                self._processor.filtered_dataframe["efo"].values,
                 auto_bins=self.state.efo_bin_size_hz == 0,
                 bin_size=self.state.efo_bin_size_hz,
             )
@@ -147,7 +197,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Get the range for the CFR data
         _, cfr_bin_edges, _, _ = prepare_histogram(
-            self.processor.filtered_dataframe["cfr"].values,
+            self._processor.filtered_dataframe["cfr"].values,
             auto_bins=True,
             bin_size=0.0,
         )
@@ -323,7 +373,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Apply the EFO filter if needed
         if self.state.efo_thresholds is not None:
-            self.processor.filter_by_1d_range(
+            self._processor.filter_by_1d_range(
                 "efo", (self.state.efo_thresholds[0], self.state.efo_thresholds[1])
             )
 
@@ -348,7 +398,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Apply the CFR filter if needed
         if self.state.cfr_thresholds is not None:
-            self.processor.filter_by_1d_range(
+            self._processor.filter_by_1d_range(
                 "cfr", (self.state.cfr_thresholds[0], self.state.cfr_thresholds[1])
             )
 

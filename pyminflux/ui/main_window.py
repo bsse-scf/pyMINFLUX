@@ -89,7 +89,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.last_selected_path = ""
 
         # Keep a reference to the MinFluxProcessor
-        self.minfluxprocessor = None
+        self._processor = None
 
         # Read the application settings and update the state
         self.read_settings()
@@ -357,6 +357,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.wizard.wizard_filters_run.connect(self.full_update_ui)
         self.wizard.save_data_triggered.connect(self.save_native_file)
         self.wizard.export_data_triggered.connect(self.export_filtered_data)
+        self.wizard.load_filename_triggered.connect(
+            self.select_and_load_or_import_data_file
+        )
 
     def enable_ui_components(self, enabled: bool):
         """Enable/disable UI components."""
@@ -388,12 +391,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plot_selected_parameters()
         self.data_viewer.clear()
         if (
-            self.minfluxprocessor is not None
-            and self.minfluxprocessor.filtered_dataframe is not None
+            self._processor is not None
+            and self._processor.filtered_dataframe is not None
         ):
-            print(
-                f"Retrieved {len(self.minfluxprocessor.filtered_dataframe.index)} events."
-            )
+            print(f"Retrieved {len(self._processor.filtered_dataframe.index)} events.")
 
     def print_to_console(self, text):
         """
@@ -472,7 +473,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Reset all filters and broadcast changes."""
 
         # Reset filters and data
-        self.minfluxprocessor.reset()
+        self._processor.reset()
         self.state.efo_thresholds = None
         self.state.cfr_thresholds = None
 
@@ -508,18 +509,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def save_native_file(self):
         """Save data to native pyMINFLUX `.pmx` file."""
         if (
-            self.minfluxprocessor is None
-            or len(self.minfluxprocessor.filtered_dataframe.index) == 0
+            self._processor is None
+            or len(self._processor.filtered_dataframe.index) == 0
         ):
             return
 
         # Get current filename to build the suggestion output
-        if self.minfluxprocessor.filename is None:
+        if self._processor.filename is None:
             out_filename = str(self.last_selected_path)
         else:
             out_filename = str(
-                self.minfluxprocessor.filename.parent
-                / f"{self.minfluxprocessor.filename.stem}.pmx"
+                self._processor.filename.parent / f"{self._processor.filename.stem}.pmx"
             )
 
         # Ask the user to pick a name (and format)
@@ -540,7 +540,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             filename = filename.parent / f"{filename.stem}.pmx"
 
         # Write to disk
-        writer = PyMinFluxNativeWriter(self.minfluxprocessor)
+        writer = PyMinFluxNativeWriter(self._processor)
         result = writer.write(filename)
 
         # Save
@@ -554,32 +554,48 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
 
     @Slot(None, name="select_and_load_or_import_data_file")
-    def select_and_load_or_import_data_file(self):
+    def select_and_load_or_import_data_file(self, filename: str = None):
         """
         Pick a MINFLUX `.pmx` file to load, or an Imspector `.npy' or '.mat' file to import.
         :return: void
         """
 
-        # Open a file dialog for the user to pick a .pmx, .npy or .mat file
-        res = QFileDialog.getOpenFileName(
-            self,
-            "Load file",
-            str(self.last_selected_path),
-            "All Supported Files (*.pmx *.npy *.mat);;"
-            "pyMINFLUX file (*.pmx);;"
-            "Imspector NumPy files (*.npy);;"
-            "Imspector MATLAB mat files (*.mat)",
-        )
-        filename = res[0]
-        if filename != "":
+        # Do we have a filename?
+        if filename is None:
+            # Open a file dialog for the user to pick a .pmx, .npy or .mat file
+            res = QFileDialog.getOpenFileName(
+                self,
+                "Load file",
+                str(self.last_selected_path),
+                "All Supported Files (*.pmx *.npy *.mat);;"
+                "pyMINFLUX file (*.pmx);;"
+                "Imspector NumPy files (*.npy);;"
+                "Imspector MATLAB mat files (*.mat)",
+            )
+            filename = res[0]
 
-            # Reset the state machine
-            self.state.reset()
+        # Make sure that we are working with a string
+        filename = str(filename)
+
+        if filename != "" and Path(filename).is_file():
 
             # Pick the right reader
             if len(filename) < 5:
+                print(f"Invalid file {filename}: skipping.")
                 return
             ext = filename.lower()[-4:]
+
+            # Make sure we have a supported file
+            if ext not in [".pmx", ".npy", ".mat"]:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Unsupported file {filename}.",
+                )
+                return
+
+            # Reset the state machine
+            self.state.reset()
 
             # If we have a `.pmx` file, we first scan the metadata and update
             # the State
@@ -597,12 +613,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 # Update the State from the read metadata
                 self.state.update_from_metadata(metadata)
 
-            if ext in [".pmx", ".npy", ".mat"]:
-                reader = MinFluxReader(
-                    filename, z_scaling_factor=self.state.z_scaling_factor
-                )
-            else:
-                return
+            # Now pass the filename to the MinFluxReader
+            reader = MinFluxReader(
+                filename, z_scaling_factor=self.state.z_scaling_factor
+            )
 
             # Open the file
             self.last_selected_path = Path(filename).parent
@@ -611,12 +625,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             print(reader)
 
             # Add initialize the processor with the reader
-            self.minfluxprocessor = MinFluxProcessor(
-                reader, self.state.min_trace_length
-            )
+            self._processor = MinFluxProcessor(reader, self.state.min_trace_length)
 
             # Make sure to set current value of use_weighted_localizations
-            self.minfluxprocessor.use_weighted_localizations = (
+            self._processor.use_weighted_localizations = (
                 self.state.weigh_avg_localization_by_eco
             )
 
@@ -661,43 +673,42 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plotter.enableAutoRange(enable=True)
 
             # Reset the fluorophore list in the wizard
-            self.wizard.set_fluorophore_list(self.minfluxprocessor.num_fluorophores)
+            self.wizard.set_fluorophore_list(self._processor.num_fluorophores)
 
             # Enable selected ui components
             self.enable_ui_components(True)
 
             # Update the Analyzer
             if self.analyzer is not None:
-                self.analyzer.set_processor(self.minfluxprocessor)
+                self.analyzer.set_processor(self._processor)
                 self.analyzer.plot()
 
             # Attach the processor reference to the wizard
-            self.wizard.set_processor(self.minfluxprocessor)
+            self.wizard.set_processor(self._processor)
 
             # Enable wizard
             self.wizard.enable_controls(True)
 
         else:
             # If nothing is loaded (even from earlier), disable wizard
-            if self.minfluxprocessor is None:
+            if self._processor is None:
                 self.wizard.enable_controls(False)
 
     @Slot(None, name="export_filtered_data")
     def export_filtered_data(self):
         """Export filtered data as CSV file."""
         if (
-            self.minfluxprocessor is None
-            or len(self.minfluxprocessor.filtered_dataframe.index) == 0
+            self._processor is None
+            or len(self._processor.filtered_dataframe.index) == 0
         ):
             return
 
         # Get current filename to build the suggestion output
-        if self.minfluxprocessor.filename is None:
+        if self._processor.filename is None:
             out_filename = str(self.last_selected_path)
         else:
             out_filename = str(
-                self.minfluxprocessor.filename.parent
-                / f"{self.minfluxprocessor.filename.stem}.csv"
+                self._processor.filename.parent / f"{self._processor.filename.stem}.csv"
             )
 
         # Ask the user to pick a name (and format)
@@ -719,7 +730,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 filename = filename.parent / f"{filename.stem}.csv"
 
             # Write to disk
-            result = MinFluxWriter.write_csv(self.minfluxprocessor, filename)
+            result = MinFluxWriter.write_csv(self._processor, filename)
 
         else:
             return
@@ -727,7 +738,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Save
         if result:
             print(
-                f"Successfully exported {len(self.minfluxprocessor.filtered_dataframe.index)} localizations."
+                f"Successfully exported {len(self._processor.filtered_dataframe.index)} localizations."
             )
         else:
             QMessageBox.critical(
@@ -740,8 +751,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def export_filtered_stats(self):
         """Export filtered, per-trace statistics as CSV file."""
         if (
-            self.minfluxprocessor is None
-            or len(self.minfluxprocessor.filtered_dataframe.index) == 0
+            self._processor is None
+            or len(self._processor.filtered_dataframe.index) == 0
         ):
             # Inform and return
             QMessageBox.information(
@@ -752,12 +763,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             return
 
         # Get current filename to build the suggestion output
-        if self.minfluxprocessor.filename is None:
+        if self._processor.filename is None:
             out_filename = str(self.last_selected_path)
         else:
             out_filename = str(
-                self.minfluxprocessor.filename.parent
-                / f"{self.minfluxprocessor.filename.stem}_stats.csv"
+                self._processor.filename.parent
+                / f"{self._processor.filename.stem}_stats.csv"
             )
 
         # Ask the user to pick a name
@@ -781,7 +792,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             filename = filename.parent / f"{filename.stem}.csv"
 
         # Collect stats
-        stats = self.minfluxprocessor.filtered_dataframe_stats
+        stats = self._processor.filtered_dataframe_stats
         if stats is None:
             return
 
@@ -867,7 +878,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_analyzer(self):
         """Initialize and open the analyzer."""
         if self.analyzer is None:
-            self.analyzer = Analyzer(self.minfluxprocessor)
+            self.analyzer = Analyzer(self._processor)
             self.wizard.wizard_filters_run.connect(self.analyzer.plot)
             self.request_sync_external_tools.connect(self.analyzer.plot)
             self.wizard.efo_bounds_modified.connect(self.analyzer.change_efo_bounds)
@@ -896,7 +907,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_time_inspector(self):
         """Initialize and open the Time Inspector."""
         if self.time_inspector is None:
-            self.time_inspector = TimeInspector(self.minfluxprocessor, parent=self)
+            self.time_inspector = TimeInspector(self._processor, parent=self)
             self.time_inspector.dataset_time_filtered.connect(self.full_update_ui)
             self.wizard.wizard_filters_run.connect(self.time_inspector.update)
             self.request_sync_external_tools.connect(self.time_inspector.update)
@@ -918,7 +929,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_color_unmixer(self):
         """Initialize and open the color unmixer."""
         if self.color_unmixer is None:
-            self.color_unmixer = ColorUnmixer(self.minfluxprocessor, parent=self)
+            self.color_unmixer = ColorUnmixer(self._processor, parent=self)
             self.color_unmixer.fluorophore_ids_assigned.connect(
                 self.wizard.set_fluorophore_list
             )
@@ -950,16 +961,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     @Slot(None, name="update_min_trace_length")
     def update_min_trace_length(self):
-        if self.minfluxprocessor is not None:
-            self.minfluxprocessor.min_trace_length = self.state.min_trace_length
+        if self._processor is not None:
+            self._processor.min_trace_length = self.state.min_trace_length
 
     @Slot(None, name="open_trace_stats_viewer")
     def open_trace_stats_viewer(self):
         """Open the trace stats viewer."""
         if self.trace_stats_viewer is None:
-            self.trace_stats_viewer = TraceStatsViewer(
-                self.minfluxprocessor, parent=self
-            )
+            self.trace_stats_viewer = TraceStatsViewer(self._processor, parent=self)
             self.request_sync_external_tools.connect(self.trace_stats_viewer.update)
             self.wizard.request_fluorophore_ids_reset.connect(
                 self.trace_stats_viewer.update
@@ -982,9 +991,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_trace_length_viewer(self):
         """Open the trace length viewer."""
         if self.trace_length_viewer is None:
-            self.trace_length_viewer = TraceLengthViewer(
-                self.minfluxprocessor, parent=self
-            )
+            self.trace_length_viewer = TraceLengthViewer(self._processor, parent=self)
             self.request_sync_external_tools.connect(self.trace_length_viewer.update)
             self.wizard.request_fluorophore_ids_reset.connect(
                 self.trace_length_viewer.update
@@ -1004,7 +1011,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_frc_tool(self):
         """Open the FRC tool."""
         if self.frc_tool is None:
-            self.frc_tool = FRCTool(self.minfluxprocessor)
+            self.frc_tool = FRCTool(self._processor)
         self.frc_tool.show()
         self.frc_tool.activateWindow()
 
@@ -1021,7 +1028,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         indices = sorted(indices)
 
         # Get the filtered dataframe subset corresponding to selected indices
-        df = self.minfluxprocessor.select_by_indices(
+        df = self._processor.select_by_indices(
             indices=indices, from_weighted_locs=self.state.plot_average_localisations
         )
 
@@ -1039,7 +1046,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Select the data by x and y range and show in the dataframe viewer."""
 
         # Get the filtered dataframe subset contained in the provided x and y ranges
-        df = self.minfluxprocessor.select_by_2d_range(
+        df = self._processor.select_by_2d_range(
             x_param,
             y_param,
             x_range,
@@ -1059,7 +1066,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Filter the data by x and y range and show in the dataframe viewer."""
 
         # Filter the dataframe by the passed x and y ranges
-        self.minfluxprocessor.filter_by_2d_range(x_param, y_param, x_range, y_range)
+        self._processor.filter_by_2d_range(x_param, y_param, x_range, y_range)
 
         # Update the Analyzer
         if self.analyzer is not None:
@@ -1086,8 +1093,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     def update_weighted_average_localization_option_and_plot(self):
         """Update the weighted average localization option in the Processor and re-plot."""
-        if self.minfluxprocessor is not None:
-            self.minfluxprocessor.use_weighted_localizations = (
+        if self._processor is not None:
+            self._processor.use_weighted_localizations = (
                 self.state.weigh_avg_localization_by_eco
             )
         self.plot_selected_parameters()
@@ -1099,7 +1106,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter.remove_points()
 
         # If there is nothing to plot, return here
-        if self.minfluxprocessor is None:
+        if self._processor is None:
             return
 
         # If an only if the requested parameters are "x" and "y" (in any order),
@@ -1109,14 +1116,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         ):
             if self.state.plot_average_localisations:
                 # Get the (potentially filtered) averaged dataframe
-                dataframe = self.minfluxprocessor.weighted_localizations
+                dataframe = self._processor.weighted_localizations
             else:
                 # Get the (potentially filtered) full dataframe
-                dataframe = self.minfluxprocessor.filtered_dataframe
+                dataframe = self._processor.filtered_dataframe
 
         else:
             # Get the (potentially filtered) full dataframe
-            dataframe = self.minfluxprocessor.filtered_dataframe
+            dataframe = self._processor.filtered_dataframe
 
         # Extract values
         x = dataframe[self.state.x_param].values
@@ -1140,13 +1147,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """
 
         # Is there data to process?
-        if self.minfluxprocessor is None:
+        if self._processor is None:
             self.data_viewer.clear()
             return
 
         if dataframe is None:
             # Get the (potentially filtered) dataframe
-            dataframe = self.minfluxprocessor.filtered_dataframe()
+            dataframe = self._processor.filtered_dataframe()
 
         # Pass the dataframe to the pdDataViewer
         self.data_viewer.set_data(dataframe)
@@ -1156,7 +1163,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Update the fluorophore ID in the processor and broadcast the change to all parties."""
 
         # Update the processor
-        self.minfluxprocessor.current_fluorophore_id = index
+        self._processor.current_fluorophore_id = index
 
         # Update all views
         self.full_update_ui()
@@ -1169,7 +1176,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Reset the fluorophore IDs."""
 
         # Reset
-        self.minfluxprocessor.reset()
+        self._processor.reset()
 
         # Update UI
         self.update_fluorophore_id_in_processor_and_broadcast(0)
