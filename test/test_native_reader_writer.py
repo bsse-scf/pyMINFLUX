@@ -207,10 +207,10 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
             # Check that the read NumPy array is identical to the original
             assert (
-                data_array.shape == processor._reader.valid_raw_data.shape
+                data_array.shape == processor.reader.valid_raw_data.shape
             ), "NumPy arrays' shape mismatch!"
             assert (
-                data_array.dtype == processor._reader.valid_raw_data.dtype
+                data_array.dtype == processor.reader.valid_raw_data.dtype
             ), "Mismatch in raw NumPy arrays' shape!"
 
             assert structured_arrays_equal(

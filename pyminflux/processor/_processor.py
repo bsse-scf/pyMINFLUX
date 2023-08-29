@@ -32,7 +32,7 @@ class MinFluxProcessor:
 
     __slots__ = [
         "state",
-        "_reader",
+        "reader",
         "_current_fluorophore_id",
         "_filtered_stats_dataframe",
         "_min_trace_length",
@@ -57,7 +57,7 @@ class MinFluxProcessor:
         """
 
         # Store a reference to the MinFluxReader
-        self._reader: MinFluxReader = reader
+        self.reader: MinFluxReader = reader
 
         # Global options
         self._min_trace_length: int = min_trace_length
@@ -110,7 +110,7 @@ class MinFluxProcessor:
     @property
     def z_scaling_factor(self):
         """Returns the scaling factor for the z coordinates from the underlying MinFluxReader."""
-        return self._reader.z_scaling_factor
+        return self.reader.z_scaling_factor
 
     @min_trace_length.setter
     def min_trace_length(self, value):
@@ -130,7 +130,7 @@ class MinFluxProcessor:
         is_3d: bool
             True if the acquisition is 3D, False otherwise.
         """
-        return self._reader.is_3d
+        return self.reader.is_3d
 
     @property
     def num_values(self) -> int:
@@ -178,7 +178,7 @@ class MinFluxProcessor:
         """Return the raw NumPy array with applied filters (for all fluorophores)."""
 
         # Copy the raw NumPy array
-        raw_array = self._reader.valid_raw_data
+        raw_array = self.reader.valid_raw_data
         if raw_array is None:
             return None
 
@@ -220,14 +220,14 @@ class MinFluxProcessor:
         full_dataframe: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
-        return self._reader.processed_dataframe
+        return self.reader.processed_dataframe
 
     @property
     def filename(self) -> Union[Path, None]:
         """Return the filename if set."""
-        if self._reader is None:
+        if self.reader is None:
             return None
-        return self._reader.filename
+        return self.reader.filename
 
     def _filtered_dataframe_all(self) -> Union[None, pd.DataFrame]:
         """Return joint dataframe for all fluorophores and with all filters applied.
@@ -385,10 +385,10 @@ class MinFluxProcessor:
             assert np.sum(mask.values) == len(z), "Unexpected number of elements in z."
 
         # Re-assign the data at the reader level
-        self._reader._data_df.loc[mask, "x"] = x
-        self._reader._data_df.loc[mask, "y"] = y
+        self.reader._data_df.loc[mask, "x"] = x
+        self.reader._data_df.loc[mask, "y"] = y
         if z is not None and self.is_3d:
-            self._reader._data_df.loc[mask, "z"] = z
+            self.reader._data_df.loc[mask, "z"] = z
 
         # Also update the raw structured NumPy array. Since NumPy
         # will return a copy if we try to access the "loc" array
@@ -396,20 +396,20 @@ class MinFluxProcessor:
         # all rows one by one!
         #
         # Furthermore, we need to scale the values by the factor
-        # self._reader._unit_scaling_factor
-        x_scaled = x / self._reader._unit_scaling_factor
-        y_scaled = y / self._reader._unit_scaling_factor
+        # self.reader._unit_scaling_factor
+        x_scaled = x / self.reader._unit_scaling_factor
+        y_scaled = y / self.reader._unit_scaling_factor
         if z is not None and self.is_3d:
-            z_scaled = z / self._reader._unit_scaling_factor
-        idx = self._reader._loc_index
-        vld_indices = np.where(self._reader._valid_entries)[0]
+            z_scaled = z / self.reader._unit_scaling_factor
+        idx = self.reader._loc_index
+        vld_indices = np.where(self.reader._valid_entries)[0]
         mask_indices = np.where(mask)[0]
         for i, I in enumerate(mask_indices):
             if I in vld_indices:
-                self._reader._data_array[I]["itr"][idx]["loc"][0] = x_scaled[i]
-                self._reader._data_array[I]["itr"][idx]["loc"][1] = y_scaled[i]
+                self.reader._data_array[I]["itr"][idx]["loc"][0] = x_scaled[i]
+                self.reader._data_array[I]["itr"][idx]["loc"][1] = y_scaled[i]
                 if z is not None and self.is_3d:
-                    self._reader._data_array[I]["itr"][idx]["loc"][2] = z_scaled[i]
+                    self.reader._data_array[I]["itr"][idx]["loc"][2] = z_scaled[i]
 
         # Mark derived data to be recomputed
         self._stats_to_be_recomputed = True

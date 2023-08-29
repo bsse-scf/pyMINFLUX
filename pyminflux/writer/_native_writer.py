@@ -27,7 +27,7 @@ class PyMinFluxNativeWriter:
     __docs__ = "Writer of (processed) MINFLUX into native `.pmx` format."
 
     def __init__(self, processor: MinFluxProcessor):
-        self._processor = processor
+        self.processor = processor
         self._state = State()
         self._message = ""
 
@@ -48,7 +48,7 @@ class PyMinFluxNativeWriter:
 
                 # Store the filtered numpy array (with fluorophores)
                 raw_data_group.create_dataset(
-                    "npy", data=self._processor.filtered_numpy_array, compression="gzip"
+                    "npy", data=self.processor.filtered_numpy_array, compression="gzip"
                 )
 
                 # Store the pandas dataframe: to make sure not to depend on additional
@@ -83,17 +83,17 @@ class PyMinFluxNativeWriter:
 
         dataset = group.create_dataset(
             "dataframe",
-            data=self._processor.filtered_dataframe.to_numpy(),
+            data=self.processor.filtered_dataframe.to_numpy(),
             compression="gzip",
         )
 
         # Convert the column names to a list of strings
-        column_names = self._processor.filtered_dataframe.columns.tolist()
+        column_names = self.processor.filtered_dataframe.columns.tolist()
 
         # Convert column data types to a list of strings
         column_types = [
-            str(self._processor.filtered_dataframe[col].dtype)
-            for col in self._processor.filtered_dataframe.columns
+            str(self.processor.filtered_dataframe[col].dtype)
+            for col in self.processor.filtered_dataframe.columns
         ]
 
         # Store the column names as an attribute of the dataset
@@ -103,14 +103,14 @@ class PyMinFluxNativeWriter:
         dataset.attrs["column_types"] = column_types
 
         # We preserve the index as well (as a Dataset, since it can be large)
-        index_data = np.array(self._processor.filtered_dataframe.index)
+        index_data = np.array(self.processor.filtered_dataframe.index)
         group.create_dataset("dataframe_index", data=index_data, compression="gzip")
 
     def _store_parameters(self, group):
         """Write important parameters."""
 
-        group.create_dataset("z_scaling_factor", data=self._processor.z_scaling_factor)
-        group.create_dataset("min_trace_length", data=self._processor.min_trace_length)
+        group.create_dataset("z_scaling_factor", data=self.processor.z_scaling_factor)
+        group.create_dataset("min_trace_length", data=self.processor.min_trace_length)
         if self._state.applied_efo_thresholds is not None:
             group.create_dataset(
                 "applied_efo_thresholds",
@@ -121,4 +121,4 @@ class PyMinFluxNativeWriter:
                 "applied_cfr_thresholds",
                 data=self._state.applied_cfr_thresholds,
             )
-        group.create_dataset("num_fluorophores", data=self._processor.num_fluorophores)
+        group.create_dataset("num_fluorophores", data=self.processor.num_fluorophores)
