@@ -24,6 +24,7 @@ __all__ = [
     "get_robust_threshold",
     "ideal_hist_bins",
     "prepare_histogram",
+    "reassign_fluo_ids_by_majority_vote",
 ]
 
 from ._analysis import (
@@ -35,4 +36,5 @@ from ._analysis import (
     get_robust_threshold,
     ideal_hist_bins,
     prepare_histogram,
+    reassign_fluo_ids_by_majority_vote,
 )

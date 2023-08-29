@@ -8,10 +8,11 @@ All notable changes to this project will be documented in this file.
 * FRC Analysis now runs in parallel over all CPU cores.
 * Add new Trace Statistics Viewer.
 * Add new Trace Length Viewer.
+* Add fluorophore ID reassignment within traces by majority vote.
 * Allow opening files by drag-and-drop on the left panel.
 * Add all analysis tools to the main window's Analysis menu.
 * Add companion ParaView reader plug-in.
-* Remove 3D Plotter (in favor of using ParaView).
+* Remove 3D Plotter (in favor of using ParaView and the ParaView reader plug-in).
 
 ## [0.2.0] - 2023-07-19
 

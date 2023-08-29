@@ -20,9 +20,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from pyminflux.analysis import reassign_fluo_ids_by_majority_vote
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
-from pyminflux.state import State
 
 
 class MockMinFluxReader:
@@ -1854,3 +1854,27 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     assert (
         (df_all == df_join).all().all()
     ), "The selected and filtered set are not identical."
+
+
+def test_fluorophore_id_majority_vote(tmpdir):
+
+    # Load the test data
+    data = np.load(Path(__file__).parent / "data" / "fluo_ids_reassignment.npz")
+
+    # Extract the data to work on
+    fluo_ids = data["fluo_ids"]
+    tids = data["tids"]
+    expected_fluo_ids = data["expected_fluo_ids"]
+
+    # Run the reassignment
+    reassigned_fluo_ids = reassign_fluo_ids_by_majority_vote(fluo_ids, tids)
+
+    # Check the results
+    assert np.all(
+        expected_fluo_ids == reassigned_fluo_ids
+    ), "Unexpected fluorophore ID reassignment result!"
+
+    # Check the number of reassigned localizations
+    assert (
+        np.sum(reassigned_fluo_ids != fluo_ids) == 112
+    ), "Unexpected number of fluorophore ID reassignments!"
