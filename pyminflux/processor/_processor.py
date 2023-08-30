@@ -816,7 +816,7 @@ class MinFluxProcessor:
 
         # Store trace stats
         df_tid["tid"] = tid  # Trace ID
-        df_tid["n"] = n  # Number of traces for given ID
+        df_tid["n"] = n  # Number of localizations for given trace ID
         df_tid["mx"] = mx  # x mean localization
         df_tid["my"] = my  # y mean localization
         df_tid["mz"] = mz  # z mean localization
