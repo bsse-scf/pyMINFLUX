@@ -2,24 +2,20 @@ from pathlib import Path
 
 import h5py
 import pandas as pd
+import paraview.vtk as vtk
+import paraview.vtk.util.numpy_support as vnp
 from paraview.simple import (
     CreateLayout,
     CreateView,
-    Delete,
     FindSource,
-    GetActiveViewOrCreate,
     GetColorTransferFunction,
-    GetLayouts,
     GetMaterialLibrary,
-    GetOpacityTransferFunction,
     Hide,
-    RemoveLayout,
     RenameSource,
     Render,
     ResetCamera,
     SetActiveView,
     Show,
-    TableToPoints,
     TrivialProducer,
     UpdatePipeline,
     _DisableFirstRenderCameraReset,
@@ -32,8 +28,9 @@ from paraview.util.vtkAlgorithm import (
     smproperty,
     smproxy,
 )
-from vtkmodules.vtkCommonCore import vtkFloatArray, vtkPoints
-from vtkmodules.vtkCommonDataModel import vtkPolyData, vtkTable
+from paraview.vtk.numpy_interface import dataset_adapter as dsa
+from vtkmodules.vtkCommonCore import vtkPoints
+from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet, vtkUnstructuredGrid
 
 
 @smproxy.reader(
@@ -45,13 +42,12 @@ from vtkmodules.vtkCommonDataModel import vtkPolyData, vtkTable
 class pyMINFLUXReader(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(
-            self, nInputPorts=0, nOutputPorts=1, outputType="vtkPolyData"
+            self, nInputPorts=0, nOutputPorts=1, outputType="vtkMultiBlockDataSet"
         )
         self._filename = ""
         self._x_column = "x"
         self._y_column = "y"
         self._z_column = "z"
-        self._message = ""
 
     @smproperty.stringvector(name="FileName", panel_visibility="never")
     @smdomain.filelist()
@@ -64,35 +60,28 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
 
     def RequestData(self, request, inInfo, outInfo):
 
+        # Disable automatic camera reset on Show()
+        _DisableFirstRenderCameraReset()
+
         # Create a new "pyMINFLUX" layout
         layout, render_view = self.create_new_layout()
 
-        # Read the file into a table compatible with TableToPoints
-        table = self.file_to_table(self._filename)
-        if table is None:
-            # Inform ParaView that opening the file failed.
-            raise RuntimeError(
-                f"Could not open {self._filename}: error was {self._message}"
-            )
+        # Read the file
+        data = self.load_data_to_grid(self._filename)
 
-        # Rename the table object
-        RenameSource("Dataframe", proxy=table)
+        # Wrap the data in a ParaView object to set its rendering options
+        points = TrivialProducer()
+        points.GetClientSideObject().SetOutput(data)
 
-        # Convert the table to points
-        table_to_points = TableToPoints(Input=table)
-        table_to_points.XColumn = self._x_column
-        table_to_points.YColumn = self._y_column
-        table_to_points.ZColumn = self._z_column
-
-        # Rename the points object
-        RenameSource("Localizations", proxy=table_to_points)
+        # Rename the TrivialProducer
+        RenameSource("Localizations", proxy=points)
 
         # Show the points in the render view
-        point_display = Show(table_to_points, render_view)
+        point_display = Show(points, render_view)
         Render(render_view)
 
         # Set the display properties of the render view
-        self.set_render_view_display_properties(point_display, table_to_points)
+        self.set_render_view_display_properties(point_display, points)
 
         # Update the pipeline
         UpdatePipeline(proxy=point_display)
@@ -104,8 +93,8 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         ResetCamera()
 
         # Output the poly data to the pipeline
-        output = vtkPolyData.GetData(outInfo)
-        output.ShallowCopy(table_to_points.GetClientSideObject().GetOutputDataObject(0))
+        output = vtkMultiBlockDataSet.GetData(outInfo, 0)
+        output.SetBlock(0, data)
 
         # Hide the rendering of the reader itself
         source = FindSource(Path(self._filename).name)
@@ -114,9 +103,39 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         # Return success
         return 1
 
-    def file_to_table(self, filename):
-        """Read the file and convert it to a vtkTable."""
+    def load_data_to_grid(self, filename):
+        """Read the file and convert it to a vtkUnstructuredGrid."""
 
+        # Read the data frame
+        df = self.read_dataframe_from_pmx(filename)
+
+        # Create a new object
+        points = vtkPoints()
+        points.SetData(vnp.numpy_to_vtk(df[["x", "y", "z"]].values))
+        mfx_data = vtkUnstructuredGrid()
+        ugrid = dsa.WrapDataObject(mfx_data)
+        ugrid.Points = points
+        p = points.GetNumberOfPoints()
+        ugrid.AllocateExact(p, p)
+
+        for j in range(p):
+            ids = vtk.vtkIdList()
+            ids.SetNumberOfIds(1)
+            ids.SetId(0, j)
+            ugrid.InsertNextCell(vtk.VTK_VERTEX, ids)
+
+        # Add additional columns as attributes
+        for col in df.columns:
+            if col in ["x", "y"]:  # We keep z for depth-coloring
+                continue
+            vtk_array = vnp.numpy_to_vtk(df[col].values)
+            vtk_array.SetName(col)  # Sets the name of the attribute
+            mfx_data.GetPointData().AddArray(vtk_array)
+
+        return mfx_data
+
+    def read_dataframe_from_pmx(self, filename):
+        """Read the Pandas DataFrame from the `.pmx` file."""
         with h5py.File(filename, "r") as f:
 
             # Read the file_version attribute
@@ -148,28 +167,7 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
             for col, dtype in zip(column_names, column_types):
                 df[col] = df[col].astype(dtype)
 
-        # Create a new column loc_z (that can be used for coloring)
-        df["loc z"] = df["z"]
-
-        # Populate the vtkTable
-        table = vtkTable()
-
-        for column_name in df.columns:
-            array = vtkFloatArray()
-            array.SetName(column_name)
-            array.SetNumberOfComponents(1)
-            array.SetNumberOfTuples(len(df))
-
-            for i, value in enumerate(df[column_name]):
-                array.SetValue(i, float(value))
-
-            table.AddColumn(array)
-
-        # Now wrap it to be compatible with TableToPoints()
-        producer = TrivialProducer()
-        producer.GetClientSideObject().SetOutput(table)
-
-        return producer
+        return df
 
     def create_new_layout(self):
         """Create a new layout with a render and a spreadsheet views."""
