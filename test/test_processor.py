@@ -119,7 +119,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     #
     # 2D_All.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # 2D_ValidOnly.npy
@@ -172,7 +172,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     #
     # 2D_All.npy
     #
-    # min_num_loc_per_trace = 4 (filter short traces)
+    # min_trace_length = 4 (filter short traces)
     #
 
     # 2D_ValidOnly.npy
@@ -202,7 +202,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_num_loc_per_trace) == 0
+    assert np.sum(counts.values < processor.min_trace_length) == 0
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
@@ -216,7 +216,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_num_loc_per_trace) == 0
+    assert np.sum(counts.values < processor.min_trace_length) == 0
 
     # Reset all filters and confirm counts
     processor.reset()
@@ -233,7 +233,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # 2D_ValidOnly.npy
@@ -286,7 +286,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 4 (filter short traces)
+    # min_trace_length = 4 (filter short traces)
     #
 
     # 2D_ValidOnly.npy
@@ -316,7 +316,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_num_loc_per_trace) == 0
+    assert np.sum(counts.values < processor.min_trace_length) == 0
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
@@ -330,7 +330,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_num_loc_per_trace) == 0
+    assert np.sum(counts.values < processor.min_trace_length) == 0
 
     # Reset all filters and confirm counts
     processor.reset()
@@ -347,7 +347,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     #
     # 3D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # 3D_ValidOnly.npy
@@ -400,7 +400,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     #
     # 3D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 4 (filter short traces)
+    # min_trace_length = 4 (filter short traces)
     #
 
     # 3D_ValidOnly.npy
@@ -430,7 +430,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_num_loc_per_trace) == 0
+    assert np.sum(counts.values < processor.min_trace_length) == 0
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
@@ -444,7 +444,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_num_loc_per_trace) == 0
+    assert np.sum(counts.values < processor.min_trace_length) == 0
 
     # Reset all filters and confirm counts
     processor.reset()
@@ -508,7 +508,7 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # Read and process file
@@ -583,7 +583,7 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 4 (filter short traces)
+    # min_trace_length = 4 (filter short traces)
     #
 
     # Read and process file
@@ -658,7 +658,7 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     #
     # 3D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # Read and process file
@@ -733,7 +733,7 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     #
     # 3D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # Read and process file
@@ -811,7 +811,7 @@ def test_apply_threshold(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # Read and process file
@@ -840,7 +840,7 @@ def test_apply_threshold(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 4 (filter short traces)
+    # min_trace_length = 4 (filter short traces)
     #
 
     # Read and process file
@@ -875,7 +875,7 @@ def test_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # Read and process file
@@ -898,7 +898,7 @@ def test_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 4 (filter short traces)
+    # min_trace_length = 4 (filter short traces)
     #
 
     # Read and process file
@@ -924,7 +924,7 @@ def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # Read and process file
@@ -964,7 +964,7 @@ def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 4 (filter short traces)
+    # min_trace_length = 4 (filter short traces)
     #
 
     # Read and process file
@@ -1008,7 +1008,7 @@ def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do nto filter anything)
+    # min_trace_length = 1 (do nto filter anything)
     #
 
     # Read and process file
@@ -1046,7 +1046,7 @@ def test_proper_application_of_global_filters():
     processor.filter_by_1d_range("x", (0.0, 15.0))
     assert len(processor.filtered_dataframe.index) == 6
 
-    processor.min_num_loc_per_trace = 4
+    processor.min_trace_length = 4
 
     processor.reset()
 
@@ -1054,13 +1054,13 @@ def test_proper_application_of_global_filters():
     assert len(processor.filtered_dataframe.index) == 5
 
     # We filter out 2, and the remaining 3 should be suppressed by the global
-    # filters since now processor.min_num_loc_per_trace is 4.
+    # filters since now processor.min_trace_length is 4.
     processor.filter_by_1d_range("x", (0.0, 15.0))
     assert len(processor.filtered_dataframe.index) == 0
 
     # FILTER 2D RANGE
 
-    processor.min_num_loc_per_trace = 1
+    processor.min_trace_length = 1
 
     processor.reset()
 
@@ -1068,7 +1068,7 @@ def test_proper_application_of_global_filters():
     processor.filter_by_2d_range("x", "y", (0.0, 15.0), (3.0, 18.0))
     assert len(processor.filtered_dataframe.index) == 6
 
-    processor.min_num_loc_per_trace = 4
+    processor.min_trace_length = 4
 
     processor.reset()
 
@@ -1076,13 +1076,13 @@ def test_proper_application_of_global_filters():
     assert len(processor.filtered_dataframe.index) == 5
 
     # We filter out 2, and the remaining 3 should be suppressed by the global
-    # filters since now processor.min_num_loc_per_trace is 4.
+    # filters since now processor.min_trace_length is 4.
     processor.filter_by_2d_range("x", "y", (0.0, 15.0), (3.0, 18.0))
     assert len(processor.filtered_dataframe.index) == 0
 
     # FILTER 1D SINGLE THRESHOLD
 
-    processor.min_num_loc_per_trace = 1
+    processor.min_trace_length = 1
 
     processor.reset()
 
@@ -1093,7 +1093,7 @@ def test_proper_application_of_global_filters():
     processor.filter_by_single_threshold("x", 15.0, larger_than=False)
     assert len(processor.filtered_dataframe.index) == 6
 
-    processor.min_num_loc_per_trace = 4
+    processor.min_trace_length = 4
 
     processor.reset()
 
@@ -1101,7 +1101,7 @@ def test_proper_application_of_global_filters():
     assert len(processor.filtered_dataframe.index) == 5
 
     # We filter out 2, and the remaining 3 should be suppressed by the global
-    # filters since now processor.min_num_loc_per_trace is 4.
+    # filters since now processor.min_trace_length is 4.
     processor.filter_by_single_threshold("x", 15.0, larger_than=False)
     assert len(processor.filtered_dataframe.index) == 0
 
@@ -1111,7 +1111,7 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1
+    # min_trace_length = 1
     #
 
     # Read and process file
@@ -1137,11 +1137,11 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 4
+    # min_trace_length = 4
     #
 
     # Do not filter anything
-    processor.min_num_loc_per_trace = 4
+    processor.min_trace_length = 4
 
     # Read and process file
     processor.reset()

@@ -13,6 +13,7 @@
 #   limitations under the License.
 #
 
+import pandas as pd
 from PySide6 import QtCore
 from PySide6.QtCore import Qt
 
@@ -25,6 +26,16 @@ class PandasDataModel(QtCore.QAbstractTableModel):
     def __init__(self, data, parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
         self._data = data
+
+    def clear(self):
+        # Begin a batch operation to remove all rows
+        self.beginResetModel()
+
+        # Clear your data here
+        self._data = pd.DataFrame()
+
+        # End the batch operation, notifying the views
+        self.endResetModel()
 
     def rowCount(self, parent=None):
         return self._data.shape[0]
@@ -53,3 +64,11 @@ class PandasDataModel(QtCore.QAbstractTableModel):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self._data.columns[col]
         return None
+
+    def sort(self, column, order):
+        self.layoutAboutToBeChanged.emit()
+        column_name = self._data.columns[column]
+        self._data.sort_values(
+            column_name, ascending=(order == Qt.AscendingOrder), inplace=True
+        )
+        self.layoutChanged.emit()

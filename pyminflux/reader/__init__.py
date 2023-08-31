@@ -15,7 +15,17 @@
 
 __doc__ = "Reader of MINFLUX data."
 __all__ = [
+    "Metadata",
+    "NativeMetadataReader",
+    "NativeArrayReader",
+    "NativeDataFrameReader",
     "MinFluxReader",
 ]
 
+from ._native_reader import (
+    Metadata,
+    NativeArrayReader,
+    NativeDataFrameReader,
+    NativeMetadataReader,
+)
 from ._reader import MinFluxReader

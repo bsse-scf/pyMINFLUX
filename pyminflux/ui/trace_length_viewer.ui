@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Plotter3D</class>
- <widget class="QDialog" name="Plotter3D">
+ <class>TraceLengthViewer</class>
+ <widget class="QDialog" name="TraceLengthViewer">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,11 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>3D plotter</string>
+   <string>Trace Length Viewer</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_2">
-   <item row="0" column="0">
-    <layout class="QGridLayout" name="mainLayout"/>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <layout class="QVBoxLayout" name="main_layout"/>
    </item>
   </layout>
  </widget>

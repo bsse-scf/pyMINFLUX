@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyminflux"
-version = "0.2.0"
+version = "0.3.0"
 description = "Reader, processor, and viewer of MINFLUX raw data."
 authors = ["Aaron Ponti <aaron.ponti@bsse.ethz.ch>"]
 license = "Apache-2.0"
@@ -50,7 +50,7 @@ force_grid_wrap = 0
 use_parentheses = true
 line_length = 88
 combine_as_imports = true
-known_third_party = ["PySide6", "numpy", "pandas", "pyqtgraph", "pytest", "requests", "scipy", "sklearn"]
+known_third_party = ["PySide6", "h5py", "numpy", "pandas", "paraview", "pyqtgraph", "pytest", "requests", "scipy", "sklearn", "vtkmodules"]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
@@ -59,9 +59,9 @@ pandas = "^1.5.1"
 pyside6 = ">=6.4.0.1,<6.5"
 pyqtgraph = "^0.13.2"
 scipy = "^1.9.3"
-pyopengl = "^3.1.6"
 scikit-learn = "^1.2.0"
 requests = "^2.31.0"
+h5py = "^3.9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"

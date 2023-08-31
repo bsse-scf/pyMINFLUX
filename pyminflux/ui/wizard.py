@@ -13,18 +13,23 @@
 #   limitations under the License.
 #
 
+from pathlib import Path
+
 from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
 from PySide6.QtGui import QDoubleValidator
-from PySide6.QtWidgets import QDialog
+from PySide6.QtWidgets import QDialog, QMessageBox
 
 from pyminflux.state import State
 
 from ..analysis import prepare_histogram
+from ..utils import intersect_2d_ranges
 from .ui_wizard import Ui_WizardDialog
 
 
 class WizardDialog(QDialog, Ui_WizardDialog):
     load_data_triggered = Signal(None, name="load_data_triggered")
+    load_filename_triggered = Signal(str, name="load_filename_triggered")
+    save_data_triggered = Signal(None, name="save_data_triggered")
     reset_filters_triggered = Signal(None, name="reset_filters_triggered")
     open_unmixer_triggered = Signal(None, name="open_unmixer_triggered")
     open_time_inspector_triggered = Signal(None, name="open_time_inspector_triggered")
@@ -46,6 +51,9 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Initialize the dialog
         self.ui = Ui_WizardDialog()
         self.ui.setupUi(self)
+
+        # Accept drops
+        self.setAcceptDrops(True)
 
         # Keep a reference to the singleton State class
         self.state = State()
@@ -77,6 +85,15 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Set up connections
         self.setup_conn()
 
+    def dragEnterEvent(self, event):
+        """Process drag events. Ignore drag events that are not file paths."""
+
+        # Does the event contains URLs (file paths)?
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
     def keyPressEvent(self, event):
         """Intercept key-press events."""
         if event.key() == Qt.Key_Escape:
@@ -84,6 +101,41 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             event.ignore()
         else:
             super().keyPressEvent(event)
+
+    def dropEvent(self, event):
+
+        # Retrieve urls
+        urls = event.mimeData().urls()
+        if len(urls) == 0:
+            return
+
+        # Make sure that we have only one file
+        if len(urls) > 1:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Cannot open multiple files.",
+            )
+            return
+
+        # Check the file
+        try:
+            filename = urls[0].toLocalFile()
+        except Exception as _:
+            return
+
+        # Make sure it is of the right format
+        if len(filename) < 5:
+            return
+        ext = filename.lower()[-4:]
+        if ext in [".pmx", ".npy", ".mat"]:
+            self.load_filename_triggered.emit(str(filename))
+        else:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Unsupported file {filename}.",
+            )
 
     def set_processor(self, processor):
         """Store a reference to the processor."""
@@ -123,6 +175,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         )
         self.ui.pbEFOFilter.clicked.connect(self.run_efo_filter_and_broadcast)
         self.ui.pbCFRFilter.clicked.connect(self.run_cfr_filter_and_broadcast)
+        self.ui.pbSaveData.clicked.connect(lambda _: self.save_data_triggered.emit())
         self.ui.pbExportData.clicked.connect(
             lambda _: self.export_data_triggered.emit()
         )
@@ -217,7 +270,8 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.ui.leCFRUpperBound.setVisible(enabled)
         self.ui.pbCFRFilter.setVisible(enabled)
 
-        # Export data
+        # Save/Export data
+        self.ui.pbSaveData.setVisible(enabled)
         self.ui.pbExportData.setVisible(enabled)
 
     def reset_fluorophores(self):
@@ -322,6 +376,15 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             self.processor.filter_by_1d_range(
                 "efo", (self.state.efo_thresholds[0], self.state.efo_thresholds[1])
             )
+
+        # Update State.applied_efo_thresholds
+        if self.state.applied_efo_thresholds is None:
+            self.state.applied_efo_thresholds = self.state.efo_thresholds
+        else:
+            self.state.applied_efo_thresholds = intersect_2d_ranges(
+                self.state.efo_thresholds, self.state.applied_efo_thresholds
+            )
+
         # Signal that the external viewers should be updated
         self.wizard_filters_run.emit()
 
@@ -338,6 +401,15 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             self.processor.filter_by_1d_range(
                 "cfr", (self.state.cfr_thresholds[0], self.state.cfr_thresholds[1])
             )
+
+        # Update State.applied_cfr_thresholds
+        if self.state.applied_cfr_thresholds is None:
+            self.state.applied_cfr_thresholds = self.state.cfr_thresholds
+        else:
+            self.state.applied_cfr_thresholds = intersect_2d_ranges(
+                self.state.cfr_thresholds, self.state.applied_cfr_thresholds
+            )
+
         # Signal that the external viewers should be updated
         self.wizard_filters_run.emit()
 

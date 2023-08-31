@@ -26,9 +26,7 @@ from .ui_options import Ui_Options
 
 class Options(QDialog, Ui_Options):
     # Signal that the options have changed
-    min_num_loc_per_trace_option_changed = Signal(
-        name="min_num_loc_per_trace_option_changed"
-    )
+    min_trace_length_option_changed = Signal(name="min_trace_length_option_changed")
     efo_bin_size_hz_option_changed = Signal(name="efo_bin_size_hz_option_changed")
     weigh_avg_localization_by_eco_option_changed = Signal(
         name="weigh_avg_localization_by_eco_option_changed"
@@ -81,7 +79,7 @@ class Options(QDialog, Ui_Options):
         }
 
         # Set defaults
-        self.ui.leMinTIDNum.setText(str(self.state.min_num_loc_per_trace))
+        self.ui.leMinTIDNum.setText(str(self.state.min_trace_length))
         self.ui.leMinTIDNum.setValidator(QIntValidator(bottom=0))
         self.ui.leEFOBinSize.setText(str(self.state.efo_bin_size_hz))
         self.ui.leEFOBinSize.setValidator(QDoubleValidator(bottom=0.0))
@@ -124,15 +122,17 @@ class Options(QDialog, Ui_Options):
         self.ui.lePlotExportDPI.setText(str(self.state.plot_export_dpi))
         self.ui.lePlotExportDPI.setValidator(QIntValidator(bottom=72))
 
+        self.ui.cbOpenConsoleAtStart.setChecked(self.state.open_console_at_start)
+
         # Set signal-slot connections
         self.setup_conn()
 
     def setup_conn(self):
         """Set up signal-slot connections."""
-        self.ui.leMinTIDNum.textChanged.connect(self.persist_min_num_loc_per_trace)
+        self.ui.leMinTIDNum.textChanged.connect(self.persist_min_trace_length)
         self.ui.pbSetDefault.clicked.connect(self.set_as_new_default)
         self.ui.cbWeightAvgLocByECO.stateChanged.connect(
-            self.weigh_avg_localization_by_eco
+            self.persist_weigh_avg_localization_by_eco
         )
         self.ui.leEFOBinSize.textChanged.connect(self.persist_efo_bin_size_hz)
         self.ui.leEFOSingleEmitterFrequency.textChanged.connect(
@@ -149,6 +149,10 @@ class Options(QDialog, Ui_Options):
         self.ui.leZScalingFactor.textChanged.connect(self.persist_z_scaling_factor)
 
         self.ui.lePlotExportDPI.textChanged.connect(self.persist_plot_export_dpi)
+
+        self.ui.cbOpenConsoleAtStart.stateChanged.connect(
+            self.persist_open_console_at_start
+        )
 
         self.ui.pbMinTIDNumHelp.clicked.connect(
             lambda _: self.ui.teHelp.setText(
@@ -200,21 +204,26 @@ class Options(QDialog, Ui_Options):
                 "Resolution (in dots per inch) for the all plots when exported as .png images."
             )
         )
+        self.ui.pbOpenConsoleAtStartHelp.clicked.connect(
+            lambda _: self.ui.teHelp.setText(
+                "Whether to open the console at application start."
+            )
+        )
 
-    @Slot(str, name="persist_min_num_loc_per_trace")
-    def persist_min_num_loc_per_trace(self, text):
+    @Slot(str, name="persist_min_trace_length")
+    def persist_min_trace_length(self, text):
         try:
-            min_num_loc_per_trace = int(text)
+            min_trace_length = int(text)
         except Exception as _:
             self.ui.leMinTIDNum.setStyleSheet("background-color: red;")
             self.valid["leMinTIDNum"] = False
             return
         self.ui.leMinTIDNum.setStyleSheet("")
         self.valid["leMinTIDNum"] = True
-        self.state.min_num_loc_per_trace = min_num_loc_per_trace
+        self.state.min_trace_length = min_trace_length
 
         # Signal the change
-        self.min_num_loc_per_trace_option_changed.emit()
+        self.min_trace_length_option_changed.emit()
 
     @Slot(str, name="persist_z_scaling_factor")
     def persist_z_scaling_factor(self, text):
@@ -384,12 +393,16 @@ class Options(QDialog, Ui_Options):
                 self.ui.leLocPrecRangeMax.setStyleSheet("background-color: red;")
                 self.valid["leLocPrecRangeMax"] = False
 
-    @Slot(str, name="weigh_avg_localization_by_eco")
-    def weigh_avg_localization_by_eco(self, state):
+    @Slot(str, name="persist_weigh_avg_localization_by_eco")
+    def persist_weigh_avg_localization_by_eco(self, state):
         self.state.weigh_avg_localization_by_eco = state != 0
 
         # Signal the change
         self.weigh_avg_localization_by_eco_option_changed.emit()
+
+    @Slot(str, name="persist_open_console_at_start")
+    def persist_open_console_at_start(self, state):
+        self.state.open_console_at_start = state != 0
 
     @Slot(str, name="set_as_new_default")
     def set_as_new_default(self, text):
@@ -410,7 +423,7 @@ class Options(QDialog, Ui_Options):
         # Update the application settings
         settings = Settings()
         settings.instance.setValue(
-            "options/min_num_loc_per_trace", int(self.state.min_num_loc_per_trace)
+            "options/min_trace_length", int(self.state.min_trace_length)
         )
         settings.instance.setValue(
             "options/z_scaling_factor", float(self.state.z_scaling_factor)
@@ -440,8 +453,19 @@ class Options(QDialog, Ui_Options):
                 "options/loc_precision_range", list(self.state.loc_precision_range)
             )
         settings.instance.setValue(
+            "options/open_console_at_start",
+            self.state.open_console_at_start,
+        )
+        settings.instance.setValue(
             "options/plot_export_dpi", int(self.state.plot_export_dpi)
         )
+
+        # This property was superseded by "options/min_trace_length"
+        if settings.instance.contains("options/min_num_loc_per_trace"):
+            settings.instance.remove("options/min_num_loc_per_trace")
+
+        # Sync the settings with file
+        settings.instance.sync()
 
     def _validate(self, value, line_edit):
         """Check that the value in the QLineEdit is a valid float, or reset it and visually mark it otherwise."""

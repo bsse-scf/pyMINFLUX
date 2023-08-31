@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-
+import os
 import warnings
 
 import numpy as np
@@ -20,13 +20,15 @@ import pyqtgraph as pg
 from PySide6.QtCore import (
     QMutex,
     QMutexLocker,
+    QObject,
     QPoint,
+    QRunnable,
     QThread,
-    QWaitCondition,
+    QThreadPool,
     Signal,
     Slot,
 )
-from PySide6.QtGui import QAction, QDoubleValidator, QIntValidator, QPen, Qt
+from PySide6.QtGui import QAction, QDoubleValidator, QIntValidator, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 
 from ..fourier import estimate_resolution_by_frc
@@ -36,8 +38,88 @@ from .helpers import export_plot_interactive
 from .ui_frc_tool import Ui_FRCTool
 
 
-class LocalWorker(QThread):
+class CancelFlag:
+    """Encapulates a Mutex to communicate state change to the Workers."""
 
+    def __init__(self):
+        self._cancelled = False
+        self._mutex = QMutex()
+
+    def is_cancelled(self):
+        with QMutexLocker(self._mutex):
+            return self._cancelled
+
+    def cancel(self):
+        with QMutexLocker(self._mutex):
+            self._cancelled = True
+
+
+class WorkerSignals(QObject):
+    """Encapsulates Signals to be used by the Workers."""
+
+    # Signal progress, completion, and request for stop
+    progress = Signal(int)
+    result = Signal(int, np.ndarray)
+
+
+class Worker(QRunnable):
+    """Worker to run the FRC analysis in parallel over all bins."""
+
+    def __init__(
+        self, index, processor, start_time, end_time, sxy, rx, ry, n_reps, cancel_flag
+    ):
+        """Constructor."""
+
+        super().__init__()
+        self.index = index
+        self.processor = processor
+        self.start_time = start_time
+        self.end_time = end_time
+        self.sxy = sxy
+        self.rx = rx
+        self.ry = ry
+        self.n_reps = n_reps
+        self.signals = WorkerSignals()
+        self.cancel_flag = cancel_flag
+
+    def run(self):
+        # Check that the processing has not been interrupted
+        if self.cancel_flag.is_cancelled():
+            # Signal completion
+            self.signals.result.emit(self.index, None)
+            self.signals.progress.emit(1)
+            return
+
+        # Extract the data
+        df = self.processor.select_by_1d_range(
+            "tim", x_range=(self.start_time, self.end_time)
+        )
+        df_gr = df.groupby("tid")
+        mx = df_gr["x"].mean()
+        my = df_gr["y"].mean()
+
+        # Estimate the resolution by FRC
+        _, _, _, resolutions, _ = estimate_resolution_by_frc(
+            x=mx,
+            y=my,
+            sx=self.sxy,
+            sy=self.sxy,
+            rx=self.rx,
+            ry=self.ry,
+            num_reps=self.n_reps,
+            seed=None,
+            return_all=True,
+        )
+
+        # Convert to nm
+        resolutions = 1e9 * np.array(resolutions)
+
+        # Signal completion
+        self.signals.result.emit(self.index, resolutions)
+        self.signals.progress.emit(1)
+
+
+class ProcessorThread(QThread):
     # Signal progress and completion
     processing_started = Signal()
     processing_progress_updated = Signal(int)
@@ -57,13 +139,18 @@ class LocalWorker(QThread):
         self.ry = ry
         self.n_reps = n_reps
 
+        # Initialize a thread pool
+        self.thread_pool = QThreadPool.globalInstance()
+        self.thread_pool.setMaxThreadCount(os.cpu_count())
+
+        # Keep track of the progress of the various threads
+        self.progress = 0
+
         # Initialize output
         self.all_resolutions = None
 
-        # Set up mutexes and wait conditions
-        self.mutex = QMutex()
-        self.condition = QWaitCondition()
-        self.is_interrupted = False
+        # Initialize CancelFlag to communicate to Worker in a thread-safe manner
+        self.cancel_flag = CancelFlag()
 
     def run(self):
         """Run the computation."""
@@ -77,50 +164,62 @@ class LocalWorker(QThread):
         )
         self.all_resolutions.fill(np.nan)
 
-        # Process all time steps
+        # Reset the progress counter
+        self.progress = 0
+
+        # Create the workers and add them to the thread pool
         for i, t in enumerate(self.t_steps):
+            if self.cancel_flag.is_cancelled():
+                # This is unlikely: threads are added very fast to the QThreadPool's queue
+                self.processing_interrupted.emit()
+                break
 
-            with QMutexLocker(self.mutex):
-                if self.is_interrupted:
-                    self.processing_interrupted.emit()
-                    return
-
-            # Extract the data
-            df = self.processor.select_by_1d_range("tim", x_range=(self.t_start, t))
-            df_gr = df.groupby("tid")
-            mx = df_gr["x"].mean()
-            my = df_gr["y"].mean()
-
-            # Estimate the resolution by FRC
-            _, _, _, resolutions, _ = estimate_resolution_by_frc(
-                x=mx,
-                y=my,
-                sx=self.sxy,
-                sy=self.sxy,
+            # Create the processor_thread
+            worker = Worker(
+                index=i,
+                processor=self.processor,
+                start_time=self.t_start,
+                end_time=t,
+                sxy=self.sxy,
                 rx=self.rx,
                 ry=self.ry,
-                num_reps=self.n_reps,
-                seed=None,
-                return_all=True,
+                n_reps=self.n_reps,
+                cancel_flag=self.cancel_flag,
             )
 
-            # Convert to nm
-            resolutions = 1e9 * np.array(resolutions)
+            # Attach all signals
+            worker.signals.result.connect(self.store_result)
+            worker.signals.progress.connect(self.broadcast_update_progress)
 
-            # Store the resolution
-            self.all_resolutions[i, :] = resolutions
+            # Add the thread to the pool and start it
+            self.thread_pool.start(
+                worker
+            )  # Add the processor_thread to the thread pool
 
-            # Signal progress
-            self.processing_progress_updated.emit(
-                int(np.round(100 * (i + 1) / len(self.t_steps)))
-            )
+        # Wait for all threads to finish
+        self.thread_pool.waitForDone()
 
         # Signal completion
         self.processing_finished.emit()
 
     def stop(self):
-        with QMutexLocker(self.mutex):
-            self.is_interrupted = True
+        # Inform the queued Workers to skip computation
+        self.cancel_flag.cancel()
+
+        # Clear the ThreadPool queue
+        self.thread_pool.clear()
+
+    @Slot(int, np.ndarray, name="store_result")
+    def store_result(self, index, result):
+        if result is not None:
+            self.all_resolutions[index, :] = result
+
+    def broadcast_update_progress(self, value):
+        # Signal progress
+        self.progress += value
+        self.processing_progress_updated.emit(
+            int(np.round(100 * (self.progress + 1) / len(self.t_steps)))
+        )
 
 
 class FRCTool(QDialog, Ui_FRCTool):
@@ -146,8 +245,8 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Create widgets
         self.create_widgets()
 
-        # Keep a reference to the local worker
-        self.worker = None
+        # Keep a reference to the processor thread
+        self.processor_thread = None
 
         # Hide the progress bar
         self.ui.progress_bar.setValue(0)
@@ -220,9 +319,9 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Do not capture key events for now
         ev.ignore()
 
-    def set_processor(self, minfluxprocessor: MinFluxProcessor):
+    def set_processor(self, processor: MinFluxProcessor):
         """Reset the internal state."""
-        self.processor = minfluxprocessor
+        self.processor = processor
 
     @Slot(int, name="persist_frc_endpoint_only")
     def persist_frc_endpoint_only(self, value):
@@ -257,10 +356,6 @@ class FRCTool(QDialog, Ui_FRCTool):
             self.processor.filtered_dataframe["y"].max(),
         )
 
-        # Delete the existing worker, if needed
-        if self.worker is not None:
-            del self.worker
-
         # Prepare the arguments for the Worker
         t_start = self.processor.filtered_dataframe["tim"].min()
         t_end = self.processor.filtered_dataframe["tim"].max()
@@ -277,23 +372,35 @@ class FRCTool(QDialog, Ui_FRCTool):
             t_steps = np.linspace(t_start, t_end, n_steps)
             t_steps = t_steps[1:]
 
-        # Create the new worker
-        self.worker = LocalWorker(self.processor, t_start, t_steps, sxy, rx, ry, n_reps)
-        self.worker.processing_started.connect(self.update_ui_on_process_start)
-        self.worker.processing_progress_updated.connect(self.update_progress_bar)
-        self.worker.processing_interrupted.connect(self.update_ui_on_process_end)
-        self.worker.processing_interrupted.connect(self.collect_results_and_plot)
-        self.worker.processing_finished.connect(self.update_ui_on_process_end)
-        self.worker.processing_finished.connect(self.collect_results_and_plot)
+        # Create the new processor_thread
+        if self.processor_thread is not None:
+            del self.processor_thread
+        self.processor_thread = ProcessorThread(
+            self.processor, t_start, t_steps, sxy, rx, ry, n_reps
+        )
+        self.processor_thread.processing_started.connect(
+            self.update_ui_on_process_start
+        )
+        self.processor_thread.processing_progress_updated.connect(
+            self.update_progress_bar
+        )
+        self.processor_thread.processing_interrupted.connect(
+            self.update_ui_on_process_end
+        )
+        self.processor_thread.processing_interrupted.connect(
+            self.collect_results_and_plot
+        )
+        self.processor_thread.processing_finished.connect(self.update_ui_on_process_end)
+        self.processor_thread.processing_finished.connect(self.collect_results_and_plot)
 
-        # Now process in the local worker
-        self.worker.start()
+        # Now process in the local processor_thread
+        self.processor_thread.start()
 
     @Slot(name="stop_frc_analysis")
     def stop_frc_analysis(self):
-        if self.worker is None:
+        if self.processor_thread is None:
             return
-        self.worker.stop()
+        self.processor_thread.stop()
 
     @Slot(str, name="persist_frc_lateral_resolution")
     def persist_frc_lateral_resolution(self, text):
@@ -332,10 +439,10 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Show x and y grids
         self.frc_plot.showGrid(x=True, y=True)
 
-        # Set properties of the label for y axis
+        # Set properties of the label for y-axis
         self.frc_plot.setLabel("left", "Resolution [nm]")
 
-        # Set properties of the label for x axis
+        # Set properties of the label for x-axis
         self.frc_plot.setLabel("bottom", "Acquisition time", units="s")
 
         if self.state.frc_endpoint_only:
@@ -459,12 +566,12 @@ class FRCTool(QDialog, Ui_FRCTool):
     def collect_results_and_plot(self):
         """Collect results from the local worked and plot them."""
 
-        if self.worker is None:
+        if self.processor_thread is None:
             return
 
         # Collect the results
-        t_steps = self.worker.t_steps
-        all_resolutions = self.worker.all_resolutions
+        t_steps = self.processor_thread.t_steps
+        all_resolutions = self.processor_thread.all_resolutions
 
         # Update plot
         self.plot(t_steps, all_resolutions)

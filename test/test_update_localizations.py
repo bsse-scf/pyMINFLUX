@@ -56,7 +56,7 @@ def test_update_localizations(extract_raw_npy_data_files):
     #
     # 2D_ValidOnly.npy
     #
-    # min_num_loc_per_trace = 1 (do not filter anything)
+    # min_trace_length = 1 (do not filter anything)
     #
 
     # 2D_ValidOnly.npy

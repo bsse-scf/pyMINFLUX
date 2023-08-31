@@ -20,7 +20,12 @@ from PySide6.QtCore import QPoint, Signal, Slot
 from PySide6.QtGui import QAction, QDoubleValidator, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 
-from pyminflux.analysis import assign_data_to_clusters, prepare_histogram
+from pyminflux.analysis import (
+    assign_data_to_clusters,
+    prepare_histogram,
+    reassign_fluo_ids_by_majority_vote,
+)
+from pyminflux.processor import MinFluxProcessor
 from pyminflux.state import State
 from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.ui_color_unmixer import Ui_ColorUnmixer
@@ -34,7 +39,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     # Signal that the fluorophore IDs have been assigned
     fluorophore_ids_assigned = Signal(int, name="fluorophore_ids_assigned")
 
-    def __init__(self, processor, parent):
+    def __init__(self, processor: MinFluxProcessor, parent):
         # Call the base class
         super().__init__(parent=parent)
 
@@ -183,6 +188,15 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Partition the data
         y_pred = dcr > threshold
 
+        # Turn the prediction into a fluo_id
+        fluo_ids = y_pred + 1
+
+        # Reassign fluorophore IDs majority vote if necessary
+        if self.state.num_fluorophores > 1:
+            fluo_ids = reassign_fluo_ids_by_majority_vote(
+                fluo_ids, self.processor.full_dataframe["tid"]
+            )
+
         # It one or more charts already exists, remove them
         for item in self.plot_widget.allChildItems():
             self.plot_widget.removeItem(item)
@@ -195,8 +209,8 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         offset = self.dcr_bin_width / self.state.num_fluorophores
 
         # Create new histograms (always 2)
-        for f in range(2):
-            data = dcr[y_pred == f]
+        for f in range(1, 3):
+            data = dcr[fluo_ids == f]
             if len(data) == 0:
                 continue
 
@@ -211,13 +225,13 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
                 x=self.dcr_bin_centers + f * offset,
                 height=n_dcr,
                 width=bar_width * self.dcr_bin_width,
-                brush=brushes[f],
+                brush=brushes[f - 1],
                 alpha=0.5,
             )
             self.plot_widget.addItem(chart)
 
         # Store the predictions (1-shifted)
-        self.assigned_fluorophore_ids = y_pred + 1
+        self.assigned_fluorophore_ids = fluo_ids
 
         # Make sure to enable the assign button
         self.ui.pbManualAssign.setEnabled(True)
@@ -233,6 +247,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
         # Fit the data to the requested number of clusters
         fluo_ids = assign_data_to_clusters(dcr, self.state.num_fluorophores, seed=42)
+
+        # Reassign fluorophore IDs majority vote if necessary
+        if self.state.num_fluorophores > 1:
+            fluo_ids = reassign_fluo_ids_by_majority_vote(
+                fluo_ids, self.processor.full_dataframe["tid"]
+            )
 
         # It one or more charts already exists, remove them
         for item in self.plot_widget.allChildItems():

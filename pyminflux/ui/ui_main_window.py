@@ -60,8 +60,6 @@ class Ui_MainWindow(object):
             MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1000, 800)
         MainWindow.setMinimumSize(QSize(640, 480))
-        self.actionLoad = QAction(MainWindow)
-        self.actionLoad.setObjectName("actionLoad")
         self.actionQuit = QAction(MainWindow)
         self.actionQuit.setObjectName("actionQuit")
         self.actionConsole = QAction(MainWindow)
@@ -72,9 +70,6 @@ class Ui_MainWindow(object):
         self.actionData_viewer.setObjectName("actionData_viewer")
         self.actionData_viewer.setCheckable(True)
         self.actionData_viewer.setChecked(True)
-        self.action3D_Plotter = QAction(MainWindow)
-        self.action3D_Plotter.setObjectName("action3D_Plotter")
-        self.action3D_Plotter.setCheckable(False)
         self.actionState = QAction(MainWindow)
         self.actionState.setObjectName("actionState")
         self.actionOptions = QAction(MainWindow)
@@ -97,10 +92,24 @@ class Ui_MainWindow(object):
         self.actionExport_stats.setObjectName("actionExport_stats")
         self.actionCheck_for_updates = QAction(MainWindow)
         self.actionCheck_for_updates.setObjectName("actionCheck_for_updates")
-        self.actionEstimate_resolution = QAction(MainWindow)
-        self.actionEstimate_resolution.setObjectName("actionEstimate_resolution")
+        self.actionFRC_analyzer = QAction(MainWindow)
+        self.actionFRC_analyzer.setObjectName("actionFRC_analyzer")
         self.actionWhat_s_new = QAction(MainWindow)
         self.actionWhat_s_new.setObjectName("actionWhat_s_new")
+        self.actionUnmixer = QAction(MainWindow)
+        self.actionUnmixer.setObjectName("actionUnmixer")
+        self.actionTime_Inspector = QAction(MainWindow)
+        self.actionTime_Inspector.setObjectName("actionTime_Inspector")
+        self.actionAnalyzer = QAction(MainWindow)
+        self.actionAnalyzer.setObjectName("actionAnalyzer")
+        self.actionTrace_Stats_Viewer = QAction(MainWindow)
+        self.actionTrace_Stats_Viewer.setObjectName("actionTrace_Stats_Viewer")
+        self.actionTrace_Length_Viewer = QAction(MainWindow)
+        self.actionTrace_Length_Viewer.setObjectName("actionTrace_Length_Viewer")
+        self.actionLoad = QAction(MainWindow)
+        self.actionLoad.setObjectName("actionLoad")
+        self.actionSave = QAction(MainWindow)
+        self.actionSave.setObjectName("actionSave")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -134,6 +143,8 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuAnalysis.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
         self.menuFile.addAction(self.actionLoad)
+        self.menuFile.addAction(self.actionSave)
+        self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionExport_data)
         self.menuFile.addAction(self.actionExport_stats)
         self.menuFile.addSeparator()
@@ -142,9 +153,6 @@ class Ui_MainWindow(object):
         self.menuFile.addAction(self.actionQuit)
         self.menuView.addAction(self.actionData_viewer)
         self.menuView.addAction(self.actionConsole)
-        self.menuView.addSeparator()
-        self.menuView.addAction(self.action3D_Plotter)
-        self.menuView.addSeparator()
         self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
         self.menuHelp.addAction(self.actionManual)
@@ -156,7 +164,13 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionWhat_s_new)
         self.menuHelp.addAction(self.actionCheck_for_updates)
         self.menuHelp.addAction(self.actionAbout)
-        self.menuAnalysis.addAction(self.actionEstimate_resolution)
+        self.menuAnalysis.addAction(self.actionUnmixer)
+        self.menuAnalysis.addAction(self.actionTime_Inspector)
+        self.menuAnalysis.addAction(self.actionAnalyzer)
+        self.menuAnalysis.addSeparator()
+        self.menuAnalysis.addAction(self.actionTrace_Stats_Viewer)
+        self.menuAnalysis.addAction(self.actionTrace_Length_Viewer)
+        self.menuAnalysis.addAction(self.actionFRC_analyzer)
 
         self.retranslateUi(MainWindow)
 
@@ -168,21 +182,6 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(
             QCoreApplication.translate("MainWindow", "MainWindow", None)
         )
-        self.actionLoad.setText(
-            QCoreApplication.translate("MainWindow", "&Load data", None)
-        )
-        # if QT_CONFIG(tooltip)
-        self.actionLoad.setToolTip(
-            QCoreApplication.translate(
-                "MainWindow", "Load MinFlux binary NumPy data", None
-            )
-        )
-        # endif // QT_CONFIG(tooltip)
-        # if QT_CONFIG(shortcut)
-        self.actionLoad.setShortcut(
-            QCoreApplication.translate("MainWindow", "Ctrl+L", None)
-        )
-        # endif // QT_CONFIG(shortcut)
         self.actionQuit.setText(QCoreApplication.translate("MainWindow", "Quit", None))
         # if QT_CONFIG(tooltip)
         self.actionQuit.setToolTip(
@@ -197,9 +196,6 @@ class Ui_MainWindow(object):
         )
         self.actionData_viewer.setText(
             QCoreApplication.translate("MainWindow", "Data viewer", None)
-        )
-        self.action3D_Plotter.setText(
-            QCoreApplication.translate("MainWindow", "3D plotter", None)
         )
         self.actionState.setText(
             QCoreApplication.translate("MainWindow", "[DEBUG] Show state", None)
@@ -229,17 +225,44 @@ class Ui_MainWindow(object):
             QCoreApplication.translate("MainWindow", "Mailing list", None)
         )
         self.actionExport_stats.setText(
-            QCoreApplication.translate("MainWindow", "Export stats", None)
+            QCoreApplication.translate("MainWindow", "Export trace stats", None)
         )
         self.actionCheck_for_updates.setText(
             QCoreApplication.translate("MainWindow", "Check for updates", None)
         )
-        self.actionEstimate_resolution.setText(
+        self.actionFRC_analyzer.setText(
             QCoreApplication.translate("MainWindow", "FRC Analyzer", None)
         )
         self.actionWhat_s_new.setText(
             QCoreApplication.translate("MainWindow", "What's new?", None)
         )
+        self.actionUnmixer.setText(
+            QCoreApplication.translate("MainWindow", "Unmixer", None)
+        )
+        self.actionTime_Inspector.setText(
+            QCoreApplication.translate("MainWindow", "Time Inspector", None)
+        )
+        self.actionAnalyzer.setText(
+            QCoreApplication.translate("MainWindow", "Analyzer", None)
+        )
+        self.actionTrace_Stats_Viewer.setText(
+            QCoreApplication.translate("MainWindow", "Trace Stats Viewer", None)
+        )
+        self.actionTrace_Length_Viewer.setText(
+            QCoreApplication.translate("MainWindow", "Trace Length Viewer", None)
+        )
+        self.actionLoad.setText(QCoreApplication.translate("MainWindow", "Load", None))
+        # if QT_CONFIG(shortcut)
+        self.actionLoad.setShortcut(
+            QCoreApplication.translate("MainWindow", "Ctrl+L", None)
+        )
+        # endif // QT_CONFIG(shortcut)
+        self.actionSave.setText(QCoreApplication.translate("MainWindow", "Save", None))
+        # if QT_CONFIG(shortcut)
+        self.actionSave.setShortcut(
+            QCoreApplication.translate("MainWindow", "Ctrl+S", None)
+        )
+        # endif // QT_CONFIG(shortcut)
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", "Help", None))
