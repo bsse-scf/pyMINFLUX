@@ -555,7 +555,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """
 
         # Do we have a filename?
-        if filename is None:
+        if filename is None or not filename:
             # Open a file dialog for the user to pick a .pmx, .npy or .mat file
             res = QFileDialog.getOpenFileName(
                 self,
