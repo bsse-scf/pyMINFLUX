@@ -9,9 +9,9 @@ All notable changes to this project will be documented in this file.
 * Add new Trace Statistics Viewer.
 * Add new Trace Length Viewer.
 * Add fluorophore ID reassignment within traces by majority vote.
-* Allow opening files by drag-and-drop on the left panel.
+* Allow opening files by drag-and-drop onto the Pipeline Toolbar (left panel).
 * Add all analysis tools to the main window's Analysis menu.
-* Add companion ParaView reader plug-in.
+* Add companion [ParaView reader plug-in](https://github.com/bsse-scf/pyMINFLUX/tree/master/paraview_plugins).
 * Remove 3D Plotter (in favor of using ParaView and the ParaView reader plug-in).
 
 ## [0.2.0] - 2023-07-19
