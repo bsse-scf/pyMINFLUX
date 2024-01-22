@@ -637,7 +637,11 @@ class MinFluxReader:
 
         # Copy the data over
         for field_name in data_array.dtype.names:
-            new_array[field_name] = data_array[field_name]
+            if field_name == "itr":
+                for itr_field_name in data_array["itr"].dtype.names:
+                    new_array["itr"][itr_field_name] = data_array["itr"][itr_field_name]
+            else:
+                new_array[field_name] = data_array[field_name]
 
         # Return the migrated array
         return new_array
