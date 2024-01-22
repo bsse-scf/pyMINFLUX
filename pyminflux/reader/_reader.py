@@ -37,6 +37,7 @@ class MinFluxReader:
         "_valid_entries",
         "_is_3d",
         "_is_aggregated",
+        "_is_tracking",
         "_reps",
         "_efo_index",
         "_cfr_index",
@@ -94,6 +95,9 @@ class MinFluxReader:
         # Whether the acquisition is 2D or 3D
         self._is_3d: bool = False
 
+        # Whether the acquisition is a tracking dataset
+        self._is_tracking: bool = False
+
         # Whether the file contains aggregate measurements
         self._is_aggregated: bool = False
 
@@ -127,6 +131,11 @@ class MinFluxReader:
     def is_aggregated(self) -> bool:
         """Returns True is the acquisition is aggregated, False otherwise."""
         return self._is_aggregated
+
+    @property
+    def is_tracking(self) -> bool:
+        """Returns True for a tracking acquisition, False otherwise."""
+        return self._is_tracking
 
     @property
     def num_valid_entries(self) -> int:
@@ -242,12 +251,24 @@ class MinFluxReader:
         num_locs = self._data_array["itr"].shape[1]
         if num_locs == 10:
             self._is_aggregated = False
+            self._is_tracking = False
+            self._is_3d = True
+        elif num_locs == 9:
+            # @TODO Check id this is correct!
+            self._is_aggregated = False
+            self._is_tracking = True
             self._is_3d = True
         elif num_locs == 5:
             self._is_aggregated = False
+            self._is_tracking = False
+            self._is_3d = False
+        elif num_locs == 4:
+            self._is_aggregated = False
+            self._is_tracking = True
             self._is_3d = False
         elif num_locs == 1:
             self._is_aggregated = True
+            self._is_tracking = False
             self._is_3d = np.nanmean(self._data_array["itr"]["loc"][:, :, 2]) != 0.0
         else:
             print(f"Unexpected number of localizations per trace ({num_locs}).")
@@ -538,8 +559,10 @@ class MinFluxReader:
         if self._data_array is None:
             return False
 
+        # Number of iterations
+        self._reps = self._data_array["itr"].shape[1]
+
         if self.is_aggregated:
-            self._reps = 1
             self._efo_index = -1  # Not used
             self._cfr_index = -1  # Not used
             self._dcr_index = -1  # Not used
@@ -547,19 +570,31 @@ class MinFluxReader:
             self._loc_index = -1  # Not used
         else:
             if self.is_3d:
-                self._reps = 10
-                self._efo_index = 9
-                self._cfr_index = 6
-                self._dcr_index = 9
-                self._eco_index = 9
-                self._loc_index = 9
+                if self._is_tracking:
+                    self._efo_index = 8
+                    self._cfr_index = 5
+                    self._dcr_index = 8
+                    self._eco_index = 8
+                    self._loc_index = 8
+                else:
+                    self._efo_index = 9
+                    self._cfr_index = 6
+                    self._dcr_index = 9
+                    self._eco_index = 9
+                    self._loc_index = 9
             else:
-                self._reps = 5
-                self._efo_index = 4
-                self._cfr_index = 4
-                self._dcr_index = 4
-                self._eco_index = 4
-                self._loc_index = 4
+                if self._is_tracking:
+                    self._efo_index = 3
+                    self._cfr_index = 3
+                    self._dcr_index = 3
+                    self._eco_index = 3
+                    self._loc_index = 3
+                else:
+                    self._efo_index = 4
+                    self._cfr_index = 4
+                    self._dcr_index = 4
+                    self._eco_index = 4
+                    self._loc_index = 4
 
     def _create_empty_data_array(self, n_entries: int, n_iters: int) -> np.ndarray:
         """Initializes a structured data array compatible with those exported from Imspector.
@@ -580,8 +615,8 @@ class MinFluxReader:
         array: Empty array with the requested dimensionality.
         """
 
-        if n_iters not in [1, 5, 10]:
-            raise ValueError("`n_iters` must be one of 1, 5, 10.")
+        if n_iters not in [1, 4, 5, 9, 10]:
+            raise ValueError("`n_iters` must be one of 1, 4, 5, 9, 10.")
 
         return np.empty(
             n_entries,
