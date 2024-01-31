@@ -55,6 +55,7 @@ class MinFluxReader:
         filename: Union[Path, str],
         valid: bool = True,
         z_scaling_factor: float = 1.0,
+        is_tracking: bool = False,
     ):
         """Constructor.
 
@@ -69,6 +70,10 @@ class MinFluxReader:
 
         z_scaling_factor: float (optional, default = 1.0)
             Refractive index mismatch correction factor to apply to the z coordinates.
+
+        is_tracking: bool
+            Whether the dataset comes from a tracking experiment; otherwise, it is considered as a
+            localization experiment.
         """
 
         # Store the filename
@@ -96,7 +101,7 @@ class MinFluxReader:
         self._is_3d: bool = False
 
         # Whether the acquisition is a tracking dataset
-        self._is_tracking: bool = False
+        self._is_tracking: bool = is_tracking
 
         # Whether the file contains aggregate measurements
         self._is_aggregated: bool = False
@@ -248,31 +253,27 @@ class MinFluxReader:
         self._valid_entries = self._data_array["vld"]
 
         # Cache whether the data is 2D or 3D and whether is aggregated
+        # The cases are different for localization vs. tracking experiments
         num_locs = self._data_array["itr"].shape[1]
-        if num_locs == 10:
-            self._is_aggregated = False
-            self._is_tracking = False
-            self._is_3d = True
-        elif num_locs == 9:
-            # @TODO Check id this is correct!
-            self._is_aggregated = False
-            self._is_tracking = True
-            self._is_3d = True
-        elif num_locs == 5:
-            self._is_aggregated = False
-            self._is_tracking = False
-            self._is_3d = False
-        elif num_locs == 4:
-            self._is_aggregated = False
-            self._is_tracking = True
-            self._is_3d = False
-        elif num_locs == 1:
-            self._is_aggregated = True
-            self._is_tracking = False
-            self._is_3d = np.nanmean(self._data_array["itr"]["loc"][:, :, 2]) != 0.0
+        self._is_3d = np.nanmean(self._data_array["itr"]["loc"][:, :, 2]) != 0.0
+        if self._is_tracking:
+            # Tracking experiment
+            if num_locs in [4, 5]:
+                self._is_aggregated = False
+            elif num_locs == 1:
+                self._is_aggregated = True
+            else:
+                print(f"Unexpected number of localizations per trace ({num_locs}).")
+                return False
         else:
-            print(f"Unexpected number of localizations per trace ({num_locs}).")
-            return False
+            # Localization experiment
+            if num_locs in [5, 10]:
+                self._is_aggregated = False
+            elif num_locs == 1:
+                self._is_aggregated = True
+            else:
+                print(f"Unexpected number of localizations per trace ({num_locs}).")
+                return False
 
         # Set all relevant indices
         self._set_all_indices()
@@ -569,26 +570,28 @@ class MinFluxReader:
             self._eco_index = -1  # Not used
             self._loc_index = -1  # Not used
         else:
-            if self.is_3d:
-                if self._is_tracking:
-                    self._efo_index = 8
-                    self._cfr_index = 5
-                    self._dcr_index = 8
-                    self._eco_index = 8
-                    self._loc_index = 8
+            if self._is_tracking:
+                # Tracking experiment
+                if self.is_3d:
+                    self._efo_index = 4
+                    self._cfr_index = 4
+                    self._dcr_index = 4
+                    self._eco_index = 4
+                    self._loc_index = 4
                 else:
-                    self._efo_index = 9
-                    self._cfr_index = 6
-                    self._dcr_index = 9
-                    self._eco_index = 9
-                    self._loc_index = 9
-            else:
-                if self._is_tracking:
                     self._efo_index = 3
                     self._cfr_index = 3
                     self._dcr_index = 3
                     self._eco_index = 3
                     self._loc_index = 3
+            else:
+                # Localization experiment
+                if self.is_3d:
+                    self._efo_index = 9
+                    self._cfr_index = 6
+                    self._dcr_index = 9
+                    self._eco_index = 9
+                    self._loc_index = 9
                 else:
                     self._efo_index = 4
                     self._cfr_index = 4
@@ -615,8 +618,8 @@ class MinFluxReader:
         array: Empty array with the requested dimensionality.
         """
 
-        if n_iters not in [1, 4, 5, 9, 10]:
-            raise ValueError("`n_iters` must be one of 1, 4, 5, 9, 10.")
+        if n_iters not in [1, 4, 5, 10]:
+            raise ValueError("`n_iters` must be one of 1, 4, 5, 10.")
 
         return np.empty(
             n_entries,
