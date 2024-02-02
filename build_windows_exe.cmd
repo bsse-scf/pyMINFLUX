@@ -16,11 +16,12 @@ REM
 setlocal
 
 SET VERSION=0.3.0
+SET PYTHON_VERSION=3.11
 
 IF "%ANACONDA_HOME%"=="" ECHO Please set environment variable ANACONDA_HOME. && exit /b
 
 REM Create and activate a dedicated env
-call conda create -n pyminflux-build python=3.10 -y
+call conda create -n pyminflux-build python=%PYTHON_VERSION% -y
 call conda activate pyminflux-build
 
 REM Install dependencies
@@ -55,5 +56,5 @@ powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compressi
 
 REM Remove the conda environment
 call conda deactivate
-call conda env remove -n pyminflux-build
+call conda env remove -n pyminflux-build -y
 IF EXIST "%ANACONDA_HOME%"\envs\pyminflux-build rmdir /s /q "%ANACONDA_HOME%"\envs\pyminflux-build

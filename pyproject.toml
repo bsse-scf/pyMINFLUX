@@ -62,13 +62,13 @@ scipy = "^1.9.3"
 scikit-learn = "^1.2.0"
 requests = "^2.31.0"
 h5py = "^3.9.0"
+pyinstaller = "^6.3.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
 ordered-set = "^4.1.0"
 pytest-cov = "^4.0.0"
 pre-commit = "^3.1.1"
-pyinstaller = "5.10.1"
 pdoc3 = "^0.10.0"
 
 [tool.poetry.scripts]
