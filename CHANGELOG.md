@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - TBD
+
+
 ## [0.3.0] - 2023-09-01
 
 * Add native pyMINFLUX file format `.pmx`.
