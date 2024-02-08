@@ -39,9 +39,9 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     # Signal that the fluorophore IDs have been assigned
     fluorophore_ids_assigned = Signal(int, name="fluorophore_ids_assigned")
 
-    def __init__(self, processor: MinFluxProcessor, parent):
+    def __init__(self, processor: MinFluxProcessor):
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_ColorUnmixer()

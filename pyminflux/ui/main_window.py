@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 
 from pyqtgraph import ViewBox
-from PySide6 import QtGui
+from PySide6 import QtGui, __version__ as pyside6_version
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import (
@@ -822,6 +822,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             "About",
             f"{__APP_NAME__} v{__version__}\n"
             f"\n"
+            f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n"
+            f"PySide6 {pyside6_version}\n"
+            f"\n"
             f"Copyright 2022 - {datetime.now().year}\n"
             f"Single Cell Facility\n"
             f"D-BSSE\n"
@@ -901,7 +904,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_time_inspector(self):
         """Initialize and open the Time Inspector."""
         if self.time_inspector is None:
-            self.time_inspector = TimeInspector(self.processor, parent=self)
+            self.time_inspector = TimeInspector(self.processor)
             self.time_inspector.dataset_time_filtered.connect(self.full_update_ui)
             self.wizard.wizard_filters_run.connect(self.time_inspector.update)
             self.request_sync_external_tools.connect(self.time_inspector.update)
@@ -923,7 +926,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_color_unmixer(self):
         """Initialize and open the color unmixer."""
         if self.color_unmixer is None:
-            self.color_unmixer = ColorUnmixer(self.processor, parent=self)
+            self.color_unmixer = ColorUnmixer(self.processor)
             self.color_unmixer.fluorophore_ids_assigned.connect(
                 self.wizard.set_fluorophore_list
             )
@@ -962,7 +965,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_trace_stats_viewer(self):
         """Open the trace stats viewer."""
         if self.trace_stats_viewer is None:
-            self.trace_stats_viewer = TraceStatsViewer(self.processor, parent=self)
+            self.trace_stats_viewer = TraceStatsViewer(self.processor)
             self.request_sync_external_tools.connect(self.trace_stats_viewer.update)
             self.wizard.request_fluorophore_ids_reset.connect(
                 self.trace_stats_viewer.update
@@ -985,7 +988,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_trace_length_viewer(self):
         """Open the trace length viewer."""
         if self.trace_length_viewer is None:
-            self.trace_length_viewer = TraceLengthViewer(self.processor, parent=self)
+            self.trace_length_viewer = TraceLengthViewer(self.processor)
             self.request_sync_external_tools.connect(self.trace_length_viewer.update)
             self.wizard.request_fluorophore_ids_reset.connect(
                 self.trace_length_viewer.update

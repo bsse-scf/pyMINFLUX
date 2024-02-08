@@ -33,9 +33,9 @@ class TraceLengthViewer(QDialog, Ui_TraceLengthViewer):
     A QDialog to display a bar plot of trace lengths.
     """
 
-    def __init__(self, processor: MinFluxProcessor, parent):
+    def __init__(self, processor: MinFluxProcessor):
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_TraceLengthViewer()

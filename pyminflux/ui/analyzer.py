@@ -47,7 +47,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         """Constructor."""
 
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_Analyzer()

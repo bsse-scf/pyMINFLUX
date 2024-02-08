@@ -36,7 +36,7 @@ class Options(QDialog, Ui_Options):
         """Constructor."""
 
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_Options()

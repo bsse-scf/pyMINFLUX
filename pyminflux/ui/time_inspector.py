@@ -36,9 +36,9 @@ class TimeInspector(QDialog, Ui_TimeInspector):
     processing_completed = Signal(None, name="processing_completed")
     dataset_time_filtered = Signal(None, name="dataset_time_filtered")
 
-    def __init__(self, processor, parent):
+    def __init__(self, processor):
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_TimeInspector()

@@ -34,9 +34,9 @@ class TraceStatsViewer(QDialog, Ui_TraceStatsViewer):
 
     export_trace_stats_requested = Signal(None, name="export_trace_stats_requested")
 
-    def __init__(self, processor: MinFluxProcessor, parent):
+    def __init__(self, processor: MinFluxProcessor):
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_TraceStatsViewer()

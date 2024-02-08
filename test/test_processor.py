@@ -533,9 +533,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -567,9 +567,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -608,9 +608,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -642,9 +642,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -683,9 +683,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -717,9 +717,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -758,9 +758,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -792,9 +792,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"

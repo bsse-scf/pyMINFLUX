@@ -223,11 +223,11 @@ class ProcessorThread(QThread):
 
 
 class FRCTool(QDialog, Ui_FRCTool):
-    def __init__(self, processor: MinFluxProcessor, parent=None):
+    def __init__(self, processor: MinFluxProcessor):
         """Constructor."""
 
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_FRCTool()
