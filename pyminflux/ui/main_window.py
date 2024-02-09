@@ -311,7 +311,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "https://github.com/bsse-scf/pyMINFLUX/blob/master/CHANGELOG.md"
             )
         )
-        self.ui.actionCheck_for_updates.triggered.connect(self.check_four_updates)
+        self.ui.actionCheck_for_updates.triggered.connect(self.check_remote_for_updates)
         self.ui.actionAbout.triggered.connect(self.about)
 
         # Plotter toolbar
@@ -832,8 +832,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             f"Switzerland",
         )
 
-    @Slot(None, name="check_four_updates")
-    def check_four_updates(self):
+    @Slot(None, name="check_remote_for_updates")
+    def check_remote_for_updates(self):
         """Check for application updates."""
 
         # Check for updates
