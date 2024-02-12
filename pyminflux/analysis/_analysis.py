@@ -17,10 +17,50 @@ import math
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 from scipy import stats
 from scipy.ndimage import median_filter
 from scipy.signal import find_peaks
 from sklearn.mixture import BayesianGaussianMixture
+
+
+def calculate_time_resolution(df: pd.DataFrame, unit_factor: float = 1e3):
+    """Calculate time resolution of acquisition.
+
+    Parameters
+    ----------
+
+    df: pd.DataFrame
+        Processed dataframe as returned by `MinFluxReader.processed_dataframe` or
+        `MinFluxProcessor.filtered_dataframe`. The dataframe is expected to contain
+        the columns "tid" and "tim".
+
+    unit_factor: float (default = 1e3)
+        Factor by which the time resolution is multiplied. By default, `unit_factor`
+        is 1e3, to return the resolution in milliseconds.
+
+    Returns
+    -------
+
+    med: float
+        Median time resolution
+
+    mad: float
+        Median absolute deviation of the time resolution (divided by 0.67449 to bring it to the
+        scale of the standard deviation)
+    """
+
+    # Calculate time differences
+    tim_diff = df.groupby('tid')['tim'].diff()
+
+    # Remove NaNs (indicate the beginning of a new trace)
+    tim_diff = tim_diff[np.logical_not(np.isnan(tim_diff))]
+
+    # Calculate the median and the mad
+    med = unit_factor * np.median(tim_diff)
+    mad = unit_factor * stats.median_abs_deviation(tim_diff, scale=0.67449)
+
+    return med, mad
 
 
 def hist_bins(values: np.ndarray, bin_size: float) -> tuple:

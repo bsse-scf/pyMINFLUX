@@ -11,21 +11,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
 
 import h5py
 import pandas as pd
 
-
-@dataclass
-class Metadata:
-    z_scaling_factor: float
-    min_trace_length: int
-    efo_thresholds: tuple[int, int]
-    cfr_thresholds: tuple[float, float]
-    num_fluorophores: int
+from pyminflux.reader.metadata import NativeMetadata
 
 
 class NativeMetadataReader:
@@ -65,7 +57,7 @@ class NativeMetadataReader:
             num_fluorophores = f["parameters/num_fluorophores"][()]
 
         # Store and return
-        metadata = Metadata(
+        metadata = NativeMetadata(
             z_scaling_factor=z_scaling_factor,
             min_trace_length=min_trace_length,
             efo_thresholds=efo_thresholds,

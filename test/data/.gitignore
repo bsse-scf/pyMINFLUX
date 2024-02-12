@@ -2,5 +2,7 @@
 2D_*.npy
 3d_*.npy
 3D_*.npy
+precision_*.npy
+tracking_*.npy
 230321-*.mat
 230321-*.npy
