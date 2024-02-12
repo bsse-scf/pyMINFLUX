@@ -19,95 +19,119 @@ from scipy.io import loadmat
 
 
 def convert_from_mat(filename: Union[Path, str]) -> Union[np.ndarray, None]:
-    """Load the MAT file."""
+    """Load MINFLUX MAT file and convert it to MINFLUX NPY array in memory.
 
+    Parameters
+    ----------
+
+    filename: Union[Path, str]
+        Full path of file to be opened.
+
+    Returns
+    -------
+
+    data_array: Union[np.ndarray, None]
+        NumPy array if the loading and converting was successful, None otherwise.
+    """
+
+    # Load .mat file
     try:
         mat_array = loadmat(str(filename))
     except (FileNotFoundError, ValueError) as e:
         print(f"Could not open {filename}: {e}")
         return None
 
-    # Number of entries
-    n_entries = len(mat_array["itr"]["itr"][0][0])
+    # Process it
+    try:
+        # Number of entries
+        n_entries = len(mat_array["itr"]["itr"][0][0])
 
-    # Number of iterations
-    n_iters = mat_array["itr"]["itr"][0][0].shape[-1]
+        # Number of iterations
+        n_iters = mat_array["itr"]["itr"][0][0].shape[-1]
 
-    # Initialize an empty structure NumPy data array
-    data_array = create_empty_data_array(n_entries, n_iters)
+        # Initialize an empty structure NumPy data array
+        data_array = create_empty_data_array(n_entries, n_iters)
 
-    # Copy the data over
-    data_array["vld"] = mat_array["vld"].ravel().astype(data_array.dtype["vld"])
-    data_array["sqi"] = mat_array["sqi"].ravel().astype(data_array.dtype["sqi"])
-    data_array["gri"] = mat_array["gri"].ravel().astype(data_array.dtype["gri"])
-    data_array["tim"] = mat_array["tim"].ravel().astype(data_array.dtype["tim"])
-    data_array["tid"] = mat_array["tid"].ravel().astype(data_array.dtype["tid"])
-    data_array["act"] = mat_array["act"].ravel().astype(data_array.dtype["act"])
-    data_array["dos"] = mat_array["dos"].ravel().astype(data_array.dtype["dos"])
-    data_array["sky"] = mat_array["sky"].ravel().astype(data_array.dtype["sky"])
-    data_array["itr"]["itr"] = mat_array["itr"]["itr"][0][0].astype(
-        data_array["itr"]["itr"].dtype
-    )
-    data_array["itr"]["tic"] = mat_array["itr"]["tic"][0][0].astype(
-        data_array["itr"]["tic"].dtype
-    )
-    data_array["itr"]["loc"] = mat_array["itr"]["loc"][0][0].astype(
-        data_array["itr"]["loc"].dtype
-    )
-    data_array["itr"]["lnc"] = mat_array["itr"]["lnc"][0][0].astype(
-        data_array["itr"]["lnc"].dtype
-    )
-    data_array["itr"]["eco"] = mat_array["itr"]["eco"][0][0].astype(
-        data_array["itr"]["eco"].dtype
-    )
-    data_array["itr"]["ecc"] = mat_array["itr"]["ecc"][0][0].astype(
-        data_array["itr"]["ecc"].dtype
-    )
-    data_array["itr"]["efo"] = mat_array["itr"]["efo"][0][0].astype(
-        data_array["itr"]["efo"].dtype
-    )
-    data_array["itr"]["efc"] = mat_array["itr"]["efc"][0][0].astype(
-        data_array["itr"]["efc"].dtype
-    )
-    data_array["itr"]["sta"] = mat_array["itr"]["sta"][0][0].astype(
-        data_array["itr"]["sta"].dtype
-    )
-    data_array["itr"]["cfr"] = mat_array["itr"]["cfr"][0][0].astype(
-        data_array["itr"]["cfr"].dtype
-    )
-    data_array["itr"]["dcr"] = mat_array["itr"]["dcr"][0][0].astype(
-        data_array["itr"]["dcr"].dtype
-    )
-    data_array["itr"]["ext"] = mat_array["itr"]["ext"][0][0].astype(
-        data_array["itr"]["ext"].dtype
-    )
-    data_array["itr"]["gvy"] = mat_array["itr"]["gvy"][0][0].astype(
-        data_array["itr"]["gvy"].dtype
-    )
-    data_array["itr"]["gvx"] = mat_array["itr"]["gvx"][0][0].astype(
-        data_array["itr"]["gvx"].dtype
-    )
-    data_array["itr"]["eoy"] = mat_array["itr"]["eoy"][0][0].astype(
-        data_array["itr"]["eoy"].dtype
-    )
-    data_array["itr"]["eox"] = mat_array["itr"]["eox"][0][0].astype(
-        data_array["itr"]["eox"].dtype
-    )
-    data_array["itr"]["dmz"] = mat_array["itr"]["dmz"][0][0].astype(
-        data_array["itr"]["dmz"].dtype
-    )
-    data_array["itr"]["lcy"] = mat_array["itr"]["lcy"][0][0].astype(
-        data_array["itr"]["lcy"].dtype
-    )
-    data_array["itr"]["lcx"] = mat_array["itr"]["lcx"][0][0].astype(
-        data_array["itr"]["lcx"].dtype
-    )
-    data_array["itr"]["lcz"] = mat_array["itr"]["lcz"][0][0].astype(
-        data_array["itr"]["lcz"].dtype
-    )
-    data_array["itr"]["fbg"] = mat_array["itr"]["fbg"][0][0].astype(
-        data_array["itr"]["fbg"].dtype
-    )
+        # Copy the data over
+        data_array["vld"] = mat_array["vld"].ravel().astype(data_array.dtype["vld"])
+        data_array["sqi"] = mat_array["sqi"].ravel().astype(data_array.dtype["sqi"])
+        data_array["gri"] = mat_array["gri"].ravel().astype(data_array.dtype["gri"])
+        data_array["tim"] = mat_array["tim"].ravel().astype(data_array.dtype["tim"])
+        data_array["tid"] = mat_array["tid"].ravel().astype(data_array.dtype["tid"])
+        data_array["act"] = mat_array["act"].ravel().astype(data_array.dtype["act"])
+        data_array["dos"] = mat_array["dos"].ravel().astype(data_array.dtype["dos"])
+        data_array["sky"] = mat_array["sky"].ravel().astype(data_array.dtype["sky"])
+        data_array["itr"]["itr"] = mat_array["itr"]["itr"][0][0].astype(
+            data_array["itr"]["itr"].dtype
+        )
+        data_array["itr"]["tic"] = mat_array["itr"]["tic"][0][0].astype(
+            data_array["itr"]["tic"].dtype
+        )
+        data_array["itr"]["loc"] = mat_array["itr"]["loc"][0][0].astype(
+            data_array["itr"]["loc"].dtype
+        )
+        data_array["itr"]["lnc"] = mat_array["itr"]["lnc"][0][0].astype(
+            data_array["itr"]["lnc"].dtype
+        )
+        data_array["itr"]["eco"] = mat_array["itr"]["eco"][0][0].astype(
+            data_array["itr"]["eco"].dtype
+        )
+        data_array["itr"]["ecc"] = mat_array["itr"]["ecc"][0][0].astype(
+            data_array["itr"]["ecc"].dtype
+        )
+        data_array["itr"]["efo"] = mat_array["itr"]["efo"][0][0].astype(
+            data_array["itr"]["efo"].dtype
+        )
+        data_array["itr"]["efc"] = mat_array["itr"]["efc"][0][0].astype(
+            data_array["itr"]["efc"].dtype
+        )
+        data_array["itr"]["sta"] = mat_array["itr"]["sta"][0][0].astype(
+            data_array["itr"]["sta"].dtype
+        )
+        data_array["itr"]["cfr"] = mat_array["itr"]["cfr"][0][0].astype(
+            data_array["itr"]["cfr"].dtype
+        )
+        data_array["itr"]["dcr"] = mat_array["itr"]["dcr"][0][0].astype(
+            data_array["itr"]["dcr"].dtype
+        )
+        data_array["itr"]["ext"] = mat_array["itr"]["ext"][0][0].astype(
+            data_array["itr"]["ext"].dtype
+        )
+        data_array["itr"]["gvy"] = mat_array["itr"]["gvy"][0][0].astype(
+            data_array["itr"]["gvy"].dtype
+        )
+        data_array["itr"]["gvx"] = mat_array["itr"]["gvx"][0][0].astype(
+            data_array["itr"]["gvx"].dtype
+        )
+        data_array["itr"]["eoy"] = mat_array["itr"]["eoy"][0][0].astype(
+            data_array["itr"]["eoy"].dtype
+        )
+        data_array["itr"]["eox"] = mat_array["itr"]["eox"][0][0].astype(
+            data_array["itr"]["eox"].dtype
+        )
+        data_array["itr"]["dmz"] = mat_array["itr"]["dmz"][0][0].astype(
+            data_array["itr"]["dmz"].dtype
+        )
+        data_array["itr"]["lcy"] = mat_array["itr"]["lcy"][0][0].astype(
+            data_array["itr"]["lcy"].dtype
+        )
+        data_array["itr"]["lcx"] = mat_array["itr"]["lcx"][0][0].astype(
+            data_array["itr"]["lcx"].dtype
+        )
+        data_array["itr"]["lcz"] = mat_array["itr"]["lcz"][0][0].astype(
+            data_array["itr"]["lcz"].dtype
+        )
+        data_array["itr"]["fbg"] = mat_array["itr"]["fbg"][0][0].astype(
+            data_array["itr"]["fbg"].dtype
+        )
+
+    except KeyError as k:
+        print(f"Error processing file {filename}: could not find key {k}.")
+        data_array = None
+
+    except Exception as e:
+        print(f"Error processing file {filename}: unexpected structure.")
+        data_array = None
 
     # Return success
     return data_array
@@ -131,9 +155,6 @@ def create_empty_data_array(n_entries: int, n_iters: int) -> np.ndarray:
 
     array: Empty array with the requested dimensionality.
     """
-
-    if n_iters not in [1, 4, 5, 10]:
-        raise ValueError("`n_iters` must be one of 1, 4, 5, 10.")
 
     return np.empty(
         n_entries,
@@ -180,8 +201,15 @@ def create_empty_data_array(n_entries: int, n_iters: int) -> np.ndarray:
     )
 
 
-def find_last_valid(data_array: np.ndarray):
-    """Find last valid iteration across all relevant parameters."""
+def find_last_valid_iteration(data_array: np.ndarray):
+    """Find last valid iteration across all relevant parameters.
+
+    Parameters
+    ----------
+
+    data_array: np.ndarray
+        MINFLUX NumPy array.
+    """
 
     # Initialize output
     last_valid = {
@@ -244,7 +272,24 @@ def find_last_valid(data_array: np.ndarray):
 
 
 def migrate_npy_array(data_array) -> np.ndarray:
-    """Migrate the raw Imspector NumPy array into a pyMINFLUX raw array."""
+    """Migrate the raw Imspector NumPy array into a pyMINFLUX raw array.
+
+    Parameters
+    ----------
+
+    data_array: np.ndarray
+        MINFLUX NumPy array.
+
+    Returns
+    -------
+
+    new_array: np.ndarray
+        Migrated MINFLUX NumPy array (with "fluo" column).
+    """
+
+    # Make sure that data_array is not None
+    if data_array is None:
+        return None
 
     # Initialize the empty target array
     new_array = create_empty_data_array(

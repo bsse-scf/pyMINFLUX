@@ -21,7 +21,7 @@ import pytest
 
 from pyminflux.analysis import get_robust_threshold, calculate_time_resolution
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.reader import MinFluxReader, MinFluxRawArrayParser
+from pyminflux.reader import MinFluxReader
 
 
 @pytest.fixture(autouse=False)
