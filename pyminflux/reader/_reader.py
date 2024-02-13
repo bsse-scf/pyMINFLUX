@@ -14,18 +14,23 @@
 #
 
 from pathlib import Path
+from pickle import UnpicklingError
 from typing import Union
 
 import h5py
 import numpy as np
 import pandas as pd
-from scipy.io import loadmat
 
 from pyminflux.reader import NativeArrayReader
+from pyminflux.reader.util import (
+    migrate_npy_array,
+    convert_from_mat,
+    find_last_valid_iteration,
+)
 
 
 class MinFluxReader:
-    __docs__ = "Reader of MINFLUX data in ~.pmx`, `.npy` or `.mat` formats."
+    __docs__ = "Reader of MINFLUX data in `.pmx`, `.npy` or `.mat` formats."
 
     __slots__ = [
         "_filename",
@@ -37,6 +42,7 @@ class MinFluxReader:
         "_valid_entries",
         "_is_3d",
         "_is_aggregated",
+        "_is_tracking",
         "_reps",
         "_efo_index",
         "_cfr_index",
@@ -54,6 +60,7 @@ class MinFluxReader:
         filename: Union[Path, str],
         valid: bool = True,
         z_scaling_factor: float = 1.0,
+        is_tracking: bool = False,
     ):
         """Constructor.
 
@@ -61,13 +68,17 @@ class MinFluxReader:
         ----------
 
         filename: Union[Path, str]
-            Full path to the `.npy` or `.mat` file to read
+            Full path to the `.pmx`, `.npy` or `.mat` file to read
 
         valid: bool (optional, default = True)
             Whether to load only valid localizations.
 
         z_scaling_factor: float (optional, default = 1.0)
             Refractive index mismatch correction factor to apply to the z coordinates.
+
+        is_tracking: bool
+            Whether the dataset comes from a tracking experiment; otherwise, it is considered as a
+            localization experiment.
         """
 
         # Store the filename
@@ -94,10 +105,14 @@ class MinFluxReader:
         # Whether the acquisition is 2D or 3D
         self._is_3d: bool = False
 
+        # Whether the acquisition is a tracking dataset
+        self._is_tracking: bool = is_tracking
+
         # Whether the file contains aggregate measurements
         self._is_aggregated: bool = False
 
-        # Indices dependent on 2D or 3D acquisition
+        # Indices dependent on 2D or 3D acquisition and whether the
+        # data comes from a localization or a tracking experiment.
         self._reps: int = -1
         self._efo_index: int = -1
         self._cfr_index: int = -1
@@ -127,6 +142,11 @@ class MinFluxReader:
     def is_aggregated(self) -> bool:
         """Returns True is the acquisition is aggregated, False otherwise."""
         return self._is_aggregated
+
+    @property
+    def is_tracking(self) -> bool:
+        """Returns True for a tracking acquisition, False otherwise."""
+        return self._is_tracking
 
     @property
     def num_valid_entries(self) -> int:
@@ -209,15 +229,21 @@ class MinFluxReader:
                 if "fluo" in data_array.dtype.names:
                     self._data_array = data_array
                 else:
-                    self._data_array = self._migrate_npy_array(data_array)
-            except ValueError as e:
+                    self._data_array = migrate_npy_array(data_array)
+            except (
+                OSError,
+                UnpicklingError,
+                ValueError,
+                EOFError,
+                FileNotFoundError,
+            ) as e:
                 print(f"Could not open {self._filename}: {e}")
                 return False
 
         elif self._filename.name.lower().endswith(".mat"):
             try:
-                self._data_array = self._convert_from_mat()
-            except ValueError as e:
+                self._data_array = convert_from_mat(self._filename)
+            except Exception as e:
                 print(f"Could not open {self._filename}: {e}")
                 return False
 
@@ -227,7 +253,7 @@ class MinFluxReader:
                 if self._data_array is None:
                     print(f"Could not open {self._filename}.")
                     return False
-            except ValueError as e:
+            except Exception as e:
                 print(f"Could not open {self._filename}: {e}")
                 return False
 
@@ -239,19 +265,11 @@ class MinFluxReader:
         self._valid_entries = self._data_array["vld"]
 
         # Cache whether the data is 2D or 3D and whether is aggregated
-        num_locs = self._data_array["itr"].shape[1]
-        if num_locs == 10:
-            self._is_aggregated = False
-            self._is_3d = True
-        elif num_locs == 5:
-            self._is_aggregated = False
-            self._is_3d = False
-        elif num_locs == 1:
-            self._is_aggregated = True
-            self._is_3d = np.nanmean(self._data_array["itr"]["loc"][:, :, 2]) != 0.0
-        else:
-            print(f"Unexpected number of localizations per trace ({num_locs}).")
-            return False
+        # The cases are different for localization vs. tracking experiments
+        # num_locs = self._data_array["itr"].shape[1]
+        self._is_3d = (
+            float(np.nanmean(self._data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
+        )
 
         # Set all relevant indices
         self._set_all_indices()
@@ -259,106 +277,11 @@ class MinFluxReader:
         # Return success
         return True
 
-    def _convert_from_mat(self) -> Union[np.ndarray, None]:
-        """Load the MAT file."""
-
-        try:
-            mat_array = loadmat(str(self._filename))
-        except ValueError as e:
-            print(f"Could not open {self._filename}: {e}")
-            return None
-
-        # Number of entries
-        n_entries = len(mat_array["itr"]["itr"][0][0])
-
-        # Number of iterations
-        n_iters = mat_array["itr"]["itr"][0][0].shape[-1]
-
-        # Initialize an empty structure NumPy data array
-        data_array = self._create_empty_data_array(n_entries, n_iters)
-
-        # Copy the data over
-        data_array["vld"] = mat_array["vld"].ravel().astype(data_array.dtype["vld"])
-        data_array["sqi"] = mat_array["sqi"].ravel().astype(data_array.dtype["sqi"])
-        data_array["gri"] = mat_array["gri"].ravel().astype(data_array.dtype["gri"])
-        data_array["tim"] = mat_array["tim"].ravel().astype(data_array.dtype["tim"])
-        data_array["tid"] = mat_array["tid"].ravel().astype(data_array.dtype["tid"])
-        data_array["act"] = mat_array["act"].ravel().astype(data_array.dtype["act"])
-        data_array["dos"] = mat_array["dos"].ravel().astype(data_array.dtype["dos"])
-        data_array["sky"] = mat_array["sky"].ravel().astype(data_array.dtype["sky"])
-        data_array["itr"]["itr"] = mat_array["itr"]["itr"][0][0].astype(
-            data_array["itr"]["itr"].dtype
-        )
-        data_array["itr"]["tic"] = mat_array["itr"]["tic"][0][0].astype(
-            data_array["itr"]["tic"].dtype
-        )
-        data_array["itr"]["loc"] = mat_array["itr"]["loc"][0][0].astype(
-            data_array["itr"]["loc"].dtype
-        )
-        data_array["itr"]["lnc"] = mat_array["itr"]["lnc"][0][0].astype(
-            data_array["itr"]["lnc"].dtype
-        )
-        data_array["itr"]["eco"] = mat_array["itr"]["eco"][0][0].astype(
-            data_array["itr"]["eco"].dtype
-        )
-        data_array["itr"]["ecc"] = mat_array["itr"]["ecc"][0][0].astype(
-            data_array["itr"]["ecc"].dtype
-        )
-        data_array["itr"]["efo"] = mat_array["itr"]["efo"][0][0].astype(
-            data_array["itr"]["efo"].dtype
-        )
-        data_array["itr"]["efc"] = mat_array["itr"]["efc"][0][0].astype(
-            data_array["itr"]["efc"].dtype
-        )
-        data_array["itr"]["sta"] = mat_array["itr"]["sta"][0][0].astype(
-            data_array["itr"]["sta"].dtype
-        )
-        data_array["itr"]["cfr"] = mat_array["itr"]["cfr"][0][0].astype(
-            data_array["itr"]["cfr"].dtype
-        )
-        data_array["itr"]["dcr"] = mat_array["itr"]["dcr"][0][0].astype(
-            data_array["itr"]["dcr"].dtype
-        )
-        data_array["itr"]["ext"] = mat_array["itr"]["ext"][0][0].astype(
-            data_array["itr"]["ext"].dtype
-        )
-        data_array["itr"]["gvy"] = mat_array["itr"]["gvy"][0][0].astype(
-            data_array["itr"]["gvy"].dtype
-        )
-        data_array["itr"]["gvx"] = mat_array["itr"]["gvx"][0][0].astype(
-            data_array["itr"]["gvx"].dtype
-        )
-        data_array["itr"]["eoy"] = mat_array["itr"]["eoy"][0][0].astype(
-            data_array["itr"]["eoy"].dtype
-        )
-        data_array["itr"]["eox"] = mat_array["itr"]["eox"][0][0].astype(
-            data_array["itr"]["eox"].dtype
-        )
-        data_array["itr"]["dmz"] = mat_array["itr"]["dmz"][0][0].astype(
-            data_array["itr"]["dmz"].dtype
-        )
-        data_array["itr"]["lcy"] = mat_array["itr"]["lcy"][0][0].astype(
-            data_array["itr"]["lcy"].dtype
-        )
-        data_array["itr"]["lcx"] = mat_array["itr"]["lcx"][0][0].astype(
-            data_array["itr"]["lcx"].dtype
-        )
-        data_array["itr"]["lcz"] = mat_array["itr"]["lcz"][0][0].astype(
-            data_array["itr"]["lcz"].dtype
-        )
-        data_array["itr"]["fbg"] = mat_array["itr"]["fbg"][0][0].astype(
-            data_array["itr"]["fbg"].dtype
-        )
-
-        # Return success
-        return data_array
-
     def _read_from_pmx(self) -> Union[np.ndarray, None]:
         """Load the PMX file."""
 
         # Open the file and read the data
         with h5py.File(self._filename, "r") as f:
-
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
@@ -538,109 +461,64 @@ class MinFluxReader:
         if self._data_array is None:
             return False
 
-        if self.is_aggregated:
-            self._reps = 1
-            self._efo_index = -1  # Not used
-            self._cfr_index = -1  # Not used
-            self._dcr_index = -1  # Not used
-            self._eco_index = -1  # Not used
-            self._loc_index = -1  # Not used
+        # Number of iterations
+        self._reps = self._data_array["itr"].shape[1]
+
+        # Is this an aggregated acquisition?
+        if self._reps == 1:
+            self._is_aggregated = True
         else:
-            if self.is_3d:
-                self._reps = 10
-                self._efo_index = 9
-                self._cfr_index = 6
-                self._dcr_index = 9
-                self._eco_index = 9
-                self._loc_index = 9
-            else:
-                self._reps = 5
-                self._efo_index = 4
-                self._cfr_index = 4
-                self._dcr_index = 4
-                self._eco_index = 4
-                self._loc_index = 4
+            self._is_aggregated = False
 
-    def _create_empty_data_array(self, n_entries: int, n_iters: int) -> np.ndarray:
-        """Initializes a structured data array compatible with those exported from Imspector.
+        # Query the data to find the last valid iteration
+        # for all measurements
+        last_valid = find_last_valid_iteration(self._data_array)
 
-        Parameters
-        ----------
+        # Set the extracted indices
+        self._efo_index = last_valid["efo_index"]
+        self._cfr_index = last_valid["cfr_index"]
+        self._dcr_index = last_valid["dcr_index"]
+        self._eco_index = last_valid["eco_index"]
+        self._loc_index = last_valid["loc_index"]
 
-        n_entries: int
-            Number of localizations in the array.
+        # Inform the user (temporary debug info)
+        print(f"Selected iterations: efo: {self._efo_index}, cfr: {self._cfr_index}, dcr: {self._dcr_index}, eco: {self._eco_index}, loc: {self._loc_index}")
 
-        n_iters: int
-            Number of iterations per localization.
-            10 for 3D datasets, 5 for 2D datasets, 1 for aggregated measurements.
-
-        Returns
-        -------
-
-        array: Empty array with the requested dimensionality.
-        """
-
-        if n_iters not in [1, 5, 10]:
-            raise ValueError("`n_iters` must be one of 1, 5, 10.")
-
-        return np.empty(
-            n_entries,
-            dtype=np.dtype(
-                [
-                    (
-                        "itr",
-                        [
-                            ("itr", "<i4"),
-                            ("tic", "<u8"),
-                            ("loc", "<f8", (3,)),
-                            ("lnc", "<f8", (3,)),
-                            ("eco", "<i4"),
-                            ("ecc", "<i4"),
-                            ("efo", "<f8"),
-                            ("efc", "<f8"),
-                            ("sta", "<i4"),
-                            ("cfr", "<f8"),
-                            ("dcr", "<f8"),
-                            ("ext", "<f8", (3,)),
-                            ("gvy", "<f8"),
-                            ("gvx", "<f8"),
-                            ("eoy", "<f8"),
-                            ("eox", "<f8"),
-                            ("dmz", "<f8"),
-                            ("lcy", "<f8"),
-                            ("lcx", "<f8"),
-                            ("lcz", "<f8"),
-                            ("fbg", "<f8"),
-                        ],
-                        (n_iters,),
-                    ),
-                    ("sqi", "<u4"),
-                    ("gri", "<u4"),
-                    ("tim", "<f8"),
-                    ("tid", "<i4"),
-                    ("vld", "?"),
-                    ("act", "?"),
-                    ("dos", "<i4"),
-                    ("sky", "<i4"),
-                    ("fluo", "<i1"),
-                ]
-            ),
-        )
-
-    def _migrate_npy_array(self, data_array) -> np.ndarray:
-        """Migrate the raw Imspector NumPy array into a pyMINFLUX raw array."""
-
-        # Initialize the empty target array
-        new_array = self._create_empty_data_array(
-            len(data_array), data_array["itr"].shape[-1]
-        )
-
-        # Copy the data over
-        for field_name in data_array.dtype.names:
-            new_array[field_name] = data_array[field_name]
-
-        # Return the migrated array
-        return new_array
+        # if self.is_aggregated:
+        #     self._efo_index = -1  # Not used
+        #     self._cfr_index = -1  # Not used
+        #     self._dcr_index = -1  # Not used
+        #     self._eco_index = -1  # Not used
+        #     self._loc_index = -1  # Not used
+        # else:
+        #     if self._is_tracking:
+        #         # Tracking experiment
+        #         if self.is_3d:
+        #             self._efo_index = 4
+        #             self._cfr_index = 4
+        #             self._dcr_index = 4
+        #             self._eco_index = 4
+        #             self._loc_index = 4
+        #         else:
+        #             self._efo_index = 3
+        #             self._cfr_index = 3
+        #             self._dcr_index = 3
+        #             self._eco_index = 3
+        #             self._loc_index = 3
+        #     else:
+        #         # Localization experiment
+        #         if self.is_3d:
+        #             self._efo_index = 9
+        #             self._cfr_index = 6
+        #             self._dcr_index = 9
+        #             self._eco_index = 9
+        #             self._loc_index = 9
+        #         else:
+        #             self._efo_index = 4
+        #             self._cfr_index = 4
+        #             self._dcr_index = 4
+        #             self._eco_index = 4
+        #             self._loc_index = 4
 
     def __repr__(self) -> str:
         """String representation of the object."""

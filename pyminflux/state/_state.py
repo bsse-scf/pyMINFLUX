@@ -17,7 +17,7 @@ from enum import IntEnum
 from typing import Union
 
 from ..base import Singleton
-from ..reader import Metadata
+from ..reader.metadata import NativeMetadata
 
 
 class ColorCode(IntEnum):
@@ -204,8 +204,8 @@ class State(metaclass=Singleton):
         self.frc_endpoint_only = False
         self.open_console_at_start = False
 
-    def update_from_metadata(self, metadata: Metadata):
-        """Update State from the Metadata parameters from a `.pmx` file."""
+    def update_from_metadata(self, metadata: NativeMetadata):
+        """Update State from the NativeMetadata parameters from a `.pmx` file."""
         self.min_trace_length = metadata.min_trace_length
         self.efo_thresholds = metadata.efo_thresholds
         self.applied_efo_thresholds = metadata.efo_thresholds
