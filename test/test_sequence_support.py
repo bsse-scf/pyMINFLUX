@@ -18,7 +18,9 @@ from pathlib import Path
 
 import pytest
 
-from pyminflux.reader import MinFluxRawArrayParser
+import numpy as np
+
+from pyminflux.reader.util import find_last_valid_iteration
 
 
 @pytest.fixture(autouse=False)
@@ -87,144 +89,167 @@ def extract_parsing_archives(tmpdir):
     # - Nothing for the moment
 
 
-def test_parsing(extract_parsing_archives):
+def test_last_valid_iteration(extract_parsing_archives):
 
     # 2D_ValidOnly.npy
-    parser = MinFluxRawArrayParser(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
-    metadata = parser.scan()
+    data_array = np.load(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    data_array = data_array[data_array["vld"]]
+    num_iterations = data_array["itr"]["itr"].shape[1]
+    num_entries = data_array["itr"]["itr"].shape[0]
+    last_valid = find_last_valid_iteration(data_array)
+    is_3d = float(np.nanmean(data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
 
-    assert metadata.is_valid, "Dataset is expected to be valid."
-    assert metadata.is_3d is False, "Dataset is expected to be 2D."
-    assert metadata.num_iterations == 5, "Dataset is expected to have 5 iterations."
-    assert metadata.num_entries == 12580, "Dataset is expected to have 12580 entries."
-    assert metadata.last_valid["cfr_index"] == 4, "Last valid CFR index should be 4."
-    assert metadata.last_valid["dcr_index"] == 4, "Last valid DCR index should be 4."
-    assert metadata.last_valid["eco_index"] == 4, "Last valid ECO index should be 4."
-    assert metadata.last_valid["efo_index"] == 4, "Last valid EFO index should be 4."
-    assert metadata.last_valid["loc_index"] == 4, "Last valid LOC index should be 4."
+    assert is_3d is False, "Dataset is expected to be 2D."
+    assert num_iterations == 5, "Dataset is expected to have 5 iterations."
+    assert num_entries == 12580, "Dataset is expected to have 12580 entries."
+    assert last_valid["cfr_index"] == 4, "Last valid CFR index should be 4."
+    assert last_valid["dcr_index"] == 4, "Last valid DCR index should be 4."
+    assert last_valid["eco_index"] == 4, "Last valid ECO index should be 4."
+    assert last_valid["efo_index"] == 4, "Last valid EFO index should be 4."
+    assert last_valid["loc_index"] == 4, "Last valid LOC index should be 4."
 
     # 3D_ValidOnly.npy
-    parser = MinFluxRawArrayParser(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
-    metadata = parser.scan()
+    data_array = np.load(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
+    data_array = data_array[data_array["vld"]]
+    num_iterations = data_array["itr"]["itr"].shape[1]
+    num_entries = data_array["itr"]["itr"].shape[0]
+    last_valid = find_last_valid_iteration(data_array)
+    is_3d = float(np.nanmean(data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
 
-    assert metadata.is_valid, "Dataset is expected to be valid."
-    assert metadata.is_3d is True, "Dataset is expected to be 3D."
-    assert metadata.num_iterations == 10, "Dataset is expected to have 10 iterations."
-    assert metadata.num_entries == 5812, "Dataset is expected to have 5812 entries."
-    assert metadata.last_valid["cfr_index"] == 6, "Last valid CFR index should be 6."
-    assert metadata.last_valid["dcr_index"] == 9, "Last valid DCR index should be 9."
-    assert metadata.last_valid["eco_index"] == 9, "Last valid ECO index should be 9."
-    assert metadata.last_valid["efo_index"] == 9, "Last valid EFO index should be 9."
-    assert metadata.last_valid["loc_index"] == 9, "Last valid LOC index should be 9."
+    assert is_3d is True, "Dataset is expected to be 3D."
+    assert num_iterations == 10, "Dataset is expected to have 10 iterations."
+    assert num_entries == 5812, "Dataset is expected to have 5812 entries."
+    assert last_valid["cfr_index"] == 6, "Last valid CFR index should be 6."
+    assert last_valid["dcr_index"] == 9, "Last valid DCR index should be 9."
+    assert last_valid["eco_index"] == 9, "Last valid ECO index should be 9."
+    assert last_valid["efo_index"] == 9, "Last valid EFO index should be 9."
+    assert last_valid["loc_index"] == 9, "Last valid LOC index should be 9."
 
     # 2d_tracking.npy
-    parser = MinFluxRawArrayParser(Path(__file__).parent / "data" / "2d_tracking.npy")
-    metadata = parser.scan()
+    data_array = np.load(Path(__file__).parent / "data" / "2d_tracking.npy")
+    data_array = data_array[data_array["vld"]]
+    num_iterations = data_array["itr"]["itr"].shape[1]
+    num_entries = data_array["itr"]["itr"].shape[0]
+    last_valid = find_last_valid_iteration(data_array)
+    is_3d = float(np.nanmean(data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
 
-    assert metadata.is_valid, "Dataset is expected to be valid."
-    assert metadata.is_3d is False, "Dataset is expected to be 2D."
-    assert metadata.num_iterations == 4, "Dataset is expected to have 4 iterations."
-    assert metadata.num_entries == 38105, "Dataset is expected to have 38105 entries."
-    assert metadata.last_valid["cfr_index"] == 1, "Last valid CFR index should be 1."
-    assert metadata.last_valid["dcr_index"] == 3, "Last valid DCR index should be 3."
-    assert metadata.last_valid["eco_index"] == 3, "Last valid ECO index should be 3."
-    assert metadata.last_valid["efo_index"] == 3, "Last valid EFO index should be 3."
-    assert metadata.last_valid["loc_index"] == 3, "Last valid LOC index should be 3."
+    assert is_3d is False, "Dataset is expected to be 2D."
+    assert num_iterations == 4, "Dataset is expected to have 4 iterations."
+    assert num_entries == 38105, "Dataset is expected to have 38105 entries."
+    assert last_valid["cfr_index"] == 1, "Last valid CFR index should be 1."
+    assert last_valid["dcr_index"] == 3, "Last valid DCR index should be 3."
+    assert last_valid["eco_index"] == 3, "Last valid ECO index should be 3."
+    assert last_valid["efo_index"] == 3, "Last valid EFO index should be 3."
+    assert last_valid["loc_index"] == 3, "Last valid LOC index should be 3."
 
     # precision_immobilized_seqTrk3D.npy
-    parser = MinFluxRawArrayParser(
+    data_array = np.load(
         Path(__file__).parent / "data" / "precision_immobilized_seqTrk3D.npy"
     )
-    metadata = parser.scan()
+    data_array = data_array[data_array["vld"]]
+    num_iterations = data_array["itr"]["itr"].shape[1]
+    num_entries = data_array["itr"]["itr"].shape[0]
+    last_valid = find_last_valid_iteration(data_array)
+    is_3d = float(np.nanmean(data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
 
-    assert metadata.is_valid, "Dataset is expected to be valid."
-    assert metadata.is_3d is True, "Dataset is expected to be 3D."
-    assert metadata.num_iterations == 5, "Dataset is expected to have 5 iterations."
-    assert metadata.num_entries == 3826, "Dataset is expected to have 3826 entries."
-    assert metadata.last_valid["cfr_index"] == 2, "Last valid CFR index should be 2."
-    assert metadata.last_valid["dcr_index"] == 4, "Last valid DCR index should be 4."
-    assert metadata.last_valid["eco_index"] == 4, "Last valid ECO index should be 4."
-    assert metadata.last_valid["efo_index"] == 4, "Last valid EFO index should be 4."
-    assert metadata.last_valid["loc_index"] == 4, "Last valid LOC index should be 4."
+    assert is_3d is True, "Dataset is expected to be 3D."
+    assert num_iterations == 5, "Dataset is expected to have 5 iterations."
+    assert num_entries == 3826, "Dataset is expected to have 3826 entries."
+    assert last_valid["cfr_index"] == 2, "Last valid CFR index should be 2."
+    assert last_valid["dcr_index"] == 4, "Last valid DCR index should be 4."
+    assert last_valid["eco_index"] == 4, "Last valid ECO index should be 4."
+    assert last_valid["efo_index"] == 4, "Last valid EFO index should be 4."
+    assert last_valid["loc_index"] == 4, "Last valid LOC index should be 4."
 
     # precision_immobilized_seqTrkFast.npy
-    parser = MinFluxRawArrayParser(
+    data_array = np.load(
         Path(__file__).parent / "data" / "precision_immobilized_seqTrkFast.npy"
     )
-    metadata = parser.scan()
+    data_array = data_array[data_array["vld"]]
+    num_iterations = data_array["itr"]["itr"].shape[1]
+    num_entries = data_array["itr"]["itr"].shape[0]
+    last_valid = find_last_valid_iteration(data_array)
+    is_3d = float(np.nanmean(data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
 
-    assert metadata.is_valid, "Dataset is expected to be valid."
-    assert metadata.is_3d is False, "Dataset is expected to be 2D."
-    assert metadata.num_iterations == 4, "Dataset is expected to have 4 iterations."
-    assert metadata.num_entries == 13100, "Dataset is expected to have 13100 entries."
-    assert metadata.last_valid["cfr_index"] == 1, "Last valid CFR index should be 1."
-    assert metadata.last_valid["dcr_index"] == 3, "Last valid DCR index should be 3."
-    assert metadata.last_valid["eco_index"] == 3, "Last valid ECO index should be 3."
-    assert metadata.last_valid["efo_index"] == 3, "Last valid EFO index should be 3."
-    assert metadata.last_valid["loc_index"] == 3, "Last valid LOC index should be 3."
+    assert is_3d is False, "Dataset is expected to be 2D."
+    assert num_iterations == 4, "Dataset is expected to have 4 iterations."
+    assert num_entries == 13100, "Dataset is expected to have 13100 entries."
+    assert last_valid["cfr_index"] == 1, "Last valid CFR index should be 1."
+    assert last_valid["dcr_index"] == 3, "Last valid DCR index should be 3."
+    assert last_valid["eco_index"] == 3, "Last valid ECO index should be 3."
+    assert last_valid["efo_index"] == 3, "Last valid EFO index should be 3."
+    assert last_valid["loc_index"] == 3, "Last valid LOC index should be 3."
 
     # precision_immobilized_seqTrk.npy
-    parser = MinFluxRawArrayParser(
+    data_array = np.load(
         Path(__file__).parent / "data" / "precision_immobilized_seqTrk.npy"
     )
-    metadata = parser.scan()
+    data_array = data_array[data_array["vld"]]
+    num_iterations = data_array["itr"]["itr"].shape[1]
+    num_entries = data_array["itr"]["itr"].shape[0]
+    last_valid = find_last_valid_iteration(data_array)
+    is_3d = float(np.nanmean(data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
 
-    assert metadata.is_valid, "Dataset is expected to be valid."
-    assert metadata.is_3d is False, "Dataset is expected to be 2D."
-    assert metadata.num_iterations == 4, "Dataset is expected to have 4 iterations."
-    assert metadata.num_entries == 15189, "Dataset is expected to have 15189 entries."
-    assert metadata.last_valid["cfr_index"] == 3, "Last valid CFR index should be 3."
-    assert metadata.last_valid["dcr_index"] == 3, "Last valid DCR index should be 3."
-    assert metadata.last_valid["eco_index"] == 3, "Last valid ECO index should be 3."
-    assert metadata.last_valid["efo_index"] == 3, "Last valid EFO index should be 3."
-    assert metadata.last_valid["loc_index"] == 3, "Last valid LOC index should be 3."
+    assert is_3d is False, "Dataset is expected to be 2D."
+    assert num_iterations == 4, "Dataset is expected to have 4 iterations."
+    assert num_entries == 15189, "Dataset is expected to have 15189 entries."
+    assert last_valid["cfr_index"] == 3, "Last valid CFR index should be 3."
+    assert last_valid["dcr_index"] == 3, "Last valid DCR index should be 3."
+    assert last_valid["eco_index"] == 3, "Last valid ECO index should be 3."
+    assert last_valid["efo_index"] == 3, "Last valid EFO index should be 3."
+    assert last_valid["loc_index"] == 3, "Last valid LOC index should be 3."
     print("\n* * * Why is cfr_index == 3 for precision_immobilized_seqTrk.npy? * * *")
 
     # tracking_free_seqTrck3D.npy
-    parser = MinFluxRawArrayParser(
-        Path(__file__).parent / "data" / "tracking_free_seqTrck3D.npy"
-    )
-    metadata = parser.scan()
+    data_array = np.load(Path(__file__).parent / "data" / "tracking_free_seqTrck3D.npy")
+    data_array = data_array[data_array["vld"]]
+    num_iterations = data_array["itr"]["itr"].shape[1]
+    num_entries = data_array["itr"]["itr"].shape[0]
+    last_valid = find_last_valid_iteration(data_array)
+    is_3d = float(np.nanmean(data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
 
-    assert metadata.is_valid, "Dataset is expected to be valid."
-    assert metadata.is_3d is True, "Dataset is expected to be 3D."
-    assert metadata.num_iterations == 5, "Dataset is expected to have 4 iterations."
-    assert metadata.num_entries == 27735, "Dataset is expected to have 27735 entries."
-    assert metadata.last_valid["cfr_index"] == 2, "Last valid CFR index should be 2."
-    assert metadata.last_valid["dcr_index"] == 4, "Last valid DCR index should be 4."
-    assert metadata.last_valid["eco_index"] == 4, "Last valid ECO index should be 4."
-    assert metadata.last_valid["efo_index"] == 4, "Last valid EFO index should be 4."
-    assert metadata.last_valid["loc_index"] == 4, "Last valid LOC index should be 4."
+    assert is_3d is True, "Dataset is expected to be 3D."
+    assert num_iterations == 5, "Dataset is expected to have 4 iterations."
+    assert num_entries == 27735, "Dataset is expected to have 27735 entries."
+    assert last_valid["cfr_index"] == 2, "Last valid CFR index should be 2."
+    assert last_valid["dcr_index"] == 4, "Last valid DCR index should be 4."
+    assert last_valid["eco_index"] == 4, "Last valid ECO index should be 4."
+    assert last_valid["efo_index"] == 4, "Last valid EFO index should be 4."
+    assert last_valid["loc_index"] == 4, "Last valid LOC index should be 4."
 
     # tracking_free_seqTrckFast.npy
-    parser = MinFluxRawArrayParser(
+    data_array = np.load(
         Path(__file__).parent / "data" / "tracking_free_seqTrckFast.npy"
     )
-    metadata = parser.scan()
+    data_array = data_array[data_array["vld"]]
+    num_iterations = data_array["itr"]["itr"].shape[1]
+    num_entries = data_array["itr"]["itr"].shape[0]
+    last_valid = find_last_valid_iteration(data_array)
+    is_3d = float(np.nanmean(data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
 
-    assert metadata.is_valid, "Dataset is expected to be valid."
-    assert metadata.is_3d is False, "Dataset is expected to be 2D."
-    assert metadata.num_iterations == 4, "Dataset is expected to have 4 iterations."
-    assert metadata.num_entries == 160079, "Dataset is expected to have 160079 entries."
-    assert metadata.last_valid["cfr_index"] == 1, "Last valid CFR index should be 1."
-    assert metadata.last_valid["dcr_index"] == 3, "Last valid DCR index should be 3."
-    assert metadata.last_valid["eco_index"] == 3, "Last valid ECO index should be 3."
-    assert metadata.last_valid["efo_index"] == 3, "Last valid EFO index should be 3."
-    assert metadata.last_valid["loc_index"] == 3, "Last valid LOC index should be 3."
+    assert is_3d is False, "Dataset is expected to be 2D."
+    assert num_iterations == 4, "Dataset is expected to have 4 iterations."
+    assert num_entries == 160079, "Dataset is expected to have 160079 entries."
+    assert last_valid["cfr_index"] == 1, "Last valid CFR index should be 1."
+    assert last_valid["dcr_index"] == 3, "Last valid DCR index should be 3."
+    assert last_valid["eco_index"] == 3, "Last valid ECO index should be 3."
+    assert last_valid["efo_index"] == 3, "Last valid EFO index should be 3."
+    assert last_valid["loc_index"] == 3, "Last valid LOC index should be 3."
 
     # tracking_free_seqTrck.npy
-    parser = MinFluxRawArrayParser(
-        Path(__file__).parent / "data" / "tracking_free_seqTrck.npy"
-    )
-    metadata = parser.scan()
+    data_array = np.load(Path(__file__).parent / "data" / "tracking_free_seqTrck.npy")
+    data_array = data_array[data_array["vld"]]
+    num_iterations = data_array["itr"]["itr"].shape[1]
+    num_entries = data_array["itr"]["itr"].shape[0]
+    last_valid = find_last_valid_iteration(data_array)
+    is_3d = float(np.nanmean(data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
 
-    assert metadata.is_valid, "Dataset is expected to be valid."
-    assert metadata.is_3d is False, "Dataset is expected to be 2D."
-    assert metadata.num_iterations == 4, "Dataset is expected to have 4 iterations."
-    assert metadata.num_entries == 184421, "Dataset is expected to have 184421 entries."
-    assert metadata.last_valid["cfr_index"] == 3, "Last valid CFR index should be 3."
-    assert metadata.last_valid["dcr_index"] == 3, "Last valid DCR index should be 3."
-    assert metadata.last_valid["eco_index"] == 3, "Last valid ECO index should be 3."
-    assert metadata.last_valid["efo_index"] == 3, "Last valid EFO index should be 3."
-    assert metadata.last_valid["loc_index"] == 3, "Last valid LOC index should be 3."
+    assert is_3d is False, "Dataset is expected to be 2D."
+    assert num_iterations == 4, "Dataset is expected to have 4 iterations."
+    assert num_entries == 184421, "Dataset is expected to have 184421 entries."
+    assert last_valid["cfr_index"] == 3, "Last valid CFR index should be 3."
+    assert last_valid["dcr_index"] == 3, "Last valid DCR index should be 3."
+    assert last_valid["eco_index"] == 3, "Last valid ECO index should be 3."
+    assert last_valid["efo_index"] == 3, "Last valid EFO index should be 3."
+    assert last_valid["loc_index"] == 3, "Last valid LOC index should be 3."
     print("\n* * * Why is cfr_index == 3 for tracking_free_seqTrck.npy? * * *")

@@ -213,15 +213,19 @@ def find_last_valid_iteration(data_array: np.ndarray):
 
     # Initialize output
     last_valid = {
-        "efo_index": -1,
-        "cfr_index": -1,
-        "dcr_index": -1,
-        "eco_index": -1,
-        "loc_index": -1
+        "efo_index": 0,
+        "cfr_index": 0,
+        "dcr_index": 0,
+        "eco_index": 0,
+        "loc_index": 0
     }
 
     # Number of iterations
     num_iterations = data_array["itr"].shape[1]
+
+    # Do we have aggregated measurements?
+    if num_iterations == 1:
+        return last_valid
 
     # Set efo index
     for i in range(num_iterations - 1, -1, -1):
@@ -271,7 +275,7 @@ def find_last_valid_iteration(data_array: np.ndarray):
     return last_valid
 
 
-def migrate_npy_array(data_array) -> np.ndarray:
+def migrate_npy_array(data_array) -> Union[np.ndarray, None]:
     """Migrate the raw Imspector NumPy array into a pyMINFLUX raw array.
 
     Parameters

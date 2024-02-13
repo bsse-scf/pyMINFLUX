@@ -22,7 +22,11 @@ import numpy as np
 import pandas as pd
 
 from pyminflux.reader import NativeArrayReader
-from pyminflux.reader.util import migrate_npy_array, convert_from_mat
+from pyminflux.reader.util import (
+    migrate_npy_array,
+    convert_from_mat,
+    find_last_valid_iteration,
+)
 
 
 class MinFluxReader:
@@ -52,11 +56,11 @@ class MinFluxReader:
     ]
 
     def __init__(
-            self,
-            filename: Union[Path, str],
-            valid: bool = True,
-            z_scaling_factor: float = 1.0,
-            is_tracking: bool = False,
+        self,
+        filename: Union[Path, str],
+        valid: bool = True,
+        z_scaling_factor: float = 1.0,
+        is_tracking: bool = False,
     ):
         """Constructor.
 
@@ -226,7 +230,13 @@ class MinFluxReader:
                     self._data_array = data_array
                 else:
                     self._data_array = migrate_npy_array(data_array)
-            except (OSError, UnpicklingError, ValueError, EOFError, FileNotFoundError) as e:
+            except (
+                OSError,
+                UnpicklingError,
+                ValueError,
+                EOFError,
+                FileNotFoundError,
+            ) as e:
                 print(f"Could not open {self._filename}: {e}")
                 return False
 
@@ -256,27 +266,10 @@ class MinFluxReader:
 
         # Cache whether the data is 2D or 3D and whether is aggregated
         # The cases are different for localization vs. tracking experiments
-        num_locs = self._data_array["itr"].shape[1]
-        self._is_3d = float(np.nanmean(self._data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
-
-        if self._is_tracking:
-            # Tracking experiment
-            if num_locs in [4, 5]:
-                self._is_aggregated = False
-            elif num_locs == 1:
-                self._is_aggregated = True
-            else:
-                print(f"Unexpected number of localizations per trace ({num_locs}).")
-                return False
-        else:
-            # Localization experiment
-            if num_locs in [5, 10]:
-                self._is_aggregated = False
-            elif num_locs == 1:
-                self._is_aggregated = True
-            else:
-                print(f"Unexpected number of localizations per trace ({num_locs}).")
-                return False
+        # num_locs = self._data_array["itr"].shape[1]
+        self._is_3d = (
+            float(np.nanmean(self._data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
+        )
 
         # Set all relevant indices
         self._set_all_indices()
@@ -420,7 +413,7 @@ class MinFluxReader:
         for c in np.nditer(tid_counts):
             tmp = np.repeat(np.arange(c), self._reps)
             n = len(tmp)
-            aid[index: index + n, 0] = tmp
+            aid[index : index + n, 0] = tmp
             index += n
 
         # Get all valid flags (repeated over the repetitions)
@@ -431,8 +424,8 @@ class MinFluxReader:
 
         # Get all localizations (reshaped to drop the first dimension)
         loc = (
-                self._data_array["itr"]["loc"].reshape((n_rows, 3))
-                * self._unit_scaling_factor
+            self._data_array["itr"]["loc"].reshape((n_rows, 3))
+            * self._unit_scaling_factor
         )
         loc[:, 2] = loc[:, 2] * self._z_scaling_factor
 
@@ -471,41 +464,61 @@ class MinFluxReader:
         # Number of iterations
         self._reps = self._data_array["itr"].shape[1]
 
-        if self.is_aggregated:
-            self._efo_index = -1  # Not used
-            self._cfr_index = -1  # Not used
-            self._dcr_index = -1  # Not used
-            self._eco_index = -1  # Not used
-            self._loc_index = -1  # Not used
+        # Is this an aggregated acquisition?
+        if self._reps == 1:
+            self._is_aggregated = True
         else:
-            if self._is_tracking:
-                # Tracking experiment
-                if self.is_3d:
-                    self._efo_index = 4
-                    self._cfr_index = 4
-                    self._dcr_index = 4
-                    self._eco_index = 4
-                    self._loc_index = 4
-                else:
-                    self._efo_index = 3
-                    self._cfr_index = 3
-                    self._dcr_index = 3
-                    self._eco_index = 3
-                    self._loc_index = 3
-            else:
-                # Localization experiment
-                if self.is_3d:
-                    self._efo_index = 9
-                    self._cfr_index = 6
-                    self._dcr_index = 9
-                    self._eco_index = 9
-                    self._loc_index = 9
-                else:
-                    self._efo_index = 4
-                    self._cfr_index = 4
-                    self._dcr_index = 4
-                    self._eco_index = 4
-                    self._loc_index = 4
+            self._is_aggregated = False
+
+        # Query the data to find the last valid iteration
+        # for all measurements
+        last_valid = find_last_valid_iteration(self._data_array)
+
+        # Set the extracted indices
+        self._efo_index = last_valid["efo_index"]
+        self._cfr_index = last_valid["cfr_index"]
+        self._dcr_index = last_valid["dcr_index"]
+        self._eco_index = last_valid["eco_index"]
+        self._loc_index = last_valid["loc_index"]
+
+        # Inform the user (temporary debug info)
+        print(f"Selected iterations: efo: {self._efo_index}, cfr: {self._cfr_index}, dcr: {self._dcr_index}, eco: {self._eco_index}, loc: {self._loc_index}")
+
+        # if self.is_aggregated:
+        #     self._efo_index = -1  # Not used
+        #     self._cfr_index = -1  # Not used
+        #     self._dcr_index = -1  # Not used
+        #     self._eco_index = -1  # Not used
+        #     self._loc_index = -1  # Not used
+        # else:
+        #     if self._is_tracking:
+        #         # Tracking experiment
+        #         if self.is_3d:
+        #             self._efo_index = 4
+        #             self._cfr_index = 4
+        #             self._dcr_index = 4
+        #             self._eco_index = 4
+        #             self._loc_index = 4
+        #         else:
+        #             self._efo_index = 3
+        #             self._cfr_index = 3
+        #             self._dcr_index = 3
+        #             self._eco_index = 3
+        #             self._loc_index = 3
+        #     else:
+        #         # Localization experiment
+        #         if self.is_3d:
+        #             self._efo_index = 9
+        #             self._cfr_index = 6
+        #             self._dcr_index = 9
+        #             self._eco_index = 9
+        #             self._loc_index = 9
+        #         else:
+        #             self._efo_index = 4
+        #             self._cfr_index = 4
+        #             self._dcr_index = 4
+        #             self._eco_index = 4
+        #             self._loc_index = 4
 
     def __repr__(self) -> str:
         """String representation of the object."""
