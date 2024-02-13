@@ -963,6 +963,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.color_unmixer.fluorophore_ids_assigned.connect(
                 self.histogram_plotter.plot_histogram
             )
+        if self.time_inspector is not None:
+            self.time_inspector.dataset_time_filtered.connect(
+                self.histogram_plotter.plot_histogram
+            )
         self.histogram_plotter.show()
         self.histogram_plotter.activateWindow()
 

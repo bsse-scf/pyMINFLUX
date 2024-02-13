@@ -114,6 +114,11 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
         # Get the data for the histogram
         data = self.processor.filtered_dataframe[self.selected_parameter].values
 
+        # Is there data?
+        if len(data) == 0:
+            self.clear_plot()
+            return
+
         # Calculate the histogram
         n, _, b, _ = prepare_histogram(data, auto_bins=True)
 
