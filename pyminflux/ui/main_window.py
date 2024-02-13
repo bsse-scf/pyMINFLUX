@@ -44,6 +44,7 @@ from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.frc_tool import FRCTool
+from pyminflux.ui.histogram_plotter import HistogramPlotter
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
@@ -101,6 +102,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.data_viewer = None
         self.analyzer = None
         self.plotter = None
+        self.histogram_plotter = None
         self.color_unmixer = None
         self.time_inspector = None
         self.trace_stats_viewer = None
@@ -151,7 +153,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         sys.stdout.signal_textWritten.connect(self.print_to_console)
 
         # Print a welcome message to the console
-        print(f"Welcome to {__APP_NAME__}.")
+        print(f"Welcome to {__APP_NAME__} v{__version__}.")
 
     def load_and_apply_settings(self):
         """Read the application settings and update the State."""
@@ -277,6 +279,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.actionState.triggered.connect(self.print_current_state)
+        self.ui.actionHistogram_Plotter.triggered.connect(self.open_histogram_plotter)
         self.ui.actionUnmixer.triggered.connect(self.open_color_unmixer)
         self.ui.actionTime_Inspector.triggered.connect(self.open_time_inspector)
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
@@ -375,6 +378,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionSave.setEnabled(enabled)
         self.ui.actionExport_data.setEnabled(enabled)
         self.ui.actionExport_stats.setEnabled(enabled)
+        self.ui.actionHistogram_Plotter.setEnabled(enabled)
         self.ui.actionUnmixer.setEnabled(enabled)
         self.ui.actionTime_Inspector.setEnabled(enabled)
         self.ui.actionAnalyzer.setEnabled(enabled)
@@ -422,6 +426,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.options is not None:
                 self.options.close()
                 self.options = None
+
+            if self.histogram_plotter is not None:
+                self.histogram_plotter.close()
+                self.histogram_plotter = None
 
             if self.analyzer is not None:
                 self.analyzer.close()
@@ -641,6 +649,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.options is not None:
                 self.options.close()
                 self.options = None
+
+            # Close the Histogram Plotter
+            if self.histogram_plotter is not None:
+                self.histogram_plotter.close()
+                self.histogram_plotter = None
 
             # Close the Color Unmixer
             if self.color_unmixer is not None:
@@ -886,17 +899,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             self.analyzer.efo_bounds_changed.connect(self.wizard.change_efo_bounds)
             self.analyzer.cfr_bounds_changed.connect(self.wizard.change_cfr_bounds)
-            if self.time_inspector is not None:
-                self.analyzer.data_filters_changed.connect(self.time_inspector.update)
-            if self.trace_stats_viewer is not None:
-                self.analyzer.data_filters_changed.connect(
-                    self.trace_stats_viewer.update
-                )
-            if self.trace_length_viewer is not None:
-                self.analyzer.data_filters_changed.connect(
-                    self.trace_length_viewer.update
-                )
-            self.analyzer.plot()
+        if self.histogram_plotter is not None:
+            self.analyzer.data_filters_changed.connect(
+                self.histogram_plotter.plot_histogram
+        )
+        if self.time_inspector is not None:
+            self.analyzer.data_filters_changed.connect(self.time_inspector.update)
+        if self.trace_stats_viewer is not None:
+            self.analyzer.data_filters_changed.connect(
+                self.trace_stats_viewer.update
+            )
+        if self.trace_length_viewer is not None:
+            self.analyzer.data_filters_changed.connect(
+                self.trace_length_viewer.update
+            )
+        self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
 
@@ -911,6 +928,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.analyzer is not None:
             self.analyzer.data_filters_changed.connect(self.time_inspector.update)
             self.time_inspector.dataset_time_filtered.connect(self.analyzer.plot)
+        if self.histogram_plotter is not None:
+            self.time_inspector.dataset_time_filtered.connect(
+                self.histogram_plotter.plot_histogram
+            )
         if self.trace_stats_viewer is not None:
             self.time_inspector.dataset_time_filtered.connect(
                 self.trace_stats_viewer.update
@@ -921,6 +942,29 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
         self.time_inspector.show()
         self.time_inspector.activateWindow()
+
+    @Slot(None, name="open_histogram_plotter")
+    def open_histogram_plotter(self):
+        """Initialize and open the histogram plotter."""
+        if self.histogram_plotter is None:
+            self.histogram_plotter = HistogramPlotter(self.processor)
+            self.request_sync_external_tools.connect(
+                self.histogram_plotter.plot_histogram
+            )
+            self.wizard.wizard_filters_run.connect(
+                self.histogram_plotter.plot_histogram
+            )
+            self.wizard.fluorophore_id_changed.connect(self.histogram_plotter.plot_histogram)
+        if self.analyzer is not None:
+            self.analyzer.data_filters_changed.connect(
+                self.histogram_plotter.plot_histogram
+            )
+        if self.color_unmixer is not None:
+            self.color_unmixer.fluorophore_ids_assigned.connect(
+                self.histogram_plotter.plot_histogram
+            )
+        self.histogram_plotter.show()
+        self.histogram_plotter.activateWindow()
 
     @Slot(None, name="open_color_unmixer")
     def open_color_unmixer(self):
