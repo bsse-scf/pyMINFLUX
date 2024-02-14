@@ -213,11 +213,11 @@ def find_last_valid_iteration(data_array: np.ndarray):
 
     # Initialize output
     last_valid = {
-        "efo_index": 0,
-        "cfr_index": 0,
-        "dcr_index": 0,
-        "eco_index": 0,
-        "loc_index": 0
+        "efo_index": -1,
+        "cfr_index": -1,
+        "dcr_index": -1,
+        "eco_index": -1,
+        "loc_index": -1,
     }
 
     # Number of iterations
@@ -225,6 +225,14 @@ def find_last_valid_iteration(data_array: np.ndarray):
 
     # Do we have aggregated measurements?
     if num_iterations == 1:
+        # For clarity, let's set the indices to 0
+        last_valid = {
+            "efo_index": 0,
+            "cfr_index": 0,
+            "dcr_index": 0,
+            "eco_index": 0,
+            "loc_index": 0,
+        }
         return last_valid
 
     # Set efo index
@@ -239,9 +247,11 @@ def find_last_valid_iteration(data_array: np.ndarray):
     # Set cfr index
     for i in range(num_iterations - 1, -1, -1):
         cfr = data_array["itr"]["cfr"][:, i]
-        unique_cfr_values = np.unique(cfr)
-        if len(unique_cfr_values) == 1 and np.isclose(unique_cfr_values[0], -3.05175781e-5):
-            continue
+        # unique_cfr_values = np.unique(cfr)
+        # if len(unique_cfr_values) == 1 and np.isclose(
+        #     unique_cfr_values[0], -3.05175781e-5
+        # ):
+        #     continue
         if np.nanstd(cfr) > 0:
             last_valid["cfr_index"] = i
             break
@@ -296,9 +306,7 @@ def migrate_npy_array(data_array) -> Union[np.ndarray, None]:
         return None
 
     # Initialize the empty target array
-    new_array = create_empty_data_array(
-        len(data_array), data_array["itr"].shape[-1]
-    )
+    new_array = create_empty_data_array(len(data_array), data_array["itr"].shape[-1])
 
     # Copy the data over
     for field_name in data_array.dtype.names:
