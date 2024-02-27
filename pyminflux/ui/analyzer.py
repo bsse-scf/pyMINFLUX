@@ -42,8 +42,9 @@ class Analyzer(QDialog, Ui_Analyzer):
     cfr_threshold_factor_changed = Signal(name="cfr_threshold_factor_changed")
     cfr_lower_bound_state_changed = Signal(name="cfr_lower_bound_state_changed")
     cfr_upper_bound_state_changed = Signal(name="cfr_upper_bound_state_changed")
+    tr_len_bounds_changed = Signal(name="tr_len_bounds_changed")
 
-    def __init__(self, minfluxprocessor: MinFluxProcessor, parent=None):
+    def __init__(self, processor: MinFluxProcessor, parent=None):
         """Constructor."""
 
         # Call the base class
@@ -54,7 +55,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.setupUi(self)
 
         # Store the reference to the reader
-        self.processor = minfluxprocessor
+        self.processor = processor
 
         # Reference to the communications label
         self.communication_label = None
@@ -62,11 +63,14 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Keep references to the plots
         self.efo_plot = None
         self.cfr_plot = None
+        self.tr_len_plot = None
         self.sx_plot = None
         self.sy_plot = None
         self.sz_plot = None
         self.efo_region = None
         self.cfr_region = None
+        self.tr_len_region = None
+        self.tr_len = None
 
         # Keep a reference to the singleton State class
         self.state = State()
@@ -74,6 +78,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Remember the data ranges (default to the options)
         self.efo_range = self.state.efo_range
         self.cfr_range = self.state.cfr_range
+        self.tr_len_range = self.state.tr_len_range
         self.loc_precision_range = self.state.loc_precision_range
 
         # Create widgets
@@ -169,10 +174,21 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.histogram_raise_context_menu_with_filtering
         )
 
+        self.tr_len_plot = pg.PlotWidget(
+            parent=self, background="w", title="Trace Length"
+        )
+        self.tr_len_plot.setMouseEnabled(x=True, y=False)
+        self.tr_len_plot.setMenuEnabled(False)
+        self.tr_len_plot.scene().sigMouseClicked.connect(
+            self.histogram_raise_context_menu_with_filtering
+        )
+
         self.ui.parameters_layout.addWidget(self.efo_plot)
         self.efo_plot.hide()
         self.ui.parameters_layout.addWidget(self.cfr_plot)
         self.cfr_plot.hide()
+        self.ui.parameters_layout.addWidget(self.tr_len_plot)
+        self.tr_len_plot.hide()
 
         # Localizations layout
         self.sx_plot = pg.PlotWidget(parent=self, background="w", title="σx")
@@ -208,8 +224,10 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.processor = minfluxprocessor
         self.efo_region = None
         self.cfr_region = None
+        self.tr_len = None
         self.efo_range = None
         self.cfr_range = None
+        self.tr_len_range = None
 
     @Slot(name="run_efo_cutoff_frequency_detection")
     def run_efo_cutoff_frequency_detection(self):
@@ -356,6 +374,30 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Signal that the external viewers should be updated
         self.data_filters_changed.emit()
 
+    @Slot(name="run_tr_len_filter_and_broadcast_viewers_update")
+    def run_tr_len_filter_and_broadcast_viewers_update(self):
+        """Apply the Trace Length filter and inform the rest of the application that the data viewers should be updated."""
+
+        # Apply the trace length filter if needed
+        if self.state.tr_len_thresholds is not None:
+            self.processor.filter_by_1d_stats(
+                "n", (self.state.tr_len_thresholds[0], self.state.tr_len_thresholds[1])
+            )
+
+        # Update State.applied_tr_len_thresholds
+        if self.state.applied_tr_len_thresholds is None:
+            self.state.applied_tr_len_thresholds = self.state.tr_len_thresholds
+        else:
+            self.state.tr_len_thresholds = intersect_2d_ranges(
+                self.state.tr_len_thresholds, self.state.applied_tr_len_thresholds
+            )
+
+        # Update the histograms
+        self.plot()
+
+        # Signal that the external viewers should be updated
+        self.data_filters_changed.emit()
+
     @Slot(name="disable_buttons")
     def disable_buttons(self):
         self.ui.pbDetectCutoffFrequency.setEnabled(False)
@@ -394,6 +436,8 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.efo_plot.removeItem(item)
         for item in self.cfr_plot.allChildItems():
             self.cfr_plot.removeItem(item)
+        for item in self.tr_len_plot.allChildItems():
+            self.tr_len_plot.removeItem(item)
         for item in self.sx_plot.allChildItems():
             self.sx_plot.removeItem(item)
         for item in self.sy_plot.allChildItems():
@@ -426,9 +470,30 @@ class Analyzer(QDialog, Ui_Analyzer):
             bin_size=0.0,
         )
 
+        # Trace length distribution
+        (
+            n_tr_len,
+            n_tr_len_bin_edges,
+            n_tr_len_bin_centers,
+            n_tr_len_bin_width,
+        ) = prepare_histogram(
+            self.processor.filtered_dataframe_stats["n"],
+            normalize=False,
+            auto_bins=False,
+            bin_size=1.0,
+        )
+
+        # Remove empty trace lengths
+        to_keep = n_tr_len > 0
+        n_tr_len = n_tr_len[to_keep]
+        n_tr_len_bin_edges = n_tr_len_bin_edges[
+            np.concatenate((to_keep, [True]), axis=0)
+        ]
+        n_tr_len_bin_centers = n_tr_len_bin_centers[to_keep]
+
         #
-        # Get "efo" and "cfr" measurements, and "sx", "sy" and "sz" localization jitter
-        #
+        # Get "efo" and "cfr" measurements, build "trace length distribution" histogram,
+        # and the "sx", "sy" and "sz" localization jitter
 
         # "efo"
         if self.state.efo_thresholds is None:
@@ -468,6 +533,34 @@ class Analyzer(QDialog, Ui_Analyzer):
             force_min_x_range_to_zero=False,
         )
         self.cfr_plot.show()
+
+        # Trace length distribution
+        self.tr_len_range = (0, n_tr_len_bin_centers.max())
+        self.state.tr_len_range = self.tr_len_range
+        if self.state.tr_len_thresholds is None:
+            self.state.tr_len_thresholds = self.tr_len_range
+
+        self.tr_len_region = self._create_histogram_plot(
+            "tr_len",
+            self.tr_len_plot,
+            n_tr_len,
+            n_tr_len_bin_edges,
+            n_tr_len_bin_centers,
+            n_tr_len_bin_width,
+            axis_range=self.tr_len_range,
+            brush="g",
+            fmt="{value:.2f}",
+            support_thresholding=True,
+            thresholds=self.state.tr_len_thresholds,
+            force_min_x_range_to_zero=False,
+        )
+        self._add_median_line(
+            self.tr_len_plot,
+            self.processor.filtered_dataframe_stats["n"],
+            label_pos=0.85,
+            unit="",
+        )
+        self.tr_len_plot.show()
 
         # sx
         n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = prepare_histogram(
@@ -627,7 +720,11 @@ class Analyzer(QDialog, Ui_Analyzer):
         return region
 
     def histogram_raise_context_menu(self, ev):
-        """Create a context menu on the efo vs cfr scatter/histogram plot ROI."""
+        """Create a context menu on current plot ROI."""
+        if not hasattr(ev, "currentItem"):
+            ev.ignore()
+            return
+
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
             reset_action = QAction("Reset default axis range")
@@ -653,7 +750,14 @@ class Analyzer(QDialog, Ui_Analyzer):
             ev.ignore()
 
     def histogram_raise_context_menu_with_filtering(self, ev):
-        """Create a context menu on the efo vs cfr scatter/histogram plot ROI."""
+        """Create a context menu with filtering options on current plot ROI."""
+        if not hasattr(ev, "currentItem"):
+            ev.ignore()
+            return
+        if not hasattr(ev.currentItem, "data_label"):
+            ev.ignore()
+            return
+
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
             ranges_action = QAction("Set ROI ranges")
@@ -702,17 +806,18 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.roi_ranges_dialog.show()
         self.roi_ranges_dialog.activateWindow()
 
-    def _add_median_line(self, plot, values):
+    def _add_median_line(self, plot, values, label_pos=0.95, unit="nm"):
         """Add median line to plot (with median +/- mad as label)."""
         _, _, med, mad = get_robust_threshold(values, 0.0)
+        unit_str = f" {unit}" if unit != "" else ""
         line = pg.InfiniteLine(
             pos=med,
             movable=False,
             angle=90,
             pen={"color": (200, 50, 50), "width": 3},
-            label=f"median={med:.2f} ± {mad:.2f} nm",
+            label=f"median={med:.2f} ± {mad:.2f}{unit_str}",
             labelOpts={
-                "position": 0.95,
+                "position": label_pos,
                 "color": (200, 50, 50),
                 "fill": (200, 50, 50, 10),
                 "movable": True,
@@ -744,6 +849,9 @@ class Analyzer(QDialog, Ui_Analyzer):
         elif item.data_label == "cfr":
             view_box.setRange(xRange=(self.state.cfr_range[0], self.state.cfr_range[1]))
             self.cfr_range = self.state.cfr_range
+        elif item.data_label == "tr_len":
+            view_box.setRange(xRange=(self.state.tr_len_range[0], self.state.tr_len_range[1]))
+            self.tr_len_range = self.state.tr_len_range
         elif item.data_label in ["sx", "sy", "sz"]:
             view_box.setRange(
                 xRange=(
@@ -767,6 +875,8 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.run_efo_filter_and_broadcast_viewers_update()
         elif plot_id == "cfr":
             self.run_cfr_filter_and_broadcast_viewers_update()
+        elif plot_id == "tr_len":
+            self.run_tr_len_filter_and_broadcast_viewers_update()
         else:
             raise ValueError(f"Unexpected `plot_id` {plot_id}.")
 
@@ -790,34 +900,43 @@ class Analyzer(QDialog, Ui_Analyzer):
     def roi_changes_finished(self):
         """Called when the ROIChanges dialog has accepted the changes."""
 
-        # Signal blocker on self.efo_plot and self.cfr_plot
+        # Signal blocker on self.efo_plot, self.cfr_plot and self.tr_len_plot
         cfr_plot_blocker = QSignalBlocker(self.cfr_plot)
         efo_plot_blocker = QSignalBlocker(self.efo_plot)
+        tr_len_plot_blocker = QSignalBlocker(self.tr_len_plot)
 
-        # Block signals from self.efo_plot and self.cfr_plot
+        # Block signals from self.efo_plot, self.cfr_plot and self.tr_len_plot
         cfr_plot_blocker.reblock()
         efo_plot_blocker.reblock()
+        tr_len_plot_blocker.reblock()
 
-        # Update the thresholds in the EFO and CFR histograms.
+        # Update the thresholds in the EFO, CFR and trace length histograms.
         self.efo_region.setRegion(self.state.efo_thresholds)
         self.cfr_region.setRegion(self.state.cfr_thresholds)
+        self.tr_len_region.setRegion(self.state.tr_len_thresholds)
 
         # Unblock the self.efo_plot and self.cfr_plot signals
         cfr_plot_blocker.unblock()
         efo_plot_blocker.unblock()
+        tr_len_plot_blocker.unblock()
 
     def region_pos_changed_finished(self, item):
         """Called when the line region on one of the histogram plots has changed."""
-        if item.data_label not in ["efo", "cfr"]:
+        if item.data_label not in ["efo", "cfr", "tr_len"]:
             raise ValueError(f"Unexpected data label {item.data_label}.")
 
         # Update the correct thresholds
         if item.data_label == "efo":
             self.state.efo_thresholds = item.getRegion()
             self.efo_bounds_changed.emit()
-        else:
+        elif item.data_label == "cfr":
             self.state.cfr_thresholds = item.getRegion()
             self.cfr_bounds_changed.emit()
+        elif item.data_label == "tr_len":
+            self.state.tr_len_thresholds = item.getRegion()
+            self.tr_len_bounds_changed.emit()
+        else:
+            raise ValueError(f"Unexpected data label {item.data_label}.")
 
     @staticmethod
     def _change_region_label_font(region_label):

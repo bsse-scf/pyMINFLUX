@@ -54,6 +54,10 @@ class NativeMetadataReader:
                 cfr_thresholds = tuple(f["parameters/applied_cfr_thresholds"][:])
             except KeyError as e:
                 cfr_thresholds = None
+            try:
+                tr_len_thresholds = tuple(f["parameters/applied_tr_len_thresholds"][:])
+            except KeyError as e:
+                tr_len_thresholds = None
             num_fluorophores = f["parameters/num_fluorophores"][()]
 
         # Store and return
@@ -62,6 +66,7 @@ class NativeMetadataReader:
             min_trace_length=min_trace_length,
             efo_thresholds=efo_thresholds,
             cfr_thresholds=cfr_thresholds,
+            tr_len_thresholds=tr_len_thresholds,
             num_fluorophores=num_fluorophores,
         )
 

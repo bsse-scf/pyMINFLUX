@@ -35,6 +35,9 @@ class ROIRanges(QDialog, Ui_ROIRanges):
         self.ui = Ui_ROIRanges()
         self.ui.setupUi(self)
 
+        # Known ROIs
+        self._valid_ROIs = ["efo", "cfr", "tr_len"]
+
         # Set dialog name
         self.setWindowTitle("ROI ranges")
 
@@ -49,6 +52,8 @@ class ROIRanges(QDialog, Ui_ROIRanges):
         self.ui.leCFRMax.setValidator(QDoubleValidator(decimals=2))
         self.ui.leEFOMin.setValidator(QDoubleValidator(decimals=0))
         self.ui.leEFOMax.setValidator(QDoubleValidator(decimals=0))
+        self.ui.leTrLenMin.setValidator(QDoubleValidator(decimals=2))
+        self.ui.leTrLenMax.setValidator(QDoubleValidator(decimals=2))
 
         # Set height explicitly, since only half of the widgets will be displayed
         # at any given time
@@ -60,6 +65,8 @@ class ROIRanges(QDialog, Ui_ROIRanges):
         self.ui.leCFRMax.setText(f"{self.state.cfr_thresholds[1]:.2f}")
         self.ui.leEFOMin.setText(f"{self.state.efo_thresholds[0]:.0f}")
         self.ui.leEFOMax.setText(f"{self.state.efo_thresholds[1]:.0f}")
+        self.ui.leTrLenMin.setText(f"{self.state.tr_len_thresholds[0]:.2f}")
+        self.ui.leTrLenMax.setText(f"{self.state.tr_len_thresholds[1]:.2f}")
 
     def accept(self):
         """Override accept slot."""
@@ -73,8 +80,13 @@ class ROIRanges(QDialog, Ui_ROIRanges):
         efo_max = float(self.ui.leEFOMax.text())
         if efo_max < efo_min:
             efo_min, efo_max = efo_max, efo_min
+        tr_len_min = float(self.ui.leTrLenMin.text())
+        tr_len_max = float(self.ui.leTrLenMax.text())
+        if tr_len_max < tr_len_min:
+            tr_len_min, tr_len_max = tr_len_max, tr_len_min
         self.state.cfr_thresholds = (cfr_min, cfr_max)
         self.state.efo_thresholds = (efo_min, efo_max)
+        self.state.tr_len_thresholds = (tr_len_min, tr_len_max)
 
         # Inform that the ranges have changed
         self.data_ranges_changed.emit()
@@ -83,30 +95,40 @@ class ROIRanges(QDialog, Ui_ROIRanges):
         super().accept()
 
     def set_target(self, target):
-        if target not in ["efo", "cfr"]:
-            raise ValueError("Expected 'efo' or 'cfr' targets.")
+        if target not in self._valid_ROIs:
+            raise ValueError("Unexpected ROI target.")
 
         if target == "efo":
-            self.ui.lbCFR.setVisible(False)
-            self.ui.lbMinCFR.setVisible(False)
-            self.ui.leCFRMin.setVisible(False)
-            self.ui.lbCFRMax.setVisible(False)
-            self.ui.leCFRMax.setVisible(False)
-            self.ui.lbEFO.setVisible(True)
-            self.ui.lbEFOMin.setVisible(True)
-            self.ui.leEFOMin.setVisible(True)
-            self.ui.lbEFOMax.setVisible(True)
-            self.ui.leEFOMax.setVisible(True)
+            self._toggle_ui_elements(efo_b=True)
             self.setWindowTitle("EFO roi range")
-        else:
-            self.ui.lbCFR.setVisible(True)
-            self.ui.lbMinCFR.setVisible(True)
-            self.ui.leCFRMin.setVisible(True)
-            self.ui.lbCFRMax.setVisible(True)
-            self.ui.leCFRMax.setVisible(True)
-            self.ui.lbEFO.setVisible(False)
-            self.ui.lbEFOMin.setVisible(False)
-            self.ui.leEFOMin.setVisible(False)
-            self.ui.lbEFOMax.setVisible(False)
-            self.ui.leEFOMax.setVisible(False)
+        elif target == "cfr":
+            self._toggle_ui_elements(cfr_b=True)
             self.setWindowTitle("CFR roi range")
+        elif target == "tr_len":
+            self._toggle_ui_elements(tr_len_b=True)
+            self.setWindowTitle("Trace lengths roi range")
+        else:
+            raise ValueError("Unexpected ROI target.")
+
+    def _toggle_ui_elements(
+        self, cfr_b: bool = False, efo_b: bool = False, tr_len_b: bool = False
+    ):
+        """Toggle on/off the requested UI elements."""
+        # CFR elements
+        self.ui.lbCFR.setVisible(cfr_b)
+        self.ui.lbMinCFR.setVisible(cfr_b)
+        self.ui.leCFRMin.setVisible(cfr_b)
+        self.ui.lbCFRMax.setVisible(cfr_b)
+        self.ui.leCFRMax.setVisible(cfr_b)
+        # EFO elements
+        self.ui.lbEFO.setVisible(efo_b)
+        self.ui.lbEFOMin.setVisible(efo_b)
+        self.ui.leEFOMin.setVisible(efo_b)
+        self.ui.lbEFOMax.setVisible(efo_b)
+        self.ui.leEFOMax.setVisible(efo_b)
+        # Trace length elements
+        self.ui.lbTrLen.setVisible(tr_len_b)
+        self.ui.lbTrLenMin.setVisible(tr_len_b)
+        self.ui.leTrLenMin.setVisible(tr_len_b)
+        self.ui.lbTrLenMax.setVisible(tr_len_b)
+        self.ui.leTrLenMax.setVisible(tr_len_b)

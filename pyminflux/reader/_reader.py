@@ -76,7 +76,7 @@ class MinFluxReader:
         z_scaling_factor: float (optional, default = 1.0)
             Refractive index mismatch correction factor to apply to the z coordinates.
 
-        is_tracking: bool
+        is_tracking: bool (optional, default = False)
             Whether the dataset comes from a tracking experiment; otherwise, it is considered as a
             localization experiment.
         """

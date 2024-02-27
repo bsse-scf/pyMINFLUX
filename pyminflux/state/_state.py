@@ -44,6 +44,7 @@ class State(metaclass=Singleton):
         "applied_cfr_thresholds",
         "efo_range",
         "cfr_range",
+        "tr_len_range",
         "loc_precision_range",
         "enable_cfr_lower_threshold",
         "enable_cfr_upper_threshold",
@@ -62,6 +63,7 @@ class State(metaclass=Singleton):
         "frc_num_repeats",
         "frc_endpoint_only",
         "open_console_at_start",
+        "tr_len_thresholds",
     ]
 
     def __init__(self):
@@ -84,17 +86,20 @@ class State(metaclass=Singleton):
         # EFO expected frequency for single emitters
         self.efo_expected_frequency: float = 0.0
 
-        # Lower and upper (absolute) thresholds for the EFO and CFR values
+        # Lower and upper (absolute) thresholds for the EFO, CFR and trace length values
         self.efo_thresholds: Union[None, tuple] = None
         self.cfr_thresholds: Union[None, tuple] = None
+        self.tr_len_thresholds: Union[None, tuple] = None
 
-        # Applied lower and upper (absolute) thresholds for the EFO and CFR values
+        # Applied lower and upper (absolute) thresholds for the EFO, CFR and trace length values
         self.applied_efo_thresholds: Union[None, tuple] = None
         self.applied_cfr_thresholds: Union[None, tuple] = None
+        self.applied_tr_len_thresholds: Union[None] = None
 
         # Histogram ranges
         self.efo_range: Union[None, tuple] = None
         self.cfr_range: Union[None, tuple] = None
+        self.tr_len_range: Union[None, tuple] = None
         self.loc_precision_range: Union[None, tuple] = None
 
         # Parameter bounds
@@ -144,6 +149,7 @@ class State(metaclass=Singleton):
             "applied_cfr_threshold": self.applied_cfr_thresholds,
             "efo_range": self.efo_range,
             "cfr_range": self.cfr_range,
+            "tr_len_range": self.tr_len_range,
             "loc_precision_range": self.loc_precision_range,
             "enable_cfr_lower_threshold": self.enable_cfr_lower_threshold,
             "enable_cfr_upper_threshold": self.enable_cfr_upper_threshold,
@@ -162,6 +168,8 @@ class State(metaclass=Singleton):
             "frc_num_repeats": self.frc_num_repeats,
             "frc_endpoint_only": self.frc_endpoint_only,
             "open_console_at_start": self.open_console_at_start,
+            "tr_len_thresholds": self.tr_len_thresholds,
+            "applied_tr_len_thresholds": self.applied_tr_len_thresholds,
         }
 
     def reset(self):
@@ -171,6 +179,8 @@ class State(metaclass=Singleton):
         self.applied_efo_thresholds = None
         self.cfr_thresholds = None
         self.applied_cfr_thresholds = None
+        self.tr_len_thresholds = None
+        self.applied_tr_len_thresholds = None
 
     def full_reset(self):
         """Reset to defaults."""
@@ -185,6 +195,7 @@ class State(metaclass=Singleton):
         self.applied_cfr_thresholds = None
         self.efo_range = None
         self.cfr_range = None
+        self.tr_len_range = None
         self.loc_precision_range = None
         self.enable_cfr_lower_threshold = False
         self.enable_cfr_upper_threshold = True
@@ -203,6 +214,8 @@ class State(metaclass=Singleton):
         self.frc_num_repeats = 5
         self.frc_endpoint_only = False
         self.open_console_at_start = False
+        self.tr_len_thresholds = None
+        self.applied_tr_len_thresholds = None
 
     def update_from_metadata(self, metadata: NativeMetadata):
         """Update State from the NativeMetadata parameters from a `.pmx` file."""
@@ -213,6 +226,8 @@ class State(metaclass=Singleton):
         self.applied_cfr_thresholds = metadata.cfr_thresholds
         self.num_fluorophores = metadata.num_fluorophores
         self.z_scaling_factor = metadata.z_scaling_factor
+        self.tr_len_thresholds = metadata.tr_len_thresholds
+        self.applied_tr_len_thresholds = metadata.tr_len_thresholds
 
     def __str__(self):
         """Human-readable representation."""

@@ -31,6 +31,11 @@ from typing import Union
 class NativeMetadata:
     """Metadata associated to `.pmx` native pyMINFLUX file format.
 
+    Version 2.0
+    -----------
+        tr_len_thresholds: Union[None, tuple[int, int]]
+        (v 1.0)
+
     Version 1.0
     -----------
         z_scaling_factor: float
@@ -39,8 +44,10 @@ class NativeMetadata:
         cfr_thresholds: tuple[float, float]
         num_fluorophores: int
     """
+
     z_scaling_factor: float
     min_trace_length: int
     efo_thresholds: Union[None, tuple[int, int]]
     cfr_thresholds: Union[None, tuple[float, float]]
+    tr_len_thresholds: Union[None, tuple[float, float]]
     num_fluorophores: int
