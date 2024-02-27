@@ -53,6 +53,7 @@ class MinFluxReader:
         "_tim_index",
         "_vld_index",
         "_z_scaling_factor",
+        "_dwell_time",
     ]
 
     def __init__(
@@ -61,6 +62,7 @@ class MinFluxReader:
         valid: bool = True,
         z_scaling_factor: float = 1.0,
         is_tracking: bool = False,
+        dwell_time: bool = 1.0,
     ):
         """Constructor.
 
@@ -79,6 +81,9 @@ class MinFluxReader:
         is_tracking: bool (optional, default = False)
             Whether the dataset comes from a tracking experiment; otherwise, it is considered as a
             localization experiment.
+
+        dwell_time: float (optional, default 1.0)
+            Dwell time in milliseconds.
         """
 
         # Store the filename
@@ -95,6 +100,9 @@ class MinFluxReader:
 
         # Store the z correction factor
         self._z_scaling_factor: float = z_scaling_factor
+
+        # Store the dwell time (in microseconds)
+        self._dwell_time = 1000 * dwell_time
 
         # Initialize the data
         self._data_array = None
@@ -346,7 +354,7 @@ class MinFluxReader:
             dcr = itr["dcr"]
 
             # Dwell
-            dwell = np.around(eco / (efo / 1000.0), decimals=0)
+            dwell = np.around(eco / (efo / self._dwell_time), decimals=0)
 
         else:
             # Extract the locations
@@ -366,7 +374,7 @@ class MinFluxReader:
             dcr = itr[:, self._dcr_index]["dcr"]
 
             # Calculate dwell
-            dwell = np.around(eco / (efo / 1000.0), decimals=0)
+            dwell = np.around(eco / (efo / self._dwell_time), decimals=0)
 
         # Create a Pandas dataframe for the results
         df = pd.DataFrame(
