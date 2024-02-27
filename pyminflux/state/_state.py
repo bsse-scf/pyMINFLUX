@@ -64,6 +64,8 @@ class State(metaclass=Singleton):
         "frc_endpoint_only",
         "open_console_at_start",
         "tr_len_thresholds",
+        "dwell_time",
+        "is_tracking",
     ]
 
     def __init__(self):
@@ -136,6 +138,12 @@ class State(metaclass=Singleton):
         # Whether to open the console at application start
         self.open_console_at_start: bool = False
 
+        # Dwell time in milliseconds
+        self.dwell_time: float = 1.0
+
+        # Is the dataset a tracking acquisition?
+        self.is_tracking: bool = False
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -170,6 +178,8 @@ class State(metaclass=Singleton):
             "open_console_at_start": self.open_console_at_start,
             "tr_len_thresholds": self.tr_len_thresholds,
             "applied_tr_len_thresholds": self.applied_tr_len_thresholds,
+            "dwell_time": self.dwell_time,
+            "is_tracking": self.is_tracking,
         }
 
     def reset(self):
@@ -216,6 +226,8 @@ class State(metaclass=Singleton):
         self.open_console_at_start = False
         self.tr_len_thresholds = None
         self.applied_tr_len_thresholds = None
+        self.dwell_time = 1.0
+        self.is_tracking = False
 
     def update_from_metadata(self, metadata: NativeMetadata):
         """Update State from the NativeMetadata parameters from a `.pmx` file."""
@@ -228,6 +240,8 @@ class State(metaclass=Singleton):
         self.z_scaling_factor = metadata.z_scaling_factor
         self.tr_len_thresholds = metadata.tr_len_thresholds
         self.applied_tr_len_thresholds = metadata.tr_len_thresholds
+        self.dwell_time = metadata.dwell_time
+        self.is_tracking = metadata.is_tracking
 
     def __str__(self):
         """Human-readable representation."""

@@ -40,12 +40,12 @@ class NativeMetadataReader:
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
-            if file_version != "1.0":
+            if file_version != "1.0" and file_version != "2.0":
                 return None
 
             # Read the parameters
-            z_scaling_factor = f["parameters/z_scaling_factor"][()]
-            min_trace_length = f["parameters/min_trace_length"][()]
+            z_scaling_factor = float(f["parameters/z_scaling_factor"][()])
+            min_trace_length = int(f["parameters/min_trace_length"][()])
             try:
                 efo_thresholds = tuple(f["parameters/applied_efo_thresholds"][:])
             except KeyError as e:
@@ -54,11 +54,25 @@ class NativeMetadataReader:
                 cfr_thresholds = tuple(f["parameters/applied_cfr_thresholds"][:])
             except KeyError as e:
                 cfr_thresholds = None
-            try:
-                tr_len_thresholds = tuple(f["parameters/applied_tr_len_thresholds"][:])
-            except KeyError as e:
+            num_fluorophores = int(f["parameters/num_fluorophores"][()])
+
+            # Version 2.0 parameters
+            if file_version == "2.0":
+
+                try:
+                    tr_len_thresholds = tuple(f["parameters/applied_tr_len_thresholds"][:])
+                except KeyError as e:
+                    tr_len_thresholds = None
+                dwell_time = float(f["parameters/dwell_time"][()])
+
+                # HDF5 does not have a native boolean type, so we save as int8 and convert it
+                # back to boolean on read.
+                is_tracking = bool(f["parameters/is_tracking"][()])
+
+            else:
                 tr_len_thresholds = None
-            num_fluorophores = f["parameters/num_fluorophores"][()]
+                dwell_time = 1.0
+                is_tracking = False
 
         # Store and return
         metadata = NativeMetadata(
@@ -68,6 +82,8 @@ class NativeMetadataReader:
             cfr_thresholds=cfr_thresholds,
             tr_len_thresholds=tr_len_thresholds,
             num_fluorophores=num_fluorophores,
+            dwell_time=dwell_time,
+            is_tracking=is_tracking,
         )
 
         return metadata
@@ -93,7 +109,7 @@ class NativeArrayReader:
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
-            if file_version != "1.0":
+            if file_version != "1.0" and file_version != "2.0":
                 return None
 
             # We only read the raw NumPy array
