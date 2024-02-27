@@ -754,6 +754,56 @@ class MinFluxProcessor:
         self._stats_to_be_recomputed = True
         self._weighted_localizations_to_be_recomputed = True
 
+    def filter_by_1d_stats(self, x_prop_stats: str, x_range: tuple):
+        """Filter TIDs by min and max thresholding using the given property from the stats dataframe.
+
+        Parameters
+        ----------
+
+        x_prop_stats: str
+            Name of the property (column) from the stats dataframe used to filter.
+
+        x_range: tuple
+            Tuple containing the minimum and maximum values for the selected property.
+        """
+
+        # Make sure the property exists in the stats dataframe
+        if x_prop_stats not in self.filtered_dataframe_stats.columns:
+            raise ValueError(
+                f"The property {x_prop_stats} does not exist in `filtered_dataframe_stats`."
+            )
+
+        # Make sure that the ranges are increasing
+        x_min = x_range[0]
+        x_max = x_range[1]
+        if x_max < x_min:
+            x_max, x_min = x_min, x_max
+
+        # Find all TIDs for current fluorophore ID by which the requested stats property is inside the range
+        tids_to_keep = self.filtered_dataframe_stats[
+            (
+                (self.filtered_dataframe_stats[x_prop_stats] >= x_min)
+                & (self.filtered_dataframe_stats[x_prop_stats] <= x_max)
+            )
+        ]["tid"].values
+
+        # Rows of the filtered dataframe to keep
+        rows_to_keep = self.filtered_dataframe["tid"].isin(tids_to_keep)
+
+        # Apply filter
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
+            self._selected_rows_dict[1] = self._selected_rows_dict[1] & rows_to_keep
+
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
+            self._selected_rows_dict[2] = self._selected_rows_dict[2] & rows_to_keep
+
+        # Apply the global filters
+        self._apply_global_filters()
+
+        # Make sure to flag the derived data to be recomputed
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
+
     def _calculate_statistics(self):
         """Calculate per-trace statistics."""
 
