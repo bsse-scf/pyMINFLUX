@@ -92,10 +92,10 @@ def hist_bins(values: np.ndarray, bin_size: float) -> tuple:
         raise ValueError("No data.")
 
     # Find an appropriate min value that keeps the bins nicely centered
-    min_value = bin_size * int(np.min(values) / bin_size)
+    min_value = bin_size * int(np.nanmin(values) / bin_size)
 
     # Max value
-    max_value = np.max(values)
+    max_value = np.nanmax(values)
 
     # Pathological case where bin_width is 0.0
     if bin_size <= 0.0:
@@ -145,7 +145,7 @@ def ideal_hist_bins(values: np.ndarray, scott: bool = False):
         raise ValueError("No data.")
 
     # Pathological case, all values are the same
-    if np.all(np.diff(values) == 0):
+    if np.all(np.diff(values[np.logical_not(np.isnan(values))]) == 0):
         bin_edges = (values[0] - 5e-7, values[0] + 5e-7)
         bin_centers = (values[0],)
         bin_size = 1e-6
@@ -161,12 +161,12 @@ def ideal_hist_bins(values: np.ndarray, scott: bool = False):
     bin_size = (factor * iqr) / crn
 
     # Get min and max values
-    min_value = np.min(values)
-    max_value = np.max(values)
+    min_value = np.nanmin(values)
+    max_value = np.nanmax(values)
 
     # Pathological case where bin_size is 0.0
     if bin_size == 0.0:
-        bin_size = 0.5 * (min_value + max_value)
+        bin_size = 0.5 * (max_value - min_value)
 
     # Calculate number of bins
     num_bins = math.floor((max_value - min_value) / bin_size) + 1

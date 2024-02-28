@@ -54,6 +54,7 @@ class MinFluxReader:
         "_vld_index",
         "_z_scaling_factor",
         "_dwell_time",
+        "_valid_cfr",
     ]
 
     def __init__(
@@ -127,6 +128,7 @@ class MinFluxReader:
         self._dcr_index: int = -1
         self._eco_index: int = -1
         self._loc_index: int = -1
+        self._valid_cfr: list = []
 
         # Constant indices
         self._tid_index: int = 0
@@ -171,6 +173,19 @@ class MinFluxReader:
         return np.logical_not(self._valid_entries).sum()
 
     @property
+    def valid_cfr(self) -> list:
+        """Return the iterations with valid CFR measurements.
+
+        Returns
+        -------
+        cfr: boolean array with True for the iteration indices
+             that have a valid measurement.
+        """
+        if self._data_array is None:
+            return []
+        return self._valid_cfr
+
+    @property
     def valid_raw_data(self) -> Union[None, np.ndarray]:
         """Return the raw data."""
         if self._data_array is None:
@@ -200,6 +215,112 @@ class MinFluxReader:
         if self._filename is None:
             return None
         return Path(self._filename)
+
+    def set_indices(self, index, cfr_index, process: bool = True) :
+        """Set the parameter indices.
+
+        We distinguish between the index of all parameters
+        that are always measured and are accessed from the
+        same iteration, and the cfr index, that is not
+        always measured.
+
+        Parameters
+        ----------
+
+        index: int
+            Global iteration index for all parameters but cfr
+
+        cfr_index: int
+            Iteration index for cfr
+
+        process: bool (Optional, default = True)
+            By default, when setting the indices, the data is rescanned
+            and the dataframe is rebuilt. In case several properties of
+            the MinFluxReader are modified sequentially, the processing
+            can be disabled and run only once after the last change.
+        """
+
+        # Make sure there is loaded data
+        if self._data_array is None:
+            raise ValueError("No data loaded.")
+
+        if self._reps == -1:
+            raise ValueError("No data loaded.")
+
+        if len(self._valid_cfr) == 0:
+            raise ValueError("No data loaded.")
+
+        # Check that the arguments are compatible with the loaded data
+        if index < 0 or index > self._reps - 1:
+            raise ValueError(f"The value of index must be between 0 and {self._reps - 1}.")
+
+        if cfr_index < 0 or cfr_index > len(self._valid_cfr) - 1:
+            raise ValueError(f"The value of index must be between 0 and {len(self._valid_cfr) - 1}.")
+
+        # Now set the general values
+        self._efo_index = index
+        self._dcr_index = index
+        self._eco_index = index
+        self._loc_index = index
+
+        # Set the cfr index
+        self._cfr_index = cfr_index
+
+        # Constant indices
+        self._tid_index: int = 0
+        self._tim_index: int = 0
+        self._vld_index: int = 0
+
+        # Re-process the file?
+        if process:
+            self._process()
+
+    def set_tracking(self, is_tracking: bool, process: bool = True):
+        """Sets whether the acquisition is tracking or localization.
+
+        Parameters
+        ----------
+
+        is_tracking: bool
+            Set to True for a tracking acquisition, False for a localization
+            acquisition.
+
+        process: bool (Optional, default = True)
+            By default, when setting the indices, the data is rescanned
+            and the dataframe is rebuilt. In case several properties of
+            the MinFluxReader are modified sequentially, the processing
+            can be disabled and run only once after the last change.
+        """
+
+        # Update the flag
+        self._is_tracking = is_tracking
+
+        # Re-process the file?
+        if process:
+            self._process()
+
+    def set_dwell_time(self, dwell_time: float, process: bool = True):
+        """
+        Sets the dwell time.
+
+        Parameters
+        ----------
+        dwell_time: float
+            Dwell time.
+
+        process: bool (Optional, default = True)
+            By default, when setting the indices, the data is rescanned
+            and the dataframe is rebuilt. In case several properties of
+            the MinFluxReader are modified sequentially, the processing
+            can be disabled and run only once after the last change.
+        """
+
+        # Update the flag
+        self._dwell_time = 1000 * dwell_time
+
+        # Re-process the file?
+        if process:
+            self._process()
 
     @classmethod
     def processed_properties(cls) -> list:
@@ -402,7 +523,7 @@ class MinFluxReader:
         if self._data_array is None:
             return None
 
-        # Intialize output dataframe
+        # Initialize output dataframe
         df = pd.DataFrame(columns=MinFluxReader.raw_properties())
 
         # Allocate space for the columns
@@ -488,45 +609,7 @@ class MinFluxReader:
         self._dcr_index = last_valid["dcr_index"]
         self._eco_index = last_valid["eco_index"]
         self._loc_index = last_valid["loc_index"]
-
-        # Inform the user (temporary debug info)
-        print(f"Selected iterations: efo: {self._efo_index}, cfr: {self._cfr_index}, dcr: {self._dcr_index}, eco: {self._eco_index}, loc: {self._loc_index}")
-
-        # if self.is_aggregated:
-        #     self._efo_index = -1  # Not used
-        #     self._cfr_index = -1  # Not used
-        #     self._dcr_index = -1  # Not used
-        #     self._eco_index = -1  # Not used
-        #     self._loc_index = -1  # Not used
-        # else:
-        #     if self._is_tracking:
-        #         # Tracking experiment
-        #         if self.is_3d:
-        #             self._efo_index = 4
-        #             self._cfr_index = 4
-        #             self._dcr_index = 4
-        #             self._eco_index = 4
-        #             self._loc_index = 4
-        #         else:
-        #             self._efo_index = 3
-        #             self._cfr_index = 3
-        #             self._dcr_index = 3
-        #             self._eco_index = 3
-        #             self._loc_index = 3
-        #     else:
-        #         # Localization experiment
-        #         if self.is_3d:
-        #             self._efo_index = 9
-        #             self._cfr_index = 6
-        #             self._dcr_index = 9
-        #             self._eco_index = 9
-        #             self._loc_index = 9
-        #         else:
-        #             self._efo_index = 4
-        #             self._cfr_index = 4
-        #             self._dcr_index = 4
-        #             self._eco_index = 4
-        #             self._loc_index = 4
+        self._valid_cfr = last_valid["valid_cfr"]
 
     def __repr__(self) -> str:
         """String representation of the object."""

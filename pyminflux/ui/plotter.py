@@ -335,9 +335,11 @@ class Plotter(PlotWidget):
             self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
 
             # Fix aspect ratio
-            x_scale = (x.max() - x.min()) / (len(x) - 1)
-            y_scale = (y.max() - y.min()) / (len(y) - 1)
+            x_scale = (np.nanmax(x) - np.nanmin(x)) / (len(x) - 1)
+            y_scale = (np.nanmax(y) - np.nanmin(y)) / (len(y) - 1)
             aspect_ratio = y_scale / x_scale
+            if np.isnan(aspect_ratio):
+                aspect_ratio = 1.0
             self.getPlotItem().getViewBox().setAspectLocked(
                 lock=True, ratio=aspect_ratio
             )

@@ -218,6 +218,7 @@ def find_last_valid_iteration(data_array: np.ndarray):
         "dcr_index": -1,
         "eco_index": -1,
         "loc_index": -1,
+        "valid_cfr": [],
     }
 
     # Number of iterations
@@ -232,55 +233,29 @@ def find_last_valid_iteration(data_array: np.ndarray):
             "dcr_index": 0,
             "eco_index": 0,
             "loc_index": 0,
+            "valid_cfr": [True],
         }
         return last_valid
 
     # Set efo index
-    for i in range(num_iterations - 1, -1, -1):
-        efo = data_array["itr"]["efo"][:, i]
-        # unique_efo_values = np.unique(efo)
-        # if len(unique_efo_values) > 1 and np.nanstd(efo) > 0:
-        if np.nanstd(efo) > 0:
-            last_valid["efo_index"] = i
-            break
+    last_valid["efo_index"] = num_iterations - 1
 
     # Set cfr index
-    for i in range(num_iterations - 1, -1, -1):
-        cfr = data_array["itr"]["cfr"][:, i]
-        # unique_cfr_values = np.unique(cfr)
-        # if len(unique_cfr_values) == 1 and np.isclose(
-        #     unique_cfr_values[0], -3.05175781e-5
-        # ):
-        #     continue
-        if np.nanstd(cfr) > 0:
-            last_valid["cfr_index"] = i
-            break
+    last_valid["valid_cfr"] = (np.std(data_array["itr"]["cfr"], axis=0) > 0.0).tolist()
+    valid_indices = np.where(last_valid["valid_cfr"])[0]
+    if len(valid_indices) == 0:
+        last_valid["cfr_index"] = num_iterations - 1
+    else:
+        last_valid["cfr_index"] = valid_indices[-1]
 
     # Set dcr index
-    for i in range(num_iterations - 1, -1, -1):
-        dcr = data_array["itr"]["dcr"][:, i]
-        # unique_dcr_values = np.unique(dcr)
-        if np.nanstd(dcr) > 0:
-            last_valid["dcr_index"] = i
-            break
+    last_valid["dcr_index"] = num_iterations - 1
 
     # Set eco index
-    for i in range(num_iterations - 1, -1, -1):
-        eco = data_array["itr"]["eco"][:, i]
-        # unique_eco_values = np.unique(eco)
-        if np.nanstd(eco) > 0:
-            last_valid["eco_index"] = i
-            break
+    last_valid["eco_index"] = num_iterations - 1
 
     # Set loc index
-    for i in range(num_iterations - 1, -1, -1):
-        loc = data_array["itr"]["loc"][:, i]
-        # y coord
-        # unique_loc_y_values = np.unique(loc[:, 0])
-        # unique_loc_x_values = np.unique(loc[:, 1])
-        if np.nanstd(loc[:, 0]) > 0 and np.nanstd(loc[:, 1]) > 0:
-            last_valid["loc_index"] = i
-            break
+    last_valid["loc_index"] = num_iterations - 1
 
     return last_valid
 
