@@ -137,7 +137,7 @@ class NativeDataFrameReader:
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
-            if file_version != "1.0":
+            if file_version != "1.0" and file_version != "2.0":
                 return None
 
             # Read dataset
