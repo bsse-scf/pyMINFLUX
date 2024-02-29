@@ -34,6 +34,7 @@ class MinFluxReader:
 
     __slots__ = [
         "_filename",
+        "_is_valid_sequence",
         "_valid",
         "_unit_scaling_factor",
         "_data_array",
@@ -92,6 +93,10 @@ class MinFluxReader:
         if not self._filename.is_file():
             raise IOError(f"The file {self._filename} does not seem to exist.")
 
+        # Keep track of whether the dataframe had to be filtered to
+        # remove rows because an invalid sequence was picked.
+        self._is_valid_sequence: bool = False
+
         # Store the valid flag
         self._valid: bool = valid
 
@@ -137,6 +142,11 @@ class MinFluxReader:
 
         # Load the file
         self._load()
+
+    @property
+    def is_valid_sequence(self) ->bool:
+        """Return True if the selected iterations give a valid sequence, False otherwise."""
+        return self._is_valid_sequence
 
     @property
     def z_scaling_factor(self) -> float:
@@ -515,6 +525,15 @@ class MinFluxReader:
         df["dcr"] = dcr
         df["dwell"] = dwell
         df["fluo"] = fluo
+
+        # Remove rows with NaNs in the loc matrix
+        df = df.dropna(subset=["x"])
+
+        # Check if the dataframe is still completely valid
+        # as a function of the selected iterations
+        self._is_valid_sequence = False
+        if len(df.index) == len(indices):
+            self._is_valid_sequence = True
 
         return df
 

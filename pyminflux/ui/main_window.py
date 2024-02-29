@@ -707,6 +707,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Enable selected ui components
             self.enable_ui_components(True)
 
+            # If the read sequence is not valid, disable the save button
+            if reader.is_valid_sequence:
+                self.ui.actionSave.setEnabled(True)
+                self.wizard.enable_save_button(True)
+            else:
+                self.ui.actionSave.setEnabled(False)
+                self.wizard.enable_save_button(False)
+
             # Update the Analyzer
             if self.analyzer is not None:
                 self.analyzer.set_processor(self.processor)
@@ -1147,7 +1155,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter.remove_points()
 
         # If there is nothing to plot, return here
-        if self.processor is None:
+        if self.processor is None or len(self.processor.filtered_dataframe.index) == 0:
+            print("No data to process.")
             return
 
         # If an only if the requested parameters are "x" and "y" (in any order),

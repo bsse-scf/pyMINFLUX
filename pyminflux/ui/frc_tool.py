@@ -342,6 +342,11 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Mark that there is no plot ready to export
         self.plot_ready_to_export = False
 
+        # Is there data to process?
+        if len(self.processor.filtered_dataframe.index) == 0:
+            self.frc_plot.setTitle("No data.")
+            return
+
         # Get the common parameters
         sxy = self.state.frc_lateral_resolution
         n_reps = self.state.frc_num_repeats

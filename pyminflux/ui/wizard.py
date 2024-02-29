@@ -183,7 +183,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     def prepare_filter_ranges(self):
         """Extract bounds from the EFO and CFR data and prefill the values."""
 
-        if self.processor is None:
+        if self.processor is None or len(self.processor.filtered_dataframe.index) == 0:
             return
 
         # Get the range for the EFO data
@@ -273,6 +273,10 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Save/Export data
         self.ui.pbSaveData.setVisible(enabled)
         self.ui.pbExportData.setVisible(enabled)
+
+    def enable_save_button(self, enable):
+        """Enable or disable the save button."""
+        self.ui.pbSaveData.setEnabled(enable)
 
     def reset_fluorophores(self):
         """Reset the fluorophores."""
