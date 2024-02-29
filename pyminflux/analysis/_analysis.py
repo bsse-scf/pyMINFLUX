@@ -51,7 +51,7 @@ def calculate_time_resolution(df: pd.DataFrame, unit_factor: float = 1e3):
     """
 
     # Calculate time differences
-    tim_diff = df.groupby('tid')['tim'].diff()
+    tim_diff = df.groupby("tid")["tim"].diff()
 
     # Remove NaNs (indicate the beginning of a new trace)
     tim_diff = tim_diff[np.logical_not(np.isnan(tim_diff))]

@@ -632,8 +632,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Open the sequence selector
             sequence_selector = SequenceSelector(
-                    reader.valid_cfr,
-                    self.state.dwell_time
+                reader.valid_cfr, self.state.dwell_time
             )
             if sequence_selector.exec_() != QDialog.Accepted:
                 # The user cancelled the dialog
@@ -647,7 +646,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # trigger the creation of the dataframe, hence the
             # process=False argument everywhere).
             reader.set_tracking(selection["is_tracking"], process=False)
-            reader.set_indices(selection["iteration"], selection["cfr_iteration"], process=False)
+            reader.set_indices(
+                selection["iteration"], selection["cfr_iteration"], process=False
+            )
             reader.set_dwell_time(selection["dwell_time"], process=False)
 
             # Show some info
@@ -934,17 +935,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.histogram_plotter is not None:
             self.analyzer.data_filters_changed.connect(
                 self.histogram_plotter.plot_histogram
-        )
+            )
         if self.time_inspector is not None:
             self.analyzer.data_filters_changed.connect(self.time_inspector.update)
         if self.trace_stats_viewer is not None:
-            self.analyzer.data_filters_changed.connect(
-                self.trace_stats_viewer.update
-            )
+            self.analyzer.data_filters_changed.connect(self.trace_stats_viewer.update)
         if self.trace_length_viewer is not None:
-            self.analyzer.data_filters_changed.connect(
-                self.trace_length_viewer.update
-            )
+            self.analyzer.data_filters_changed.connect(self.trace_length_viewer.update)
         self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
@@ -986,7 +983,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.wizard.wizard_filters_run.connect(
                 self.histogram_plotter.plot_histogram
             )
-            self.wizard.fluorophore_id_changed.connect(self.histogram_plotter.plot_histogram)
+            self.wizard.fluorophore_id_changed.connect(
+                self.histogram_plotter.plot_histogram
+            )
         if self.analyzer is not None:
             self.analyzer.data_filters_changed.connect(
                 self.histogram_plotter.plot_histogram

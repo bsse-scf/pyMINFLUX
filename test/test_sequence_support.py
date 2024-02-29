@@ -16,9 +16,8 @@
 import zipfile
 from pathlib import Path
 
-import pytest
-
 import numpy as np
+import pytest
 
 from pyminflux.reader.util import find_last_valid_iteration
 

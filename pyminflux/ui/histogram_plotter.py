@@ -15,10 +15,7 @@
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import (
-    QPoint,
-    Slot,
-)
+from PySide6.QtCore import QPoint, Slot
 from PySide6.QtGui import QAction, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 

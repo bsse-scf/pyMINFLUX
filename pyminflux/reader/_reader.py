@@ -23,9 +23,9 @@ import pandas as pd
 
 from pyminflux.reader import NativeArrayReader
 from pyminflux.reader.util import (
-    migrate_npy_array,
     convert_from_mat,
     find_last_valid_iteration,
+    migrate_npy_array,
 )
 
 
@@ -151,7 +151,7 @@ class MinFluxReader:
             raise IOError(f"The file {self._filename} is not a valid MINFLUX file.")
 
     @property
-    def is_last_valid(self) ->bool:
+    def is_last_valid(self) -> bool:
         """Return True if the selected iterations are the "last valid", False otherwise."""
         return self._is_last_valid
 
@@ -233,7 +233,7 @@ class MinFluxReader:
             return None
         return Path(self._filename)
 
-    def set_indices(self, index, cfr_index, process: bool = True) :
+    def set_indices(self, index, cfr_index, process: bool = True):
         """Set the parameter indices.
 
         We distinguish between the index of all parameters
@@ -269,10 +269,14 @@ class MinFluxReader:
 
         # Check that the arguments are compatible with the loaded data
         if index < 0 or index > self._reps - 1:
-            raise ValueError(f"The value of index must be between 0 and {self._reps - 1}.")
+            raise ValueError(
+                f"The value of index must be between 0 and {self._reps - 1}."
+            )
 
         if cfr_index < 0 or cfr_index > len(self._valid_cfr) - 1:
-            raise ValueError(f"The value of index must be between 0 and {len(self._valid_cfr) - 1}.")
+            raise ValueError(
+                f"The value of index must be between 0 and {len(self._valid_cfr) - 1}."
+            )
 
         # Now set the general values
         self._efo_index = index
@@ -539,7 +543,10 @@ class MinFluxReader:
         df = df.dropna(subset=["x"])
 
         # Check if the selected indices correspond to the last valid iteration
-        self._is_last_valid = self._cfr_index == self._last_valid_cfr and self._efo_index == self._last_valid
+        self._is_last_valid = (
+            self._cfr_index == self._last_valid_cfr
+            and self._efo_index == self._last_valid
+        )
 
         return df
 

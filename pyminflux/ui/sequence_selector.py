@@ -94,20 +94,12 @@ class SequenceSelector(QDialog, Ui_SequenceSelector):
         return None
 
     def set_connections(self):
-        self.ui.leDwellTime.textChanged.connect(
-            self.persist_dwell_time
-        )
-        self.ui.cbTracking.stateChanged.connect(
-            self.persist_is_tracking
-        )
-        self.ui.pb_last_valid.clicked.connect(
-            self.set_last_valid
-        )
+        self.ui.leDwellTime.textChanged.connect(self.persist_dwell_time)
+        self.ui.cbTracking.stateChanged.connect(self.persist_is_tracking)
+        self.ui.pb_last_valid.clicked.connect(self.set_last_valid)
         for i in range(len(self.widgets_list)):
             self.widgets_list[i][0].setProperty("index", i)
-            self.widgets_list[i][0].clicked.connect(
-                self.set_all_iterations
-            )
+            self.widgets_list[i][0].clicked.connect(self.set_all_iterations)
 
     @Slot(str, name="persist_dwell_time")
     def persist_dwell_time(self, text):
@@ -176,18 +168,23 @@ class SequenceSelector(QDialog, Ui_SequenceSelector):
     def set_cfr_validity(self, cfr_status):
         """Display the validity of the CFR _iteration with the selected characters."""
         for i, status in enumerate(cfr_status):
-            self.widgets_list[i][1].setText(self.valid_char if status else self.invalid_char)
+            self.widgets_list[i][1].setText(
+                self.valid_char if status else self.invalid_char
+            )
 
     def reset_colors(self):
-        for i in range(len(self.widgets_list) - 1, - 1, -1):
+        for i in range(len(self.widgets_list) - 1, -1, -1):
             self.widgets_list[i][0].setStyleSheet("")
             self.widgets_list[i][1].setStyleSheet("")
 
     def highlight_iteration(self, iteration):
         """Highlight the button for the global _iteration."""
         self.widgets_list[iteration][0].setStyleSheet(
-            "color: black; background-color: lightblue; border-style: flat; padding: 5px")
+            "color: black; background-color: lightblue; border-style: flat; padding: 5px"
+        )
 
     def highlight_cfr(self, cfr_index):
         """Highlight the label for the cfr index."""
-        self.widgets_list[cfr_index][1].setStyleSheet("color: black; background-color: lightblue;")
+        self.widgets_list[cfr_index][1].setStyleSheet(
+            "color: black; background-color: lightblue;"
+        )

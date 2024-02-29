@@ -8,80 +8,114 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
-    QCursor, QFont, QFontDatabase, QGradient,
-    QIcon, QImage, QKeySequence, QLinearGradient,
-    QPainter, QPalette, QPixmap, QRadialGradient,
-    QTransform)
-from PySide6.QtWidgets import (QApplication, QGridLayout, QMainWindow, QMenu,
-    QMenuBar, QSizePolicy, QSplitter, QStatusBar,
-    QWidget)
+from PySide6.QtCore import (
+    QCoreApplication,
+    QDate,
+    QDateTime,
+    QLocale,
+    QMetaObject,
+    QObject,
+    QPoint,
+    QRect,
+    QSize,
+    Qt,
+    QTime,
+    QUrl,
+)
+from PySide6.QtGui import (
+    QAction,
+    QBrush,
+    QColor,
+    QConicalGradient,
+    QCursor,
+    QFont,
+    QFontDatabase,
+    QGradient,
+    QIcon,
+    QImage,
+    QKeySequence,
+    QLinearGradient,
+    QPainter,
+    QPalette,
+    QPixmap,
+    QRadialGradient,
+    QTransform,
+)
+from PySide6.QtWidgets import (
+    QApplication,
+    QGridLayout,
+    QMainWindow,
+    QMenu,
+    QMenuBar,
+    QSizePolicy,
+    QSplitter,
+    QStatusBar,
+    QWidget,
+)
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
-            MainWindow.setObjectName(u"MainWindow")
+            MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1000, 800)
         MainWindow.setMinimumSize(QSize(640, 480))
         self.actionQuit = QAction(MainWindow)
-        self.actionQuit.setObjectName(u"actionQuit")
+        self.actionQuit.setObjectName("actionQuit")
         self.actionConsole = QAction(MainWindow)
-        self.actionConsole.setObjectName(u"actionConsole")
+        self.actionConsole.setObjectName("actionConsole")
         self.actionConsole.setCheckable(True)
         self.actionConsole.setChecked(False)
         self.actionData_viewer = QAction(MainWindow)
-        self.actionData_viewer.setObjectName(u"actionData_viewer")
+        self.actionData_viewer.setObjectName("actionData_viewer")
         self.actionData_viewer.setCheckable(True)
         self.actionData_viewer.setChecked(True)
         self.actionState = QAction(MainWindow)
-        self.actionState.setObjectName(u"actionState")
+        self.actionState.setObjectName("actionState")
         self.actionOptions = QAction(MainWindow)
-        self.actionOptions.setObjectName(u"actionOptions")
+        self.actionOptions.setObjectName("actionOptions")
         self.actionAbout = QAction(MainWindow)
-        self.actionAbout.setObjectName(u"actionAbout")
+        self.actionAbout.setObjectName("actionAbout")
         self.actionExport_data = QAction(MainWindow)
-        self.actionExport_data.setObjectName(u"actionExport_data")
+        self.actionExport_data.setObjectName("actionExport_data")
         self.actionManual = QAction(MainWindow)
-        self.actionManual.setObjectName(u"actionManual")
+        self.actionManual.setObjectName("actionManual")
         self.actionWebsite = QAction(MainWindow)
-        self.actionWebsite.setObjectName(u"actionWebsite")
+        self.actionWebsite.setObjectName("actionWebsite")
         self.actionCode_repository = QAction(MainWindow)
-        self.actionCode_repository.setObjectName(u"actionCode_repository")
+        self.actionCode_repository.setObjectName("actionCode_repository")
         self.actionIssues = QAction(MainWindow)
-        self.actionIssues.setObjectName(u"actionIssues")
+        self.actionIssues.setObjectName("actionIssues")
         self.actionMailing_list = QAction(MainWindow)
-        self.actionMailing_list.setObjectName(u"actionMailing_list")
+        self.actionMailing_list.setObjectName("actionMailing_list")
         self.actionExport_stats = QAction(MainWindow)
-        self.actionExport_stats.setObjectName(u"actionExport_stats")
+        self.actionExport_stats.setObjectName("actionExport_stats")
         self.actionCheck_for_updates = QAction(MainWindow)
-        self.actionCheck_for_updates.setObjectName(u"actionCheck_for_updates")
+        self.actionCheck_for_updates.setObjectName("actionCheck_for_updates")
         self.actionFRC_analyzer = QAction(MainWindow)
-        self.actionFRC_analyzer.setObjectName(u"actionFRC_analyzer")
+        self.actionFRC_analyzer.setObjectName("actionFRC_analyzer")
         self.actionWhat_s_new = QAction(MainWindow)
-        self.actionWhat_s_new.setObjectName(u"actionWhat_s_new")
+        self.actionWhat_s_new.setObjectName("actionWhat_s_new")
         self.actionUnmixer = QAction(MainWindow)
-        self.actionUnmixer.setObjectName(u"actionUnmixer")
+        self.actionUnmixer.setObjectName("actionUnmixer")
         self.actionTime_Inspector = QAction(MainWindow)
-        self.actionTime_Inspector.setObjectName(u"actionTime_Inspector")
+        self.actionTime_Inspector.setObjectName("actionTime_Inspector")
         self.actionAnalyzer = QAction(MainWindow)
-        self.actionAnalyzer.setObjectName(u"actionAnalyzer")
+        self.actionAnalyzer.setObjectName("actionAnalyzer")
         self.actionTrace_Stats_Viewer = QAction(MainWindow)
-        self.actionTrace_Stats_Viewer.setObjectName(u"actionTrace_Stats_Viewer")
+        self.actionTrace_Stats_Viewer.setObjectName("actionTrace_Stats_Viewer")
         self.actionLoad = QAction(MainWindow)
-        self.actionLoad.setObjectName(u"actionLoad")
+        self.actionLoad.setObjectName("actionLoad")
         self.actionSave = QAction(MainWindow)
-        self.actionSave.setObjectName(u"actionSave")
+        self.actionSave.setObjectName("actionSave")
         self.actionHistogram_Plotter = QAction(MainWindow)
-        self.actionHistogram_Plotter.setObjectName(u"actionHistogram_Plotter")
+        self.actionHistogram_Plotter.setObjectName("actionHistogram_Plotter")
         self.centralwidget = QWidget(MainWindow)
-        self.centralwidget.setObjectName(u"centralwidget")
+        self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
-        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setObjectName("gridLayout")
         self.splitter_layout = QSplitter(self.centralwidget)
-        self.splitter_layout.setObjectName(u"splitter_layout")
+        self.splitter_layout.setObjectName("splitter_layout")
         self.splitter_layout.setMaximumSize(QSize(16777215, 16777215))
         self.splitter_layout.setOrientation(Qt.Vertical)
 
@@ -89,19 +123,19 @@ class Ui_MainWindow(object):
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
-        self.menubar.setObjectName(u"menubar")
+        self.menubar.setObjectName("menubar")
         self.menubar.setGeometry(QRect(0, 0, 1000, 23))
         self.menuFile = QMenu(self.menubar)
-        self.menuFile.setObjectName(u"menuFile")
+        self.menuFile.setObjectName("menuFile")
         self.menuView = QMenu(self.menubar)
-        self.menuView.setObjectName(u"menuView")
+        self.menuView.setObjectName("menuView")
         self.menuHelp = QMenu(self.menubar)
-        self.menuHelp.setObjectName(u"menuHelp")
+        self.menuHelp.setObjectName("menuHelp")
         self.menuAnalysis = QMenu(self.menubar)
-        self.menuAnalysis.setObjectName(u"menuAnalysis")
+        self.menuAnalysis.setObjectName("menuAnalysis")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
-        self.statusbar.setObjectName(u"statusbar")
+        self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
         self.menubar.addAction(self.menuFile.menuAction())
@@ -141,48 +175,99 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
 
         QMetaObject.connectSlotsByName(MainWindow)
+
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.actionQuit.setText(QCoreApplication.translate("MainWindow", u"Quit", None))
-#if QT_CONFIG(tooltip)
-        self.actionQuit.setToolTip(QCoreApplication.translate("MainWindow", u"Quit application", None))
-#endif // QT_CONFIG(tooltip)
-#if QT_CONFIG(shortcut)
+        MainWindow.setWindowTitle(
+            QCoreApplication.translate("MainWindow", "MainWindow", None)
+        )
+        self.actionQuit.setText(QCoreApplication.translate("MainWindow", "Quit", None))
+        # if QT_CONFIG(tooltip)
+        self.actionQuit.setToolTip(
+            QCoreApplication.translate("MainWindow", "Quit application", None)
+        )
+        # endif // QT_CONFIG(tooltip)
+        # if QT_CONFIG(shortcut)
         self.actionQuit.setShortcut("")
-#endif // QT_CONFIG(shortcut)
-        self.actionConsole.setText(QCoreApplication.translate("MainWindow", u"Console", None))
-        self.actionData_viewer.setText(QCoreApplication.translate("MainWindow", u"Data viewer", None))
-        self.actionState.setText(QCoreApplication.translate("MainWindow", u"[DEBUG] Show state", None))
-        self.actionOptions.setText(QCoreApplication.translate("MainWindow", u"Options", None))
-        self.actionAbout.setText(QCoreApplication.translate("MainWindow", u"About", None))
-        self.actionExport_data.setText(QCoreApplication.translate("MainWindow", u"Export data", None))
-        self.actionManual.setText(QCoreApplication.translate("MainWindow", u"Manual", None))
-        self.actionWebsite.setText(QCoreApplication.translate("MainWindow", u"Website", None))
-        self.actionCode_repository.setText(QCoreApplication.translate("MainWindow", u"Repository", None))
-        self.actionIssues.setText(QCoreApplication.translate("MainWindow", u"Issues", None))
-        self.actionMailing_list.setText(QCoreApplication.translate("MainWindow", u"Mailing list", None))
-        self.actionExport_stats.setText(QCoreApplication.translate("MainWindow", u"Export trace stats", None))
-        self.actionCheck_for_updates.setText(QCoreApplication.translate("MainWindow", u"Check for updates", None))
-        self.actionFRC_analyzer.setText(QCoreApplication.translate("MainWindow", u"FRC Analyzer", None))
-        self.actionWhat_s_new.setText(QCoreApplication.translate("MainWindow", u"What's new?", None))
-        self.actionUnmixer.setText(QCoreApplication.translate("MainWindow", u"Unmixer", None))
-        self.actionTime_Inspector.setText(QCoreApplication.translate("MainWindow", u"Time Inspector", None))
-        self.actionAnalyzer.setText(QCoreApplication.translate("MainWindow", u"Analyzer", None))
-        self.actionTrace_Stats_Viewer.setText(QCoreApplication.translate("MainWindow", u"Trace Stats Viewer", None))
-        self.actionLoad.setText(QCoreApplication.translate("MainWindow", u"Load", None))
-#if QT_CONFIG(shortcut)
-        self.actionLoad.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+L", None))
-#endif // QT_CONFIG(shortcut)
-        self.actionSave.setText(QCoreApplication.translate("MainWindow", u"Save", None))
-#if QT_CONFIG(shortcut)
-        self.actionSave.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+S", None))
-#endif // QT_CONFIG(shortcut)
-        self.actionHistogram_Plotter.setText(QCoreApplication.translate("MainWindow", u"Histogram Plotter", None))
-        self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
-        self.menuView.setTitle(QCoreApplication.translate("MainWindow", u"View", None))
-        self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", u"Help", None))
-        self.menuAnalysis.setTitle(QCoreApplication.translate("MainWindow", u"Analysis", None))
-    # retranslateUi
+        # endif // QT_CONFIG(shortcut)
+        self.actionConsole.setText(
+            QCoreApplication.translate("MainWindow", "Console", None)
+        )
+        self.actionData_viewer.setText(
+            QCoreApplication.translate("MainWindow", "Data viewer", None)
+        )
+        self.actionState.setText(
+            QCoreApplication.translate("MainWindow", "[DEBUG] Show state", None)
+        )
+        self.actionOptions.setText(
+            QCoreApplication.translate("MainWindow", "Options", None)
+        )
+        self.actionAbout.setText(
+            QCoreApplication.translate("MainWindow", "About", None)
+        )
+        self.actionExport_data.setText(
+            QCoreApplication.translate("MainWindow", "Export data", None)
+        )
+        self.actionManual.setText(
+            QCoreApplication.translate("MainWindow", "Manual", None)
+        )
+        self.actionWebsite.setText(
+            QCoreApplication.translate("MainWindow", "Website", None)
+        )
+        self.actionCode_repository.setText(
+            QCoreApplication.translate("MainWindow", "Repository", None)
+        )
+        self.actionIssues.setText(
+            QCoreApplication.translate("MainWindow", "Issues", None)
+        )
+        self.actionMailing_list.setText(
+            QCoreApplication.translate("MainWindow", "Mailing list", None)
+        )
+        self.actionExport_stats.setText(
+            QCoreApplication.translate("MainWindow", "Export trace stats", None)
+        )
+        self.actionCheck_for_updates.setText(
+            QCoreApplication.translate("MainWindow", "Check for updates", None)
+        )
+        self.actionFRC_analyzer.setText(
+            QCoreApplication.translate("MainWindow", "FRC Analyzer", None)
+        )
+        self.actionWhat_s_new.setText(
+            QCoreApplication.translate("MainWindow", "What's new?", None)
+        )
+        self.actionUnmixer.setText(
+            QCoreApplication.translate("MainWindow", "Unmixer", None)
+        )
+        self.actionTime_Inspector.setText(
+            QCoreApplication.translate("MainWindow", "Time Inspector", None)
+        )
+        self.actionAnalyzer.setText(
+            QCoreApplication.translate("MainWindow", "Analyzer", None)
+        )
+        self.actionTrace_Stats_Viewer.setText(
+            QCoreApplication.translate("MainWindow", "Trace Stats Viewer", None)
+        )
+        self.actionLoad.setText(QCoreApplication.translate("MainWindow", "Load", None))
+        # if QT_CONFIG(shortcut)
+        self.actionLoad.setShortcut(
+            QCoreApplication.translate("MainWindow", "Ctrl+L", None)
+        )
+        # endif // QT_CONFIG(shortcut)
+        self.actionSave.setText(QCoreApplication.translate("MainWindow", "Save", None))
+        # if QT_CONFIG(shortcut)
+        self.actionSave.setShortcut(
+            QCoreApplication.translate("MainWindow", "Ctrl+S", None)
+        )
+        # endif // QT_CONFIG(shortcut)
+        self.actionHistogram_Plotter.setText(
+            QCoreApplication.translate("MainWindow", "Histogram Plotter", None)
+        )
+        self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
+        self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
+        self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", "Help", None))
+        self.menuAnalysis.setTitle(
+            QCoreApplication.translate("MainWindow", "Analysis", None)
+        )
 
+    # retranslateUi

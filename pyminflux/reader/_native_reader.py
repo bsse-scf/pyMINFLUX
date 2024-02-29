@@ -60,7 +60,9 @@ class NativeMetadataReader:
             if file_version == "2.0":
 
                 try:
-                    tr_len_thresholds = tuple(f["parameters/applied_tr_len_thresholds"][:])
+                    tr_len_thresholds = tuple(
+                        f["parameters/applied_tr_len_thresholds"][:]
+                    )
                 except KeyError as e:
                     tr_len_thresholds = None
                 dwell_time = float(f["parameters/dwell_time"][()])

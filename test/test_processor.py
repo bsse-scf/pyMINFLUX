@@ -1192,8 +1192,12 @@ def test_filter_by_1d_stats_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 0, "No TIDs expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0, "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+    ), "No TIDs expected."
 
     #
     # Filter that rejects nothing
@@ -1219,10 +1223,19 @@ def test_filter_by_1d_stats_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 2, "Two TIDs expected."
-    assert np.all(np.unique(processor.filtered_dataframe["tid"].values) == np.array([51, 54])), "TIDs 51 and 54 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 2, "Two TIDs expected."
-    assert np.all(np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51, 54])), "TIDs 51 and 54 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 2
+    ), "Two TIDs expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51, 54])
+    ), "TIDs 51 and 54 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 2
+    ), "Two TIDs expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values)
+        == np.array([51, 54])
+    ), "TIDs 51 and 54 expected."
 
     #
     # Filter that rejects one TID
@@ -1244,10 +1257,18 @@ def test_filter_by_1d_stats_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 1, "One TID expected."
-    assert np.all(np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])), "TID 51 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1, "Two TIDs expected."
-    assert np.all(np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])
+    ), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+    ), "Two TIDs expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])
+    ), "TID 51 expected."
 
 
 def test_filter_by_1d_stats_with_fluo_id_mock_reader():
@@ -1275,10 +1296,19 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     # Now call the filter_by_1d_stats() function
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 2, "Two TIDs expected."
-    assert np.all(np.unique(processor.filtered_dataframe["tid"].values) == np.array([51, 54])), "TIDs 51 and 54 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 2, "Two TIDs expected."
-    assert np.all(np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51, 54])), "TIDs 51 and 54 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 2
+    ), "Two TIDs expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51, 54])
+    ), "TIDs 51 and 54 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 2
+    ), "Two TIDs expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values)
+        == np.array([51, 54])
+    ), "TIDs 51 and 54 expected."
 
     #
     # Current fluorophore ID = 1
@@ -1302,17 +1332,29 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 0, "No TIDs expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0, "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+    ), "No TIDs expected."
 
     # IF we change to fluorophore ID == 2, the TID 51 should still be there
     processor.current_fluorophore_id = 2
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 1, "One TID expected."
-    assert np.all(np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])), "TID 51 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1, "One TID expected."
-    assert np.all(np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])
+    ), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])
+    ), "TID 51 expected."
 
     #
     # Current fluorophore ID = 2
@@ -1336,19 +1378,35 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 1, "One TID expected."
-    assert np.all(np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])), "TID 51 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1, "One TID expected."
-    assert np.all(np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])
+    ), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])
+    ), "TID 51 expected."
 
     # If we change to fluorophore ID == 1, the TID 54 should still be there
     processor.current_fluorophore_id = 1
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 1, "One TID expected."
-    assert np.all(np.unique(processor.filtered_dataframe["tid"].values) == np.array([54])), "TID 51 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1, "One TID expected."
-    assert np.all(np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([54])), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([54])
+    ), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([54])
+    ), "TID 51 expected."
 
     #
     # Current fluorophore ID = 2
@@ -1371,23 +1429,39 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     # Now call the filter_by_1d_stats() function
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 0, "No TIDs expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0, "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+    ), "No TIDs expected."
 
     # If we change to fluorophore ID == 1, the TID 54 should still be there
     processor.current_fluorophore_id = 1
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 1, "One TID expected."
-    assert np.all(np.unique(processor.filtered_dataframe["tid"].values) == np.array([54])), "TID 51 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1, "One TID expected."
-    assert np.all(np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([54])), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([54])
+    ), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([54])
+    ), "TID 51 expected."
 
     # If we now apply the filter again, also 54 should go.
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
-    assert len(np.unique(processor.filtered_dataframe["tid"].values)) == 0, "No TIDs expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0, "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+    ), "No TIDs expected."
 
 
 def test_filter_by_1d_stats(extract_raw_npy_data_files):
@@ -1465,7 +1539,9 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
     rejected_tid_fluo_1 = tids_outside[tids_outside >= thresh]
 
     # Check the number of assigned fluorophores
-    assert int(np.sum(processor.filtered_dataframe["fluo"].values == 0)) == 0, "All rows should be assigned to fluo 1 or 2."
+    assert (
+        int(np.sum(processor.filtered_dataframe["fluo"].values == 0)) == 0
+    ), "All rows should be assigned to fluo 1 or 2."
     n_fluo_1 = int(np.sum(processor.filtered_dataframe["fluo"].values == 1))
     n_fluo_2 = int(np.sum(processor.filtered_dataframe["fluo"].values == 2))
     assert n_fluo_1 + n_fluo_2 == len(
@@ -1482,9 +1558,13 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
 
     # Now check that only the TIDs that where associated to fluorophore 1 were filtered by x_range
     subset_fluo_1 = processor.filtered_dataframe_stats[["tid", "n"]]
-    assert np.all(subset_fluo_1["tid"].values >= thresh), "Unexpected TIDs for fluorophore 1."
+    assert np.all(
+        subset_fluo_1["tid"].values >= thresh
+    ), "Unexpected TIDs for fluorophore 1."
     tids_outside_fluo_1 = tids_outside[tids_outside >= thresh]
-    assert np.all(rejected_tid_fluo_1 == tids_outside_fluo_1), "Unexpected set of rejected TIDs."
+    assert np.all(
+        rejected_tid_fluo_1 == tids_outside_fluo_1
+    ), "Unexpected set of rejected TIDs."
 
     # Now set the active fluorophore to 2
     processor.current_fluorophore_id = 2
@@ -1494,8 +1574,10 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
 
     # Now check that only the TIDs that where associated to fluorophore 1 were filtered by x_range
     subset_fluo_2 = processor.filtered_dataframe_stats[["tid", "n"]]
-    assert np.all(subset_fluo_2["tid"].values < thresh), "Unexpected TIDs for fluorophore 2."
+    assert np.all(
+        subset_fluo_2["tid"].values < thresh
+    ), "Unexpected TIDs for fluorophore 2."
     tids_outside_fluo_2 = tids_outside[tids_outside < thresh]
-    assert np.all(rejected_tid_fluo_2 == tids_outside_fluo_2), "Unexpected set of rejected TIDs."
-
-
+    assert np.all(
+        rejected_tid_fluo_2 == tids_outside_fluo_2
+    ), "Unexpected set of rejected TIDs."

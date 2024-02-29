@@ -122,7 +122,11 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         """Perform and plot the results of the selected analysis."""
 
         # Do we have something to plot?
-        if self.processor is None or self.processor.filtered_dataframe is None or len(self.processor.filtered_dataframe.index) == 0:
+        if (
+            self.processor is None
+            or self.processor.filtered_dataframe is None
+            or len(self.processor.filtered_dataframe.index) == 0
+        ):
             return
 
         # Inform that processing started
