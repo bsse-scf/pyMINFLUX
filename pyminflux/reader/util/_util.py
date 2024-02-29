@@ -291,5 +291,9 @@ def migrate_npy_array(data_array) -> Union[np.ndarray, None]:
         else:
             new_array[field_name] = data_array[field_name]
 
+    # Make sure to initialize the "fluo" column
+    if "fluo" not in data_array.dtype.names:
+        new_array["fluo"] = 0
+
     # Return the migrated array
     return new_array

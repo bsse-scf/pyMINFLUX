@@ -200,7 +200,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
-            assert file_version == "1.0", "Invalid attribute 'file_version'!"
+            assert file_version == "2.0", "Invalid attribute 'file_version'!"
 
             # Read the NumPy array explicitly
             data_array = f["raw/npy"][:]
@@ -360,7 +360,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
-            assert file_version == "1.0", "Invalid attribute 'file_version'!"
+            assert file_version == "2.0", "Invalid attribute 'file_version'!"
 
             # Read the NumPy array explicitly
             data_array = f["raw/npy"][:]
