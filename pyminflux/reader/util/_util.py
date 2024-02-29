@@ -240,9 +240,8 @@ def find_last_valid_iteration(data_array: np.ndarray):
     # Set efo index
     last_valid["efo_index"] = num_iterations - 1
 
-    # If any x coordinate is missing, the iteration is not valid
-    last_valid["valid_cfr"] = np.logical_not(np.any(np.isnan(data_array["itr"]["loc"][:, :, 0]), axis=0))
-
+    # Set cfr index
+    last_valid["valid_cfr"] = (np.std(data_array["itr"]["cfr"], axis=0) > 0.0).tolist()
     valid_indices = np.where(last_valid["valid_cfr"])[0]
     if len(valid_indices) == 0:
         last_valid["cfr_index"] = num_iterations - 1
