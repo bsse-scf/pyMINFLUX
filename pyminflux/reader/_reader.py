@@ -141,7 +141,8 @@ class MinFluxReader:
         self._vld_index: int = 0
 
         # Load the file
-        self._load()
+        if not self._load():
+            raise IOError(f"The file {self._filename} is not a valid MINFLUX file.")
 
     @property
     def is_valid_sequence(self) ->bool:
@@ -375,6 +376,8 @@ class MinFluxReader:
                 ValueError,
                 EOFError,
                 FileNotFoundError,
+                TypeError,
+                Exception,
             ) as e:
                 print(f"Could not open {self._filename}: {e}")
                 return False

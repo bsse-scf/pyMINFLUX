@@ -618,9 +618,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 print("Applied settings from file.")
 
             # Now pass the filename to the MinFluxReader
-            reader = MinFluxReader(
-                filename, z_scaling_factor=self.state.z_scaling_factor
-            )
+            try:
+                reader = MinFluxReader(
+                    filename, z_scaling_factor=self.state.z_scaling_factor
+                )
+            except IOError as e:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"{e}",
+                )
+                return
 
             # Open the sequence selector
             sequence_selector = SequenceSelector(
