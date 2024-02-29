@@ -716,7 +716,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.enable_ui_components(True)
 
             # If the read sequence is not valid, disable the save button
-            if reader.is_valid_sequence:
+            if reader.is_last_valid:
                 self.ui.actionSave.setEnabled(True)
                 self.wizard.enable_save_button(True)
             else:

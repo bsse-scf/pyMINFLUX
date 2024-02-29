@@ -315,6 +315,11 @@ class Ui_SequenceSelector(object):
 
         self.mainLayout.addLayout(self.last_valid_layout)
 
+        self.lbInfo = QLabel(SequenceSelector)
+        self.lbInfo.setObjectName(u"lbInfo")
+
+        self.mainLayout.addWidget(self.lbInfo)
+
         self.fixedVerticalSpacer = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed)
 
         self.mainLayout.addItem(self.fixedVerticalSpacer)
@@ -398,6 +403,7 @@ class Ui_SequenceSelector(object):
         self.lbIter_11.setText(QCoreApplication.translate("SequenceSelector", u"\u2713", None))
         self.pb_last_valid.setText(QCoreApplication.translate("SequenceSelector", u"Last valid", None))
         self.pl_last_valid.setText("")
+        self.lbInfo.setText(QCoreApplication.translate("SequenceSelector", u"Only \"last valid\" iteration can be saved.", None))
         self.cbTracking.setText(QCoreApplication.translate("SequenceSelector", u"Tracking dataset", None))
         self.lbDwellTime.setText(QCoreApplication.translate("SequenceSelector", u"Dwell time (ms)", None))
     # retranslateUi

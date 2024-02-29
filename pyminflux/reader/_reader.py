@@ -34,7 +34,9 @@ class MinFluxReader:
 
     __slots__ = [
         "_filename",
-        "_is_valid_sequence",
+        "_last_valid_cfr",
+        "_last_valid",
+        "_is_last_valid",
         "_valid",
         "_unit_scaling_factor",
         "_data_array",
@@ -93,9 +95,8 @@ class MinFluxReader:
         if not self._filename.is_file():
             raise IOError(f"The file {self._filename} does not seem to exist.")
 
-        # Keep track of whether the dataframe had to be filtered to
-        # remove rows because an invalid sequence was picked.
-        self._is_valid_sequence: bool = False
+        # Keep track of whether the chosen sequence is the last valid.
+        self._is_last_valid: bool = False
 
         # Store the valid flag
         self._valid: bool = valid
@@ -140,14 +141,19 @@ class MinFluxReader:
         self._tim_index: int = 0
         self._vld_index: int = 0
 
+        # Keep track of the last valid global and CFR iterations as returned
+        # by the initial scan
+        self._last_valid: int = -1
+        self._last_valid_cfr: int = -1
+
         # Load the file
         if not self._load():
             raise IOError(f"The file {self._filename} is not a valid MINFLUX file.")
 
     @property
-    def is_valid_sequence(self) ->bool:
-        """Return True if the selected iterations give a valid sequence, False otherwise."""
-        return self._is_valid_sequence
+    def is_last_valid(self) ->bool:
+        """Return True if the selected iterations are the "last valid", False otherwise."""
+        return self._is_last_valid
 
     @property
     def z_scaling_factor(self) -> float:
@@ -532,11 +538,8 @@ class MinFluxReader:
         # Remove rows with NaNs in the loc matrix
         df = df.dropna(subset=["x"])
 
-        # Check if the dataframe is still completely valid
-        # as a function of the selected iterations
-        self._is_valid_sequence = False
-        if len(df.index) == len(indices):
-            self._is_valid_sequence = True
+        # Check if the selected indices correspond to the last valid iteration
+        self._is_last_valid = self._cfr_index == self._last_valid_cfr and self._efo_index == self._last_valid
 
         return df
 
@@ -632,6 +635,10 @@ class MinFluxReader:
         self._eco_index = last_valid["eco_index"]
         self._loc_index = last_valid["loc_index"]
         self._valid_cfr = last_valid["valid_cfr"]
+
+        # Keep track of the last valid iteration
+        self._last_valid = len(self._valid_cfr) - 1
+        self._last_valid_cfr = last_valid["cfr_index"]
 
     def __repr__(self) -> str:
         """String representation of the object."""

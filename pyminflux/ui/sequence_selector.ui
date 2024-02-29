@@ -513,6 +513,13 @@
       </layout>
      </item>
      <item>
+      <widget class="QLabel" name="lbInfo">
+       <property name="text">
+        <string>Only &quot;last valid&quot; iteration can be saved.</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="fixedVerticalSpacer">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
