@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'analyzer.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -216,6 +216,47 @@ class Ui_Analyzer(object):
         self.horizontalLayout_4.addItem(self.hsCFRFilterAfter)
 
         self.tabFilterOptions.addTab(self.tab_cfr_thresholding, "")
+        self.tab_trlen_thresholding = QWidget()
+        self.tab_trlen_thresholding.setObjectName("tab_trlen_thresholding")
+        self.horizontalLayout = QHBoxLayout(self.tab_trlen_thresholding)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.hsTraceLenBefore = QSpacerItem(
+            355, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout.addItem(self.hsTraceLenBefore)
+
+        self.lbTrLenPercentile = QLabel(self.tab_trlen_thresholding)
+        self.lbTrLenPercentile.setObjectName("lbTrLenPercentile")
+
+        self.horizontalLayout.addWidget(self.lbTrLenPercentile)
+
+        self.leTrLenTopPercentile = QLineEdit(self.tab_trlen_thresholding)
+        self.leTrLenTopPercentile.setObjectName("leTrLenTopPercentile")
+        sizePolicy2.setHeightForWidth(
+            self.leTrLenTopPercentile.sizePolicy().hasHeightForWidth()
+        )
+        self.leTrLenTopPercentile.setSizePolicy(sizePolicy2)
+
+        self.horizontalLayout.addWidget(self.leTrLenTopPercentile)
+
+        self.pbTrLenRunAutoThreshold = QPushButton(self.tab_trlen_thresholding)
+        self.pbTrLenRunAutoThreshold.setObjectName("pbTrLenRunAutoThreshold")
+
+        self.horizontalLayout.addWidget(self.pbTrLenRunAutoThreshold)
+
+        self.pbTrLenRunFilter = QPushButton(self.tab_trlen_thresholding)
+        self.pbTrLenRunFilter.setObjectName("pbTrLenRunFilter")
+
+        self.horizontalLayout.addWidget(self.pbTrLenRunFilter)
+
+        self.hsTraceLenAfter = QSpacerItem(
+            355, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
+
+        self.horizontalLayout.addItem(self.hsTraceLenAfter)
+
+        self.tabFilterOptions.addTab(self.tab_trlen_thresholding, "")
 
         self.gridLayout.addWidget(self.tabFilterOptions, 0, 0, 1, 1)
 
@@ -280,6 +321,19 @@ class Ui_Analyzer(object):
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_cfr_thresholding),
             QCoreApplication.translate("Analyzer", "CFR thresholding", None),
+        )
+        self.lbTrLenPercentile.setText(
+            QCoreApplication.translate("Analyzer", "Top percentile", None)
+        )
+        self.pbTrLenRunAutoThreshold.setText(
+            QCoreApplication.translate("Analyzer", "Threshold", None)
+        )
+        self.pbTrLenRunFilter.setText(
+            QCoreApplication.translate("Analyzer", "Filter", None)
+        )
+        self.tabFilterOptions.setTabText(
+            self.tabFilterOptions.indexOf(self.tab_trlen_thresholding),
+            QCoreApplication.translate("Analyzer", "Trace length thresholding", None),
         )
 
     # retranslateUi

@@ -927,9 +927,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.wizard.efo_bounds_modified.connect(self.analyzer.change_efo_bounds)
             self.wizard.cfr_bounds_modified.connect(self.analyzer.change_cfr_bounds)
             self.analyzer.data_filters_changed.connect(self.full_update_ui)
-            self.analyzer.cfr_threshold_factor_changed.connect(
-                self.wizard.change_cfr_threshold_factor
-            )
             self.analyzer.efo_bounds_changed.connect(self.wizard.change_efo_bounds)
             self.analyzer.cfr_bounds_changed.connect(self.wizard.change_cfr_bounds)
         if self.histogram_plotter is not None:

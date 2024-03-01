@@ -326,11 +326,6 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # The fluorophore index is 1 + the combobox current index
         self.fluorophore_id_changed.emit(index)
 
-    @Slot(None, name="change_cfr_threshold_factor")
-    def change_cfr_threshold_factor(self):
-        """Update the value of the cfr threshold factor."""
-        self.ui.leCFRSigma.setText(str(self.state.cfr_threshold_factor))
-
     @Slot(None, name="change_efo_bounds")
     def change_efo_bounds(self):
         """Update the EFO bounds."""

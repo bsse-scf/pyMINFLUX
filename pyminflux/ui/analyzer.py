@@ -21,7 +21,7 @@ from pyqtgraph import AxisItem, ViewBox
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
-from PySide6.QtWidgets import QDialog, QFileDialog, QLabel, QMenu
+from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
 from ..analysis import find_cutoff_near_value, get_robust_threshold, prepare_histogram
 from ..processor import MinFluxProcessor
@@ -102,6 +102,12 @@ class Analyzer(QDialog, Ui_Analyzer):
             QDoubleValidator(bottom=0.0, top=5.0, decimals=2)
         )
 
+        # Trace Length filtering tab
+        self.ui.leTrLenTopPercentile.setText(str(self.state.tr_len_top_percentile))
+        self.ui.leTrLenTopPercentile.setValidator(
+            QDoubleValidator(bottom=0.0, top=100.0, decimals=2)
+        )
+
         # Keep a reference to the ROIRanges dialog
         self.roi_ranges_dialog = None
 
@@ -135,6 +141,15 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.pbCFRRunAutoThreshold.clicked.connect(self.run_cfr_auto_threshold)
         self.ui.leCFRFilterThreshFactor.textChanged.connect(
             self.persist_cfr_threshold_factor
+        )
+
+        # Trace length tab
+        self.ui.pbTrLenRunAutoThreshold.clicked.connect(self.run_tr_len_auto_threshold)
+        self.ui.pbTrLenRunFilter.clicked.connect(
+            self.run_tr_len_filter_and_broadcast_viewers_update
+        )
+        self.ui.leTrLenTopPercentile.textChanged.connect(
+            self.persist_tr_len_top_precentile
         )
 
         # Others
@@ -265,7 +280,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     @Slot(name="run_cfr_auto_threshold")
     def run_cfr_auto_threshold(self):
-        """Run auto-threshold on EFO and CFR values and update the plots."""
+        """Run auto-threshold on CFR values and update the plots."""
 
         # Is there something to calculate?
         if (
@@ -297,6 +312,26 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Update plot
         self.cfr_region.setRegion(self.state.cfr_thresholds)
 
+    @Slot(name="run_tr_len_auto_threshold")
+    def run_tr_len_auto_threshold(self):
+        """Run auto-run_tr_len_auto_threshold on Trace Length values and update the plots."""
+
+        # Calculate the top percentile
+        n = self.processor.filtered_dataframe_stats["n"].values
+
+        # Get the value of the percentile
+        percentile = float(self.ui.leTrLenTopPercentile.text())
+
+        # Calculate the value
+        p = np.percentile(n, percentile)
+
+        # Update the thresholds
+        thresholds = self.state.tr_len_thresholds
+        self.state.tr_len_thresholds = (thresholds[0], p)
+
+        # Update plot
+        self.tr_len_region.setRegion(self.state.tr_len_thresholds)
+
     @Slot(int, name="persist_cfr_lower_threshold")
     def persist_cfr_lower_threshold(self, state):
         self.state.enable_cfr_lower_threshold = state != 0
@@ -313,6 +348,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             efo_expected_frequency = float(text)
         except ValueError as _:
             return
+
         self.state.efo_expected_frequency = efo_expected_frequency
 
     @Slot(str, name="persist_cfr_threshold_factor")
@@ -325,6 +361,20 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Broadcast
         self.cfr_threshold_factor_changed.emit()
+
+    @Slot(str, name="persist_tr_len_top_precentile")
+    def persist_tr_len_top_precentile(self, text):
+        try:
+            tr_len_top_percentile = float(text)
+        except ValueError as _:
+            return
+        if tr_len_top_percentile <= 0.0:
+            tr_len_top_percentile = 0.0
+            self.ui.leTrLenTopPercentile.setText(str(tr_len_top_percentile))
+        if tr_len_top_percentile > 100.0:
+            tr_len_top_percentile = 100.0
+            self.ui.leTrLenTopPercentile.setText(str(tr_len_top_percentile))
+        self.state.tr_len_top_percentile = tr_len_top_percentile
 
     @Slot(name="run_efo_filter_and_broadcast_viewers_update")
     def run_efo_filter_and_broadcast_viewers_update(self):
@@ -850,7 +900,9 @@ class Analyzer(QDialog, Ui_Analyzer):
             view_box.setRange(xRange=(self.state.cfr_range[0], self.state.cfr_range[1]))
             self.cfr_range = self.state.cfr_range
         elif item.data_label == "tr_len":
-            view_box.setRange(xRange=(self.state.tr_len_range[0], self.state.tr_len_range[1]))
+            view_box.setRange(
+                xRange=(self.state.tr_len_range[0], self.state.tr_len_range[1])
+            )
             self.tr_len_range = self.state.tr_len_range
         elif item.data_label in ["sx", "sy", "sz"]:
             view_box.setRange(
