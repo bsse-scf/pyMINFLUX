@@ -337,7 +337,7 @@ class MinFluxReader:
         """
 
         # Update the flag
-        self._dwell_time = 1000 * dwell_time
+        self._dwell_time = dwell_time
 
         # Re-process the file?
         if process:
@@ -498,7 +498,7 @@ class MinFluxReader:
             dcr = itr["dcr"]
 
             # Dwell
-            dwell = np.around(eco / (efo / self._dwell_time), decimals=0)
+            dwell = np.around((eco / (efo / 1000)) / self._dwell_time, decimals=0)
 
         else:
             # Extract the locations
@@ -518,7 +518,7 @@ class MinFluxReader:
             dcr = itr[:, self._dcr_index]["dcr"]
 
             # Calculate dwell
-            dwell = np.around(eco / (efo / self._dwell_time), decimals=0)
+            dwell = np.around((eco / (efo / 1000)) / self._dwell_time, decimals=0)
 
         # Create a Pandas dataframe for the results
         df = pd.DataFrame(
