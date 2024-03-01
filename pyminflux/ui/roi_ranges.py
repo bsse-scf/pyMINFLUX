@@ -61,12 +61,17 @@ class ROIRanges(QDialog, Ui_ROIRanges):
 
     def update_fields(self):
         """Force an update of the input fields."""
-        self.ui.leCFRMin.setText(f"{self.state.cfr_thresholds[0]:.2f}")
-        self.ui.leCFRMax.setText(f"{self.state.cfr_thresholds[1]:.2f}")
-        self.ui.leEFOMin.setText(f"{self.state.efo_thresholds[0]:.0f}")
-        self.ui.leEFOMax.setText(f"{self.state.efo_thresholds[1]:.0f}")
-        self.ui.leTrLenMin.setText(f"{self.state.tr_len_thresholds[0]:.2f}")
-        self.ui.leTrLenMax.setText(f"{self.state.tr_len_thresholds[1]:.2f}")
+        if self.state.cfr_thresholds is not None:
+            self.ui.leCFRMin.setText(f"{self.state.cfr_thresholds[0]:.2f}")
+            self.ui.leCFRMax.setText(f"{self.state.cfr_thresholds[1]:.2f}")
+
+        if self.state.efo_thresholds is not None:
+            self.ui.leEFOMin.setText(f"{self.state.efo_thresholds[0]:.0f}")
+            self.ui.leEFOMax.setText(f"{self.state.efo_thresholds[1]:.0f}")
+
+        if self.state.tr_len_thresholds is not None:
+            self.ui.leTrLenMin.setText(f"{self.state.tr_len_thresholds[0]:.2f}")
+            self.ui.leTrLenMax.setText(f"{self.state.tr_len_thresholds[1]:.2f}")
 
     def accept(self):
         """Override accept slot."""
