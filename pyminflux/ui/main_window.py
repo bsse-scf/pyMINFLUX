@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 
 from pyqtgraph import ViewBox
-from PySide6 import QtGui, __version__ as pyside6_version
+from PySide6 import QtGui
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import (
@@ -863,19 +863,33 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot(None, name="about")
     def about(self):
         """Show simple About dialog."""
+        from h5py import __version__ as h5py_version
+        from numpy import __version__ as numpy_version
+        from pandas import __version__ as pandas_version
+        from pyarrow import __version__ as pyarrow_version
+        from pyqtgraph import __version__ as pg_version
+        from PySide6 import __version__ as pyside6_version
+        from scipy import __version__ as scipy_version
+
         QMessageBox.about(
             self,
             "About",
             f"{__APP_NAME__} v{__version__}\n"
             f"\n"
-            f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n"
-            f"PySide6 {pyside6_version}\n"
-            f"\n"
             f"Copyright 2022 - {datetime.now().year}\n"
             f"Single Cell Facility\n"
             f"D-BSSE\n"
             f"ETH Zurich\n"
-            f"Switzerland",
+            f"Switzerland"
+            f"\n\n---\n"
+            f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n"
+            f"PySide6 {pyside6_version}\n"
+            f"PyQtGraph {pg_version}\n"
+            f"NumPy {numpy_version}\n"
+            f"SciPy {scipy_version}\n"
+            f"Pandas {pandas_version}\n"
+            f"PyArrow {pyarrow_version}\n"
+            f"h5py {h5py_version}\n",
         )
 
     @Slot(None, name="check_remote_for_updates")
