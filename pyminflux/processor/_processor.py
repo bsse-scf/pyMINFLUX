@@ -103,6 +103,11 @@ class MinFluxProcessor:
         }
 
     @property
+    def is_tracking(self):
+        """Minimum number of localizations for the trace to be kept."""
+        return self.reader.is_tracking
+
+    @property
     def min_trace_length(self):
         """Minimum number of localizations for the trace to be kept."""
         return self._min_trace_length
