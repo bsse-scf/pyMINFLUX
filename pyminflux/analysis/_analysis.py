@@ -638,3 +638,39 @@ def reassign_fluo_ids_by_majority_vote(fluo_ids: np.ndarray, tids: np.ndarray):
 
     # We can now return work_fluo_ids, that has been modified in place by the split_fluo_ids views
     return work_fluo_ids
+
+
+def calc_time_resolution(df: pd.DataFrame, factor: float = 1000):
+    """Calculate time resolution for all traces.
+
+    Parameters
+    ----------
+
+    df: pd.DataFrame
+        Either the MinFluxProcessor.filtered_dataframe or the MinFluxProcessor.filtered_dataframe_stats.
+
+    factor: float (Optional, default = 1000)
+        Factor to multiply the time resolution (by default, multiply by 1000 to get a time resolution in milliseconds).
+
+    Return
+    ------
+
+    med: float
+        Median time resolution
+
+    mad: float
+        Median absolute deviation of the time resolution (divided by 0.67449 to bring it to the scale of the
+        standard deviation).
+    """
+
+    # Calculate time differences
+    tim_diff = df.groupby("tid")["tim"].diff()
+
+    # Remove NaNs (indicate the beginning of a new trace)
+    tim_diff = tim_diff[np.logical_not(np.isnan(tim_diff))]
+
+    # Calculate the median and the mad
+    med = factor * np.median(tim_diff)
+    mad = factor * stats.median_abs_deviation(tim_diff, scale=0.67449)
+
+    return med, mad
