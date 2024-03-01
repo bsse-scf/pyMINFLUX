@@ -328,9 +328,6 @@ class Plotter(PlotWidget):
         self.showAxis("left")
         self.setBackground("k")
 
-        # Update range
-        self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
-
         # Fix aspect ratio
         x_scale = (np.nanmax(x) - np.nanmin(x)) / (len(x) - 1)
         y_scale = (np.nanmax(y) - np.nanmin(y)) / (len(y) - 1)
@@ -338,6 +335,9 @@ class Plotter(PlotWidget):
         if np.isnan(aspect_ratio):
             aspect_ratio = 1.0
         self.getPlotItem().getViewBox().setAspectLocked(lock=True, ratio=aspect_ratio)
+
+        # Update range
+        self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
 
         # Update last plotted parameters
         self._last_x_param = x_param
