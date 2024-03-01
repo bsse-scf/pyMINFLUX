@@ -27,7 +27,7 @@ from ..analysis import find_cutoff_near_value, get_robust_threshold, prepare_his
 from ..processor import MinFluxProcessor
 from ..state import State
 from ..utils import intersect_2d_ranges
-from .helpers import export_plot_interactive
+from .helpers import add_median_line, export_plot_interactive
 from .roi_ranges import ROIRanges
 from .ui_analyzer import Ui_Analyzer
 
@@ -604,7 +604,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             thresholds=self.state.tr_len_thresholds,
             force_min_x_range_to_zero=False,
         )
-        self._add_median_line(
+        add_median_line(
             self.tr_len_plot,
             self.processor.filtered_dataframe_stats["n"],
             label_pos=0.85,
@@ -629,7 +629,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             brush="k",
             support_thresholding=False,
         )
-        self._add_median_line(
+        add_median_line(
             self.sx_plot, self.processor.filtered_dataframe_stats["sx"].values
         )
         self.sx_plot.show()
@@ -651,7 +651,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             brush="k",
             support_thresholding=False,
         )
-        self._add_median_line(
+        add_median_line(
             self.sy_plot, self.processor.filtered_dataframe_stats["sy"].values
         )
         self.sy_plot.show()
@@ -674,7 +674,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 brush="k",
                 support_thresholding=False,
             )
-            self._add_median_line(
+            add_median_line(
                 self.sz_plot,
                 self.processor.filtered_dataframe_stats["sz"].values,
             )
@@ -855,25 +855,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.roi_ranges_dialog.set_target(item)
         self.roi_ranges_dialog.show()
         self.roi_ranges_dialog.activateWindow()
-
-    def _add_median_line(self, plot, values, label_pos=0.95, unit="nm"):
-        """Add median line to plot (with median +/- mad as label)."""
-        _, _, med, mad = get_robust_threshold(values, 0.0)
-        unit_str = f" {unit}" if unit != "" else ""
-        line = pg.InfiniteLine(
-            pos=med,
-            movable=False,
-            angle=90,
-            pen={"color": (200, 50, 50), "width": 3},
-            label=f"median={med:.2f} ± {mad:.2f}{unit_str}",
-            labelOpts={
-                "position": label_pos,
-                "color": (200, 50, 50),
-                "fill": (200, 50, 50, 10),
-                "movable": True,
-            },
-        )
-        plot.addItem(line)
 
     def shift_x_axis_origin_to_zero(self, item):
         """Set the lower range of the x axis of the passed viewbox to 0."""

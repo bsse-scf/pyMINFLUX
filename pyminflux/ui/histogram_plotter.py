@@ -21,8 +21,7 @@ from PySide6.QtWidgets import QDialog, QMenu
 
 from ..analysis import prepare_histogram
 from ..processor import MinFluxProcessor
-from ..reader import MinFluxReader
-from .helpers import export_plot_interactive
+from .helpers import add_median_line, export_plot_interactive
 from .ui_histogram_plotter import Ui_HistogramPlotter
 
 
@@ -52,10 +51,8 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
         # Keep track of whether there is a plot to export
         self.plot_ready_to_export = False
 
-        # Fill the parameters combo box
-        self.plotting_parameters = MinFluxReader.processed_properties()
-        # if "fluo" in self.plotting_parameters:
-        #     self.plotting_parameters.remove("fluo")
+        # We only allow plotting of two parameters: "eco" and "dwell"
+        self.plotting_parameters = ["eco", "dwell"]
 
         # Add the values to the plot properties combo boxes (without time)
         self.ui.cbParam.addItems(self.plotting_parameters)
@@ -121,6 +118,9 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
 
         # Plot the histogram
         self.plot(bins=b, freqs=n, param=self.selected_parameter)
+
+        # Add a median line
+        add_median_line(self.hist_plot, data, unit="")
 
         # Mark that there is a plot ready  to export
         self.plot_ready_to_export = True

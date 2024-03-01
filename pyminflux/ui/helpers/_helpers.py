@@ -14,12 +14,13 @@
 from pathlib import Path
 from typing import Union
 
-import pyqtgraph
+import pyqtgraph as pg
 from pyqtgraph import AxisItem, ViewBox
 from PySide6.QtCore import QRect, QRectF
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QApplication, QFileDialog
 
+from pyminflux.analysis import get_robust_threshold
 from pyminflux.state import State
 
 
@@ -29,7 +30,7 @@ def export_plot_interactive(item, parent=None):
         view_box = item
     elif isinstance(item, AxisItem):
         view_box = item.getViewBox()
-    elif isinstance(item, pyqtgraph.PlotItem):
+    elif isinstance(item, pg.PlotItem):
         view_box = item.getViewBox()
     else:
         return
@@ -57,16 +58,14 @@ def export_plot_interactive(item, parent=None):
     export_to_image(view_box, filename, dpi=state.plot_export_dpi)
 
 
-def export_to_image(
-    item: pyqtgraph.ViewBox, out_file_name: Union[Path, str], dpi: int = 600
-):
+def export_to_image(item: pg.ViewBox, out_file_name: Union[Path, str], dpi: int = 600):
     """Export current QGraphicsScene to file."""
 
     # Get the scene from the viewBox
-    if isinstance(item, pyqtgraph.ViewBox):
+    if isinstance(item, pg.ViewBox):
         plot_item = item.parentItem()
         plot_widget = plot_item.getViewWidget()
-    elif isinstance(item, pyqtgraph.PlotWidget):
+    elif isinstance(item, pg.PlotWidget):
         plot_widget = item
     else:
         return
@@ -101,3 +100,23 @@ def export_to_image(
 
     # Inform
     print(f"Plot exported to {out_file_name}.")
+
+
+def add_median_line(plot, values, label_pos=0.95, unit="nm"):
+    """Add median line to plot (with median +/- mad as label)."""
+    _, _, med, mad = get_robust_threshold(values, 0.0)
+    unit_str = f" {unit}" if unit != "" else ""
+    line = pg.InfiniteLine(
+        pos=med,
+        movable=False,
+        angle=90,
+        pen={"color": (200, 50, 50), "width": 3},
+        label=f"median={med:.2f} ± {mad:.2f}{unit_str}",
+        labelOpts={
+            "position": label_pos,
+            "color": (200, 50, 50),
+            "fill": (200, 50, 50, 10),
+            "movable": True,
+        },
+    )
+    plot.addItem(line)
