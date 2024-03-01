@@ -292,7 +292,7 @@ class Plotter(PlotWidget):
         self.clear()
 
     def plot_parameters(self, x, y, x_param, y_param, tid, fid):
-        """Plot localizations in a 2D scatter plot."""
+        """Plot localizations and other parameters in a 2D scatter plot."""
 
         # Create the scatter plot
         self.scatter = pg.ScatterPlotItem(
@@ -328,21 +328,16 @@ class Plotter(PlotWidget):
         self.showAxis("left")
         self.setBackground("k")
 
-        if (self._last_x_param is None or self._last_x_param != x_param) or (
-            self._last_y_param is None or self._last_y_param != y_param
-        ):
-            # Update range
-            self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
+        # Update range
+        self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
 
-            # Fix aspect ratio
-            x_scale = (np.nanmax(x) - np.nanmin(x)) / (len(x) - 1)
-            y_scale = (np.nanmax(y) - np.nanmin(y)) / (len(y) - 1)
-            aspect_ratio = y_scale / x_scale
-            if np.isnan(aspect_ratio):
-                aspect_ratio = 1.0
-            self.getPlotItem().getViewBox().setAspectLocked(
-                lock=True, ratio=aspect_ratio
-            )
+        # Fix aspect ratio
+        x_scale = (np.nanmax(x) - np.nanmin(x)) / (len(x) - 1)
+        y_scale = (np.nanmax(y) - np.nanmin(y)) / (len(y) - 1)
+        aspect_ratio = y_scale / x_scale
+        if np.isnan(aspect_ratio):
+            aspect_ratio = 1.0
+        self.getPlotItem().getViewBox().setAspectLocked(lock=True, ratio=aspect_ratio)
 
         # Update last plotted parameters
         self._last_x_param = x_param
