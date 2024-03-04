@@ -60,13 +60,11 @@ def calculate_time_resolution(df: pd.DataFrame, unit_factor: float = 1e3):
     df_work["tim_diff"] = df_work.groupby("tid")["tim"].diff()
 
     # Remove rows with NaNs (indicate the beginning of a new trace)
-    df_work = df_work[np.logical_not(np.isnan(df_work["tim_diff"]))]
+    df_work = unit_factor * df_work[np.logical_not(np.isnan(df_work["tim_diff"]))]
 
     # Calculate the median and the mad
-    med = unit_factor * np.median(df_work["tim_diff"].values)
-    mad = unit_factor * stats.median_abs_deviation(
-        df_work["tim_diff"].values, scale=0.67449
-    )
+    med = np.median(df_work["tim_diff"].values)
+    mad = stats.median_abs_deviation(df_work["tim_diff"].values, scale=0.67449)
 
     return df_work[["tid", "tim_diff"]], med, mad
 
