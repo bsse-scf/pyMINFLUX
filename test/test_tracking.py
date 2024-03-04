@@ -19,7 +19,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pyminflux.analysis import calculate_time_resolution, get_robust_threshold
+from pyminflux.analysis import (
+    calculate_time_resolution,
+    calculate_total_distance_traveled,
+    get_robust_threshold,
+)
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 
@@ -159,7 +163,6 @@ def test_tracking_from_npy(extract_tracking_archives):
 
 
 def test_tracking_from_reader_and_processor(extract_tracking_archives):
-
     # Min trace length to  consider
     min_trace_length = 4
 
@@ -186,8 +189,11 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
 
+    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 49.91002512390616
     ), "Unexpected x median localization precision."
@@ -240,8 +246,11 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
 
+    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 16.154817907708743
     ), "Unexpected x median localization precision."
@@ -294,8 +303,11 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
 
+    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 16.77324059525086
     ), "Unexpected x median localization precision."
@@ -348,8 +360,11 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
 
+    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 20.20228255238626
     ), "Unexpected x median localization precision."
@@ -380,60 +395,6 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     ), "Unexpected mad time resolution."
 
     #
-    # precision_immobilized_seqTrk
-    #
-    reader = MinFluxReader(
-        Path(__file__).parent / "data" / "precision_immobilized_seqTrk.npy",
-        z_scaling_factor=0.7,
-        is_tracking=True,
-    )
-    processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
-    assert processor.is_3d is False
-
-    _, _, median_sx, mad_sx = get_robust_threshold(
-        processor.filtered_dataframe_stats["sx"].values
-    )
-    _, _, median_sy, mad_sy = get_robust_threshold(
-        processor.filtered_dataframe_stats["sy"].values
-    )
-    _, _, median_sz, mad_sz = get_robust_threshold(
-        processor.filtered_dataframe_stats["sz"].values
-    )
-    _, _, median_n, mad_n = get_robust_threshold(
-        processor.filtered_dataframe_stats["n"].values
-    )
-    median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
-
-    assert (
-        pytest.approx(median_sx, 1e-6) == 16.154817907708743
-    ), "Unexpected x median localization precision."
-    assert (
-        pytest.approx(mad_sx, 1e-6) == 5.363280315345168
-    ), "Unexpected x mad localization precision."
-    assert (
-        pytest.approx(median_sy, 1e-6) == 17.398082992653343
-    ), "Unexpected y median localization precision."
-    assert (
-        pytest.approx(mad_sy, 1e-6) == 6.652914705379723
-    ), "Unexpected y mad localization precision."
-    assert (
-        pytest.approx(median_sz, 1e-6) == 0.00
-    ), "Unexpected z median localization precision."
-    assert (
-        pytest.approx(mad_sz, 1e-6) == 0.00
-    ), "Unexpected z mad localization precision."
-    assert pytest.approx(median_n, 1e-6) == 47.00, "Unexpected median trace length."
-    assert (
-        pytest.approx(mad_n, 1e-6) == 45.96065175169387
-    ), "Unexpected mad trace length."
-    assert (
-        pytest.approx(median_tim, 1e-6) == 0.9409749999989003
-    ), "Unexpected median time resolution."
-    assert (
-        pytest.approx(mad_tim, 1e-6) == 0.6827751338065132
-    ), "Unexpected mad time resolution."
-
-    #
     # tracking_free_seqTrck3D
     #
     reader = MinFluxReader(
@@ -456,8 +417,11 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
 
+    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 26.28193988854605
     ), "Unexpected x median localization precision."
@@ -510,8 +474,11 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
 
+    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 26.131099635005015
     ), "Unexpected x median localization precision."
@@ -564,8 +531,11 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
 
+    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 19.95096561847626
     ), "Unexpected x median localization precision."
@@ -594,3 +564,260 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     assert (
         pytest.approx(mad_tim, 1e-6) == 0.9100209049310964
     ), "Unexpected mad time resolution."
+
+
+def test_calculate_total_distance_traveled(extract_tracking_archives):
+    # Parameters
+    min_trace_length = 4
+
+    #
+    # precision_immobilized_seqTrk3D
+    #
+    reader = MinFluxReader(
+        Path(__file__).parent / "data" / "precision_immobilized_seqTrk.npy",
+        z_scaling_factor=0.7,
+        is_tracking=True,
+    )
+    processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
+    assert processor.is_3d is False
+
+    # Calculate the total distance traveled per tid
+    (
+        total_distance,
+        displacements,
+        med,
+        mad,
+        med_d,
+        mad_d,
+    ) = calculate_total_distance_traveled(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
+    assert len(total_distance.index) == len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of distances."
+    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of displacements."
+    assert (
+        pytest.approx(med, 1e-6) == 945.8445877951381
+    ), "Unexpected median for the total traveled distance per tid."
+    assert (
+        pytest.approx(mad, 1e-6) == 908.8712103386998
+    ), "Unexpected median absolute deviation for the total traveled distance per tid."
+    assert (
+        pytest.approx(med_d, 1e-6) == 19.07780436918798
+    ), "Unexpected median for all displacements."
+    assert (
+        pytest.approx(mad_d, 1e-6) == 12.28678312068945
+    ), "Unexpected median absolute deviation for all displacements."
+
+    #
+    # precision_immobilized_seqTrk3D
+    #
+    reader = MinFluxReader(
+        Path(__file__).parent / "data" / "precision_immobilized_seqTrk3D.npy",
+        z_scaling_factor=0.7,
+        is_tracking=True,
+    )
+    processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
+    assert processor.is_3d is True
+
+    # Calculate the total distance traveled per tid
+    (
+        total_distance,
+        displacements,
+        med,
+        mad,
+        med_d,
+        mad_d,
+    ) = calculate_total_distance_traveled(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
+    assert len(total_distance.index) == len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of distances."
+    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of displacements."
+    assert (
+        pytest.approx(med, 1e-6) == 410.7251004389293
+    ), "Unexpected median for the total traveled distance per tid."
+    assert (
+        pytest.approx(mad, 1e-6) == 351.8878925096984
+    ), "Unexpected median absolute deviation for the total traveled distance per tid."
+    assert (
+        pytest.approx(med_d, 1e-6) == 28.877920840662167
+    ), "Unexpected median for all displacements."
+    assert (
+        pytest.approx(mad_d, 1e-6) == 13.719981778393253
+    ), "Unexpected median absolute deviation for all displacements."
+
+    #
+    # precision_immobilized_seqTrkFast
+    #
+    reader = MinFluxReader(
+        Path(__file__).parent / "data" / "precision_immobilized_seqTrkFast.npy",
+        z_scaling_factor=0.7,
+        is_tracking=True,
+    )
+    processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
+    assert processor.is_3d is False
+
+    # Calculate the total distance traveled per tid
+    (
+        total_distance,
+        displacements,
+        med,
+        mad,
+        med_d,
+        mad_d,
+    ) = calculate_total_distance_traveled(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
+    assert len(total_distance.index) == len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of distances."
+    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of displacements."
+    assert (
+        pytest.approx(med, 1e-6) == 3110.0166114044587
+    ), "Unexpected median for the total traveled distance per tid."
+    assert (
+        pytest.approx(mad, 1e-6) == 3479.5802586609575
+    ), "Unexpected median absolute deviation for the total traveled distance per tid."
+    assert (
+        pytest.approx(med_d, 1e-6) == 27.995822523087682
+    ), "Unexpected median for all displacements."
+    assert (
+        pytest.approx(mad_d, 1e-6) == 16.00018406679733
+    ), "Unexpected median absolute deviation for all displacements."
+
+    #
+    # tracking_free_seqTrck3D
+    #
+    reader = MinFluxReader(
+        Path(__file__).parent / "data" / "tracking_free_seqTrck3D.npy",
+        z_scaling_factor=0.7,
+        is_tracking=True,
+    )
+    processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
+    assert processor.is_3d is True
+
+    # Calculate the total distance traveled per tid
+    (
+        total_distance,
+        displacements,
+        med,
+        mad,
+        med_d,
+        mad_d,
+    ) = calculate_total_distance_traveled(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
+    assert len(total_distance.index) == len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of distances."
+    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of displacements."
+    assert (
+        pytest.approx(med, 1e-6) == 1206.2126699478988
+    ), "Unexpected median for the total traveled distance per tid."
+    assert (
+        pytest.approx(mad, 1e-6) == 1392.7747332444576
+    ), "Unexpected median absolute deviation for the total traveled distance per tid."
+    assert (
+        pytest.approx(med_d, 1e-6) == 22.559207065867305
+    ), "Unexpected median for all displacements."
+    assert (
+        pytest.approx(mad_d, 1e-6) == 11.825964413327107
+    ), "Unexpected median absolute deviation for all displacements."
+
+    #
+    # tracking_free_seqTrckFast
+    #
+    reader = MinFluxReader(
+        Path(__file__).parent / "data" / "tracking_free_seqTrckFast.npy",
+        z_scaling_factor=0.7,
+        is_tracking=True,
+    )
+    processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
+    assert processor.is_3d is False
+
+    # Calculate the total distance traveled per tid
+    (
+        total_distance,
+        displacements,
+        med,
+        mad,
+        med_d,
+        mad_d,
+    ) = calculate_total_distance_traveled(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
+    assert len(total_distance.index) == len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of distances."
+    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of displacements."
+    assert (
+        pytest.approx(med, 1e-6) == 11834.591038905457
+    ), "Unexpected median for the total traveled distance per tid."
+    assert (
+        pytest.approx(mad, 1e-6) == 12779.898733261447
+    ), "Unexpected median absolute deviation for the total traveled distance per tid."
+    assert (
+        pytest.approx(med_d, 1e-6) == 27.81657636134422
+    ), "Unexpected median for all displacements."
+    assert (
+        pytest.approx(mad_d, 1e-6) == 15.918213620957275
+    ), "Unexpected median absolute deviation for all displacements."
+
+    #
+    # tracking_free_seqTrck
+    #
+    reader = MinFluxReader(
+        Path(__file__).parent / "data" / "tracking_free_seqTrck.npy",
+        z_scaling_factor=0.7,
+        is_tracking=True,
+    )
+    processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
+    assert processor.is_3d is False
+
+    # Calculate the total distance traveled per tid
+    (
+        total_distance,
+        displacements,
+        med,
+        mad,
+        med_d,
+        mad_d,
+    ) = calculate_total_distance_traveled(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
+    assert len(total_distance.index) == len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of distances."
+    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
+        processor.filtered_dataframe_stats.index
+    ), "Unexpected number of displacements."
+    assert (
+        pytest.approx(med, 1e-6) == 2736.843343938342
+    ), "Unexpected median for the total traveled distance per tid."
+    assert (
+        pytest.approx(mad, 1e-6) == 3146.8302964660757
+    ), "Unexpected median absolute deviation for the total traveled distance per tid."
+    assert (
+        pytest.approx(med_d, 1e-6) == 18.502447434529394
+    ), "Unexpected median for all displacements."
+    assert (
+        pytest.approx(mad_d, 1e-6) == 12.038166058676897
+    ), "Unexpected median absolute deviation for all displacements."

@@ -14,10 +14,11 @@
 from pathlib import Path
 from typing import Union
 
+import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import AxisItem, ViewBox
 from PySide6.QtCore import QRect, QRectF
-from PySide6.QtGui import QImage, QPainter
+from PySide6.QtGui import QImage, QPainter, Qt
 from PySide6.QtWidgets import QApplication, QFileDialog
 
 from pyminflux.analysis import get_robust_threshold
@@ -102,7 +103,13 @@ def export_to_image(item: pg.ViewBox, out_file_name: Union[Path, str], dpi: int 
     print(f"Plot exported to {out_file_name}.")
 
 
-def add_median_line(plot, values, label_pos=0.95, unit="nm"):
+def add_median_line(
+    plot: pg.PlotWidget,
+    values: np.ndarray,
+    label_pos: float = 0.95,
+    unit: str = "nm",
+    add_iqr: bool = True,
+):
     """Add median line to plot (with median +/- mad as label)."""
     _, _, med, mad = get_robust_threshold(values, 0.0)
     unit_str = f" {unit}" if unit != "" else ""
@@ -120,3 +127,35 @@ def add_median_line(plot, values, label_pos=0.95, unit="nm"):
         },
     )
     plot.addItem(line)
+    if add_iqr:
+        iqr = np.percentile(values, q=(25, 75))
+        fp_line = pg.InfiniteLine(
+            pos=iqr[0],
+            movable=False,
+            angle=90,
+            pen={"color": (200, 50, 50), "width": 1, "style": Qt.DashLine},
+            # label=f"25pc={iqr[0]:.2f}{unit_str}",
+            label="",
+            # labelOpts={
+            #     "position": label_pos - 0.1,
+            #     "color": (200, 50, 50),
+            #     "fill": (200, 50, 50, 10),
+            #     "movable": True,
+            # },
+        )
+        plot.addItem(fp_line)
+        tp_line = pg.InfiniteLine(
+            pos=iqr[1],
+            movable=False,
+            angle=90,
+            pen={"color": (200, 50, 50), "width": 1, "style": Qt.DashLine},
+            # label=f"75pc={iqr[1]:.2f}{unit_str}",
+            label="",
+            # labelOpts={
+            #     "position": label_pos - 0.2,
+            #     "color": (200, 50, 50),
+            #     "fill": (200, 50, 50, 10),
+            #     "movable": True,
+            # },
+        )
+        plot.addItem(tp_line)

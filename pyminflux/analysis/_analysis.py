@@ -59,7 +59,7 @@ def calculate_time_resolution(df: pd.DataFrame, unit_factor: float = 1e3):
     # Calculate time differences
     df_work["tim_diff"] = df_work.groupby("tid")["tim"].diff()
 
-    # Remove rows with NaNs (indicate the beginning of a new trace)
+    # Remove rows with NaNs (NaNs indicate the beginning of a new trace)
     df_work = unit_factor * df_work[np.logical_not(np.isnan(df_work["tim_diff"]))]
 
     # Calculate the median and the mad
@@ -87,12 +87,22 @@ def calculate_total_distance_traveled(df: pd.DataFrame, is_3d: bool):
     total_distance: pd.DataFrame
         Total distance traveled per tid.
 
-    med: float
-        Median total distance traveled
+    displacements: pd.DataFrame
+        All individual displacements.
 
-    mad: float
-        Median absolute deviation of the time resolution (divided by 0.67449 to bring it to the scale of the
-        standard deviation).
+    med_tot: float
+        Median total distance traveled across all tids.
+
+    mad_tot: float
+        Median absolute deviation of the distances traveled across all tids,divided by 0.67449 to bring it to the
+        scale of the standard deviation.
+
+    med_displ: float
+        Median displacement (step).
+
+    med_displ: float
+        Median absolute deviation of the displacements (steps), divided by 0.67449 to bring it to the scale of the
+        standard deviation.
     """
 
     # Work on a copy of the dataframe
@@ -100,9 +110,6 @@ def calculate_total_distance_traveled(df: pd.DataFrame, is_3d: bool):
 
     # Calculate displacements per tid
     df_work[["dx", "dy", "dz"]] = df_work.groupby("tid")[["x", "y", "z"]].diff()
-
-    # Replace NaNs with 0.0 (NaNs indicate the beginning of a new trace)
-    df_work[["dx", "dy", "dz"]] = df_work[["dx", "dy", "dz"]].fillna(0)
 
     def distance_2d(row: pd.Series) -> float:
         return np.sqrt(row["dx"] ** 2 + row["dy"] ** 2)
@@ -118,13 +125,25 @@ def calculate_total_distance_traveled(df: pd.DataFrame, is_3d: bool):
     # Calculate total distance per tid
     total_distance = df_work.groupby("tid")["displacement"].sum().reset_index()
 
-    # Calculate the median and the mad
-    med = float(np.median(total_distance["displacement"].values))
-    mad = float(
+    # Calculate the median and the mad of the total distance
+    med_tot = float(np.median(total_distance["displacement"].values))
+    mad_tot = float(
         stats.median_abs_deviation(total_distance["displacement"].values, scale=0.67449)
     )
 
-    return total_distance, med, mad
+    # Remove rows with NaNs from df_work (NaNs indicate the beginning of a new trace)
+    displacements = df_work[["tid", "displacement"]].copy(deep=True)
+    displacements = displacements[
+        np.logical_not(np.isnan(displacements["displacement"]))
+    ]
+
+    # Calculate the median and the mad of all displacements
+    med_displ = float(np.median(displacements["displacement"].values))
+    mad_displ = float(
+        stats.median_abs_deviation(displacements["displacement"].values, scale=0.67449)
+    )
+
+    return total_distance, displacements, med_tot, mad_tot, med_displ, mad_displ
 
 
 def hist_bins(values: np.ndarray, bin_size: float) -> tuple:

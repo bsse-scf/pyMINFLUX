@@ -724,6 +724,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.ui.actionSave.setEnabled(False)
                 self.wizard.enable_save_button(False)
 
+            # If the acquisition is a tracking one, disable the FRC tool
+            if reader.is_tracking:
+                self.ui.actionFRC_analyzer.setEnabled(False)
+            else:
+                self.ui.actionFRC_analyzer.setEnabled(True)
+
             # Update the Analyzer
             if self.analyzer is not None:
                 self.analyzer.set_processor(self.processor)

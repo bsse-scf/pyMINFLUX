@@ -23,7 +23,13 @@ from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
-from ..analysis import find_cutoff_near_value, get_robust_threshold, prepare_histogram
+from ..analysis import (
+    calculate_time_resolution,
+    calculate_total_distance_traveled,
+    find_cutoff_near_value,
+    get_robust_threshold,
+    prepare_histogram,
+)
 from ..processor import MinFluxProcessor
 from ..state import State
 from ..utils import intersect_2d_ranges
@@ -149,7 +155,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.run_tr_len_filter_and_broadcast_viewers_update
         )
         self.ui.leTrLenTopPercentile.textChanged.connect(
-            self.persist_tr_len_top_precentile
+            self.persist_tr_len_top_percentile
         )
 
         # Others
@@ -362,8 +368,8 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Broadcast
         self.cfr_threshold_factor_changed.emit()
 
-    @Slot(str, name="persist_tr_len_top_precentile")
-    def persist_tr_len_top_precentile(self, text):
+    @Slot(str, name="persist_tr_len_top_percentile")
+    def persist_tr_len_top_percentile(self, text):
         try:
             tr_len_top_percentile = float(text)
         except ValueError as _:
@@ -612,75 +618,201 @@ class Analyzer(QDialog, Ui_Analyzer):
         )
         self.tr_len_plot.show()
 
-        # sx
-        n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = prepare_histogram(
-            self.processor.filtered_dataframe_stats["sx"].values,
-            auto_bins=True,
-            bin_size=0.0,
-        )
-        _ = self._create_histogram_plot(
-            "sx",
-            self.sx_plot,
-            n_sx,
-            sx_bin_edges,
-            sx_bin_centers,
-            sx_bin_width,
-            axis_range=self.loc_precision_range,
-            brush="k",
-            support_thresholding=False,
-        )
-        add_median_line(
-            self.sx_plot, self.processor.filtered_dataframe_stats["sx"].values
-        )
-        self.sx_plot.show()
+        #
+        # The following plots are different for localization and tracking datasets
+        #
 
-        # sy
-        n_sy, sy_bin_edges, sy_bin_centers, sy_bin_width = prepare_histogram(
-            self.processor.filtered_dataframe_stats["sy"].values,
-            auto_bins=True,
-            bin_size=0.0,
-        )
-        _ = self._create_histogram_plot(
-            "sy",
-            self.sy_plot,
-            n_sy,
-            sy_bin_edges,
-            sy_bin_centers,
-            sy_bin_width,
-            axis_range=self.loc_precision_range,
-            brush="k",
-            support_thresholding=False,
-        )
-        add_median_line(
-            self.sy_plot, self.processor.filtered_dataframe_stats["sy"].values
-        )
-        self.sy_plot.show()
+        if self.processor.is_tracking:
 
-        # sz
-        if self.processor.is_3d:
-            n_sz, sz_bin_edges, sz_bin_centers, sz_bin_width = prepare_histogram(
-                self.processor.filtered_dataframe_stats["sz"].values,
+            #
+            # Plot various statistics for tracking datasets
+            #
+
+            # Time resolution
+            tim, med_tim, mad_tim = calculate_time_resolution(
+                self.processor.filtered_dataframe
+            )
+            (
+                n_tim,
+                n_tim_bin_edges,
+                n_tim_bin_centers,
+                n_tim_bin_width,
+            ) = prepare_histogram(
+                tim["tim_diff"].values,
+                normalize=False,
+                auto_bins=True,
+            )
+
+            _ = self._create_histogram_plot(
+                "time_res",
+                self.sx_plot,
+                n_tim,
+                n_tim_bin_edges,
+                n_tim_bin_centers,
+                n_tim_bin_width,
+                axis_range=None,
+                brush="k",
+                support_thresholding=False,
+            )
+            add_median_line(self.sx_plot, tim["tim_diff"].values, unit="ms")
+            self.sx_plot.setTitle("Time resolution")
+            self.sx_plot.show()
+
+            # Extract total distance traveled per tid and overall displacement steps
+            (
+                total_distance,
+                displacements,
+                _,
+                _,
+                _,
+                _,
+            ) = calculate_total_distance_traveled(
+                self.processor.filtered_dataframe, is_3d=self.processor.is_3d
+            )
+
+            # Displacement steps
+            (
+                n_displ,
+                n_displ_bin_edges,
+                n_displ_bin_centers,
+                n_displ_bin_width,
+            ) = prepare_histogram(
+                displacements["displacement"].values,
+                normalize=False,
+                auto_bins=True,
+            )
+            _ = self._create_histogram_plot(
+                "displ_res",
+                self.sy_plot,
+                n_displ,
+                n_displ_bin_edges,
+                n_displ_bin_centers,
+                n_displ_bin_width,
+                axis_range=None,
+                brush="k",
+                support_thresholding=False,
+            )
+            add_median_line(
+                self.sy_plot, displacements["displacement"].values, unit="nm"
+            )
+            self.sy_plot.setTitle("Displacement resolution")
+            self.sy_plot.show()
+
+            # Total distance traveled per TID
+            (
+                n_trav,
+                n_trav_bin_edges,
+                n_trav_bin_centers,
+                n_trav_bin_width,
+            ) = prepare_histogram(
+                total_distance["displacement"].values,
+                normalize=False,
+                auto_bins=True,
+            )
+
+            # Remove distance traveled
+            to_keep = n_trav > 0
+            n_trav = n_trav[to_keep]
+            n_trav_bin_edges = n_trav_bin_edges[
+                np.concatenate((to_keep, [True]), axis=0)
+            ]
+            n_trav_bin_centers = n_trav_bin_centers[to_keep]
+
+            _ = self._create_histogram_plot(
+                "tot_trav",
+                self.sz_plot,
+                n_trav,
+                n_trav_bin_edges,
+                n_trav_bin_centers,
+                n_trav_bin_width,
+                axis_range=None,
+                brush="k",
+                support_thresholding=False,
+            )
+            add_median_line(
+                self.sz_plot, total_distance["displacement"].values, unit="nm"
+            )
+            self.sz_plot.setTitle("Total distance traveled per trace")
+            self.sz_plot.show()
+
+        else:
+
+            #
+            # Plot various statistics for localization datasets
+            #
+
+            # sx
+            n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = prepare_histogram(
+                self.processor.filtered_dataframe_stats["sx"].values,
                 auto_bins=True,
                 bin_size=0.0,
             )
             _ = self._create_histogram_plot(
-                "sz",
-                self.sz_plot,
-                n_sz,
-                sz_bin_edges,
-                sz_bin_centers,
-                sz_bin_width,
+                "sx",
+                self.sx_plot,
+                n_sx,
+                sx_bin_edges,
+                sx_bin_centers,
+                sx_bin_width,
                 axis_range=self.loc_precision_range,
                 brush="k",
                 support_thresholding=False,
             )
             add_median_line(
-                self.sz_plot,
-                self.processor.filtered_dataframe_stats["sz"].values,
+                self.sx_plot, self.processor.filtered_dataframe_stats["sx"].values
             )
-            self.sz_plot.show()
-        else:
-            self.sz_plot.hide()
+            self.sx_plot.setTitle("σx")
+            self.sx_plot.show()
+
+            # sy
+            n_sy, sy_bin_edges, sy_bin_centers, sy_bin_width = prepare_histogram(
+                self.processor.filtered_dataframe_stats["sy"].values,
+                auto_bins=True,
+                bin_size=0.0,
+            )
+            _ = self._create_histogram_plot(
+                "sy",
+                self.sy_plot,
+                n_sy,
+                sy_bin_edges,
+                sy_bin_centers,
+                sy_bin_width,
+                axis_range=self.loc_precision_range,
+                brush="k",
+                support_thresholding=False,
+            )
+            add_median_line(
+                self.sy_plot, self.processor.filtered_dataframe_stats["sy"].values
+            )
+            self.sy_plot.setTitle("σy")
+            self.sy_plot.show()
+
+            # sz
+            if self.processor.is_3d:
+                n_sz, sz_bin_edges, sz_bin_centers, sz_bin_width = prepare_histogram(
+                    self.processor.filtered_dataframe_stats["sz"].values,
+                    auto_bins=True,
+                    bin_size=0.0,
+                )
+                _ = self._create_histogram_plot(
+                    "sz",
+                    self.sz_plot,
+                    n_sz,
+                    sz_bin_edges,
+                    sz_bin_centers,
+                    sz_bin_width,
+                    axis_range=self.loc_precision_range,
+                    brush="k",
+                    support_thresholding=False,
+                )
+                add_median_line(
+                    self.sz_plot,
+                    self.processor.filtered_dataframe_stats["sz"].values,
+                )
+                self.sz_plot.setTitle("σz")
+                self.sz_plot.show()
+            else:
+                self.sz_plot.hide()
 
         # Announce that the plotting has completed
         self.plotting_completed.emit()
@@ -696,6 +828,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         *,
         axis_range: Optional[tuple] = None,
         brush: str = "b",
+        title: str = "",
         fmt: str = "{value:0.2f}",
         support_thresholding: bool = False,
         thresholds: Optional[Tuple] = None,
