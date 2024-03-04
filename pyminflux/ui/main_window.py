@@ -670,6 +670,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
 
+            # Reset the plotter
+            if self.plotter is not None:
+                self.plotter.reset()
+
             # Close the Options
             if self.options is not None:
                 self.options.close()

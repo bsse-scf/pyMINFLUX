@@ -287,6 +287,12 @@ class Plotter(PlotWidget):
             ev.ignore()
             super().mouseReleaseEvent(ev)
 
+    def reset(self):
+        # Forget last plot
+        self._last_x_param = None
+        self._last_y_param = None
+        self.remove_points()
+
     def remove_points(self):
         self.setBackground("w")
         self.clear()
@@ -328,16 +334,22 @@ class Plotter(PlotWidget):
         self.showAxis("left")
         self.setBackground("k")
 
-        # Fix aspect ratio
-        x_scale = (np.nanmax(x) - np.nanmin(x)) / (len(x) - 1)
-        y_scale = (np.nanmax(y) - np.nanmin(y)) / (len(y) - 1)
-        aspect_ratio = y_scale / x_scale
-        if np.isnan(aspect_ratio):
-            aspect_ratio = 1.0
-        self.getPlotItem().getViewBox().setAspectLocked(lock=True, ratio=aspect_ratio)
+        # Fix aspect ratio (if needed)
+        if (self._last_x_param is None or self._last_x_param != x_param) or (
+            self._last_y_param is None or self._last_y_param != y_param
+        ):
 
-        # Update range
-        self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
+            # Update range
+            self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
+
+            x_scale = (np.nanmax(x) - np.nanmin(x)) / (len(x) - 1)
+            y_scale = (np.nanmax(y) - np.nanmin(y)) / (len(y) - 1)
+            aspect_ratio = y_scale / x_scale
+            if np.isnan(aspect_ratio):
+                aspect_ratio = 1.0
+            self.getPlotItem().getViewBox().setAspectLocked(
+                lock=True, ratio=aspect_ratio
+            )
 
         # Update last plotted parameters
         self._last_x_param = x_param
