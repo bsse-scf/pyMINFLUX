@@ -108,8 +108,8 @@ class MinFluxReader:
         # Store the z correction factor
         self._z_scaling_factor: float = z_scaling_factor
 
-        # Store the dwell time (in microseconds)
-        self._dwell_time = 1000 * dwell_time
+        # Store the dwell time
+        self._dwell_time = dwell_time
 
         # Initialize the data
         self._data_array = None
