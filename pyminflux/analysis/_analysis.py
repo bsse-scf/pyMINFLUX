@@ -108,19 +108,24 @@ def calculate_total_distance_traveled(df: pd.DataFrame, is_3d: bool):
     # Work on a copy of the dataframe
     df_work = df[["tid", "x", "y", "z"]].copy(deep=True)
 
+    def calculate_displacements_2d(group):
+        """Calculate displacements per tid."""
+        group[["dx", "dy"]] = group[["x", "y"]].diff()
+        group["displacement"] = np.sqrt(group["dx"] ** 2 + group["dy"] ** 2)
+        return group
+
+    def calculate_displacements_3d(group):
+        """Calculate displacements per tid."""
+        tmp = group[["x", "y", "z"]].diff()
+        group["displacement"] = np.sqrt(tmp["x"] ** 2 + tmp["y"] ** 2 + tmp["z"] ** 2)
+        return group
+
     # Calculate displacements per tid
-    df_work[["dx", "dy", "dz"]] = df_work.groupby("tid")[["x", "y", "z"]].diff()
-
-    def distance_2d(row: pd.Series) -> float:
-        return np.sqrt(row["dx"] ** 2 + row["dy"] ** 2)
-
-    def distance_3d(row: pd.Series) -> float:
-        return np.sqrt(row["dx"] ** 2 + row["dy"] ** 2 + row["dz"] ** 2)
-
     if is_3d:
-        df_work["displacement"] = df_work.apply(distance_3d, axis=1)
+        df_work = df_work.groupby("tid").apply(calculate_displacements_3d)
     else:
-        df_work["displacement"] = df_work.apply(distance_2d, axis=1)
+        df_work = df_work.groupby("tid").apply(calculate_displacements_2d)
+    df_work.reset_index(drop=True, inplace=True)
 
     # Calculate total distance per tid
     total_distance = df_work.groupby("tid")["displacement"].sum().reset_index()
