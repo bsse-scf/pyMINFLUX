@@ -342,11 +342,16 @@ class Plotter(PlotWidget):
             # Update range
             self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
 
-            x_scale = (np.nanmax(x) - np.nanmin(x)) / (len(x) - 1)
-            y_scale = (np.nanmax(y) - np.nanmin(y)) / (len(y) - 1)
-            aspect_ratio = y_scale / x_scale
-            if np.isnan(aspect_ratio):
+            if x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]:
                 aspect_ratio = 1.0
+            else:
+                x_min, x_max = np.nanpercentile(x, (1, 99))
+                x_scale = x_max - x_min
+                y_min, y_max = np.nanpercentile(y, (1, 99))
+                y_scale = y_max - y_min
+                aspect_ratio = y_scale / x_scale
+                if np.isnan(aspect_ratio):
+                    aspect_ratio = 1.0
             self.getPlotItem().getViewBox().setAspectLocked(
                 lock=True, ratio=aspect_ratio
             )
