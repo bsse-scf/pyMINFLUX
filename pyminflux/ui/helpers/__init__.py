@@ -12,4 +12,9 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from ._helpers import add_median_line, export_plot_interactive, export_to_image
+from ._helpers import (
+    BottomLeftAnchoredScaleBar,
+    add_median_line,
+    export_plot_interactive,
+    export_to_image,
+)

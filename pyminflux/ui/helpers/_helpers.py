@@ -17,7 +17,7 @@ from typing import Union
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import AxisItem, ViewBox
-from PySide6.QtCore import QRect, QRectF
+from PySide6.QtCore import QPointF, QRect, QRectF
 from PySide6.QtGui import QImage, QPainter, Qt
 from PySide6.QtWidgets import QApplication, QFileDialog
 
@@ -159,3 +159,64 @@ def add_median_line(
             # },
         )
         plot.addItem(tp_line)
+
+
+class BottomLeftAnchoredScaleBar(pg.ScaleBar):
+    def __init__(
+        self,
+        viewBox,
+        size=None,
+        width=5,
+        brush=None,
+        pen=None,
+        suffix="nm",
+        offset=(20, -20),
+    ):
+        super().__init__(
+            size=size, width=width, brush=brush, pen=pen, suffix=suffix, offset=offset
+        )
+
+        # Store a reference to the ViewBox
+        self.viewBox = viewBox
+
+        # Keep a margin from the edge of the view when zooming in
+        self.margin = 10.0
+
+        # Set the ViewBox as parent item
+        self.setParentItem(viewBox)
+
+        # Offset from the bottom-left corner in pixels
+        self.originalOffset = offset
+
+        # Initially anchor the scale bar
+        self.anchor(itemPos=(0, 1), parentPos=(0, 1), offset=self.originalOffset)
+
+    def updateBar(self):
+        view = self.parentItem()
+        if view is None:
+            return
+
+        # Calculate the width of the scale bar based on its size in the current view's coordinates
+        p1 = view.mapFromViewToItem(self, QPointF(0, 0))
+        p2 = view.mapFromViewToItem(self, QPointF(self.size, 0))
+        w = (p2 - p1).x()
+
+        # Determine the visible left edge in the item's coordinate system
+        visibleLeftEdge = view.mapFromViewToItem(
+            self, QPointF(view.viewRect().left(), 0)
+        ).x()
+
+        # The corrected logic for determining the initial and adjusted positions of the scale bar
+        # This ensures the left edge of the scale bar aligns with the specified offset from the visible left edge
+        initialLeftEdge = visibleLeftEdge + self.offset[0] - w
+
+        # Check if the left edge of the scale bar, when considering the offset, is out of the visible area
+        if initialLeftEdge <= visibleLeftEdge:
+            # If out of view, adjust the scale bar's position to align its left edge with the visible left edge
+            adjustedLeftEdge = visibleLeftEdge + self.margin
+            self.bar.setRect(QRectF(adjustedLeftEdge, 0, w, self._width))
+            self.text.setPos(adjustedLeftEdge + w / 2.0, 0)
+        else:
+            # Otherwise, position the scale bar using the corrected initial position
+            self.bar.setRect(QRectF(initialLeftEdge, 0, w, self._width))
+            self.text.setPos(initialLeftEdge + w / 2.0, 0)

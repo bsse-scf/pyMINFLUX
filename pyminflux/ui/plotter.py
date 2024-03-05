@@ -22,7 +22,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu
 
 from ..state import ColorCode, State
-from .helpers import export_plot_interactive
+from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
 
 
 class Plotter(PlotWidget):
@@ -67,6 +67,9 @@ class Plotter(PlotWidget):
         # Keep track of last plot
         self._last_x_param = None
         self._last_y_param = None
+
+        # Keep track of the ScaleBar
+        self.scale_bar = None
 
     def enableAutoRange(self, enable: bool):
         """Enable/disable axes autorange."""
@@ -342,9 +345,26 @@ class Plotter(PlotWidget):
             # Update range
             self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
 
+            # Remove the scale bar
+            if self.scale_bar is not None:
+                del self.scale_bar
+                self.scale_bar = None
+
             if x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]:
+                # Set fixed aspect ratio
                 aspect_ratio = 1.0
+
+                # Add scale bar
+                self.scale_bar = BottomLeftAnchoredScaleBar(
+                    size=500,
+                    viewBox=self.getViewBox(),
+                    brush="b",
+                    pen="w",
+                    suffix="nm",
+                    offset=(50, -25),
+                )
             else:
+                # Calculate aspect ratio
                 x_min, x_max = np.nanpercentile(x, (1, 99))
                 x_scale = x_max - x_min
                 y_min, y_max = np.nanpercentile(y, (1, 99))
@@ -352,6 +372,7 @@ class Plotter(PlotWidget):
                 aspect_ratio = y_scale / x_scale
                 if np.isnan(aspect_ratio):
                     aspect_ratio = 1.0
+
             self.getPlotItem().getViewBox().setAspectLocked(
                 lock=True, ratio=aspect_ratio
             )
