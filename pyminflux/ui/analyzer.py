@@ -670,32 +670,34 @@ class Analyzer(QDialog, Ui_Analyzer):
                 self.processor.filtered_dataframe, is_3d=self.processor.is_3d
             )
 
+            # Use displacement steps and time intervals to calculate speeds
+            tim.loc[tim["tim_diff"] == 0, "tim_diff"] = 1e-10
+            speeds = displacements["displacement"].values / tim["tim_diff"].values
+
             # Displacement steps
             (
-                n_displ,
-                n_displ_bin_edges,
-                n_displ_bin_centers,
-                n_displ_bin_width,
+                n_speeds,
+                n_speeds_bin_edges,
+                n_speeds_bin_centers,
+                n_speeds_bin_width,
             ) = prepare_histogram(
-                displacements["displacement"].values,
+                speeds,
                 normalize=False,
                 auto_bins=True,
             )
             _ = self._create_histogram_plot(
-                "displ_res",
+                "speed",
                 self.sy_plot,
-                n_displ,
-                n_displ_bin_edges,
-                n_displ_bin_centers,
-                n_displ_bin_width,
+                n_speeds,
+                n_speeds_bin_edges,
+                n_speeds_bin_centers,
+                n_speeds_bin_width,
                 axis_range=None,
                 brush="k",
                 support_thresholding=False,
             )
-            add_median_line(
-                self.sy_plot, displacements["displacement"].values, unit="nm"
-            )
-            self.sy_plot.setTitle("Displacement resolution")
+            add_median_line(self.sy_plot, speeds, unit="nm/ms")
+            self.sy_plot.setTitle("Speed")
             self.sy_plot.show()
 
             # Total distance traveled per TID
