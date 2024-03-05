@@ -476,7 +476,7 @@ def find_cutoff_near_value(
     -------
 
     cutoff: float
-        Estiated cutoff frequency.
+        Estimated cutoff frequency.
     """
 
     # Absolute minimum prominence

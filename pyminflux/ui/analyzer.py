@@ -670,9 +670,11 @@ class Analyzer(QDialog, Ui_Analyzer):
                 self.processor.filtered_dataframe, is_3d=self.processor.is_3d
             )
 
-            # Use displacement steps and time intervals to calculate speeds
-            tim.loc[tim["tim_diff"] == 0, "tim_diff"] = 1e-10
-            speeds = displacements["displacement"].values / tim["tim_diff"].values
+            # Calculate speed per trace
+            total_time = tim.groupby("tid")["tim_diff"].sum().reset_index()
+            speeds = (
+                total_distance["displacement"].values / total_time["tim_diff"].values
+            )
 
             # Displacement steps
             (
@@ -697,7 +699,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 support_thresholding=False,
             )
             add_median_line(self.sy_plot, speeds, unit="nm/ms")
-            self.sy_plot.setTitle("Speed")
+            self.sy_plot.setTitle("Average speed per trace")
             self.sy_plot.show()
 
             # Total distance traveled per TID
