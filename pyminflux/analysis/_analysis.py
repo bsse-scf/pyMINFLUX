@@ -24,16 +24,57 @@ from scipy.signal import find_peaks
 from sklearn.mixture import BayesianGaussianMixture
 
 
-def calculate_time_resolution(df: pd.DataFrame, unit_factor: float = 1e3):
+def calculate_time_steps(df: pd.DataFrame, unit_factor: float = 1e3):
     """Calculate time resolution of acquisition.
 
     Parameters
     ----------
 
     df: pd.DataFrame
-        Processed dataframe as returned by `MinFluxReader.processed_dataframe` or
-        `MinFluxProcessor.filtered_dataframe`. The dataframe is expected to contain
-        the columns "tid" and "tim".
+        Processed dataframe as returned by `MinFluxReader.processed_dataframe`.
+        The dataframe is expected to contain the columns "tid" and "tim".
+
+    unit_factor: float (default = 1e3)
+        Factor by which the time resolution is multiplied. By default, `unit_factor`
+        is 1e3, to return the resolution in milliseconds.
+
+    Returns
+    -------
+    tim_diff: pd.DataFrame
+        Dataframe with all time differences between consecutive localizations. Columns are "tid" and "tif_diff"
+
+    med: float
+        Median time resolution of tim_diff
+
+    mad: float
+        Median absolute deviation of the time resolution from tim_diff (divided by 0.67449 to bring it to the
+        scale of the standard deviation)
+    """
+
+    # Work on a shallow copy
+    df_copy = df.copy()
+
+    # Calculate time differences and apply unit factor
+    df_copy["tim_diff"] = df_copy.groupby("tid")["tim"].diff() * unit_factor
+
+    # Calculate the median and the mad
+    med = np.nanmedian(df_copy["tim_diff"].values)
+    mad = stats.median_abs_deviation(
+        df_copy["tim_diff"].values, scale=0.67449, nan_policy="omit"
+    )
+
+    return df_copy[["tid", "tim_diff"]], med, mad
+
+
+def calculate_trace_time(df: pd.DataFrame, unit_factor: float = 1e3):
+    """Calculate total trace time.
+
+    Parameters
+    ----------
+
+    df: pd.DataFrame
+        Processed dataframe as returned by `MinFluxReader.processed_dataframe`.
+        The dataframe is expected to contain the columns "tid" and "tim".
 
     unit_factor: float (default = 1e3)
         Factor by which the time resolution is multiplied. By default, `unit_factor`
@@ -42,34 +83,86 @@ def calculate_time_resolution(df: pd.DataFrame, unit_factor: float = 1e3):
     Returns
     -------
 
-    tim_diff: np.ndarray
-        Array with all time differences between consecutive localizations.
+    tim_tot: pd.DataFrame
+        Dataframe with total time per trace. Columns are "tid" and "tim_tot"
 
-    med: float
-        Median time resolution
+    med_tot: float
+        Median time resolution of tot_tim
 
-    mad: float
-        Median absolute deviation of the time resolution (divided by 0.67449 to bring it to the
+    mad_tot: float
+        Median absolute deviation of the time resolution from tot_tim (divided by 0.67449 to bring it to the
         scale of the standard deviation)
     """
 
-    # Work on a copy of the dataframe
-    df_work = df[["tid", "tim"]].copy(deep=True)
+    # Get the time steps
+    tim_diff, _, _ = calculate_time_steps(df, unit_factor)
 
-    # Calculate time differences
-    df_work["tim_diff"] = df_work.groupby("tid")["tim"].diff()
+    # Calculate total time per trace
+    tim_tot = tim_diff.groupby("tid")["tim_diff"].sum().reset_index(name="tim_tot")
 
-    # Remove rows with NaNs (NaNs indicate the beginning of a new trace)
-    df_work = unit_factor * df_work[np.logical_not(np.isnan(df_work["tim_diff"]))]
+    # Calculate median and mad per trace
+    med_tot = np.nanmedian(tim_tot["tim_tot"].values)
+    mad_tot = stats.median_abs_deviation(
+        tim_tot["tim_tot"].values, scale=0.67449, nan_policy="omit"
+    )
 
-    # Calculate the median and the mad
-    med = np.median(df_work["tim_diff"].values)
-    mad = stats.median_abs_deviation(df_work["tim_diff"].values, scale=0.67449)
-
-    return df_work[["tid", "tim_diff"]], med, mad
+    return tim_tot, med_tot, mad_tot
 
 
-def calculate_total_distance_traveled(df: pd.DataFrame, is_3d: bool):
+def calculate_displacements(df: pd.DataFrame, is_3d: Optional[bool] = None):
+    """Calculate displacement resolution.
+
+    Parameters
+    ----------
+
+    df: pd.DataFrame
+        The MinFluxProcessor.filtered_dataframe.
+
+    is_3d: bool
+        Set to True for 3D datasets, False for 2D datasets.
+
+    Return
+    ------
+
+    displacements: pd.DataFrame
+        All individual displacements.
+
+    med_displ: float
+        Median displacement (step).
+
+    mad_displ: float
+        Median absolute deviation of the displacements (steps), divided by 0.67449 to bring it to the scale of the
+        standard deviation.
+    """
+
+    # Determine if 3D calculations are needed
+    if is_3d is None:
+        is_3d = np.any(df["z"] != 0)
+
+    def calculate_displacements(group):
+        """Calculate displacements per tid."""
+        diffs = group[["x", "y", "z"]].diff() if is_3d else group[["x", "y"]].diff()
+        group["displacement"] = np.sqrt(np.sum(diffs.values**2, axis=1))
+        return group
+
+    # Calculate displacements per tid
+    displacements = df.groupby("tid").apply(calculate_displacements)
+    displacements.reset_index(drop=True, inplace=True)
+
+    # Do we have data?
+    if len(displacements.index) == 0 or "displacement" not in displacements.columns:
+        displacements["displacement"] = []
+    med = float(np.nanmedian(displacements["displacement"].values))
+    mad = float(
+        stats.median_abs_deviation(
+            displacements["displacement"].values, scale=0.67449, nan_policy="omit"
+        )
+    )
+
+    return displacements[["tid", "displacement"]], med, mad
+
+
+def calculate_total_distance_traveled(df: pd.DataFrame, is_3d: Optional[bool] = None):
     """Calculate total distance traveled for each tid in a dataframe.
 
     Parameters
@@ -87,68 +180,29 @@ def calculate_total_distance_traveled(df: pd.DataFrame, is_3d: bool):
     total_distance: pd.DataFrame
         Total distance traveled per tid.
 
-    displacements: pd.DataFrame
-        All individual displacements.
-
     med_tot: float
         Median total distance traveled across all tids.
 
     mad_tot: float
         Median absolute deviation of the distances traveled across all tids,divided by 0.67449 to bring it to the
         scale of the standard deviation.
-
-    med_displ: float
-        Median displacement (step).
-
-    med_displ: float
-        Median absolute deviation of the displacements (steps), divided by 0.67449 to bring it to the scale of the
-        standard deviation.
     """
 
-    # Work on a copy of the dataframe
-    df_work = df[["tid", "x", "y", "z"]].copy(deep=True)
-
-    def calculate_displacements_2d(group):
-        """Calculate displacements per tid."""
-        group[["dx", "dy"]] = group[["x", "y"]].diff()
-        group["displacement"] = np.sqrt(group["dx"] ** 2 + group["dy"] ** 2)
-        return group
-
-    def calculate_displacements_3d(group):
-        """Calculate displacements per tid."""
-        tmp = group[["x", "y", "z"]].diff()
-        group["displacement"] = np.sqrt(tmp["x"] ** 2 + tmp["y"] ** 2 + tmp["z"] ** 2)
-        return group
-
-    # Calculate displacements per tid
-    if is_3d:
-        df_work = df_work.groupby("tid").apply(calculate_displacements_3d)
-    else:
-        df_work = df_work.groupby("tid").apply(calculate_displacements_2d)
-    df_work.reset_index(drop=True, inplace=True)
+    # Get the displacements
+    displacements, _, _ = calculate_displacements(df)
 
     # Calculate total distance per tid
-    total_distance = df_work.groupby("tid")["displacement"].sum().reset_index()
+    total_distance = displacements.groupby("tid")["displacement"].sum().reset_index()
 
-    # Calculate the median and the mad of the total distance
-    med_tot = float(np.median(total_distance["displacement"].values))
-    mad_tot = float(
-        stats.median_abs_deviation(total_distance["displacement"].values, scale=0.67449)
+    # Calculate median and mad of the total distance
+    med = float(np.nanmedian(total_distance["displacement"].values))
+    mad = float(
+        stats.median_abs_deviation(
+            total_distance["displacement"].values, scale=0.67449, nan_policy="omit"
+        )
     )
 
-    # Remove rows with NaNs from df_work (NaNs indicate the beginning of a new trace)
-    displacements = df_work[["tid", "displacement"]].copy(deep=True)
-    displacements = displacements[
-        np.logical_not(np.isnan(displacements["displacement"]))
-    ]
-
-    # Calculate the median and the mad of all displacements
-    med_displ = float(np.median(displacements["displacement"].values))
-    mad_displ = float(
-        stats.median_abs_deviation(displacements["displacement"].values, scale=0.67449)
-    )
-
-    return total_distance, displacements, med_tot, mad_tot, med_displ, mad_displ
+    return total_distance, med, mad
 
 
 def hist_bins(values: np.ndarray, bin_size: float) -> tuple:

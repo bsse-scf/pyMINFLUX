@@ -55,8 +55,9 @@ class MockMinFluxReader:
         )
         y = x + 3.0
         z = 0.0 * x
-        self._df = pd.DataFrame(columns=["tid", "x", "y", "z"])
+        self._df = pd.DataFrame(columns=["tid", "tim", "x", "y", "z", "fluo"])
         self._df["tid"] = tids
+        self._df["tim"] = np.arange(len(x)).tolist()
         self._df["x"] = x
         self._df["y"] = y
         self._df["z"] = z
@@ -1029,8 +1030,8 @@ def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
     processor.filter_by_1d_range("tim", (0.0, 60.0))
 
     # Make sure all entries are the same
-    assert (
-        (df_stats == processor.filtered_dataframe_stats).all().all()
+    assert df_stats.equals(
+        processor.filtered_dataframe_stats
     ), "The selected and filtered set are not identical."
 
 

@@ -20,10 +20,11 @@ import numpy as np
 import pytest
 
 from pyminflux.analysis import (
-    calculate_time_resolution,
+    calculate_time_steps,
     calculate_total_distance_traveled,
     get_robust_threshold,
 )
+from pyminflux.analysis._analysis import calculate_displacements
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 
@@ -189,10 +190,10 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
-    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(tim.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 49.91002512390616
@@ -246,10 +247,10 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
-    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(tim.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 16.154817907708743
@@ -303,10 +304,10 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
-    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(tim.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 16.77324059525086
@@ -360,10 +361,10 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
-    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(tim.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 20.20228255238626
@@ -417,10 +418,10 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
-    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(tim.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 26.28193988854605
@@ -474,10 +475,10 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
-    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(tim.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 26.131099635005015
@@ -531,10 +532,10 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     _, _, median_n, mad_n = get_robust_threshold(
         processor.filtered_dataframe_stats["n"].values
     )
-    tim, median_tim, mad_tim = calculate_time_resolution(processor.filtered_dataframe)
+    tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
-    assert len(tim.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(tim.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of time differences."
     assert (
         pytest.approx(median_sx, 1e-6) == 19.95096561847626
@@ -581,23 +582,21 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
     assert processor.is_3d is False
 
+    # Calculate displacements
+    displacements, med_d, mad_d = calculate_displacements(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
     # Calculate the total distance traveled per tid
-    (
-        total_distance,
-        displacements,
-        med,
-        mad,
-        med_d,
-        mad_d,
-    ) = calculate_total_distance_traveled(
+    (total_distance, med, mad,) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
     assert len(total_distance.index) == len(
         processor.filtered_dataframe_stats.index
     ), "Unexpected number of distances."
-    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(displacements.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of displacements."
     assert (
         pytest.approx(med, 1e-6) == 945.8445877951381
@@ -623,23 +622,21 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
     assert processor.is_3d is True
 
+    # Calculate displacements
+    displacements, med_d, mad_d = calculate_displacements(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
     # Calculate the total distance traveled per tid
-    (
-        total_distance,
-        displacements,
-        med,
-        mad,
-        med_d,
-        mad_d,
-    ) = calculate_total_distance_traveled(
+    (total_distance, med, mad,) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
     assert len(total_distance.index) == len(
         processor.filtered_dataframe_stats.index
     ), "Unexpected number of distances."
-    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(displacements.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of displacements."
     assert (
         pytest.approx(med, 1e-6) == 410.7251004389293
@@ -665,23 +662,21 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
     assert processor.is_3d is False
 
+    # Calculate displacements
+    displacements, med_d, mad_d = calculate_displacements(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
     # Calculate the total distance traveled per tid
-    (
-        total_distance,
-        displacements,
-        med,
-        mad,
-        med_d,
-        mad_d,
-    ) = calculate_total_distance_traveled(
+    (total_distance, med, mad,) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
     assert len(total_distance.index) == len(
         processor.filtered_dataframe_stats.index
     ), "Unexpected number of distances."
-    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(displacements.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of displacements."
     assert (
         pytest.approx(med, 1e-6) == 3110.0166114044587
@@ -707,23 +702,21 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
     assert processor.is_3d is True
 
+    # Calculate displacements
+    displacements, med_d, mad_d = calculate_displacements(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
     # Calculate the total distance traveled per tid
-    (
-        total_distance,
-        displacements,
-        med,
-        mad,
-        med_d,
-        mad_d,
-    ) = calculate_total_distance_traveled(
+    (total_distance, med, mad,) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
     assert len(total_distance.index) == len(
         processor.filtered_dataframe_stats.index
     ), "Unexpected number of distances."
-    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(displacements.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of displacements."
     assert (
         pytest.approx(med, 1e-6) == 1206.2126699478988
@@ -749,23 +742,21 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
     assert processor.is_3d is False
 
+    # Calculate displacements
+    displacements, med_d, mad_d = calculate_displacements(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
     # Calculate the total distance traveled per tid
-    (
-        total_distance,
-        displacements,
-        med,
-        mad,
-        med_d,
-        mad_d,
-    ) = calculate_total_distance_traveled(
+    (total_distance, med, mad,) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
     assert len(total_distance.index) == len(
         processor.filtered_dataframe_stats.index
     ), "Unexpected number of distances."
-    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(displacements.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of displacements."
     assert (
         pytest.approx(med, 1e-6) == 11834.591038905457
@@ -791,23 +782,21 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     processor = MinFluxProcessor(reader, min_trace_length=min_trace_length)
     assert processor.is_3d is False
 
+    # Calculate displacements
+    displacements, med_d, mad_d = calculate_displacements(
+        processor.filtered_dataframe, is_3d=processor.is_3d
+    )
+
     # Calculate the total distance traveled per tid
-    (
-        total_distance,
-        displacements,
-        med,
-        mad,
-        med_d,
-        mad_d,
-    ) = calculate_total_distance_traveled(
+    (total_distance, med, mad,) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
     assert len(total_distance.index) == len(
         processor.filtered_dataframe_stats.index
     ), "Unexpected number of distances."
-    assert len(displacements.index) == len(processor.filtered_dataframe.index) - len(
-        processor.filtered_dataframe_stats.index
+    assert len(displacements.index) == len(
+        processor.filtered_dataframe.index
     ), "Unexpected number of displacements."
     assert (
         pytest.approx(med, 1e-6) == 2736.843343938342

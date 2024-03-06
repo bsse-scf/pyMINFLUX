@@ -24,7 +24,7 @@ from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
 from ..analysis import (
-    calculate_time_resolution,
+    calculate_time_steps,
     calculate_total_distance_traveled,
     find_cutoff_near_value,
     get_robust_threshold,
@@ -629,9 +629,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             #
 
             # Time resolution
-            tim, med_tim, mad_tim = calculate_time_resolution(
-                self.processor.filtered_dataframe
-            )
+            tim, _, _ = calculate_time_steps(self.processor.filtered_dataframe)
             (
                 n_tim,
                 n_tim_bin_edges,
@@ -658,24 +656,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.sx_plot.setTitle("Time resolution")
             self.sx_plot.show()
 
-            # Extract total distance traveled per tid and overall displacement steps
-            (
-                total_distance,
-                displacements,
-                _,
-                _,
-                _,
-                _,
-            ) = calculate_total_distance_traveled(
-                self.processor.filtered_dataframe, is_3d=self.processor.is_3d
-            )
-
-            # Calculate speed per trace
-            total_time = tim.groupby("tid")["tim_diff"].sum().reset_index()
-            speeds = (
-                total_distance["displacement"].values / total_time["tim_diff"].values
-            )
-
             # Displacement steps
             (
                 n_speeds,
@@ -683,7 +663,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 n_speeds_bin_centers,
                 n_speeds_bin_width,
             ) = prepare_histogram(
-                speeds,
+                self.processor.filtered_dataframe_stats["avg_speed"].values,
                 normalize=False,
                 auto_bins=True,
             )
@@ -698,7 +678,11 @@ class Analyzer(QDialog, Ui_Analyzer):
                 brush="k",
                 support_thresholding=False,
             )
-            add_median_line(self.sy_plot, speeds, unit="nm/ms")
+            add_median_line(
+                self.sy_plot,
+                self.processor.filtered_dataframe_stats["avg_speed"].values,
+                unit="nm/ms",
+            )
             self.sy_plot.setTitle("Average speed per trace")
             self.sy_plot.show()
 
@@ -709,7 +693,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 n_trav_bin_centers,
                 n_trav_bin_width,
             ) = prepare_histogram(
-                total_distance["displacement"].values,
+                self.processor.filtered_dataframe_stats["total_dist"].values,
                 normalize=False,
                 auto_bins=True,
             )
@@ -734,7 +718,9 @@ class Analyzer(QDialog, Ui_Analyzer):
                 support_thresholding=False,
             )
             add_median_line(
-                self.sz_plot, total_distance["displacement"].values, unit="nm"
+                self.sz_plot,
+                self.processor.filtered_dataframe_stats["total_dist"].values,
+                unit="nm",
             )
             self.sz_plot.setTitle("Total distance traveled per trace")
             self.sz_plot.show()

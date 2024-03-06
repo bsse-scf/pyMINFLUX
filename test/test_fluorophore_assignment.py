@@ -126,8 +126,9 @@ class MockMinFluxReader:
         )
         y = x + 3.0
         z = 0.0 * x
-        self._df = pd.DataFrame(columns=["tid", "x", "y", "z"])
+        self._df = pd.DataFrame(columns=["tid", "tim", "x", "y", "z", "fluo"])
         self._df["tid"] = tids
+        self._df["tim"] = np.arange(len(x)).tolist()
         self._df["x"] = x
         self._df["y"] = y
         self._df["z"] = z
