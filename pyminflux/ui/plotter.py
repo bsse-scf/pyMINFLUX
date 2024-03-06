@@ -341,28 +341,26 @@ class Plotter(PlotWidget):
         if (self._last_x_param is None or self._last_x_param != x_param) or (
             self._last_y_param is None or self._last_y_param != y_param
         ):
-
             # Update range
             self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
-
-            # Remove the scale bar
-            if self.scale_bar is not None:
-                del self.scale_bar
-                self.scale_bar = None
 
             if x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]:
                 # Set fixed aspect ratio
                 aspect_ratio = 1.0
 
                 # Add scale bar
-                self.scale_bar = BottomLeftAnchoredScaleBar(
-                    size=500,
-                    viewBox=self.getViewBox(),
-                    brush="b",
-                    pen="w",
-                    suffix="nm",
-                    offset=(50, -25),
-                )
+                if self.scale_bar is None:
+                    self.scale_bar = BottomLeftAnchoredScaleBar(
+                        size=500,
+                        viewBox=self.getViewBox(),
+                        brush="b",
+                        pen="w",
+                        suffix="nm",
+                        offset=(50, -15),
+                    )
+                self.scale_bar.setEnabled(True)
+                self.scale_bar.setVisible(True)
+
             else:
                 # Calculate aspect ratio
                 x_min, x_max = np.nanpercentile(x, (1, 99))
@@ -372,6 +370,10 @@ class Plotter(PlotWidget):
                 aspect_ratio = y_scale / x_scale
                 if np.isnan(aspect_ratio):
                     aspect_ratio = 1.0
+
+                if self.scale_bar is not None:
+                    self.scale_bar.setEnabled(False)
+                    self.scale_bar.setVisible(False)
 
             self.getPlotItem().getViewBox().setAspectLocked(
                 lock=True, ratio=aspect_ratio

@@ -134,14 +134,7 @@ def add_median_line(
             movable=False,
             angle=90,
             pen={"color": (200, 50, 50), "width": 1, "style": Qt.DashLine},
-            # label=f"25pc={iqr[0]:.2f}{unit_str}",
             label="",
-            # labelOpts={
-            #     "position": label_pos - 0.1,
-            #     "color": (200, 50, 50),
-            #     "fill": (200, 50, 50, 10),
-            #     "movable": True,
-            # },
         )
         plot.addItem(fp_line)
         tp_line = pg.InfiniteLine(
@@ -149,19 +142,15 @@ def add_median_line(
             movable=False,
             angle=90,
             pen={"color": (200, 50, 50), "width": 1, "style": Qt.DashLine},
-            # label=f"75pc={iqr[1]:.2f}{unit_str}",
             label="",
-            # labelOpts={
-            #     "position": label_pos - 0.2,
-            #     "color": (200, 50, 50),
-            #     "fill": (200, 50, 50, 10),
-            #     "movable": True,
-            # },
         )
         plot.addItem(tp_line)
 
 
 class BottomLeftAnchoredScaleBar(pg.ScaleBar):
+    """A ScaleBar that stays anchored at the bottom left corner of the view and resizes
+    and repositions itself according to panning and zoom level."""
+
     def __init__(
         self,
         viewBox,
@@ -172,12 +161,22 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
         suffix="nm",
         offset=(20, -20),
     ):
+        """Constructor."""
         super().__init__(
             size=size, width=width, brush=brush, pen=pen, suffix=suffix, offset=offset
         )
 
         # Store a reference to the ViewBox
         self.viewBox = viewBox
+
+        # Enabled flag
+        self._is_enabled = True
+
+        # Current size
+        self.currentSize = size
+        self.initialSizePixels = None
+        self.scaleBarLabel = f"{width}nm"
+        self.ratio_step = 2.0
 
         # Keep a margin from the edge of the view when zooming in
         self.margin = 10.0
@@ -191,10 +190,91 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
         # Initially anchor the scale bar
         self.anchor(itemPos=(0, 1), parentPos=(0, 1), offset=self.originalOffset)
 
+    def setEnabled(self, b: bool):
+        """Enables/disables to scale bar.
+
+        Important: disable it if the coordinate system of the ViewBox changes.
+        """
+        self._is_enabled = b
+
+    def _calculateScaleBarRatio(self) -> float:
+        """Calculate the ratio of the current size of the bar with the size at the
+        beginning or after a resizing due to the zoom level passing a 2x or 0.5x threshold.
+        """
+        if not self._is_enabled:
+            return 0
+
+        view = self.parentItem()
+        if view is None:
+            return 0
+
+        # Get current scal bar size in pixels
+        currentSize = self._currentSizeInPixels()
+
+        # Return the ratio to the initial scale bar size
+        return currentSize / self.initialSizePixels
+
+    def _adjustScaleBarSize(self):
+        """Adjust the scale bar size based on the ratio calculated in `_calculateScaleBarRatio()`."""
+        if not self._is_enabled:
+            return
+
+        ratio = self._calculateScaleBarRatio()
+        if ratio == 0:
+            return
+
+        # Halve or double the length of the scale bar depending on zoom level
+        if ratio >= self.ratio_step:
+            self.currentSize /= self.ratio_step
+            self.size = self.currentSize
+            self.scaleBarLabel = f"{self.currentSize}nm"
+            self.text.setText(self.scaleBarLabel)
+            self.initialSizePixels = self._currentSizeInPixels()
+        elif ratio <= 0.5:
+            self.currentSize *= self.ratio_step
+            self.size = self.currentSize
+            self.scaleBarLabel = f"{self.currentSize}nm"
+            self.text.setText(self.scaleBarLabel)
+            self.initialSizePixels = self._currentSizeInPixels()
+
+    def _storeInitialSizePixels(self):
+        """Store the initial size of the scale bar in pixels."""
+        if not self._is_enabled:
+            return 0
+
+        self.initialSizePixels = self._currentSizeInPixels()
+
+    def _currentSizeInPixels(self):
+        """Return current size of the scale bar in pixels."""
+        if not self._is_enabled:
+            return 0
+
+        view = self.parentItem()
+        if view is None:
+            return 0
+
+        # Get the bounding rect of the scale bar
+        rect = self.bar.boundingRect()
+
+        # Map the corners of the rectangle to view coordinates
+        topLeft = view.mapToScene(self.bar.mapToScene(rect.topLeft()))
+        bottomRight = view.mapToScene(self.bar.mapToScene(rect.bottomRight()))
+
+        # Calculate the width in pixels
+        return abs(bottomRight.x() - topLeft.x())
+
     def updateBar(self):
+        """Update the scale bar in size and position on the view."""
+        if not self._is_enabled:
+            return
+
         view = self.parentItem()
         if view is None:
             return
+
+        # First, adjust the scale bar size depending on zoom ratio
+        if self.initialSizePixels is not None:
+            self._adjustScaleBarSize()
 
         # Calculate the width of the scale bar based on its size in the current view's coordinates
         p1 = view.mapFromViewToItem(self, QPointF(0, 0))
@@ -220,3 +300,7 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
             # Otherwise, position the scale bar using the corrected initial position
             self.bar.setRect(QRectF(initialLeftEdge, 0, w, self._width))
             self.text.setPos(initialLeftEdge + w / 2.0, 0)
+
+        # Ensure the initial scale bar size in pixels has been stored.
+        if self.initialSizePixels is None:
+            self._storeInitialSizePixels()
