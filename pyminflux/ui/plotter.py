@@ -352,6 +352,7 @@ class Plotter(PlotWidget):
                 if self.scale_bar is None:
                     self.scale_bar = BottomLeftAnchoredScaleBar(
                         size=500,
+                        auto_resize=False,
                         viewBox=self.getViewBox(),
                         brush="b",
                         pen="w",

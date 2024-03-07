@@ -154,12 +154,13 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
     def __init__(
         self,
         viewBox,
-        size=None,
-        width=5,
+        size: int = None,
+        auto_resize: bool = True,
+        width: int = 5,
         brush=None,
         pen=None,
-        suffix="nm",
-        offset=(20, -20),
+        suffix: str = "nm",
+        offset: tuple = (20, -20),
     ):
         """Constructor."""
         super().__init__(
@@ -171,6 +172,9 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
 
         # Enabled flag
         self._is_enabled = True
+
+        # Autoresize flag
+        self._auto_resize: bool = auto_resize
 
         # Current size
         self.currentSize = size
@@ -217,6 +221,9 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
     def _adjustScaleBarSize(self):
         """Adjust the scale bar size based on the ratio calculated in `_calculateScaleBarRatio()`."""
         if not self._is_enabled:
+            return
+
+        if not self._auto_resize:
             return
 
         ratio = self._calculateScaleBarRatio()
@@ -273,7 +280,7 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
             return
 
         # First, adjust the scale bar size depending on zoom ratio
-        if self.initialSizePixels is not None:
+        if self._auto_resize and self.initialSizePixels is not None:
             self._adjustScaleBarSize()
 
         # Calculate the width of the scale bar based on its size in the current view's coordinates
