@@ -15,12 +15,12 @@
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QDialog
 
-from pyminflux.ui.ui_sequence_selector import Ui_SequenceSelector
+from pyminflux.ui.ui_importer import Ui_Importer
 
 
-class SequenceSelector(QDialog, Ui_SequenceSelector):
+class Importer(QDialog, Ui_Importer):
     """
-    A QDialog to support custom sequence loading.
+    A QDialog to support custom loading.
     """
 
     def __init__(self, valid_cfr, dwell_time):
@@ -28,7 +28,7 @@ class SequenceSelector(QDialog, Ui_SequenceSelector):
         super().__init__()
 
         # Initialize the dialog
-        self.ui = Ui_SequenceSelector()
+        self.ui = Ui_Importer()
         self.ui.setupUi(self)
 
         # Store the arguments

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SequenceSelector</class>
- <widget class="QDialog" name="SequenceSelector">
+ <class>Importer</class>
+ <widget class="QDialog" name="Importer">
   <property name="windowModality">
    <enum>Qt::NonModal</enum>
   </property>
@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>260</width>
-    <height>604</height>
+    <height>628</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -26,7 +26,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Sequence Selector</string>
+   <string>Importer</string>
   </property>
   <property name="modal">
    <bool>true</bool>
@@ -591,7 +591,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>SequenceSelector</receiver>
+   <receiver>Importer</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -607,7 +607,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>SequenceSelector</receiver>
+   <receiver>Importer</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

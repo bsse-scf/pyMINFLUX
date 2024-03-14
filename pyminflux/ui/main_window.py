@@ -45,10 +45,10 @@ from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.histogram_plotter import HistogramPlotter
+from pyminflux.ui.importer import Importer
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
-from pyminflux.ui.sequence_selector import SequenceSelector
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow
@@ -630,17 +630,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 )
                 return
 
-            # Open the sequence selector
-            sequence_selector = SequenceSelector(
-                reader.valid_cfr, self.state.dwell_time
-            )
-            if sequence_selector.exec_() != QDialog.Accepted:
+            # Open the Importer
+            importer = Importer(reader.valid_cfr, self.state.dwell_time)
+            if importer.exec_() != QDialog.Accepted:
                 # The user cancelled the dialog
                 print("Loading cancelled.")
                 return
 
-            # Retrieve the selected options from the SequenceSelector
-            selection = sequence_selector.get_selection()
+            # Retrieve the selected options from the Importer
+            selection = importer.get_selection()
 
             # Update the reader object (we let the MinFluxProcessor
             # trigger the creation of the dataframe, hence the
