@@ -15,6 +15,7 @@
 from ._helpers import (
     BottomLeftAnchoredScaleBar,
     add_median_line,
+    create_brushes_by,
     export_plot_interactive,
     export_to_image,
 )

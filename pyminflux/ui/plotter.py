@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import time
 
 import numpy as np
 import pyqtgraph as pg
@@ -22,7 +23,11 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu
 
 from ..state import ColorCode, State
-from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
+from .helpers import (
+    BottomLeftAnchoredScaleBar,
+    create_brushes_by,
+    export_plot_interactive,
+)
 
 
 class Plotter(PlotWidget):
@@ -306,8 +311,8 @@ class Plotter(PlotWidget):
         # Create the scatter plot
         self.scatter = pg.ScatterPlotItem(
             size=5,
-            pen=self.pen,
-            brush=self.brush,
+            pen=None,
+            brush=None,
             hoverable=True,
             hoverSymbol="s",
             hoverSize=5,
@@ -318,9 +323,9 @@ class Plotter(PlotWidget):
         if self.state.color_code == ColorCode.NONE:
             brushes = self.brush
         elif self.state.color_code == ColorCode.BY_TID:
-            brushes = tid
+            brushes = create_brushes_by(tid)
         elif self.state.color_code == ColorCode.BY_FLUO:
-            brushes = [6 if i == 1 else 9 for i in fid]
+            brushes = create_brushes_by(fid, color_scheme="blue-red")
         else:
             raise ValueError("Unexpected request for color-coding the localizations!")
 

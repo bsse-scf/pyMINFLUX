@@ -10,15 +10,15 @@
 #  distributed under the License is distributed on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
-#   limitations under the License.
+#  limitations under the License.
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import AxisItem, ViewBox
 from PySide6.QtCore import QPointF, QRect, QRectF
-from PySide6.QtGui import QImage, QPainter, Qt
+from PySide6.QtGui import QBrush, QImage, QPainter, Qt
 from PySide6.QtWidgets import QApplication, QFileDialog
 
 from pyminflux.analysis import get_robust_threshold
@@ -145,6 +145,72 @@ def add_median_line(
             label="",
         )
         plot.addItem(tp_line)
+
+
+def create_brushes_by(
+    identifiers: np.ndarray, color_scheme: Optional[str] = None, seed: int = 42
+) -> list[QBrush]:
+    """Create QBrush instances to be used in a ScatterPlotItem to prevent
+    cache misses in SymbolAtlas.
+    As an illustration, this speeds up the plotting of 200,000 dots with
+    600 unique colors by ca. 20x.
+
+    See explanation at PyQtGraph.graphicsItems.ScatterPlotItem._mkBrush()
+
+    Parameters
+    ----------
+
+    identifiers: np.ndarray
+        Identifiers to be used to assign colors (e.g., tid, fluo_id)
+
+    color_scheme: Optional[str] = None
+        Pre-defined color scheme for the QBrush creation. The color scheme
+        presupposes a fixed number of unique identifiers (as for instance,
+        when the spots are labeled by fluorophore ID (either, 1 or 2).
+        Currently supported color schemes:
+
+        "blue-red": two-color scheme := [[ 0, 0, 255], [255, 0, 0]]
+
+    seed: int (Optional, default = 42)
+        Seed used to initialize the random number generator.
+    """
+
+    # Initialize the random number generator
+    rng = np.random.default_rng(seed)
+
+    # Determine unique identifiers and count
+    unique_ids = np.unique(identifiers)
+    num_brushes = len(unique_ids)
+
+    # Do we have a color scheme?
+    if color_scheme is not None:
+        if color_scheme == "blue-red":
+            unique_colors = [[0, 0, 255], [255, 0, 0]]
+        else:
+            raise ValueError(f"Unknown color scheme '{color_scheme}'.")
+
+        # Check that the number of colors in the scheme is smaller than or
+        # equal to the number of unique identifiers
+        if num_brushes < len(unique_ids):
+            raise ValueError(
+                f"The '{color_scheme}' color scheme is incompatible with the data."
+            )
+
+    else:
+        # Generate unique colors for each brush (and identifier)
+        unique_colors = rng.integers(256, size=(num_brushes, 3))
+
+    # Map each unique identifier to a unique QBrush, thus reducing
+    # the number of QBrush object creations to the minimum
+    id_to_brush = {
+        uid: pg.mkBrush(*unique_colors[i]) for i, uid in enumerate(unique_ids)
+    }
+
+    # Map each identifier in the full array to its corresponding QBrush for fast lookup
+    brushes_for_ids = [id_to_brush[identifier] for identifier in identifiers]
+
+    # Return the list of brushes (and references)
+    return brushes_for_ids
 
 
 class BottomLeftAnchoredScaleBar(pg.ScaleBar):
