@@ -36,6 +36,8 @@ class State(metaclass=Singleton):
     __SLOTS__ = [
         "applied_cfr_thresholds",
         "applied_efo_thresholds",
+        "applied_time_thresholds",
+        "applied_tr_len_thresholds",
         "cfr_range",
         "cfr_threshold_factor",
         "cfr_thresholds",
@@ -60,6 +62,7 @@ class State(metaclass=Singleton):
         "open_console_at_start",
         "plot_average_localisations",
         "plot_export_dpi",
+        "time_thresholds",
         "tr_len_range",
         "tr_len_thresholds",
         "tr_len_top_percentile",
@@ -89,15 +92,17 @@ class State(metaclass=Singleton):
         # EFO expected frequency for single emitters
         self.efo_expected_frequency: float = 0.0
 
-        # Lower and upper (absolute) thresholds for the EFO, CFR and trace length values
+        # Lower and upper (absolute) thresholds for the EFO, CFR, trace length values and time
         self.efo_thresholds: Union[None, tuple] = None
         self.cfr_thresholds: Union[None, tuple] = None
         self.tr_len_thresholds: Union[None, tuple] = None
+        self.time_thresholds: Union[None, tuple] = None
 
-        # Applied lower and upper (absolute) thresholds for the EFO, CFR and trace length values
+        # Applied lower and upper (absolute) thresholds for the EFO, CFR, trace length values and time
         self.applied_efo_thresholds: Union[None, tuple] = None
         self.applied_cfr_thresholds: Union[None, tuple] = None
         self.applied_tr_len_thresholds: Union[None] = None
+        self.applied_time_thresholds: Union[None] = None
 
         # Histogram ranges
         self.efo_range: Union[None, tuple] = None
@@ -153,6 +158,7 @@ class State(metaclass=Singleton):
         return {
             "applied_cfr_threshold": self.applied_cfr_thresholds,
             "applied_efo_thresholds": self.applied_efo_thresholds,
+            "applied_time_thresholds": self.applied_time_thresholds,
             "applied_tr_len_thresholds": self.applied_tr_len_thresholds,
             "cfr_range": self.cfr_range,
             "cfr_threshold_factor": self.cfr_threshold_factor,
@@ -178,6 +184,7 @@ class State(metaclass=Singleton):
             "open_console_at_start": self.open_console_at_start,
             "plot_average_localisations": self.plot_average_localisations,
             "plot_export_dpi": self.plot_export_dpi,
+            "time_thresholds": self.time_thresholds,
             "tr_len_range": self.tr_len_range,
             "tr_len_thresholds": self.tr_len_thresholds,
             "tr_len_top_percentile": self.tr_len_top_percentile,
@@ -196,12 +203,15 @@ class State(metaclass=Singleton):
         self.applied_cfr_thresholds = None
         self.tr_len_thresholds = None
         self.applied_tr_len_thresholds = None
+        self.time_thresholds = None
+        self.applied_time_thresholds = None
 
     def full_reset(self):
         """Reset to defaults."""
 
         self.applied_cfr_thresholds = None
         self.applied_efo_thresholds = None
+        self.applied_time_thresholds = None
         self.applied_tr_len_thresholds = None
         self.cfr_range = None
         self.cfr_threshold_factor = 2.0
@@ -226,7 +236,8 @@ class State(metaclass=Singleton):
         self.num_fluorophores = 1
         self.open_console_at_start = False
         self.plot_average_localisations = False
-        self.plot_export_dpi = 600
+        self.plot_export_dpi = 300
+        self.time_thresholds = None
         self.tr_len_range = None
         self.tr_len_thresholds = None
         self.tr_len_top_percentile = 100.0
@@ -244,6 +255,7 @@ class State(metaclass=Singleton):
         self.applied_cfr_thresholds = metadata.cfr_thresholds
         self.num_fluorophores = metadata.num_fluorophores
         self.z_scaling_factor = metadata.z_scaling_factor
+        self.time_thresholds = metadata.time_thresholds
         self.tr_len_thresholds = metadata.tr_len_thresholds
         self.applied_tr_len_thresholds = metadata.tr_len_thresholds
         self.dwell_time = metadata.dwell_time

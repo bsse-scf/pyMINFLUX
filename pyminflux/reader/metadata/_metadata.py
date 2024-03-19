@@ -33,6 +33,7 @@ class NativeMetadata:
 
     Version 2.0
     -----------
+        time_thresholds: Union[None, tuple[float, float]]
         tr_len_thresholds: Union[None, tuple[int, int]]
         dwell_time: float
         is_tracking: bool
@@ -51,6 +52,7 @@ class NativeMetadata:
     min_trace_length: int
     efo_thresholds: Union[None, tuple[int, int]]
     cfr_thresholds: Union[None, tuple[float, float]]
+    time_thresholds: Union[None, tuple[float, float]]
     tr_len_thresholds: Union[None, tuple[float, float]]
     num_fluorophores: int
     dwell_time: float

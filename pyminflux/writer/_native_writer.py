@@ -126,6 +126,11 @@ class PyMinFluxNativeWriter:
                 "applied_tr_len_thresholds",
                 data=self.state.applied_tr_len_thresholds,
             )
+        if self.state.applied_time_thresholds is not None:
+            group.create_dataset(
+                "applied_time_thresholds",
+                data=self.state.applied_time_thresholds,
+            )
         group.create_dataset("num_fluorophores", data=self.processor.num_fluorophores)
         group.create_dataset("dwell_time", data=self.state.dwell_time)
 
