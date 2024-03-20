@@ -64,7 +64,7 @@ class Ui_Importer(object):
         if not Importer.objectName():
             Importer.setObjectName("Importer")
         Importer.setWindowModality(Qt.NonModal)
-        Importer.resize(260, 628)
+        Importer.resize(260, 764)
         sizePolicy = QSizePolicy(
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
         )
@@ -325,6 +325,82 @@ class Ui_Importer(object):
 
         self.mainLayout.addLayout(self.iteration_11_layout)
 
+        self.iteration_12_layout = QHBoxLayout()
+        self.iteration_12_layout.setObjectName("iteration_12_layout")
+        self.pbIter_12 = QPushButton(Importer)
+        self.pbIter_12.setObjectName("pbIter_12")
+        self.pbIter_12.setEnabled(True)
+        self.pbIter_12.setCheckable(False)
+
+        self.iteration_12_layout.addWidget(self.pbIter_12)
+
+        self.lbIter_12 = QLabel(Importer)
+        self.lbIter_12.setObjectName("lbIter_12")
+        self.lbIter_12.setEnabled(True)
+        self.lbIter_12.setFont(font)
+        self.lbIter_12.setAlignment(Qt.AlignCenter)
+
+        self.iteration_12_layout.addWidget(self.lbIter_12)
+
+        self.mainLayout.addLayout(self.iteration_12_layout)
+
+        self.iteration_13_layout = QHBoxLayout()
+        self.iteration_13_layout.setObjectName("iteration_13_layout")
+        self.pbIter_13 = QPushButton(Importer)
+        self.pbIter_13.setObjectName("pbIter_13")
+        self.pbIter_13.setEnabled(True)
+        self.pbIter_13.setCheckable(False)
+
+        self.iteration_13_layout.addWidget(self.pbIter_13)
+
+        self.lbIter_13 = QLabel(Importer)
+        self.lbIter_13.setObjectName("lbIter_13")
+        self.lbIter_13.setEnabled(True)
+        self.lbIter_13.setFont(font)
+        self.lbIter_13.setAlignment(Qt.AlignCenter)
+
+        self.iteration_13_layout.addWidget(self.lbIter_13)
+
+        self.mainLayout.addLayout(self.iteration_13_layout)
+
+        self.iteration_14_layout = QHBoxLayout()
+        self.iteration_14_layout.setObjectName("iteration_14_layout")
+        self.pbIter_14 = QPushButton(Importer)
+        self.pbIter_14.setObjectName("pbIter_14")
+        self.pbIter_14.setEnabled(True)
+        self.pbIter_14.setCheckable(False)
+
+        self.iteration_14_layout.addWidget(self.pbIter_14)
+
+        self.lbIter_14 = QLabel(Importer)
+        self.lbIter_14.setObjectName("lbIter_14")
+        self.lbIter_14.setEnabled(True)
+        self.lbIter_14.setFont(font)
+        self.lbIter_14.setAlignment(Qt.AlignCenter)
+
+        self.iteration_14_layout.addWidget(self.lbIter_14)
+
+        self.mainLayout.addLayout(self.iteration_14_layout)
+
+        self.iteration_15_layout = QHBoxLayout()
+        self.iteration_15_layout.setObjectName("iteration_15_layout")
+        self.pbIter_15 = QPushButton(Importer)
+        self.pbIter_15.setObjectName("pbIter_15")
+        self.pbIter_15.setEnabled(True)
+        self.pbIter_15.setCheckable(False)
+
+        self.iteration_15_layout.addWidget(self.pbIter_15)
+
+        self.lbIter_15 = QLabel(Importer)
+        self.lbIter_15.setObjectName("lbIter_15")
+        self.lbIter_15.setEnabled(True)
+        self.lbIter_15.setFont(font)
+        self.lbIter_15.setAlignment(Qt.AlignCenter)
+
+        self.iteration_15_layout.addWidget(self.lbIter_15)
+
+        self.mainLayout.addLayout(self.iteration_15_layout)
+
         self.last_valid_layout = QHBoxLayout()
         self.last_valid_layout.setObjectName("last_valid_layout")
         self.pb_last_valid = QPushButton(Importer)
@@ -460,6 +536,22 @@ class Ui_Importer(object):
             QCoreApplication.translate("Importer", "Iteration 11", None)
         )
         self.lbIter_11.setText(QCoreApplication.translate("Importer", "\u2713", None))
+        self.pbIter_12.setText(
+            QCoreApplication.translate("Importer", "Iteration 12", None)
+        )
+        self.lbIter_12.setText(QCoreApplication.translate("Importer", "\u2713", None))
+        self.pbIter_13.setText(
+            QCoreApplication.translate("Importer", "Iteration 13", None)
+        )
+        self.lbIter_13.setText(QCoreApplication.translate("Importer", "\u2713", None))
+        self.pbIter_14.setText(
+            QCoreApplication.translate("Importer", "Iteration 14", None)
+        )
+        self.lbIter_14.setText(QCoreApplication.translate("Importer", "\u2713", None))
+        self.pbIter_15.setText(
+            QCoreApplication.translate("Importer", "Iteration 15", None)
+        )
+        self.lbIter_15.setText(QCoreApplication.translate("Importer", "\u2713", None))
         self.pb_last_valid.setText(
             QCoreApplication.translate("Importer", "Last valid", None)
         )

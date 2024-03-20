@@ -66,6 +66,10 @@ class Importer(QDialog, Ui_Importer):
             (self.ui.pbIter_9, self.ui.lbIter_9),
             (self.ui.pbIter_10, self.ui.lbIter_10),
             (self.ui.pbIter_11, self.ui.lbIter_11),
+            (self.ui.pbIter_12, self.ui.lbIter_12),
+            (self.ui.pbIter_13, self.ui.lbIter_13),
+            (self.ui.pbIter_14, self.ui.lbIter_14),
+            (self.ui.pbIter_15, self.ui.lbIter_15),
         ]
 
         # Initially hide all buttons and labels
