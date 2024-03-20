@@ -58,6 +58,7 @@ class MinFluxReader:
         "_z_scaling_factor",
         "_dwell_time",
         "_valid_cfr",
+        "_relocalizations",
     ]
 
     def __init__(
@@ -135,6 +136,7 @@ class MinFluxReader:
         self._eco_index: int = -1
         self._loc_index: int = -1
         self._valid_cfr: list = []
+        self._relocalizations: list = []
 
         # Constant indices
         self._tid_index: int = 0
@@ -201,6 +203,18 @@ class MinFluxReader:
         if self._data_array is None:
             return []
         return self._valid_cfr
+
+    @property
+    def relocalizations(self) -> list:
+        """Return the iterations with relocalizations.
+
+        Returns
+        -------
+        reloc: boolean array with True for the iteration indices that are relocalized.
+        """
+        if self._data_array is None:
+            return []
+        return self._relocalizations
 
     @property
     def valid_raw_data(self) -> Union[None, np.ndarray]:
@@ -642,6 +656,7 @@ class MinFluxReader:
         self._eco_index = last_valid["eco_index"]
         self._loc_index = last_valid["loc_index"]
         self._valid_cfr = last_valid["valid_cfr"]
+        self._relocalizations = last_valid["reloc"]
 
         # Keep track of the last valid iteration
         self._last_valid = len(self._valid_cfr) - 1

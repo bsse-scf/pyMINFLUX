@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
+import pandas as pd
 from scipy.io import loadmat
 
 
@@ -234,6 +235,7 @@ def find_last_valid_iteration(data_array: np.ndarray):
             "eco_index": 0,
             "loc_index": 0,
             "valid_cfr": [True],
+            "reloc": [False],
         }
         return last_valid
 
@@ -247,6 +249,34 @@ def find_last_valid_iteration(data_array: np.ndarray):
         last_valid["cfr_index"] = num_iterations - 1
     else:
         last_valid["cfr_index"] = valid_indices[-1]
+
+    # Set relocalized iterations: here we can use a simple trick to understand
+    # which iterations re-localize. If the second localization of the first TID
+    # with more than one is NaN, the iteration does not relocalize, otherwise
+    # it does.
+
+    # Is the first trace longer that two localizations?
+    reloc_index = None
+    if data_array["tid"][1] == data_array["tid"][0]:
+        reloc_index = 1
+    else:
+        u_tids = np.unique(data_array["tid"])
+        for i, u_tid in enumerate(u_tids):
+            if i == 0:
+                # We already know that this tid only has one localization
+                continue
+            (indices,) = np.where(data_array["tid"] == u_tid)
+            if data_array["tid"][indices[1]] == data_array["tid"][indices[0]]:
+                # Found valid index
+                reloc_index = indices[1]
+                break
+    if reloc_index is None:
+        # The whole dataset does not contain any iteration with more than one localization
+        last_valid["reloc"] = [False] * num_iterations
+    else:
+        last_valid["reloc"] = np.logical_not(
+            np.isnan(data_array["itr"]["loc"][reloc_index, :, 0])
+        )
 
     # Set dcr index
     last_valid["dcr_index"] = num_iterations - 1

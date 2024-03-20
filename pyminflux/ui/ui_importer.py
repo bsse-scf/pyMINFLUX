@@ -46,6 +46,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
     QDialogButtonBox,
+    QFrame,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -64,7 +65,7 @@ class Ui_Importer(object):
         if not Importer.objectName():
             Importer.setObjectName("Importer")
         Importer.setWindowModality(Qt.NonModal)
-        Importer.resize(260, 764)
+        Importer.resize(368, 816)
         sizePolicy = QSizePolicy(
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
         )
@@ -89,12 +90,19 @@ class Ui_Importer(object):
 
         self.titleLayout.addWidget(self.lbIteration)
 
-        self.lbCFRStatus = QLabel(Importer)
-        self.lbCFRStatus.setObjectName("lbCFRStatus")
-        self.lbCFRStatus.setFont(font)
-        self.lbCFRStatus.setAlignment(Qt.AlignCenter)
+        self.lbCFRValues = QLabel(Importer)
+        self.lbCFRValues.setObjectName("lbCFRValues")
+        self.lbCFRValues.setFont(font)
+        self.lbCFRValues.setAlignment(Qt.AlignCenter)
 
-        self.titleLayout.addWidget(self.lbCFRStatus)
+        self.titleLayout.addWidget(self.lbCFRValues)
+
+        self.lbReloc = QLabel(Importer)
+        self.lbReloc.setObjectName("lbReloc")
+        self.lbReloc.setFont(font)
+        self.lbReloc.setAlignment(Qt.AlignCenter)
+
+        self.titleLayout.addWidget(self.lbReloc)
 
         self.mainLayout.addLayout(self.titleLayout)
 
@@ -113,6 +121,13 @@ class Ui_Importer(object):
         self.lbIter_0.setAlignment(Qt.AlignCenter)
 
         self.iteration_0_layout.addWidget(self.lbIter_0)
+
+        self.lbReloc_0 = QLabel(Importer)
+        self.lbReloc_0.setObjectName("lbReloc_0")
+        self.lbReloc_0.setFont(font)
+        self.lbReloc_0.setAlignment(Qt.AlignCenter)
+
+        self.iteration_0_layout.addWidget(self.lbReloc_0)
 
         self.mainLayout.addLayout(self.iteration_0_layout)
 
@@ -133,6 +148,13 @@ class Ui_Importer(object):
 
         self.iteration_1_layout.addWidget(self.lbIter_1)
 
+        self.lbReloc_1 = QLabel(Importer)
+        self.lbReloc_1.setObjectName("lbReloc_1")
+        self.lbReloc_1.setFont(font)
+        self.lbReloc_1.setAlignment(Qt.AlignCenter)
+
+        self.iteration_1_layout.addWidget(self.lbReloc_1)
+
         self.mainLayout.addLayout(self.iteration_1_layout)
 
         self.iteration_2_layout = QHBoxLayout()
@@ -151,6 +173,13 @@ class Ui_Importer(object):
         self.lbIter_2.setAlignment(Qt.AlignCenter)
 
         self.iteration_2_layout.addWidget(self.lbIter_2)
+
+        self.lbReloc_2 = QLabel(Importer)
+        self.lbReloc_2.setObjectName("lbReloc_2")
+        self.lbReloc_2.setFont(font)
+        self.lbReloc_2.setAlignment(Qt.AlignCenter)
+
+        self.iteration_2_layout.addWidget(self.lbReloc_2)
 
         self.mainLayout.addLayout(self.iteration_2_layout)
 
@@ -171,6 +200,13 @@ class Ui_Importer(object):
 
         self.iteration_3_layout.addWidget(self.lbIter_3)
 
+        self.lbReloc_3 = QLabel(Importer)
+        self.lbReloc_3.setObjectName("lbReloc_3")
+        self.lbReloc_3.setFont(font)
+        self.lbReloc_3.setAlignment(Qt.AlignCenter)
+
+        self.iteration_3_layout.addWidget(self.lbReloc_3)
+
         self.mainLayout.addLayout(self.iteration_3_layout)
 
         self.iteration_4_layout = QHBoxLayout()
@@ -189,6 +225,13 @@ class Ui_Importer(object):
         self.lbIter_4.setAlignment(Qt.AlignCenter)
 
         self.iteration_4_layout.addWidget(self.lbIter_4)
+
+        self.lbReloc_4 = QLabel(Importer)
+        self.lbReloc_4.setObjectName("lbReloc_4")
+        self.lbReloc_4.setFont(font)
+        self.lbReloc_4.setAlignment(Qt.AlignCenter)
+
+        self.iteration_4_layout.addWidget(self.lbReloc_4)
 
         self.mainLayout.addLayout(self.iteration_4_layout)
 
@@ -209,6 +252,13 @@ class Ui_Importer(object):
 
         self.iteration_5_layout.addWidget(self.lbIter_5)
 
+        self.lbReloc_5 = QLabel(Importer)
+        self.lbReloc_5.setObjectName("lbReloc_5")
+        self.lbReloc_5.setFont(font)
+        self.lbReloc_5.setAlignment(Qt.AlignCenter)
+
+        self.iteration_5_layout.addWidget(self.lbReloc_5)
+
         self.mainLayout.addLayout(self.iteration_5_layout)
 
         self.iteration_6_layout = QHBoxLayout()
@@ -227,6 +277,13 @@ class Ui_Importer(object):
         self.lbIter_6.setAlignment(Qt.AlignCenter)
 
         self.iteration_6_layout.addWidget(self.lbIter_6)
+
+        self.lbReloc_6 = QLabel(Importer)
+        self.lbReloc_6.setObjectName("lbReloc_6")
+        self.lbReloc_6.setFont(font)
+        self.lbReloc_6.setAlignment(Qt.AlignCenter)
+
+        self.iteration_6_layout.addWidget(self.lbReloc_6)
 
         self.mainLayout.addLayout(self.iteration_6_layout)
 
@@ -247,6 +304,13 @@ class Ui_Importer(object):
 
         self.iteration_7_layout.addWidget(self.lbIter_7)
 
+        self.lbReloc_7 = QLabel(Importer)
+        self.lbReloc_7.setObjectName("lbReloc_7")
+        self.lbReloc_7.setFont(font)
+        self.lbReloc_7.setAlignment(Qt.AlignCenter)
+
+        self.iteration_7_layout.addWidget(self.lbReloc_7)
+
         self.mainLayout.addLayout(self.iteration_7_layout)
 
         self.itaeration_9_layout = QHBoxLayout()
@@ -265,6 +329,13 @@ class Ui_Importer(object):
         self.lbIter_8.setAlignment(Qt.AlignCenter)
 
         self.itaeration_9_layout.addWidget(self.lbIter_8)
+
+        self.lbReloc_8 = QLabel(Importer)
+        self.lbReloc_8.setObjectName("lbReloc_8")
+        self.lbReloc_8.setFont(font)
+        self.lbReloc_8.setAlignment(Qt.AlignCenter)
+
+        self.itaeration_9_layout.addWidget(self.lbReloc_8)
 
         self.mainLayout.addLayout(self.itaeration_9_layout)
 
@@ -285,6 +356,13 @@ class Ui_Importer(object):
 
         self.iteration_9_layout.addWidget(self.lbIter_9)
 
+        self.lbReloc_9 = QLabel(Importer)
+        self.lbReloc_9.setObjectName("lbReloc_9")
+        self.lbReloc_9.setFont(font)
+        self.lbReloc_9.setAlignment(Qt.AlignCenter)
+
+        self.iteration_9_layout.addWidget(self.lbReloc_9)
+
         self.mainLayout.addLayout(self.iteration_9_layout)
 
         self.iteration_10_layout = QHBoxLayout()
@@ -303,6 +381,13 @@ class Ui_Importer(object):
         self.lbIter_10.setAlignment(Qt.AlignCenter)
 
         self.iteration_10_layout.addWidget(self.lbIter_10)
+
+        self.lbReloc_10 = QLabel(Importer)
+        self.lbReloc_10.setObjectName("lbReloc_10")
+        self.lbReloc_10.setFont(font)
+        self.lbReloc_10.setAlignment(Qt.AlignCenter)
+
+        self.iteration_10_layout.addWidget(self.lbReloc_10)
 
         self.mainLayout.addLayout(self.iteration_10_layout)
 
@@ -323,6 +408,13 @@ class Ui_Importer(object):
 
         self.iteration_11_layout.addWidget(self.lbIter_11)
 
+        self.lbReloc_11 = QLabel(Importer)
+        self.lbReloc_11.setObjectName("lbReloc_11")
+        self.lbReloc_11.setFont(font)
+        self.lbReloc_11.setAlignment(Qt.AlignCenter)
+
+        self.iteration_11_layout.addWidget(self.lbReloc_11)
+
         self.mainLayout.addLayout(self.iteration_11_layout)
 
         self.iteration_12_layout = QHBoxLayout()
@@ -341,6 +433,13 @@ class Ui_Importer(object):
         self.lbIter_12.setAlignment(Qt.AlignCenter)
 
         self.iteration_12_layout.addWidget(self.lbIter_12)
+
+        self.lbReloc_12 = QLabel(Importer)
+        self.lbReloc_12.setObjectName("lbReloc_12")
+        self.lbReloc_12.setFont(font)
+        self.lbReloc_12.setAlignment(Qt.AlignCenter)
+
+        self.iteration_12_layout.addWidget(self.lbReloc_12)
 
         self.mainLayout.addLayout(self.iteration_12_layout)
 
@@ -361,6 +460,13 @@ class Ui_Importer(object):
 
         self.iteration_13_layout.addWidget(self.lbIter_13)
 
+        self.lbReloc_13 = QLabel(Importer)
+        self.lbReloc_13.setObjectName("lbReloc_13")
+        self.lbReloc_13.setFont(font)
+        self.lbReloc_13.setAlignment(Qt.AlignCenter)
+
+        self.iteration_13_layout.addWidget(self.lbReloc_13)
+
         self.mainLayout.addLayout(self.iteration_13_layout)
 
         self.iteration_14_layout = QHBoxLayout()
@@ -379,6 +485,13 @@ class Ui_Importer(object):
         self.lbIter_14.setAlignment(Qt.AlignCenter)
 
         self.iteration_14_layout.addWidget(self.lbIter_14)
+
+        self.lbReloc_14 = QLabel(Importer)
+        self.lbReloc_14.setObjectName("lbReloc_14")
+        self.lbReloc_14.setFont(font)
+        self.lbReloc_14.setAlignment(Qt.AlignCenter)
+
+        self.iteration_14_layout.addWidget(self.lbReloc_14)
 
         self.mainLayout.addLayout(self.iteration_14_layout)
 
@@ -399,7 +512,25 @@ class Ui_Importer(object):
 
         self.iteration_15_layout.addWidget(self.lbIter_15)
 
+        self.lbReloc_15 = QLabel(Importer)
+        self.lbReloc_15.setObjectName("lbReloc_15")
+        self.lbReloc_15.setFont(font)
+        self.lbReloc_15.setAlignment(Qt.AlignCenter)
+
+        self.iteration_15_layout.addWidget(self.lbReloc_15)
+
         self.mainLayout.addLayout(self.iteration_15_layout)
+
+        self.lbRelocInfo = QLabel(Importer)
+        self.lbRelocInfo.setObjectName("lbRelocInfo")
+
+        self.mainLayout.addWidget(self.lbRelocInfo)
+
+        self.fixedVerticalSpacerLastValid = QSpacerItem(
+            20, 15, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
+        )
+
+        self.mainLayout.addItem(self.fixedVerticalSpacerLastValid)
 
         self.last_valid_layout = QHBoxLayout()
         self.last_valid_layout.setObjectName("last_valid_layout")
@@ -409,25 +540,25 @@ class Ui_Importer(object):
 
         self.last_valid_layout.addWidget(self.pb_last_valid)
 
-        self.pl_last_valid = QLabel(Importer)
-        self.pl_last_valid.setObjectName("pl_last_valid")
-        self.pl_last_valid.setFont(font)
-        self.pl_last_valid.setAlignment(Qt.AlignCenter)
-
-        self.last_valid_layout.addWidget(self.pl_last_valid)
-
         self.mainLayout.addLayout(self.last_valid_layout)
 
-        self.lbInfo = QLabel(Importer)
-        self.lbInfo.setObjectName("lbInfo")
+        self.lbLastValidInfo = QLabel(Importer)
+        self.lbLastValidInfo.setObjectName("lbLastValidInfo")
 
-        self.mainLayout.addWidget(self.lbInfo)
+        self.mainLayout.addWidget(self.lbLastValidInfo)
 
         self.fixedVerticalSpacer = QSpacerItem(
             20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
         )
 
         self.mainLayout.addItem(self.fixedVerticalSpacer)
+
+        self.line = QFrame(Importer)
+        self.line.setObjectName("line")
+        self.line.setFrameShape(QFrame.HLine)
+        self.line.setFrameShadow(QFrame.Sunken)
+
+        self.mainLayout.addWidget(self.line)
 
         self.cbTracking = QCheckBox(Importer)
         self.cbTracking.setObjectName("cbTracking")
@@ -485,78 +616,103 @@ class Ui_Importer(object):
         self.lbIteration.setText(
             QCoreApplication.translate("Importer", "Iteration number", None)
         )
-        self.lbCFRStatus.setText(
-            QCoreApplication.translate("Importer", "CFR status", None)
+        self.lbCFRValues.setText(
+            QCoreApplication.translate("Importer", "CFR values", None)
+        )
+        self.lbReloc.setText(
+            QCoreApplication.translate("Importer", "Relocalization", None)
         )
         self.pbIter_0.setText(
             QCoreApplication.translate("Importer", "Iteration 0", None)
         )
         self.lbIter_0.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_0.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_1.setText(
             QCoreApplication.translate("Importer", "Iteration 1", None)
         )
         self.lbIter_1.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_1.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_2.setText(
             QCoreApplication.translate("Importer", "Iteration 2", None)
         )
         self.lbIter_2.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_2.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_3.setText(
             QCoreApplication.translate("Importer", "Iteration 3", None)
         )
         self.lbIter_3.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_3.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_4.setText(
             QCoreApplication.translate("Importer", "Iteration 4", None)
         )
         self.lbIter_4.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_4.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_5.setText(
             QCoreApplication.translate("Importer", "Iteration 5", None)
         )
         self.lbIter_5.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_5.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_6.setText(
             QCoreApplication.translate("Importer", "Iteration 6", None)
         )
         self.lbIter_6.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_6.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_7.setText(
             QCoreApplication.translate("Importer", "Iteration 7", None)
         )
         self.lbIter_7.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_7.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_8.setText(
             QCoreApplication.translate("Importer", "Iteration 8", None)
         )
         self.lbIter_8.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_8.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_9.setText(
             QCoreApplication.translate("Importer", "Iteration 9", None)
         )
         self.lbIter_9.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_9.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_10.setText(
             QCoreApplication.translate("Importer", "Iteration 10", None)
         )
         self.lbIter_10.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_10.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_11.setText(
             QCoreApplication.translate("Importer", "Iteration 11", None)
         )
         self.lbIter_11.setText(QCoreApplication.translate("Importer", "\u2713", None))
+        self.lbReloc_11.setText(QCoreApplication.translate("Importer", "\u2713", None))
         self.pbIter_12.setText(
             QCoreApplication.translate("Importer", "Iteration 12", None)
         )
-        self.lbIter_12.setText(QCoreApplication.translate("Importer", "\u2713", None))
+        self.lbIter_12.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_12.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_13.setText(
             QCoreApplication.translate("Importer", "Iteration 13", None)
         )
-        self.lbIter_13.setText(QCoreApplication.translate("Importer", "\u2713", None))
+        self.lbIter_13.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_13.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_14.setText(
             QCoreApplication.translate("Importer", "Iteration 14", None)
         )
-        self.lbIter_14.setText(QCoreApplication.translate("Importer", "\u2713", None))
+        self.lbIter_14.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_14.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.pbIter_15.setText(
             QCoreApplication.translate("Importer", "Iteration 15", None)
         )
-        self.lbIter_15.setText(QCoreApplication.translate("Importer", "\u2713", None))
-        self.pb_last_valid.setText(
-            QCoreApplication.translate("Importer", "Last valid", None)
+        self.lbIter_15.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbReloc_15.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
+        self.lbRelocInfo.setText(
+            QCoreApplication.translate(
+                "Importer",
+                "Non-relocalized iterations have only one (x, y, z) coordinate.",
+                None,
+            )
         )
-        self.pl_last_valid.setText("")
-        self.lbInfo.setText(
+        self.pb_last_valid.setText(
+            QCoreApplication.translate("Importer", "Pick last valid iteration", None)
+        )
+        self.lbLastValidInfo.setText(
             QCoreApplication.translate(
                 "Importer", 'Only "last valid" iteration can be saved.', None
             )

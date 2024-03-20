@@ -631,7 +631,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 return
 
             # Open the Importer
-            importer = Importer(reader.valid_cfr, self.state.dwell_time)
+            importer = Importer(
+                reader.valid_cfr, reader.relocalizations, self.state.dwell_time
+            )
             if importer.exec_() != QDialog.Accepted:
                 # The user cancelled the dialog
                 print("Loading cancelled.")

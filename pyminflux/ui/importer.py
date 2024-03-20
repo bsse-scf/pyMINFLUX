@@ -23,7 +23,7 @@ class Importer(QDialog, Ui_Importer):
     A QDialog to support custom loading.
     """
 
-    def __init__(self, valid_cfr, dwell_time):
+    def __init__(self, valid_cfr, relocalizations, dwell_time):
         # Call the base class
         super().__init__()
 
@@ -37,6 +37,7 @@ class Importer(QDialog, Ui_Importer):
         self._iteration = self._num_iterations - 1
         self._cfr_iteration = self._last_valid_cfr
         self._valid_cfr = valid_cfr
+        self._relocalizations = relocalizations
         self._dwell_time = dwell_time
 
         # Keep track of whether the dataset is a tracking dataset
@@ -50,39 +51,45 @@ class Importer(QDialog, Ui_Importer):
 
         # Characters
         self.valid_char = "✓"
-        self.invalid_char = "⨯"  # "—"
+        self.invalid_char = "⨯"
 
         # Organize the widgets to hide in lists
         self.widgets_list = [
-            (self.ui.pbIter_0, self.ui.lbIter_0),
-            (self.ui.pbIter_1, self.ui.lbIter_1),
-            (self.ui.pbIter_2, self.ui.lbIter_2),
-            (self.ui.pbIter_3, self.ui.lbIter_3),
-            (self.ui.pbIter_4, self.ui.lbIter_4),
-            (self.ui.pbIter_5, self.ui.lbIter_5),
-            (self.ui.pbIter_6, self.ui.lbIter_6),
-            (self.ui.pbIter_7, self.ui.lbIter_7),
-            (self.ui.pbIter_8, self.ui.lbIter_8),
-            (self.ui.pbIter_9, self.ui.lbIter_9),
-            (self.ui.pbIter_10, self.ui.lbIter_10),
-            (self.ui.pbIter_11, self.ui.lbIter_11),
-            (self.ui.pbIter_12, self.ui.lbIter_12),
-            (self.ui.pbIter_13, self.ui.lbIter_13),
-            (self.ui.pbIter_14, self.ui.lbIter_14),
-            (self.ui.pbIter_15, self.ui.lbIter_15),
+            (self.ui.pbIter_0, self.ui.lbIter_0, self.ui.lbReloc_0),
+            (self.ui.pbIter_1, self.ui.lbIter_1, self.ui.lbReloc_1),
+            (self.ui.pbIter_2, self.ui.lbIter_2, self.ui.lbReloc_2),
+            (self.ui.pbIter_3, self.ui.lbIter_3, self.ui.lbReloc_3),
+            (self.ui.pbIter_4, self.ui.lbIter_4, self.ui.lbReloc_4),
+            (self.ui.pbIter_5, self.ui.lbIter_5, self.ui.lbReloc_5),
+            (self.ui.pbIter_6, self.ui.lbIter_6, self.ui.lbReloc_6),
+            (self.ui.pbIter_7, self.ui.lbIter_7, self.ui.lbReloc_7),
+            (self.ui.pbIter_8, self.ui.lbIter_8, self.ui.lbReloc_8),
+            (self.ui.pbIter_9, self.ui.lbIter_9, self.ui.lbReloc_9),
+            (self.ui.pbIter_10, self.ui.lbIter_10, self.ui.lbReloc_10),
+            (self.ui.pbIter_11, self.ui.lbIter_11, self.ui.lbReloc_11),
+            (self.ui.pbIter_12, self.ui.lbIter_12, self.ui.lbReloc_12),
+            (self.ui.pbIter_13, self.ui.lbIter_13, self.ui.lbReloc_13),
+            (self.ui.pbIter_14, self.ui.lbIter_14, self.ui.lbReloc_14),
+            (self.ui.pbIter_15, self.ui.lbIter_15, self.ui.lbReloc_15),
         ]
 
         # Initially hide all buttons and labels
         self.hide_to(self._num_iterations)
 
-        # Set validity
+        # Set validity flag
         self.set_cfr_validity(self._valid_cfr)
+
+        # Set relocalization flag
+        self.set_relocalizations(self._relocalizations)
 
         # Highlight global _iteration
         self.highlight_iteration(self._num_iterations - 1)
 
         # Highlight cfr index
         self.highlight_cfr(self._cfr_iteration)
+
+        # Highlight relocalize index
+        self.highlight_relocalization(self._cfr_iteration)
 
         # Adjust the size of the dialog
         self.adjustSize()
@@ -135,6 +142,9 @@ class Importer(QDialog, Ui_Importer):
         # Highlight cfr index
         self.highlight_cfr(self._cfr_iteration)
 
+        # Highlight relocalized field
+        self.highlight_relocalization(self._cfr_iteration)
+
     @Slot(int, name="set_all_iterations")
     def set_all_iterations(self, checked):
 
@@ -154,6 +164,9 @@ class Importer(QDialog, Ui_Importer):
         # Highlight cfr index
         self.highlight_cfr(index)
 
+        # Highlight relocalization row
+        self.highlight_relocalization(index)
+
     def get_selection(self) -> dict:
         """Return the selected options."""
         return {
@@ -168,6 +181,7 @@ class Importer(QDialog, Ui_Importer):
         for i in range(len(self.widgets_list) - 1, to_value - 1, -1):
             self.widgets_list[i][0].setVisible(False)
             self.widgets_list[i][1].setVisible(False)
+            self.widgets_list[i][2].setVisible(False)
 
     def set_cfr_validity(self, cfr_status):
         """Display the validity of the CFR _iteration with the selected characters."""
@@ -176,10 +190,18 @@ class Importer(QDialog, Ui_Importer):
                 self.valid_char if status else self.invalid_char
             )
 
+    def set_relocalizations(self, relocalizations):
+        """Display the iterations that have relocalizations."""
+        for i, status in enumerate(relocalizations):
+            self.widgets_list[i][2].setText(
+                self.valid_char if status else self.invalid_char
+            )
+
     def reset_colors(self):
         for i in range(len(self.widgets_list) - 1, -1, -1):
             self.widgets_list[i][0].setStyleSheet("")
             self.widgets_list[i][1].setStyleSheet("")
+            self.widgets_list[i][2].setStyleSheet("")
 
     def highlight_iteration(self, iteration):
         """Highlight the button for the global _iteration."""
@@ -190,5 +212,11 @@ class Importer(QDialog, Ui_Importer):
     def highlight_cfr(self, cfr_index):
         """Highlight the label for the cfr index."""
         self.widgets_list[cfr_index][1].setStyleSheet(
+            "color: black; background-color: lightblue;"
+        )
+
+    def highlight_relocalization(self, cfr_index):
+        """Highlight the relocalized label matching the cfr index."""
+        self.widgets_list[cfr_index][2].setStyleSheet(
             "color: black; background-color: lightblue;"
         )
