@@ -37,6 +37,7 @@ class NativeMetadata:
         tr_len_thresholds: Union[None, tuple[int, int]]
         dwell_time: float
         is_tracking: bool
+        scale_bar_size: float
         (+ version 1.0)
 
     Version 1.0
@@ -48,12 +49,13 @@ class NativeMetadata:
         num_fluorophores: int
     """
 
-    z_scaling_factor: float
-    min_trace_length: int
-    efo_thresholds: Union[None, tuple[int, int]]
     cfr_thresholds: Union[None, tuple[float, float]]
+    dwell_time: float
+    efo_thresholds: Union[None, tuple[int, int]]
+    is_tracking: bool
+    min_trace_length: int
+    num_fluorophores: int
+    scale_bar_size: float
     time_thresholds: Union[None, tuple[float, float]]
     tr_len_thresholds: Union[None, tuple[float, float]]
-    num_fluorophores: int
-    dwell_time: float
-    is_tracking: bool
+    z_scaling_factor: float

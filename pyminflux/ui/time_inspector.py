@@ -522,11 +522,18 @@ class TimeInspector(QDialog, Ui_TimeInspector):
                 return
 
             menu = QMenu()
-            ranges_action = QAction("Set ROI ranges")
+            ranges_action = QAction("Set range")
             ranges_action.triggered.connect(
                 lambda checked: self.roi_open_ranges_dialog(ev.currentItem.data_label)
             )
             menu.addAction(ranges_action)
+            keep_action = QAction("Keep data")
+            keep_action.triggered.connect(self.keep_time_region)
+            menu.addAction(keep_action)
+            drop_action = QAction("Drop data")
+            drop_action.triggered.connect(self.crop_time_region)
+            menu.addAction(drop_action)
+            menu.addSeparator()
             export_action = QAction("Export plot")
             export_action.triggered.connect(
                 lambda checked: export_plot_interactive(ev.currentItem)

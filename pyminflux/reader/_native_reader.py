@@ -72,6 +72,7 @@ class NativeMetadataReader:
             if file_version == "2.0":
 
                 try:
+                    # This setting can be missing
                     tr_len_thresholds = tuple(
                         f["parameters/applied_tr_len_thresholds"][:]
                     )
@@ -81,9 +82,10 @@ class NativeMetadataReader:
                 try:
                     dwell_time = float(f["parameters/dwell_time"][()])
                 except KeyError as e:
-                    tr_len_thresholds = None
+                    return None
 
                 try:
+                    # This setting can be missing
                     time_thresholds = tuple(f["parameters/applied_time_thresholds"][:])
                 except KeyError as e:
                     time_thresholds = None
@@ -93,13 +95,19 @@ class NativeMetadataReader:
                 try:
                     is_tracking = bool(f["parameters/is_tracking"][()])
                 except KeyError as e:
-                    tr_len_thresholds = None
+                    return None
+
+                try:
+                    scale_bar_size = float(f["parameters/scale_bar_size"][()])
+                except KeyError as e:
+                    return None
 
             else:
                 tr_len_thresholds = None
                 time_thresholds = None
                 dwell_time = 1.0
                 is_tracking = False
+                scale_bar_size = 500
 
         # Store and return
         metadata = NativeMetadata(
@@ -112,6 +120,7 @@ class NativeMetadataReader:
             num_fluorophores=num_fluorophores,
             dwell_time=dwell_time,
             is_tracking=is_tracking,
+            scale_bar_size=scale_bar_size,
         )
 
         return metadata

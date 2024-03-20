@@ -133,6 +133,7 @@ class PyMinFluxNativeWriter:
             )
         group.create_dataset("num_fluorophores", data=self.processor.num_fluorophores)
         group.create_dataset("dwell_time", data=self.state.dwell_time)
+        group.create_dataset("scale_bar_size", data=self.state.scale_bar_size)
 
         # HDF5 does not have a native boolean type, so we save as int8 and convert it
         # back to boolean on read.

@@ -336,6 +336,13 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
         # Calculate the width in pixels
         return abs(bottomRight.x() - topLeft.x())
 
+    def setSize(self, size):
+        """Set new scale bar size."""
+        self.size = size
+        self.scaleBarLabel = f"{size}nm"
+        self.text.setText(self.scaleBarLabel)
+        self.updateBar()
+
     def updateBar(self):
         """Update the scale bar in size and position on the view."""
         if not self._is_enabled:

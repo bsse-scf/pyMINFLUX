@@ -20,7 +20,7 @@ from pyqtgraph import ROI, PlotCurveItem, PlotWidget, TextItem, ViewBox, mkPen
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMenu
+from PySide6.QtWidgets import QInputDialog, QMenu
 
 from ..state import ColorCode, State
 from .helpers import (
@@ -163,6 +163,9 @@ class Plotter(PlotWidget):
                     crop_data_action.triggered.connect(self.crop_data_by_roi_selection)
                     menu.addAction(crop_data_action)
                     menu.addSeparator()
+                set_scalebar_size_action = QAction("Set scale bar size")
+                set_scalebar_size_action.triggered.connect(self.set_scalebar_size)
+                menu.addAction(set_scalebar_size_action)
                 export_action = QAction("Export plot")
                 export_action.triggered.connect(
                     lambda checked: export_plot_interactive(self.getPlotItem())
@@ -356,11 +359,11 @@ class Plotter(PlotWidget):
                 # Add scale bar
                 if self.scale_bar is None:
                     self.scale_bar = BottomLeftAnchoredScaleBar(
-                        size=500,
+                        size=self.state.scale_bar_size,
                         auto_resize=False,
                         viewBox=self.getViewBox(),
-                        brush="b",
-                        pen="w",
+                        brush="w",
+                        pen=None,
                         suffix="nm",
                         offset=(50, -15),
                     )
@@ -451,3 +454,21 @@ class Plotter(PlotWidget):
             y_range = (self.ROI.pos()[1], self.ROI.pos()[1] + self.ROI.size()[1])
 
         return x_range, y_range
+
+    def set_scalebar_size(self):
+        """Ask the user to specify the size of the scalebar."""
+        size, ok = QInputDialog.getDouble(
+            self,
+            "Scale bar",
+            "Set scale bar length (nm):",
+            self.state.scale_bar_size,
+            minValue=1,
+            maxValue=10000.0,
+            decimals=2,
+        )
+        if ok:
+            # Set the new value
+            self.state.scale_bar_size = size
+
+            # Update the bar
+            self.scale_bar.setSize(self.state.scale_bar_size)

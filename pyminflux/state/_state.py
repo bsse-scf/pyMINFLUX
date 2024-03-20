@@ -62,6 +62,7 @@ class State(metaclass=Singleton):
         "open_console_at_start",
         "plot_average_localisations",
         "plot_export_dpi",
+        "scale_bar_size",
         "time_thresholds",
         "tr_len_range",
         "tr_len_thresholds",
@@ -153,6 +154,9 @@ class State(metaclass=Singleton):
         # Is the dataset a tracking acquisition?
         self.is_tracking: bool = False
 
+        # Scale bar size in um
+        self.scale_bar_size: float = 500.0
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -184,6 +188,7 @@ class State(metaclass=Singleton):
             "open_console_at_start": self.open_console_at_start,
             "plot_average_localisations": self.plot_average_localisations,
             "plot_export_dpi": self.plot_export_dpi,
+            "scale_bar_size": self.scale_bar_size,
             "time_thresholds": self.time_thresholds,
             "tr_len_range": self.tr_len_range,
             "tr_len_thresholds": self.tr_len_thresholds,
@@ -197,14 +202,14 @@ class State(metaclass=Singleton):
     def reset(self):
         """Reset to data-specific settings."""
 
-        self.efo_thresholds = None
-        self.applied_efo_thresholds = None
-        self.cfr_thresholds = None
         self.applied_cfr_thresholds = None
-        self.tr_len_thresholds = None
-        self.applied_tr_len_thresholds = None
-        self.time_thresholds = None
+        self.applied_efo_thresholds = None
         self.applied_time_thresholds = None
+        self.applied_tr_len_thresholds = None
+        self.cfr_thresholds = None
+        self.efo_thresholds = None
+        self.time_thresholds = None
+        self.tr_len_thresholds = None
 
     def full_reset(self):
         """Reset to defaults."""
@@ -237,6 +242,7 @@ class State(metaclass=Singleton):
         self.open_console_at_start = False
         self.plot_average_localisations = False
         self.plot_export_dpi = 300
+        self.scale_bar_size = 500.0
         self.time_thresholds = None
         self.tr_len_range = None
         self.tr_len_thresholds = None
@@ -248,18 +254,19 @@ class State(metaclass=Singleton):
 
     def update_from_metadata(self, metadata: NativeMetadata):
         """Update State from the NativeMetadata parameters from a `.pmx` file."""
-        self.min_trace_length = metadata.min_trace_length
-        self.efo_thresholds = metadata.efo_thresholds
-        self.applied_efo_thresholds = metadata.efo_thresholds
-        self.cfr_thresholds = metadata.cfr_thresholds
         self.applied_cfr_thresholds = metadata.cfr_thresholds
+        self.applied_efo_thresholds = metadata.efo_thresholds
+        self.applied_tr_len_thresholds = metadata.tr_len_thresholds
+        self.cfr_thresholds = metadata.cfr_thresholds
+        self.dwell_time = metadata.dwell_time
+        self.efo_thresholds = metadata.efo_thresholds
+        self.is_tracking = metadata.is_tracking
+        self.min_trace_length = metadata.min_trace_length
         self.num_fluorophores = metadata.num_fluorophores
-        self.z_scaling_factor = metadata.z_scaling_factor
+        self.scale_bar_size = metadata.scale_bar_size
         self.time_thresholds = metadata.time_thresholds
         self.tr_len_thresholds = metadata.tr_len_thresholds
-        self.applied_tr_len_thresholds = metadata.tr_len_thresholds
-        self.dwell_time = metadata.dwell_time
-        self.is_tracking = metadata.is_tracking
+        self.z_scaling_factor = metadata.z_scaling_factor
 
     def __str__(self):
         """Human-readable representation."""

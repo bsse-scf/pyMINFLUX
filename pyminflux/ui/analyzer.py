@@ -933,7 +933,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
-            ranges_action = QAction("Set ROI ranges")
+            ranges_action = QAction("Set range")
             ranges_action.triggered.connect(
                 lambda checked: self.roi_open_ranges_dialog(ev.currentItem.data_label)
             )
