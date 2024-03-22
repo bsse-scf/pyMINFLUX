@@ -111,6 +111,11 @@ class Ui_Importer(object):
         self.pbIter_0 = QPushButton(Importer)
         self.pbIter_0.setObjectName("pbIter_0")
         self.pbIter_0.setEnabled(True)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.pbIter_0.sizePolicy().hasHeightForWidth())
+        self.pbIter_0.setSizePolicy(sizePolicy1)
         self.pbIter_0.setCheckable(False)
 
         self.iteration_0_layout.addWidget(self.pbIter_0)
@@ -118,12 +123,21 @@ class Ui_Importer(object):
         self.lbIter_0 = QLabel(Importer)
         self.lbIter_0.setObjectName("lbIter_0")
         self.lbIter_0.setEnabled(True)
+        sizePolicy2 = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.lbIter_0.sizePolicy().hasHeightForWidth())
+        self.lbIter_0.setSizePolicy(sizePolicy2)
         self.lbIter_0.setAlignment(Qt.AlignCenter)
 
         self.iteration_0_layout.addWidget(self.lbIter_0)
 
         self.lbReloc_0 = QLabel(Importer)
         self.lbReloc_0.setObjectName("lbReloc_0")
+        sizePolicy2.setHeightForWidth(self.lbReloc_0.sizePolicy().hasHeightForWidth())
+        self.lbReloc_0.setSizePolicy(sizePolicy2)
         self.lbReloc_0.setFont(font)
         self.lbReloc_0.setAlignment(Qt.AlignCenter)
 
@@ -136,6 +150,8 @@ class Ui_Importer(object):
         self.pbIter_1 = QPushButton(Importer)
         self.pbIter_1.setObjectName("pbIter_1")
         self.pbIter_1.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_1.sizePolicy().hasHeightForWidth())
+        self.pbIter_1.setSizePolicy(sizePolicy1)
         self.pbIter_1.setCheckable(False)
 
         self.iteration_1_layout.addWidget(self.pbIter_1)
@@ -143,6 +159,8 @@ class Ui_Importer(object):
         self.lbIter_1 = QLabel(Importer)
         self.lbIter_1.setObjectName("lbIter_1")
         self.lbIter_1.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_1.sizePolicy().hasHeightForWidth())
+        self.lbIter_1.setSizePolicy(sizePolicy2)
         self.lbIter_1.setFont(font)
         self.lbIter_1.setAlignment(Qt.AlignCenter)
 
@@ -150,6 +168,8 @@ class Ui_Importer(object):
 
         self.lbReloc_1 = QLabel(Importer)
         self.lbReloc_1.setObjectName("lbReloc_1")
+        sizePolicy2.setHeightForWidth(self.lbReloc_1.sizePolicy().hasHeightForWidth())
+        self.lbReloc_1.setSizePolicy(sizePolicy2)
         self.lbReloc_1.setFont(font)
         self.lbReloc_1.setAlignment(Qt.AlignCenter)
 
@@ -162,6 +182,8 @@ class Ui_Importer(object):
         self.pbIter_2 = QPushButton(Importer)
         self.pbIter_2.setObjectName("pbIter_2")
         self.pbIter_2.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_2.sizePolicy().hasHeightForWidth())
+        self.pbIter_2.setSizePolicy(sizePolicy1)
         self.pbIter_2.setCheckable(False)
 
         self.iteration_2_layout.addWidget(self.pbIter_2)
@@ -169,6 +191,8 @@ class Ui_Importer(object):
         self.lbIter_2 = QLabel(Importer)
         self.lbIter_2.setObjectName("lbIter_2")
         self.lbIter_2.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_2.sizePolicy().hasHeightForWidth())
+        self.lbIter_2.setSizePolicy(sizePolicy2)
         self.lbIter_2.setFont(font)
         self.lbIter_2.setAlignment(Qt.AlignCenter)
 
@@ -176,6 +200,8 @@ class Ui_Importer(object):
 
         self.lbReloc_2 = QLabel(Importer)
         self.lbReloc_2.setObjectName("lbReloc_2")
+        sizePolicy2.setHeightForWidth(self.lbReloc_2.sizePolicy().hasHeightForWidth())
+        self.lbReloc_2.setSizePolicy(sizePolicy2)
         self.lbReloc_2.setFont(font)
         self.lbReloc_2.setAlignment(Qt.AlignCenter)
 
@@ -188,6 +214,8 @@ class Ui_Importer(object):
         self.pbIter_3 = QPushButton(Importer)
         self.pbIter_3.setObjectName("pbIter_3")
         self.pbIter_3.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_3.sizePolicy().hasHeightForWidth())
+        self.pbIter_3.setSizePolicy(sizePolicy1)
         self.pbIter_3.setCheckable(False)
 
         self.iteration_3_layout.addWidget(self.pbIter_3)
@@ -195,6 +223,8 @@ class Ui_Importer(object):
         self.lbIter_3 = QLabel(Importer)
         self.lbIter_3.setObjectName("lbIter_3")
         self.lbIter_3.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_3.sizePolicy().hasHeightForWidth())
+        self.lbIter_3.setSizePolicy(sizePolicy2)
         self.lbIter_3.setFont(font)
         self.lbIter_3.setAlignment(Qt.AlignCenter)
 
@@ -202,6 +232,8 @@ class Ui_Importer(object):
 
         self.lbReloc_3 = QLabel(Importer)
         self.lbReloc_3.setObjectName("lbReloc_3")
+        sizePolicy2.setHeightForWidth(self.lbReloc_3.sizePolicy().hasHeightForWidth())
+        self.lbReloc_3.setSizePolicy(sizePolicy2)
         self.lbReloc_3.setFont(font)
         self.lbReloc_3.setAlignment(Qt.AlignCenter)
 
@@ -214,6 +246,8 @@ class Ui_Importer(object):
         self.pbIter_4 = QPushButton(Importer)
         self.pbIter_4.setObjectName("pbIter_4")
         self.pbIter_4.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_4.sizePolicy().hasHeightForWidth())
+        self.pbIter_4.setSizePolicy(sizePolicy1)
         self.pbIter_4.setCheckable(False)
 
         self.iteration_4_layout.addWidget(self.pbIter_4)
@@ -221,6 +255,8 @@ class Ui_Importer(object):
         self.lbIter_4 = QLabel(Importer)
         self.lbIter_4.setObjectName("lbIter_4")
         self.lbIter_4.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_4.sizePolicy().hasHeightForWidth())
+        self.lbIter_4.setSizePolicy(sizePolicy2)
         self.lbIter_4.setFont(font)
         self.lbIter_4.setAlignment(Qt.AlignCenter)
 
@@ -228,6 +264,8 @@ class Ui_Importer(object):
 
         self.lbReloc_4 = QLabel(Importer)
         self.lbReloc_4.setObjectName("lbReloc_4")
+        sizePolicy2.setHeightForWidth(self.lbReloc_4.sizePolicy().hasHeightForWidth())
+        self.lbReloc_4.setSizePolicy(sizePolicy2)
         self.lbReloc_4.setFont(font)
         self.lbReloc_4.setAlignment(Qt.AlignCenter)
 
@@ -240,6 +278,8 @@ class Ui_Importer(object):
         self.pbIter_5 = QPushButton(Importer)
         self.pbIter_5.setObjectName("pbIter_5")
         self.pbIter_5.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_5.sizePolicy().hasHeightForWidth())
+        self.pbIter_5.setSizePolicy(sizePolicy1)
         self.pbIter_5.setCheckable(False)
 
         self.iteration_5_layout.addWidget(self.pbIter_5)
@@ -247,6 +287,8 @@ class Ui_Importer(object):
         self.lbIter_5 = QLabel(Importer)
         self.lbIter_5.setObjectName("lbIter_5")
         self.lbIter_5.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_5.sizePolicy().hasHeightForWidth())
+        self.lbIter_5.setSizePolicy(sizePolicy2)
         self.lbIter_5.setFont(font)
         self.lbIter_5.setAlignment(Qt.AlignCenter)
 
@@ -254,6 +296,8 @@ class Ui_Importer(object):
 
         self.lbReloc_5 = QLabel(Importer)
         self.lbReloc_5.setObjectName("lbReloc_5")
+        sizePolicy2.setHeightForWidth(self.lbReloc_5.sizePolicy().hasHeightForWidth())
+        self.lbReloc_5.setSizePolicy(sizePolicy2)
         self.lbReloc_5.setFont(font)
         self.lbReloc_5.setAlignment(Qt.AlignCenter)
 
@@ -266,6 +310,8 @@ class Ui_Importer(object):
         self.pbIter_6 = QPushButton(Importer)
         self.pbIter_6.setObjectName("pbIter_6")
         self.pbIter_6.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_6.sizePolicy().hasHeightForWidth())
+        self.pbIter_6.setSizePolicy(sizePolicy1)
         self.pbIter_6.setCheckable(False)
 
         self.iteration_6_layout.addWidget(self.pbIter_6)
@@ -273,6 +319,8 @@ class Ui_Importer(object):
         self.lbIter_6 = QLabel(Importer)
         self.lbIter_6.setObjectName("lbIter_6")
         self.lbIter_6.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_6.sizePolicy().hasHeightForWidth())
+        self.lbIter_6.setSizePolicy(sizePolicy2)
         self.lbIter_6.setFont(font)
         self.lbIter_6.setAlignment(Qt.AlignCenter)
 
@@ -280,6 +328,8 @@ class Ui_Importer(object):
 
         self.lbReloc_6 = QLabel(Importer)
         self.lbReloc_6.setObjectName("lbReloc_6")
+        sizePolicy2.setHeightForWidth(self.lbReloc_6.sizePolicy().hasHeightForWidth())
+        self.lbReloc_6.setSizePolicy(sizePolicy2)
         self.lbReloc_6.setFont(font)
         self.lbReloc_6.setAlignment(Qt.AlignCenter)
 
@@ -292,6 +342,8 @@ class Ui_Importer(object):
         self.pbIter_7 = QPushButton(Importer)
         self.pbIter_7.setObjectName("pbIter_7")
         self.pbIter_7.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_7.sizePolicy().hasHeightForWidth())
+        self.pbIter_7.setSizePolicy(sizePolicy1)
         self.pbIter_7.setCheckable(False)
 
         self.iteration_7_layout.addWidget(self.pbIter_7)
@@ -299,6 +351,8 @@ class Ui_Importer(object):
         self.lbIter_7 = QLabel(Importer)
         self.lbIter_7.setObjectName("lbIter_7")
         self.lbIter_7.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_7.sizePolicy().hasHeightForWidth())
+        self.lbIter_7.setSizePolicy(sizePolicy2)
         self.lbIter_7.setFont(font)
         self.lbIter_7.setAlignment(Qt.AlignCenter)
 
@@ -306,6 +360,8 @@ class Ui_Importer(object):
 
         self.lbReloc_7 = QLabel(Importer)
         self.lbReloc_7.setObjectName("lbReloc_7")
+        sizePolicy2.setHeightForWidth(self.lbReloc_7.sizePolicy().hasHeightForWidth())
+        self.lbReloc_7.setSizePolicy(sizePolicy2)
         self.lbReloc_7.setFont(font)
         self.lbReloc_7.setAlignment(Qt.AlignCenter)
 
@@ -318,6 +374,8 @@ class Ui_Importer(object):
         self.pbIter_8 = QPushButton(Importer)
         self.pbIter_8.setObjectName("pbIter_8")
         self.pbIter_8.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_8.sizePolicy().hasHeightForWidth())
+        self.pbIter_8.setSizePolicy(sizePolicy1)
         self.pbIter_8.setCheckable(False)
 
         self.itaeration_9_layout.addWidget(self.pbIter_8)
@@ -325,6 +383,8 @@ class Ui_Importer(object):
         self.lbIter_8 = QLabel(Importer)
         self.lbIter_8.setObjectName("lbIter_8")
         self.lbIter_8.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_8.sizePolicy().hasHeightForWidth())
+        self.lbIter_8.setSizePolicy(sizePolicy2)
         self.lbIter_8.setFont(font)
         self.lbIter_8.setAlignment(Qt.AlignCenter)
 
@@ -332,6 +392,8 @@ class Ui_Importer(object):
 
         self.lbReloc_8 = QLabel(Importer)
         self.lbReloc_8.setObjectName("lbReloc_8")
+        sizePolicy2.setHeightForWidth(self.lbReloc_8.sizePolicy().hasHeightForWidth())
+        self.lbReloc_8.setSizePolicy(sizePolicy2)
         self.lbReloc_8.setFont(font)
         self.lbReloc_8.setAlignment(Qt.AlignCenter)
 
@@ -344,6 +406,8 @@ class Ui_Importer(object):
         self.pbIter_9 = QPushButton(Importer)
         self.pbIter_9.setObjectName("pbIter_9")
         self.pbIter_9.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_9.sizePolicy().hasHeightForWidth())
+        self.pbIter_9.setSizePolicy(sizePolicy1)
         self.pbIter_9.setCheckable(False)
 
         self.iteration_9_layout.addWidget(self.pbIter_9)
@@ -351,6 +415,8 @@ class Ui_Importer(object):
         self.lbIter_9 = QLabel(Importer)
         self.lbIter_9.setObjectName("lbIter_9")
         self.lbIter_9.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_9.sizePolicy().hasHeightForWidth())
+        self.lbIter_9.setSizePolicy(sizePolicy2)
         self.lbIter_9.setFont(font)
         self.lbIter_9.setAlignment(Qt.AlignCenter)
 
@@ -358,6 +424,8 @@ class Ui_Importer(object):
 
         self.lbReloc_9 = QLabel(Importer)
         self.lbReloc_9.setObjectName("lbReloc_9")
+        sizePolicy2.setHeightForWidth(self.lbReloc_9.sizePolicy().hasHeightForWidth())
+        self.lbReloc_9.setSizePolicy(sizePolicy2)
         self.lbReloc_9.setFont(font)
         self.lbReloc_9.setAlignment(Qt.AlignCenter)
 
@@ -370,6 +438,8 @@ class Ui_Importer(object):
         self.pbIter_10 = QPushButton(Importer)
         self.pbIter_10.setObjectName("pbIter_10")
         self.pbIter_10.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_10.sizePolicy().hasHeightForWidth())
+        self.pbIter_10.setSizePolicy(sizePolicy1)
         self.pbIter_10.setCheckable(False)
 
         self.iteration_10_layout.addWidget(self.pbIter_10)
@@ -377,6 +447,8 @@ class Ui_Importer(object):
         self.lbIter_10 = QLabel(Importer)
         self.lbIter_10.setObjectName("lbIter_10")
         self.lbIter_10.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_10.sizePolicy().hasHeightForWidth())
+        self.lbIter_10.setSizePolicy(sizePolicy2)
         self.lbIter_10.setFont(font)
         self.lbIter_10.setAlignment(Qt.AlignCenter)
 
@@ -384,6 +456,8 @@ class Ui_Importer(object):
 
         self.lbReloc_10 = QLabel(Importer)
         self.lbReloc_10.setObjectName("lbReloc_10")
+        sizePolicy2.setHeightForWidth(self.lbReloc_10.sizePolicy().hasHeightForWidth())
+        self.lbReloc_10.setSizePolicy(sizePolicy2)
         self.lbReloc_10.setFont(font)
         self.lbReloc_10.setAlignment(Qt.AlignCenter)
 
@@ -396,6 +470,8 @@ class Ui_Importer(object):
         self.pbIter_11 = QPushButton(Importer)
         self.pbIter_11.setObjectName("pbIter_11")
         self.pbIter_11.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_11.sizePolicy().hasHeightForWidth())
+        self.pbIter_11.setSizePolicy(sizePolicy1)
         self.pbIter_11.setCheckable(False)
 
         self.iteration_11_layout.addWidget(self.pbIter_11)
@@ -403,6 +479,8 @@ class Ui_Importer(object):
         self.lbIter_11 = QLabel(Importer)
         self.lbIter_11.setObjectName("lbIter_11")
         self.lbIter_11.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_11.sizePolicy().hasHeightForWidth())
+        self.lbIter_11.setSizePolicy(sizePolicy2)
         self.lbIter_11.setFont(font)
         self.lbIter_11.setAlignment(Qt.AlignCenter)
 
@@ -410,6 +488,8 @@ class Ui_Importer(object):
 
         self.lbReloc_11 = QLabel(Importer)
         self.lbReloc_11.setObjectName("lbReloc_11")
+        sizePolicy2.setHeightForWidth(self.lbReloc_11.sizePolicy().hasHeightForWidth())
+        self.lbReloc_11.setSizePolicy(sizePolicy2)
         self.lbReloc_11.setFont(font)
         self.lbReloc_11.setAlignment(Qt.AlignCenter)
 
@@ -422,6 +502,8 @@ class Ui_Importer(object):
         self.pbIter_12 = QPushButton(Importer)
         self.pbIter_12.setObjectName("pbIter_12")
         self.pbIter_12.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_12.sizePolicy().hasHeightForWidth())
+        self.pbIter_12.setSizePolicy(sizePolicy1)
         self.pbIter_12.setCheckable(False)
 
         self.iteration_12_layout.addWidget(self.pbIter_12)
@@ -429,6 +511,8 @@ class Ui_Importer(object):
         self.lbIter_12 = QLabel(Importer)
         self.lbIter_12.setObjectName("lbIter_12")
         self.lbIter_12.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_12.sizePolicy().hasHeightForWidth())
+        self.lbIter_12.setSizePolicy(sizePolicy2)
         self.lbIter_12.setFont(font)
         self.lbIter_12.setAlignment(Qt.AlignCenter)
 
@@ -436,6 +520,8 @@ class Ui_Importer(object):
 
         self.lbReloc_12 = QLabel(Importer)
         self.lbReloc_12.setObjectName("lbReloc_12")
+        sizePolicy2.setHeightForWidth(self.lbReloc_12.sizePolicy().hasHeightForWidth())
+        self.lbReloc_12.setSizePolicy(sizePolicy2)
         self.lbReloc_12.setFont(font)
         self.lbReloc_12.setAlignment(Qt.AlignCenter)
 
@@ -448,6 +534,8 @@ class Ui_Importer(object):
         self.pbIter_13 = QPushButton(Importer)
         self.pbIter_13.setObjectName("pbIter_13")
         self.pbIter_13.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_13.sizePolicy().hasHeightForWidth())
+        self.pbIter_13.setSizePolicy(sizePolicy1)
         self.pbIter_13.setCheckable(False)
 
         self.iteration_13_layout.addWidget(self.pbIter_13)
@@ -455,6 +543,8 @@ class Ui_Importer(object):
         self.lbIter_13 = QLabel(Importer)
         self.lbIter_13.setObjectName("lbIter_13")
         self.lbIter_13.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_13.sizePolicy().hasHeightForWidth())
+        self.lbIter_13.setSizePolicy(sizePolicy2)
         self.lbIter_13.setFont(font)
         self.lbIter_13.setAlignment(Qt.AlignCenter)
 
@@ -462,6 +552,8 @@ class Ui_Importer(object):
 
         self.lbReloc_13 = QLabel(Importer)
         self.lbReloc_13.setObjectName("lbReloc_13")
+        sizePolicy2.setHeightForWidth(self.lbReloc_13.sizePolicy().hasHeightForWidth())
+        self.lbReloc_13.setSizePolicy(sizePolicy2)
         self.lbReloc_13.setFont(font)
         self.lbReloc_13.setAlignment(Qt.AlignCenter)
 
@@ -474,6 +566,8 @@ class Ui_Importer(object):
         self.pbIter_14 = QPushButton(Importer)
         self.pbIter_14.setObjectName("pbIter_14")
         self.pbIter_14.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_14.sizePolicy().hasHeightForWidth())
+        self.pbIter_14.setSizePolicy(sizePolicy1)
         self.pbIter_14.setCheckable(False)
 
         self.iteration_14_layout.addWidget(self.pbIter_14)
@@ -481,6 +575,8 @@ class Ui_Importer(object):
         self.lbIter_14 = QLabel(Importer)
         self.lbIter_14.setObjectName("lbIter_14")
         self.lbIter_14.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_14.sizePolicy().hasHeightForWidth())
+        self.lbIter_14.setSizePolicy(sizePolicy2)
         self.lbIter_14.setFont(font)
         self.lbIter_14.setAlignment(Qt.AlignCenter)
 
@@ -488,6 +584,8 @@ class Ui_Importer(object):
 
         self.lbReloc_14 = QLabel(Importer)
         self.lbReloc_14.setObjectName("lbReloc_14")
+        sizePolicy2.setHeightForWidth(self.lbReloc_14.sizePolicy().hasHeightForWidth())
+        self.lbReloc_14.setSizePolicy(sizePolicy2)
         self.lbReloc_14.setFont(font)
         self.lbReloc_14.setAlignment(Qt.AlignCenter)
 
@@ -500,6 +598,8 @@ class Ui_Importer(object):
         self.pbIter_15 = QPushButton(Importer)
         self.pbIter_15.setObjectName("pbIter_15")
         self.pbIter_15.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.pbIter_15.sizePolicy().hasHeightForWidth())
+        self.pbIter_15.setSizePolicy(sizePolicy1)
         self.pbIter_15.setCheckable(False)
 
         self.iteration_15_layout.addWidget(self.pbIter_15)
@@ -507,6 +607,8 @@ class Ui_Importer(object):
         self.lbIter_15 = QLabel(Importer)
         self.lbIter_15.setObjectName("lbIter_15")
         self.lbIter_15.setEnabled(True)
+        sizePolicy2.setHeightForWidth(self.lbIter_15.sizePolicy().hasHeightForWidth())
+        self.lbIter_15.setSizePolicy(sizePolicy2)
         self.lbIter_15.setFont(font)
         self.lbIter_15.setAlignment(Qt.AlignCenter)
 
@@ -514,6 +616,8 @@ class Ui_Importer(object):
 
         self.lbReloc_15 = QLabel(Importer)
         self.lbReloc_15.setObjectName("lbReloc_15")
+        sizePolicy2.setHeightForWidth(self.lbReloc_15.sizePolicy().hasHeightForWidth())
+        self.lbReloc_15.setSizePolicy(sizePolicy2)
         self.lbReloc_15.setFont(font)
         self.lbReloc_15.setAlignment(Qt.AlignCenter)
 
@@ -521,15 +625,18 @@ class Ui_Importer(object):
 
         self.mainLayout.addLayout(self.iteration_15_layout)
 
-        self.last_valid_layout = QHBoxLayout()
-        self.last_valid_layout.setObjectName("last_valid_layout")
+        self.line_2 = QFrame(Importer)
+        self.line_2.setObjectName("line_2")
+        self.line_2.setFrameShape(QFrame.HLine)
+        self.line_2.setFrameShadow(QFrame.Sunken)
+
+        self.mainLayout.addWidget(self.line_2)
+
         self.pb_last_valid = QPushButton(Importer)
         self.pb_last_valid.setObjectName("pb_last_valid")
         self.pb_last_valid.setCheckable(False)
 
-        self.last_valid_layout.addWidget(self.pb_last_valid)
-
-        self.mainLayout.addLayout(self.last_valid_layout)
+        self.mainLayout.addWidget(self.pb_last_valid)
 
         self.lbLastValidInfo = QLabel(Importer)
         self.lbLastValidInfo.setObjectName("lbLastValidInfo")
@@ -564,23 +671,20 @@ class Ui_Importer(object):
         self.dwellLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
         self.lbDwellTime = QLabel(Importer)
         self.lbDwellTime.setObjectName("lbDwellTime")
-        sizePolicy1 = QSizePolicy(
+        sizePolicy3 = QSizePolicy(
             QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed
         )
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.lbDwellTime.sizePolicy().hasHeightForWidth())
-        self.lbDwellTime.setSizePolicy(sizePolicy1)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.lbDwellTime.sizePolicy().hasHeightForWidth())
+        self.lbDwellTime.setSizePolicy(sizePolicy3)
 
         self.dwellLayout.addWidget(self.lbDwellTime)
 
         self.leDwellTime = QLineEdit(Importer)
         self.leDwellTime.setObjectName("leDwellTime")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.leDwellTime.sizePolicy().hasHeightForWidth())
-        self.leDwellTime.setSizePolicy(sizePolicy2)
+        sizePolicy1.setHeightForWidth(self.leDwellTime.sizePolicy().hasHeightForWidth())
+        self.leDwellTime.setSizePolicy(sizePolicy1)
 
         self.dwellLayout.addWidget(self.leDwellTime)
 
