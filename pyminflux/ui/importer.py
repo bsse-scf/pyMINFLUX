@@ -206,7 +206,7 @@ class Importer(QDialog, Ui_Importer):
     def highlight_iteration(self, iteration):
         """Highlight the button for the global _iteration."""
         self.widgets_list[iteration][0].setStyleSheet(
-            "color: black; background-color: lightblue; border-style: flat; padding: 5px"
+            "color: black; background-color: lightblue; border-style: flat;"
         )
 
     def highlight_cfr(self, cfr_index):
