@@ -65,7 +65,7 @@ class Ui_Importer(object):
         if not Importer.objectName():
             Importer.setObjectName("Importer")
         Importer.setWindowModality(Qt.NonModal)
-        Importer.resize(368, 816)
+        Importer.resize(417, 816)
         sizePolicy = QSizePolicy(
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
         )
@@ -521,17 +521,6 @@ class Ui_Importer(object):
 
         self.mainLayout.addLayout(self.iteration_15_layout)
 
-        self.lbRelocInfo = QLabel(Importer)
-        self.lbRelocInfo.setObjectName("lbRelocInfo")
-
-        self.mainLayout.addWidget(self.lbRelocInfo)
-
-        self.fixedVerticalSpacerLastValid = QSpacerItem(
-            20, 15, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
-        )
-
-        self.mainLayout.addItem(self.fixedVerticalSpacerLastValid)
-
         self.last_valid_layout = QHBoxLayout()
         self.last_valid_layout.setObjectName("last_valid_layout")
         self.pb_last_valid = QPushButton(Importer)
@@ -546,6 +535,11 @@ class Ui_Importer(object):
         self.lbLastValidInfo.setObjectName("lbLastValidInfo")
 
         self.mainLayout.addWidget(self.lbLastValidInfo)
+
+        self.lbRelocInfo = QLabel(Importer)
+        self.lbRelocInfo.setObjectName("lbRelocInfo")
+
+        self.mainLayout.addWidget(self.lbRelocInfo)
 
         self.fixedVerticalSpacer = QSpacerItem(
             20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
@@ -599,7 +593,13 @@ class Ui_Importer(object):
         self.buttonBox.setOrientation(Qt.Horizontal)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
 
-        self.gridLayout.addWidget(self.buttonBox, 1, 0, 1, 1)
+        self.gridLayout.addWidget(self.buttonBox, 2, 0, 1, 1)
+
+        self.verticalSpacer = QSpacerItem(
+            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
+        )
+
+        self.gridLayout.addItem(self.verticalSpacer, 1, 0, 1, 1)
 
         self.retranslateUi(Importer)
         self.buttonBox.accepted.connect(Importer.accept)
@@ -620,7 +620,7 @@ class Ui_Importer(object):
             QCoreApplication.translate("Importer", "CFR values", None)
         )
         self.lbReloc.setText(
-            QCoreApplication.translate("Importer", "Relocalization", None)
+            QCoreApplication.translate("Importer", "Relocalized", None)
         )
         self.pbIter_0.setText(
             QCoreApplication.translate("Importer", "Iteration 0", None)
@@ -702,19 +702,19 @@ class Ui_Importer(object):
         )
         self.lbIter_15.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
         self.lbReloc_15.setText(QCoreApplication.translate("Importer", "\u2a2f", None))
-        self.lbRelocInfo.setText(
-            QCoreApplication.translate(
-                "Importer",
-                "Non-relocalized iterations have only one (x, y, z) coordinate.",
-                None,
-            )
-        )
         self.pb_last_valid.setText(
             QCoreApplication.translate("Importer", "Pick last valid iteration", None)
         )
         self.lbLastValidInfo.setText(
             QCoreApplication.translate(
                 "Importer", 'Only "last valid" iteration can be saved.', None
+            )
+        )
+        self.lbRelocInfo.setText(
+            QCoreApplication.translate(
+                "Importer",
+                "Non-relocalized iterations contain one valid measurement per trace.",
+                None,
             )
         )
         self.cbTracking.setText(
