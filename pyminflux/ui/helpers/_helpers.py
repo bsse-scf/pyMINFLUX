@@ -248,7 +248,7 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
         # Current size
         self.currentSize = size
         self.initialSizePixels = None
-        self.scaleBarLabel = f"{width}nm"
+        self.scaleBarLabel = f"{width} nm"
         self.ratio_step = 2.0
 
         # Keep a margin from the edge of the view when zooming in
@@ -301,15 +301,15 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
 
         # Halve or double the length of the scale bar depending on zoom level
         if ratio >= self.ratio_step:
-            self.currentSize /= self.ratio_step
+            self.currentSize = int(self.currentSize / self.ratio_step)
             self.size = self.currentSize
-            self.scaleBarLabel = f"{self.currentSize}nm"
+            self.scaleBarLabel = f"{self.currentSize} nm"
             self.text.setText(self.scaleBarLabel)
             self.initialSizePixels = self._currentSizeInPixels()
         elif ratio <= 0.5:
-            self.currentSize *= self.ratio_step
+            self.currentSize = int(self.currentSize * self.ratio_step)
             self.size = self.currentSize
-            self.scaleBarLabel = f"{self.currentSize}nm"
+            self.scaleBarLabel = f"{self.currentSize} nm"
             self.text.setText(self.scaleBarLabel)
             self.initialSizePixels = self._currentSizeInPixels()
 
@@ -341,8 +341,8 @@ class BottomLeftAnchoredScaleBar(pg.ScaleBar):
 
     def setSize(self, size):
         """Set new scale bar size."""
-        self.size = size
-        self.scaleBarLabel = f"{size}nm"
+        self.size = int(size)
+        self.scaleBarLabel = f"{self.size} nm"
         self.text.setText(self.scaleBarLabel)
         self.updateBar()
 

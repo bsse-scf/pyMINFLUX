@@ -457,14 +457,13 @@ class Plotter(PlotWidget):
 
     def set_scalebar_size(self):
         """Ask the user to specify the size of the scalebar."""
-        size, ok = QInputDialog.getDouble(
+        size, ok = QInputDialog.getInt(
             self,
             "Scale bar",
             "Set scale bar length (nm):",
             self.state.scale_bar_size,
             minValue=1,
-            maxValue=10000.0,
-            decimals=2,
+            maxValue=10000,
         )
         if ok:
             # Set the new value
