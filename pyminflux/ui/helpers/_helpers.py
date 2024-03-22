@@ -170,6 +170,7 @@ def create_brushes_by(
         Currently supported color schemes:
 
         "blue-red": two-color scheme := [[ 0, 0, 255], [255, 0, 0]]
+        "green-magenta": two-color scheme := [[ 0, 255, 0], [255, 0, 255]]
 
     seed: int (Optional, default = 42)
         Seed used to initialize the random number generator.
@@ -186,6 +187,8 @@ def create_brushes_by(
     if color_scheme is not None:
         if color_scheme == "blue-red":
             unique_colors = [[0, 0, 255], [255, 0, 0]]
+        if color_scheme == "green-magenta":
+            unique_colors = [[0, 255, 0], [255, 0, 255]]
         else:
             raise ValueError(f"Unknown color scheme '{color_scheme}'.")
 
