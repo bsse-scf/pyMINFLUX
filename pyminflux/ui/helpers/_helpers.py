@@ -187,7 +187,7 @@ def create_brushes_by(
     if color_scheme is not None:
         if color_scheme == "blue-red":
             unique_colors = [[0, 0, 255], [255, 0, 0]]
-        if color_scheme == "green-magenta":
+        elif color_scheme == "green-magenta":
             unique_colors = [[0, 255, 0], [255, 0, 255]]
         else:
             raise ValueError(f"Unknown color scheme '{color_scheme}'.")
