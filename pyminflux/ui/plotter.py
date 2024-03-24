@@ -27,6 +27,7 @@ from .helpers import (
     BottomLeftAnchoredScaleBar,
     create_brushes_by,
     export_plot_interactive,
+    update_brushes_by_,
 )
 
 
@@ -56,6 +57,10 @@ class Plotter(PlotWidget):
 
         # Keep a reference to the singleton State class
         self.state = State()
+
+        # Keep track of the mapping between unique identifiers or fluorophore identifiers and cached QBrushes
+        self._id_to_brush = None
+        self._fid_to_brush = None
 
         # Keep a reference to the scatter plot object
         self.scatter = None
@@ -304,6 +309,10 @@ class Plotter(PlotWidget):
         self._last_y_param = None
         self.remove_points()
 
+        # Clear color caches
+        self._id_to_brush = None
+        self._fid_to_brush = None
+
     def remove_points(self):
         self.setBackground("w")
         self.clear()
@@ -326,9 +335,19 @@ class Plotter(PlotWidget):
         if self.state.color_code == ColorCode.NONE:
             brushes = self.brush
         elif self.state.color_code == ColorCode.BY_TID:
-            brushes = create_brushes_by(tid)
+            if self._id_to_brush is None:
+                brushes, self._id_to_brush = create_brushes_by(tid)
+            else:
+                brushes, self._id_to_brush = update_brushes_by_(tid, self._id_to_brush)
         elif self.state.color_code == ColorCode.BY_FLUO:
-            brushes = create_brushes_by(fid, color_scheme="blue-red")
+            if self._fid_to_brush is None:
+                brushes, self._fid_to_brush = create_brushes_by(
+                    fid, color_scheme="blue-red"
+                )
+            else:
+                brushes, self._fid_to_brush = update_brushes_by_(
+                    fid, self._fid_to_brush
+                )
         else:
             raise ValueError("Unexpected request for color-coding the localizations!")
 

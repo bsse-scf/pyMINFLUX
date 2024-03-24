@@ -18,4 +18,5 @@ from ._helpers import (
     create_brushes_by,
     export_plot_interactive,
     export_to_image,
+    update_brushes_by_,
 )

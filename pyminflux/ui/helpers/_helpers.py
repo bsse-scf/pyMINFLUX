@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pyqtgraph as pg
@@ -149,7 +149,7 @@ def add_median_line(
 
 def create_brushes_by(
     identifiers: np.ndarray, color_scheme: Optional[str] = None, seed: int = 42
-) -> list[QBrush]:
+) -> tuple[list[Any], dict[tuple[int, Any], Any]]:
     """Create QBrush instances to be used in a ScatterPlotItem to prevent
     cache misses in SymbolAtlas.
     As an illustration, this speeds up the plotting of 200,000 dots with
@@ -174,6 +174,16 @@ def create_brushes_by(
 
     seed: int (Optional, default = 42)
         Seed used to initialize the random number generator.
+
+    Returns
+    -------
+
+    brushes_for_ids: list[QBrush]
+        List of brushes corresponding to the list of identifiers. Each identifier references
+        a unique QBrush instance.
+
+    id_to_brush: dict[int, QBrush]
+        Map between unique identifier and corresponding QBrush.
     """
 
     # Initialize the random number generator
@@ -212,12 +222,53 @@ def create_brushes_by(
     # Map each identifier in the full array to its corresponding QBrush for fast lookup
     brushes_for_ids = [id_to_brush[identifier] for identifier in identifiers]
 
+    # Return the list of brushes (and references) and the mapping between id and brush
+    return brushes_for_ids, id_to_brush
+
+
+def update_brushes_by_(
+    identifiers: np.ndarray, id_to_brush: dict[tuple[int, Any], Any]
+) -> tuple[list[Any], dict[tuple[int, Any], Any]]:
+    """Updated the QBrush instances to be used in a ScatterPlotItem my mapping
+    an (updated) list to identifier to the dictionary of cached unique ID to QBrush
+    map.
+
+    Parameters
+    ----------
+
+    identifiers: np.ndarray
+        Identifiers to be used to re-assign colors.
+
+    id_to_brush: dict[tuple[int, Any], Any]
+        Cached map of unique ID to QBrush associations. This map is returned
+        by `pyminflux.ui.helpers.create_brushes_by()`.
+
+    Returns
+    -------
+
+    brushes_for_ids: list[QBrush]
+        List of brushes corresponding to the list of identifiers. Each identifier references
+        a unique QBrush instance.
+
+    id_to_brush: dict[int, QBrush]
+        Possibly updated map between unique identifier and corresponding QBrush.
+    """
+
+    # Check that all identifies are in the cache
+    if not np.isin(np.unique(identifiers), np.array(list(id_to_brush.keys()))).all():
+        # Recreate the brushes
+        # @TODO: Just recreate the missing ones
+        brushes_for_ids, id_to_brush = create_brushes_by(identifiers)
+    else:
+        # Update the mapping from each identifier in the full array to its corresponding QBrush for fast lookup
+        brushes_for_ids = [id_to_brush[identifier] for identifier in identifiers]
+
     # Return the list of brushes (and references)
-    return brushes_for_ids
+    return brushes_for_ids, id_to_brush
 
 
 class BottomLeftAnchoredScaleBar(pg.ScaleBar):
-    """A ScaleBar that stays anchored at the bottom left corner of the view and resizes
+    """A ScaleBar that stays anchored in the bottom left corner of the view and resizes
     and repositions itself according to panning and zoom level."""
 
     def __init__(
