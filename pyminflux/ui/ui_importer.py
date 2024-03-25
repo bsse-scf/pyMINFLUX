@@ -207,6 +207,7 @@ class Ui_Importer(object):
         self.lbIter_0.setEnabled(True)
         sizePolicy1.setHeightForWidth(self.lbIter_0.sizePolicy().hasHeightForWidth())
         self.lbIter_0.setSizePolicy(sizePolicy1)
+        self.lbIter_0.setFont(font)
         self.lbIter_0.setAlignment(Qt.AlignCenter)
 
         self.gridLayout.addWidget(self.lbIter_0, 1, 1, 1, 1)
