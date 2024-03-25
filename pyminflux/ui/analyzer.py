@@ -25,7 +25,6 @@ from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
 from ..analysis import (
     calculate_time_steps,
-    calculate_total_distance_traveled,
     find_cutoff_near_value,
     get_robust_threshold,
     prepare_histogram,
@@ -246,9 +245,10 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.efo_region = None
         self.cfr_region = None
         self.tr_len = None
-        self.efo_range = None
-        self.cfr_range = None
-        self.tr_len_range = None
+        self.efo_range = self.state.efo_range
+        self.cfr_range = self.state.cfr_range
+        self.tr_len_range = self.state.tr_len_range
+        self.loc_precision_range = self.state.loc_precision_range
 
     @Slot(name="run_efo_cutoff_frequency_detection")
     def run_efo_cutoff_frequency_detection(self):
