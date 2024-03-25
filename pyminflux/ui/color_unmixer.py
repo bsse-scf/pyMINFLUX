@@ -202,7 +202,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.plot_widget.removeItem(item)
 
         # Prepare some colors
-        brushes = ["b", "r", "g", "m", "c"]
+        brushes = ["g", "m", "b", "r", "c"]
 
         # Calculate the bar width as a function of the number of fluorophores
         bar_width = 0.9 / self.state.num_fluorophores
@@ -259,7 +259,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.plot_widget.removeItem(item)
 
         # Prepare some colors
-        brushes = ["b", "r", "g", "m", "c"]
+        brushes = ["g", "m", "b", "r", "c"]
 
         # Calculate the bar width as a function of the number of fluorophores
         bar_width = 0.9 / self.state.num_fluorophores

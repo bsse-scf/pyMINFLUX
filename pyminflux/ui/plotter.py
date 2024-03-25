@@ -342,7 +342,7 @@ class Plotter(PlotWidget):
         elif self.state.color_code == ColorCode.BY_FLUO:
             if self._fid_to_brush is None:
                 brushes, self._fid_to_brush = create_brushes_by(
-                    fid, color_scheme="blue-red"
+                    fid, color_scheme="green-magenta"
                 )
             else:
                 brushes, self._fid_to_brush = update_brushes_by_(
