@@ -6,18 +6,27 @@ All notable changes to this project will be documented in this file. Detailed in
 
 ## New features 
 
+### Data compatibility
 * Add support for custom MINFLUX sequences.
 * Add initial support for single-molecule tracking datasets.
-* Add per-trace tracking stats to the Trace Stats Viewer.
-* Merge Trace Length Viewer tool into the Analyzer.
-* Add Histogram Plotter tool.
-* Add a scale bar to the main data viewer (for XYZ localisations).
-* Implement `Set range` context-menu action in the Time Inspector.
-* Dramatically improve the rendering of color-coded localizations.
-* Speed up dataframe-based operations by upgrading to Pandas 2.2.x with PyArrow backend.
-* Switch to green-magenta color scheme for fluorophore IDs.
-* Update the `pyMINFLUX Reader` ParaView plugin to read `.pmx` version 2.0 files.
+* Update the pyMINFLUX Reader ParaView plugin to read .pmx version 2.0 files.
 * Add macOS M1 build of the pyMINFLUX application.
+ 
+### Analysis and filtering tools
+* Merge Trace Length Viewer tool into the Analyzer.
+* Implement filtering by trace length into the Analyzer.
+* Add per-trace tracking stats to the Trace Stats Viewer (tracking datasets only).
+* Add Histogram Plotter tool.
+* Implement `Set range` context-menu action in the Time Inspector.
+ 
+### UI
+* Switch to green-magenta color scheme for fluorophore IDs.
+* Add a scale bar to the main data viewer (for XYZ localisations).
+* Display line connecting subsequent localizations within a trace (tracking datasets only).
+ 
+### Performance improvements
+* Dramatically improve the rendering of color-coded localizations.
+* Speed up dataframe-based operations by upgrading to Pandas 2.2.x with PyArrow backend
 
 ## Fixes
 
