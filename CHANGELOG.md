@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file. Detailed in
 * Merge Trace Length Viewer tool into the Analyzer.
 * Add Histogram Plotter tool.
 * Add a scale bar to the main data viewer (for XYZ localisations).
-* Implement `Set ranges` context-menu action in the Time Inspector.
+* Implement `Set range` context-menu action in the Time Inspector.
 * Dramatically improve the rendering of color-coded localizations.
 * Speed up dataframe-based operations by upgrading to Pandas 2.2.x with PyArrow backend.
 * Switch to green-magenta color scheme for fluorophore IDs.
