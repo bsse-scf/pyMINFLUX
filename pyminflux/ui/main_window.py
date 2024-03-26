@@ -651,6 +651,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             reader.set_dwell_time(selection["dwell_time"], process=False)
 
+            # Update the state as well
+            self.state.is_tracking = selection["is_tracking"]
+            self.state.dwell_time = selection["dwell_time"]
+
             # Show some info
             print(reader)
 
