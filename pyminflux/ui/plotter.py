@@ -62,8 +62,9 @@ class Plotter(PlotWidget):
         self._id_to_brush = None
         self._fid_to_brush = None
 
-        # Keep a reference to the scatter plot object
-        self.scatter = None
+        # Keep a reference to the scatter_plot/line plot objects
+        self.scatter_plot = None
+        self.line_plot = None
 
         # ROI for localizations selection
         self.ROI = None
@@ -90,7 +91,7 @@ class Plotter(PlotWidget):
 
         # Is the user trying to initiate drawing an ROI?
         if (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.button() == Qt.MouseButton.LeftButton
             and ev.modifiers() == QtCore.Qt.ShiftModifier
         ):
@@ -123,7 +124,7 @@ class Plotter(PlotWidget):
             ev.accept()
 
         elif (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.button() == Qt.MouseButton.LeftButton
             and ev.modifiers() == QtCore.Qt.ControlModifier
             and self.state.x_param in ("x", "y")
@@ -161,7 +162,10 @@ class Plotter(PlotWidget):
         else:
 
             # Is the user trying to open a context menu?
-            if self.scatter is not None and ev.button() == Qt.MouseButton.RightButton:
+            if (
+                self.scatter_plot is not None
+                and ev.button() == Qt.MouseButton.RightButton
+            ):
                 menu = QMenu()
                 if self.ROI is not None:
                     crop_data_action = QAction("Crop data")
@@ -188,7 +192,7 @@ class Plotter(PlotWidget):
     def mouseMoveEvent(self, ev):
         # Is the user drawing an ROI?
         if (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
             and self._roi_is_being_drawn
         ):
@@ -202,7 +206,7 @@ class Plotter(PlotWidget):
             ev.accept()
 
         elif (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
             and self._line_is_being_drawn
         ):
@@ -226,7 +230,7 @@ class Plotter(PlotWidget):
 
     def mouseReleaseEvent(self, ev):
         if (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.button() == Qt.MouseButton.LeftButton
             and self._roi_is_being_drawn
         ):
@@ -261,7 +265,7 @@ class Plotter(PlotWidget):
             ev.accept()
 
         elif (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.button() == Qt.MouseButton.LeftButton
             and self._line_is_being_drawn
         ):
@@ -318,20 +322,9 @@ class Plotter(PlotWidget):
         self.clear()
 
     def plot_parameters(self, x, y, x_param, y_param, tid, fid):
-        """Plot localizations and other parameters in a 2D scatter plot."""
+        """Plot localizations and other parameters in a 2D scatter_plot plot."""
 
-        # Create the scatter plot
-        self.scatter = pg.ScatterPlotItem(
-            size=5,
-            pen=None,
-            brush=None,
-            hoverable=True,
-            hoverSymbol="s",
-            hoverSize=5,
-            hoverPen=pg.mkPen("w", width=2),
-            hoverBrush=None,
-        )
-        self.scatter.sigClicked.connect(self.clicked)
+        # Color-code the data points
         if self.state.color_code == ColorCode.NONE:
             brushes = self.brush
         elif self.state.color_code == ColorCode.BY_TID:
@@ -351,13 +344,40 @@ class Plotter(PlotWidget):
         else:
             raise ValueError("Unexpected request for color-coding the localizations!")
 
-        self.scatter.addPoints(
+        # Create the scatter_plot plot
+        self.scatter_plot = pg.ScatterPlotItem(
             x=x,
             y=y,
             data=tid,
+            size=5,
+            pen=None,
             brush=brushes,
+            hoverable=True,
+            hoverSymbol="s",
+            hoverSize=5,
+            hoverPen=pg.mkPen("w", width=2),
+            hoverBrush=None,
         )
-        self.addItem(self.scatter)
+        self.scatter_plot.sigClicked.connect(self.clicked)
+        self.addItem(self.scatter_plot)
+
+        # For a tracking dataset, we also add the connecting line_plot (for spatial parameters only)
+        if self.state.is_tracking and (
+            x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]
+        ):
+
+            # Add the line_plot within TIDs
+            line_indices = np.concatenate((np.diff(tid) == 0, [1])).astype(np.int32)
+            self.line_plot = pg.PlotDataItem(
+                x,
+                y,
+                connect=line_indices,
+                pen=mkPen(cosmetic=True, width=0.5, color="w"),
+                symbol=None,
+                brush=None,
+            )
+            self.addItem(self.line_plot)
+
         self.setLabel("bottom", text=x_param)
         self.setLabel("left", text=y_param)
         self.showAxis("bottom")
