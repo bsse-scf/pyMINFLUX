@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. Detailed information can be found in the git log.
 
-## [0.4.0] - TBD
+## [0.4.0] - 2024-03-27
 
 ## New features 
 
