@@ -26,7 +26,7 @@ All notable changes to this project will be documented in this file. Detailed in
  
 ### Performance improvements
 * Dramatically improve the rendering of color-coded localizations.
-* Speed up dataframe-based operations by upgrading to Pandas 2.2.x with PyArrow backend
+* Speed up dataframe-based operations by upgrading to Pandas 2.2.x with PyArrow backend.
 
 ## Fixes
 

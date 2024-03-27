@@ -42,4 +42,5 @@ poetry publish
 
 # Remove the conda environment
 conda deactivate
-conda env remove -n pyminflux-build
+conda env remove -n pyminflux-build -y
+
