@@ -1,0 +1,7 @@
+ordered-set==4.1.0
+pdoc3==0.10.0
+pre-commit==3.6.2
+pyinstaller==6.5.0
+pyinstaller-hooks-contrib==2024.3
+pytest==8.1.1
+pytest-cov==4.1.0
