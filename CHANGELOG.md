@@ -1,8 +1,41 @@
 # Change Log
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. Detailed information can be found in the git log.
+
+## [0.4.0] - TBD
+
+## New features 
+
+### Data compatibility
+* Add support for custom MINFLUX sequences.
+* Add initial support for single-molecule tracking datasets.
+* Update the pyMINFLUX Reader ParaView plugin to read .pmx version 2.0 files.
+* Add macOS M1 build of the pyMINFLUX application.
+ 
+### Analysis and filtering tools
+* Merge Trace Length Viewer tool into the Analyzer.
+* Implement filtering by trace length into the Analyzer.
+* Add per-trace tracking stats to the Trace Stats Viewer (tracking datasets only).
+* Add Histogram Plotter tool.
+* Implement `Set range` context-menu action in the Time Inspector.
+ 
+### UI
+* Switch to green-magenta color scheme for fluorophore IDs.
+* Add a scale bar to the main data viewer (for XYZ localisations).
+* Display line connecting subsequent localizations within a trace (tracking datasets only).
+ 
+### Performance improvements
+* Dramatically improve the rendering of color-coded localizations.
+* Speed up dataframe-based operations by upgrading to Pandas 2.2.x with PyArrow backend
+
+## Fixes
+
+* Fix default axis ranges not being applied to the Analyzer plots when loading new data.
+* Fix (incorrectly) forcing the aspect ratio of the Data Plotter for XYZ localizations.
 
 ## [0.3.0] - 2023-09-01
+
+### New features
 
 * Add native pyMINFLUX file format `.pmx`.
 * FRC Analysis now runs in parallel over all CPU cores.
@@ -24,7 +57,7 @@ All notable changes to this project will be documented in this file.
   * [Example notebook](examples/processing.ipynb)
 * Add menu action to check for application updates.
 
-### Fixed
+### Fixes
 
 * Fix issue with the fluorophore drop-down menu not being refreshed after global reset button is pressed.
 
@@ -39,7 +72,7 @@ All notable changes to this project will be documented in this file.
 * Add links to code repository, issues page, and mailing list to the Help menu.
 * Add a few minor UI tweaks.
 
-### Fixed
+### Fixes
 
 * Fix issue with applying a filter in the Time Inspector not updating the Analyzer plots.
 * Fix issue with measurement lines being allowed when the plotted data was not spatial (x, y), and the reported distance would be in nm.
@@ -49,7 +82,7 @@ All notable changes to this project will be documented in this file.
 
 Bug fix release.
 
-### Fixed
+### Fixes
 
 * Fix issue with exporting to `.npy` only working when the `Active Color` selector was on `All`.
 

@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -55,8 +55,9 @@ class MockMinFluxReader:
         )
         y = x + 3.0
         z = 0.0 * x
-        self._df = pd.DataFrame(columns=["tid", "x", "y", "z"])
+        self._df = pd.DataFrame(columns=["tid", "tim", "x", "y", "z", "fluo"])
         self._df["tid"] = tids
+        self._df["tim"] = np.arange(len(x)).tolist()
         self._df["x"] = x
         self._df["y"] = y
         self._df["z"] = z
@@ -533,9 +534,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -567,9 +568,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -608,9 +609,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -642,9 +643,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -683,9 +684,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -717,9 +718,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -758,9 +759,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -792,9 +793,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values)
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values)
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values)
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -1029,8 +1030,8 @@ def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
     processor.filter_by_1d_range("tim", (0.0, 60.0))
 
     # Make sure all entries are the same
-    assert (
-        (df_stats == processor.filtered_dataframe_stats).all().all()
+    assert df_stats.equals(
+        processor.filtered_dataframe_stats
     ), "The selected and filtered set are not identical."
 
 
@@ -1159,3 +1160,425 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
     assert selected == 0, "Failed filtering."
     assert (processor.filtered_dataframe["x"] < 1046).sum() == 0, "Failed filtering."
     assert (processor.filtered_dataframe["x"] >= 5882).sum() == 0, "Failed filtering."
+
+
+def test_filter_by_1d_stats_mock_reader():
+
+    # MockMinFluxReader
+    #
+    # min_trace_length = 1
+    #
+
+    #
+    # Filter that rejects everything
+    #
+
+    # Process mock reader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+
+    # Explicitly extract all tids that have trace lengths inside x_range
+    x_range = (0.0, 2.0)
+    subset = processor.filtered_dataframe_stats[
+        (
+            (processor.filtered_dataframe_stats["n"] >= x_range[0])
+            & (processor.filtered_dataframe_stats["n"] <= x_range[1])
+        )
+    ][["tid", "n"]]
+
+    # All should be gone
+    assert len(subset.index) == 0, "Unexpected number of filtered entries."
+
+    # Now call the filter_by_1d_stats() function
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    # Test
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+    ), "No TIDs expected."
+
+    #
+    # Filter that rejects nothing
+    #
+
+    # Process mock reader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+
+    # Explicitly extract all tids that have trace lengths inside x_range
+    x_range = (0.0, 8.0)
+    subset = processor.filtered_dataframe_stats[
+        (
+            (processor.filtered_dataframe_stats["n"] >= x_range[0])
+            & (processor.filtered_dataframe_stats["n"] <= x_range[1])
+        )
+    ][["tid", "n"]]
+
+    # Both TIDs should be there
+    assert len(subset.index) == 2, "Unexpected number of filtered entries."
+
+    # Now call the filter_by_1d_stats() function
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    # Test
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 2
+    ), "Two TIDs expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51, 54])
+    ), "TIDs 51 and 54 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 2
+    ), "Two TIDs expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values)
+        == np.array([51, 54])
+    ), "TIDs 51 and 54 expected."
+
+    #
+    # Filter that rejects one TID
+    #
+
+    # Explicitly extract all tids that have trace lengths inside x_range
+    x_range = (0.0, 4.0)
+    subset = processor.filtered_dataframe_stats[
+        (
+            (processor.filtered_dataframe_stats["n"] >= x_range[0])
+            & (processor.filtered_dataframe_stats["n"] <= x_range[1])
+        )
+    ][["tid", "n"]]
+
+    # One TID should be there
+    assert len(subset.index) == 1, "Unexpected number of filtered entries."
+
+    # Now call the filter_by_1d_stats() function
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    # Test
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])
+    ), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+    ), "Two TIDs expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])
+    ), "TID 51 expected."
+
+
+def test_filter_by_1d_stats_with_fluo_id_mock_reader():
+    #
+    # Filter that rejects everything but as a function
+    # of the assigned fluorophore ID.
+    #
+
+    #
+    # Current fluorophore ID = 0: keep all TIDs
+    #
+
+    x_range = (0.0, 8.0)
+
+    # Process mock reader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+
+    # Assign fluorophore IDs
+    processor.set_fluorophore_ids(np.array([2, 2, 2, 1, 1, 1, 1, 1]))
+
+    # Now filter
+    processor.current_fluorophore_id = 0
+
+    # Now call the filter_by_1d_stats() function
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 2
+    ), "Two TIDs expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51, 54])
+    ), "TIDs 51 and 54 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 2
+    ), "Two TIDs expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values)
+        == np.array([51, 54])
+    ), "TIDs 51 and 54 expected."
+
+    #
+    # Current fluorophore ID = 1
+    #
+    # The range rejects TID 54 if ID == 1
+    #
+
+    x_range = (0.0, 4.0)
+
+    # Process mock reader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+
+    # Assign fluorophore IDs
+    processor.set_fluorophore_ids(np.array([2, 2, 2, 1, 1, 1, 1, 1]))
+
+    # Set current fluorophore ID to 1
+    processor.current_fluorophore_id = 1
+
+    # Now call the filter_by_1d_stats() function
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    # Test
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+    ), "No TIDs expected."
+
+    # IF we change to fluorophore ID == 2, the TID 51 should still be there
+    processor.current_fluorophore_id = 2
+
+    # Test
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])
+    ), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])
+    ), "TID 51 expected."
+
+    #
+    # Current fluorophore ID = 2
+    #
+    # The range does not reject TID 51 if ID == 2
+    #
+
+    x_range = (0.0, 4.0)
+
+    # Process mock reader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+
+    # Assign fluorophore IDs
+    processor.set_fluorophore_ids(np.array([2, 2, 2, 1, 1, 1, 1, 1]))
+
+    # Now filter
+    processor.current_fluorophore_id = 2
+
+    # Now call the filter_by_1d_stats() function
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    # Test
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])
+    ), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])
+    ), "TID 51 expected."
+
+    # If we change to fluorophore ID == 1, the TID 54 should still be there
+    processor.current_fluorophore_id = 1
+
+    # Test
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([54])
+    ), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([54])
+    ), "TID 51 expected."
+
+    #
+    # Current fluorophore ID = 2
+    #
+    # The range rejects TID 51 if ID == 2
+    #
+
+    x_range = (3.5, 4.5)
+
+    # Process mock reader
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+
+    # Assign fluorophore IDs
+    processor.set_fluorophore_ids(np.array([2, 2, 2, 1, 1, 1, 1, 1]))
+
+    # Now filter
+    processor.current_fluorophore_id = 2
+
+    # Now call the filter_by_1d_stats() function
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+    ), "No TIDs expected."
+
+    # If we change to fluorophore ID == 1, the TID 54 should still be there
+    processor.current_fluorophore_id = 1
+
+    # Test
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == np.array([54])
+    ), "TID 51 expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+    ), "One TID expected."
+    assert np.all(
+        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([54])
+    ), "TID 51 expected."
+
+    # If we now apply the filter again, also 54 should go.
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+    ), "No TIDs expected."
+
+
+def test_filter_by_1d_stats(extract_raw_npy_data_files):
+
+    #
+    # 2D_ValidOnly.npy
+    #
+    # min_trace_length = 1
+    #
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+
+    # Extract all tids that have trace lengths outside x_range
+    x_range = (0.0, 100.0)
+    subset = processor.filtered_dataframe_stats[
+        (
+            (processor.filtered_dataframe_stats["n"] >= x_range[0])
+            & (processor.filtered_dataframe_stats["n"] <= x_range[1])
+        )
+    ][["tid", "n"]]
+
+    # Make sure that the extracted TIDs are correct
+    assert len(subset.index) == 1245, "Wrong number of extracted TIDs."
+    assert (
+        np.sum((subset["n"] < x_range[0]).values)
+        + np.sum((subset["n"] > x_range[1]).values)
+        == 0
+    ), "No TIDs should be in the rejected range."
+    valid_tids = subset["tid"].values
+
+    # Filter all traces that have less than 100 localizations
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    # Now check the filtered dataframe
+    assert np.all(
+        np.unique(processor.filtered_dataframe["tid"].values) == valid_tids
+    ), "Unexpected subset of selected TIDs."
+
+    # Make sure the filtered stats dataframe has been updated as well.
+    assert (
+        np.sum((processor.filtered_dataframe_stats["n"] < x_range[0]).values)
+        + np.sum((processor.filtered_dataframe_stats["n"] > x_range[1]).values)
+        == 0
+    ), "The filtered stats dataframe has not been update or has been updated incorrectly"
+
+    # 2D_ValidOnly.npy
+    #
+    # min_trace_length = 1
+    #
+    # Now assign fluorophore IDs and filter again
+
+    # Read and process file
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+
+    # Keep track of all TIDs that are outside the range
+    x_range = (0.0, 100.0)
+    tids_outside = processor.filtered_dataframe_stats[
+        (
+            (processor.filtered_dataframe_stats["n"] < x_range[0])
+            | (processor.filtered_dataframe_stats["n"] > x_range[1])
+        )
+    ]["tid"].values
+
+    # Assign the first half (of the TIDs) to fluorophore ID 2 and the second half to fluorophore ID 1
+    thresh = np.median(processor.filtered_dataframe_stats["tid"].values)
+    fluo_ids = np.ones(len(processor.filtered_dataframe.index))
+    fluo_ids[processor.filtered_dataframe["tid"].values < thresh] = 2
+    processor.set_fluorophore_ids(fluorophore_ids=fluo_ids.astype(int))
+
+    # Rejected TIDs per fluorophore
+    rejected_tid_fluo_2 = tids_outside[tids_outside < thresh]
+    rejected_tid_fluo_1 = tids_outside[tids_outside >= thresh]
+
+    # Check the number of assigned fluorophores
+    assert (
+        int(np.sum(processor.filtered_dataframe["fluo"].values == 0)) == 0
+    ), "All rows should be assigned to fluo 1 or 2."
+    n_fluo_1 = int(np.sum(processor.filtered_dataframe["fluo"].values == 1))
+    n_fluo_2 = int(np.sum(processor.filtered_dataframe["fluo"].values == 2))
+    assert n_fluo_1 + n_fluo_2 == len(
+        processor.filtered_dataframe.index
+    ), "All rows should be assigned to fluo 1 or 2."
+    assert n_fluo_1 == 6011, "Wrong number of rows assigned to fluorophore 1."
+    assert n_fluo_2 == 6569, "Wrong number of rows assigned to fluorophore 2."
+
+    # Now set the active fluorophore to 1
+    processor.current_fluorophore_id = 1
+
+    # Filter all traces that have less than 100 localizations
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    # Now check that only the TIDs that where associated to fluorophore 1 were filtered by x_range
+    subset_fluo_1 = processor.filtered_dataframe_stats[["tid", "n"]]
+    assert np.all(
+        subset_fluo_1["tid"].values >= thresh
+    ), "Unexpected TIDs for fluorophore 1."
+    tids_outside_fluo_1 = tids_outside[tids_outside >= thresh]
+    assert np.all(
+        rejected_tid_fluo_1 == tids_outside_fluo_1
+    ), "Unexpected set of rejected TIDs."
+
+    # Now set the active fluorophore to 2
+    processor.current_fluorophore_id = 2
+
+    # Filter all traces that have less than 100 localizations
+    processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
+
+    # Now check that only the TIDs that where associated to fluorophore 1 were filtered by x_range
+    subset_fluo_2 = processor.filtered_dataframe_stats[["tid", "n"]]
+    assert np.all(
+        subset_fluo_2["tid"].values < thresh
+    ), "Unexpected TIDs for fluorophore 2."
+    tids_outside_fluo_2 = tids_outside[tids_outside < thresh]
+    assert np.all(
+        rejected_tid_fluo_2 == tids_outside_fluo_2
+    ), "Unexpected set of rejected TIDs."

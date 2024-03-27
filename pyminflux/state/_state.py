@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ from enum import IntEnum
 from typing import Union
 
 from ..base import Singleton
-from ..reader import Metadata
+from ..reader.metadata import NativeMetadata
 
 
 class ColorCode(IntEnum):
@@ -34,34 +34,43 @@ class State(metaclass=Singleton):
     """
 
     __SLOTS__ = [
-        "plot_average_localisations",
-        "color_code",
-        "min_trace_length",
-        "efo_expected_frequency",
-        "efo_thresholds",
-        "applied_efo_thresholds",
-        "cfr_thresholds",
         "applied_cfr_thresholds",
-        "efo_range",
+        "applied_efo_thresholds",
+        "applied_time_thresholds",
+        "applied_tr_len_thresholds",
         "cfr_range",
-        "loc_precision_range",
+        "cfr_threshold_factor",
+        "cfr_thresholds",
+        "color_code",
+        "dcr_bin_size",
+        "dcr_manual_threshold",
+        "dwell_time",
+        "efo_bin_size_hz",
+        "efo_expected_frequency",
+        "efo_range",
+        "efo_thresholds",
         "enable_cfr_lower_threshold",
         "enable_cfr_upper_threshold",
-        "cfr_threshold_factor",
-        "efo_bin_size_hz",
+        "frc_endpoint_only",
+        "frc_lateral_resolution",
+        "frc_num_repeats",
+        "frc_temporal_resolution",
+        "is_tracking",
+        "loc_precision_range",
+        "min_trace_length",
+        "num_fluorophores",
+        "open_console_at_start",
+        "plot_average_localisations",
+        "plot_export_dpi",
+        "scale_bar_size",
+        "time_thresholds",
+        "tr_len_range",
+        "tr_len_thresholds",
+        "tr_len_top_percentile",
         "weigh_avg_localization_by_eco",
         "x_param",
         "y_param",
-        "num_fluorophores",
-        "dcr_bin_size",
-        "dcr_manual_threshold",
         "z_scaling_factor",
-        "plot_export_dpi",
-        "frc_lateral_resolution",
-        "frc_temporal_resolution",
-        "frc_num_repeats",
-        "frc_endpoint_only",
-        "open_console_at_start",
     ]
 
     def __init__(self):
@@ -84,17 +93,22 @@ class State(metaclass=Singleton):
         # EFO expected frequency for single emitters
         self.efo_expected_frequency: float = 0.0
 
-        # Lower and upper (absolute) thresholds for the EFO and CFR values
+        # Lower and upper (absolute) thresholds for the EFO, CFR, trace length values and time
         self.efo_thresholds: Union[None, tuple] = None
         self.cfr_thresholds: Union[None, tuple] = None
+        self.tr_len_thresholds: Union[None, tuple] = None
+        self.time_thresholds: Union[None, tuple] = None
 
-        # Applied lower and upper (absolute) thresholds for the EFO and CFR values
+        # Applied lower and upper (absolute) thresholds for the EFO, CFR, trace length values and time
         self.applied_efo_thresholds: Union[None, tuple] = None
         self.applied_cfr_thresholds: Union[None, tuple] = None
+        self.applied_tr_len_thresholds: Union[None] = None
+        self.applied_time_thresholds: Union[None] = None
 
         # Histogram ranges
         self.efo_range: Union[None, tuple] = None
         self.cfr_range: Union[None, tuple] = None
+        self.tr_len_range: Union[None, tuple] = None
         self.loc_precision_range: Union[None, tuple] = None
 
         # Parameter bounds
@@ -103,6 +117,9 @@ class State(metaclass=Singleton):
 
         # CFR thresholding parameters
         self.cfr_threshold_factor: float = 2.0
+
+        # Trace length top percentile
+        self.tr_len_top_percentile: float = 100.0
 
         # Weigh average localization by ECO
         self.weigh_avg_localization_by_eco: bool = False
@@ -131,87 +148,124 @@ class State(metaclass=Singleton):
         # Whether to open the console at application start
         self.open_console_at_start: bool = False
 
+        # Dwell time in milliseconds
+        self.dwell_time: float = 1.0
+
+        # Is the dataset a tracking acquisition?
+        self.is_tracking: bool = False
+
+        # Scale bar size in um
+        self.scale_bar_size: float = 500.0
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
-            "min_trace_length": self.min_trace_length,
-            "plot_average_localisations": self.plot_average_localisations,
-            "color_code": str(ColorCode(self.color_code)),
-            "efo_expected_frequency": self.efo_expected_frequency,
-            "efo_thresholds": self.efo_thresholds,
-            "applied_efo_thresholds": self.applied_efo_thresholds,
-            "cfr_thresholds": self.cfr_thresholds,
             "applied_cfr_threshold": self.applied_cfr_thresholds,
-            "efo_range": self.efo_range,
+            "applied_efo_thresholds": self.applied_efo_thresholds,
+            "applied_time_thresholds": self.applied_time_thresholds,
+            "applied_tr_len_thresholds": self.applied_tr_len_thresholds,
             "cfr_range": self.cfr_range,
-            "loc_precision_range": self.loc_precision_range,
+            "cfr_threshold_factor": self.cfr_threshold_factor,
+            "cfr_thresholds": self.cfr_thresholds,
+            "color_code": str(ColorCode(self.color_code)),
+            "dcr_bin_size": self.dcr_bin_size,
+            "dcr_manual_threshold": self.dcr_manual_threshold,
+            "dwell_time": self.dwell_time,
+            "efo_bin_size_hz": self.efo_bin_size_hz,
+            "efo_expected_frequency": self.efo_expected_frequency,
+            "efo_range": self.efo_range,
+            "efo_thresholds": self.efo_thresholds,
             "enable_cfr_lower_threshold": self.enable_cfr_lower_threshold,
             "enable_cfr_upper_threshold": self.enable_cfr_upper_threshold,
-            "cfr_threshold_factor": self.cfr_threshold_factor,
-            "efo_bin_size_hz": self.efo_bin_size_hz,
+            "frc_endpoint_only": self.frc_endpoint_only,
+            "frc_lateral_resolution": self.frc_lateral_resolution,
+            "frc_num_repeats": self.frc_num_repeats,
+            "frc_temporal_resolution": self.frc_temporal_resolution,
+            "is_tracking": self.is_tracking,
+            "loc_precision_range": self.loc_precision_range,
+            "min_trace_length": self.min_trace_length,
+            "num_fluorophores": self.num_fluorophores,
+            "open_console_at_start": self.open_console_at_start,
+            "plot_average_localisations": self.plot_average_localisations,
+            "plot_export_dpi": self.plot_export_dpi,
+            "scale_bar_size": self.scale_bar_size,
+            "time_thresholds": self.time_thresholds,
+            "tr_len_range": self.tr_len_range,
+            "tr_len_thresholds": self.tr_len_thresholds,
+            "tr_len_top_percentile": self.tr_len_top_percentile,
             "weigh_avg_localization_by_eco": self.weigh_avg_localization_by_eco,
             "x_param": self.x_param,
             "y_param": self.y_param,
-            "num_fluorophores": self.num_fluorophores,
-            "dcr_bin_size": self.dcr_bin_size,
-            "dcr_manual_threshold": self.dcr_manual_threshold,
             "z_scaling_factor": self.z_scaling_factor,
-            "plot_export_dpi": self.plot_export_dpi,
-            "frc_lateral_resolution": self.frc_lateral_resolution,
-            "frc_temporal_resolution": self.frc_temporal_resolution,
-            "frc_num_repeats": self.frc_num_repeats,
-            "frc_endpoint_only": self.frc_endpoint_only,
-            "open_console_at_start": self.open_console_at_start,
         }
 
     def reset(self):
         """Reset to data-specific settings."""
 
-        self.efo_thresholds = None
-        self.applied_efo_thresholds = None
-        self.cfr_thresholds = None
         self.applied_cfr_thresholds = None
+        self.applied_efo_thresholds = None
+        self.applied_time_thresholds = None
+        self.applied_tr_len_thresholds = None
+        self.cfr_thresholds = None
+        self.efo_thresholds = None
+        self.time_thresholds = None
+        self.tr_len_thresholds = None
 
     def full_reset(self):
         """Reset to defaults."""
 
-        self.min_trace_length = 1
-        self.plot_average_localisations = False
-        self.color_code: ColorCode = ColorCode.NONE
-        self.efo_expected_frequency = 0.0
-        self.efo_thresholds = None
-        self.applied_efo_thresholds = None
-        self.cfr_thresholds = None
         self.applied_cfr_thresholds = None
-        self.efo_range = None
+        self.applied_efo_thresholds = None
+        self.applied_time_thresholds = None
+        self.applied_tr_len_thresholds = None
         self.cfr_range = None
-        self.loc_precision_range = None
+        self.cfr_threshold_factor = 2.0
+        self.cfr_thresholds = None
+        self.color_code: ColorCode = ColorCode.NONE
+        self.dcr_bin_size = 0.0
+        self.dcr_manual_threshold = 0.0
+        self.dwell_time = 1.0
+        self.efo_bin_size_hz = 1000.0
+        self.efo_expected_frequency = 0.0
+        self.efo_range = None
+        self.efo_thresholds = None
         self.enable_cfr_lower_threshold = False
         self.enable_cfr_upper_threshold = True
-        self.cfr_threshold_factor = 2.0
-        self.efo_bin_size_hz = 1000.0
+        self.frc_endpoint_only = False
+        self.frc_lateral_resolution = 4.0
+        self.frc_num_repeats = 5
+        self.frc_temporal_resolution = 1800.0
+        self.is_tracking = False
+        self.loc_precision_range = None
+        self.min_trace_length = 1
+        self.num_fluorophores = 1
+        self.open_console_at_start = False
+        self.plot_average_localisations = False
+        self.plot_export_dpi = 300
+        self.scale_bar_size = 500.0
+        self.time_thresholds = None
+        self.tr_len_range = None
+        self.tr_len_thresholds = None
+        self.tr_len_top_percentile = 100.0
         self.weigh_avg_localization_by_eco = False
         self.x_param = "x"
         self.y_param = "y"
-        self.num_fluorophores = 1
-        self.dcr_bin_size = 0.0
-        self.dcr_manual_threshold = 0.0
         self.z_scaling_factor = 0.7
-        self.plot_export_dpi = 600
-        self.frc_lateral_resolution = 4.0
-        self.frc_temporal_resolution = 1800.0
-        self.frc_num_repeats = 5
-        self.frc_endpoint_only = False
-        self.open_console_at_start = False
 
-    def update_from_metadata(self, metadata: Metadata):
-        """Update State from the Metadata parameters from a `.pmx` file."""
-        self.min_trace_length = metadata.min_trace_length
-        self.efo_thresholds = metadata.efo_thresholds
-        self.applied_efo_thresholds = metadata.efo_thresholds
-        self.cfr_thresholds = metadata.cfr_thresholds
+    def update_from_metadata(self, metadata: NativeMetadata):
+        """Update State from the NativeMetadata parameters from a `.pmx` file."""
         self.applied_cfr_thresholds = metadata.cfr_thresholds
+        self.applied_efo_thresholds = metadata.efo_thresholds
+        self.applied_tr_len_thresholds = metadata.tr_len_thresholds
+        self.cfr_thresholds = metadata.cfr_thresholds
+        self.dwell_time = metadata.dwell_time
+        self.efo_thresholds = metadata.efo_thresholds
+        self.is_tracking = metadata.is_tracking
+        self.min_trace_length = metadata.min_trace_length
         self.num_fluorophores = metadata.num_fluorophores
+        self.scale_bar_size = metadata.scale_bar_size
+        self.time_thresholds = metadata.time_thresholds
+        self.tr_len_thresholds = metadata.tr_len_thresholds
         self.z_scaling_factor = metadata.z_scaling_factor
 
     def __str__(self):

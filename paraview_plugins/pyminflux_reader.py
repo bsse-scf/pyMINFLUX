@@ -141,8 +141,8 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
-            if file_version != "1.0":
-                self._message = "Incompatible file version."
+            if file_version != "1.0" and file_version != "2.0":
+                self._message = f"Incompatible file version {file_version}."
                 return None
 
             # Read dataset

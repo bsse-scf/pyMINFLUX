@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -44,11 +44,12 @@ from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.emittingstream import EmittingStream
 from pyminflux.ui.frc_tool import FRCTool
+from pyminflux.ui.histogram_plotter import HistogramPlotter
+from pyminflux.ui.importer import Importer
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
 from pyminflux.ui.time_inspector import TimeInspector
-from pyminflux.ui.trace_length_viewer import TraceLengthViewer
 from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.wizard import WizardDialog
@@ -101,6 +102,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.data_viewer = None
         self.analyzer = None
         self.plotter = None
+        self.histogram_plotter = None
         self.color_unmixer = None
         self.time_inspector = None
         self.trace_stats_viewer = None
@@ -151,7 +153,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         sys.stdout.signal_textWritten.connect(self.print_to_console)
 
         # Print a welcome message to the console
-        print(f"Welcome to {__APP_NAME__}.")
+        print(f"Welcome to {__APP_NAME__} v{__version__}.")
 
     def load_and_apply_settings(self):
         """Read the application settings and update the State."""
@@ -277,13 +279,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.actionState.triggered.connect(self.print_current_state)
+        self.ui.actionHistogram_Plotter.triggered.connect(self.open_histogram_plotter)
         self.ui.actionUnmixer.triggered.connect(self.open_color_unmixer)
         self.ui.actionTime_Inspector.triggered.connect(self.open_time_inspector)
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
         self.ui.actionTrace_Stats_Viewer.triggered.connect(self.open_trace_stats_viewer)
-        self.ui.actionTrace_Length_Viewer.triggered.connect(
-            self.open_trace_length_viewer
-        )
         self.ui.actionFRC_analyzer.triggered.connect(self.open_frc_tool)
         self.ui.actionManual.triggered.connect(
             lambda _: QDesktopServices.openUrl(
@@ -311,7 +311,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "https://github.com/bsse-scf/pyMINFLUX/blob/master/CHANGELOG.md"
             )
         )
-        self.ui.actionCheck_for_updates.triggered.connect(self.check_four_updates)
+        self.ui.actionCheck_for_updates.triggered.connect(self.check_remote_for_updates)
         self.ui.actionAbout.triggered.connect(self.about)
 
         # Plotter toolbar
@@ -375,11 +375,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionSave.setEnabled(enabled)
         self.ui.actionExport_data.setEnabled(enabled)
         self.ui.actionExport_stats.setEnabled(enabled)
+        self.ui.actionHistogram_Plotter.setEnabled(enabled)
         self.ui.actionUnmixer.setEnabled(enabled)
         self.ui.actionTime_Inspector.setEnabled(enabled)
         self.ui.actionAnalyzer.setEnabled(enabled)
         self.ui.actionTrace_Stats_Viewer.setEnabled(enabled)
-        self.ui.actionTrace_Length_Viewer.setEnabled(enabled)
         self.ui.actionFRC_analyzer.setEnabled(enabled)
 
     def full_update_ui(self):
@@ -422,6 +422,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.options is not None:
                 self.options.close()
                 self.options = None
+
+            if self.histogram_plotter is not None:
+                self.histogram_plotter.close()
+                self.histogram_plotter = None
 
             if self.analyzer is not None:
                 self.analyzer.close()
@@ -614,15 +618,48 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 print("Applied settings from file.")
 
             # Now pass the filename to the MinFluxReader
-            reader = MinFluxReader(
-                filename, z_scaling_factor=self.state.z_scaling_factor
-            )
+            try:
+                reader = MinFluxReader(
+                    filename, z_scaling_factor=self.state.z_scaling_factor
+                )
+            except IOError as e:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"{e}",
+                )
+                return
 
-            # Open the file
-            self.last_selected_path = Path(filename).parent
+            # Open the Importer
+            importer = Importer(
+                reader.valid_cfr, reader.relocalizations, self.state.dwell_time
+            )
+            if importer.exec_() != QDialog.Accepted:
+                # The user cancelled the dialog
+                print("Loading cancelled.")
+                return
+
+            # Retrieve the selected options from the Importer
+            selection = importer.get_selection()
+
+            # Update the reader object (we let the MinFluxProcessor
+            # trigger the creation of the dataframe, hence the
+            # process=False argument everywhere).
+            reader.set_tracking(selection["is_tracking"], process=False)
+            reader.set_indices(
+                selection["iteration"], selection["cfr_iteration"], process=False
+            )
+            reader.set_dwell_time(selection["dwell_time"], process=False)
+
+            # Update the state as well
+            self.state.is_tracking = selection["is_tracking"]
+            self.state.dwell_time = selection["dwell_time"]
 
             # Show some info
             print(reader)
+
+            # Process the file
+            self.last_selected_path = Path(filename).parent
 
             # Add initialize the processor with the reader
             self.processor = MinFluxProcessor(reader, self.state.min_trace_length)
@@ -637,10 +674,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
 
+            # Reset the plotter
+            if self.plotter is not None:
+                self.plotter.reset()
+
             # Close the Options
             if self.options is not None:
                 self.options.close()
                 self.options = None
+
+            # Close the Histogram Plotter
+            if self.histogram_plotter is not None:
+                self.histogram_plotter.close()
+                self.histogram_plotter = None
 
             # Close the Color Unmixer
             if self.color_unmixer is not None:
@@ -677,6 +723,20 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Enable selected ui components
             self.enable_ui_components(True)
+
+            # If the read sequence is not valid, disable the save button
+            if reader.is_last_valid:
+                self.ui.actionSave.setEnabled(True)
+                self.wizard.enable_save_button(True)
+            else:
+                self.ui.actionSave.setEnabled(False)
+                self.wizard.enable_save_button(False)
+
+            # If the acquisition is a tracking one, disable the FRC tool
+            if reader.is_tracking:
+                self.ui.actionFRC_analyzer.setEnabled(False)
+            else:
+                self.ui.actionFRC_analyzer.setEnabled(True)
 
             # Update the Analyzer
             if self.analyzer is not None:
@@ -817,6 +877,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot(None, name="about")
     def about(self):
         """Show simple About dialog."""
+        from h5py import __version__ as h5py_version
+        from numpy import __version__ as numpy_version
+        from pandas import __version__ as pandas_version
+        from pyarrow import __version__ as pyarrow_version
+        from pyqtgraph import __version__ as pg_version
+        from PySide6 import __version__ as pyside6_version
+        from scipy import __version__ as scipy_version
+
         QMessageBox.about(
             self,
             "About",
@@ -826,11 +894,20 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             f"Single Cell Facility\n"
             f"D-BSSE\n"
             f"ETH Zurich\n"
-            f"Switzerland",
+            f"Switzerland"
+            f"\n\n---\n"
+            f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n"
+            f"PySide6 {pyside6_version}\n"
+            f"PyQtGraph {pg_version}\n"
+            f"NumPy {numpy_version}\n"
+            f"SciPy {scipy_version}\n"
+            f"Pandas {pandas_version}\n"
+            f"PyArrow {pyarrow_version}\n"
+            f"h5py {h5py_version}\n",
         )
 
-    @Slot(None, name="check_four_updates")
-    def check_four_updates(self):
+    @Slot(None, name="check_remote_for_updates")
+    def check_remote_for_updates(self):
         """Check for application updates."""
 
         # Check for updates
@@ -878,22 +955,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.wizard.efo_bounds_modified.connect(self.analyzer.change_efo_bounds)
             self.wizard.cfr_bounds_modified.connect(self.analyzer.change_cfr_bounds)
             self.analyzer.data_filters_changed.connect(self.full_update_ui)
-            self.analyzer.cfr_threshold_factor_changed.connect(
-                self.wizard.change_cfr_threshold_factor
-            )
             self.analyzer.efo_bounds_changed.connect(self.wizard.change_efo_bounds)
             self.analyzer.cfr_bounds_changed.connect(self.wizard.change_cfr_bounds)
-            if self.time_inspector is not None:
-                self.analyzer.data_filters_changed.connect(self.time_inspector.update)
-            if self.trace_stats_viewer is not None:
-                self.analyzer.data_filters_changed.connect(
-                    self.trace_stats_viewer.update
-                )
-            if self.trace_length_viewer is not None:
-                self.analyzer.data_filters_changed.connect(
-                    self.trace_length_viewer.update
-                )
-            self.analyzer.plot()
+        if self.histogram_plotter is not None:
+            self.analyzer.data_filters_changed.connect(
+                self.histogram_plotter.plot_histogram
+            )
+        if self.time_inspector is not None:
+            self.analyzer.data_filters_changed.connect(self.time_inspector.update)
+        if self.trace_stats_viewer is not None:
+            self.analyzer.data_filters_changed.connect(self.trace_stats_viewer.update)
+        if self.trace_length_viewer is not None:
+            self.analyzer.data_filters_changed.connect(self.trace_length_viewer.update)
+        self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
 
@@ -901,13 +975,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_time_inspector(self):
         """Initialize and open the Time Inspector."""
         if self.time_inspector is None:
-            self.time_inspector = TimeInspector(self.processor, parent=self)
+            self.time_inspector = TimeInspector(self.processor)
             self.time_inspector.dataset_time_filtered.connect(self.full_update_ui)
             self.wizard.wizard_filters_run.connect(self.time_inspector.update)
             self.request_sync_external_tools.connect(self.time_inspector.update)
         if self.analyzer is not None:
             self.analyzer.data_filters_changed.connect(self.time_inspector.update)
             self.time_inspector.dataset_time_filtered.connect(self.analyzer.plot)
+        if self.histogram_plotter is not None:
+            self.time_inspector.dataset_time_filtered.connect(
+                self.histogram_plotter.plot_histogram
+            )
         if self.trace_stats_viewer is not None:
             self.time_inspector.dataset_time_filtered.connect(
                 self.trace_stats_viewer.update
@@ -919,11 +997,40 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.time_inspector.show()
         self.time_inspector.activateWindow()
 
+    @Slot(None, name="open_histogram_plotter")
+    def open_histogram_plotter(self):
+        """Initialize and open the histogram plotter."""
+        if self.histogram_plotter is None:
+            self.histogram_plotter = HistogramPlotter(self.processor)
+            self.request_sync_external_tools.connect(
+                self.histogram_plotter.plot_histogram
+            )
+            self.wizard.wizard_filters_run.connect(
+                self.histogram_plotter.plot_histogram
+            )
+            self.wizard.fluorophore_id_changed.connect(
+                self.histogram_plotter.plot_histogram
+            )
+        if self.analyzer is not None:
+            self.analyzer.data_filters_changed.connect(
+                self.histogram_plotter.plot_histogram
+            )
+        if self.color_unmixer is not None:
+            self.color_unmixer.fluorophore_ids_assigned.connect(
+                self.histogram_plotter.plot_histogram
+            )
+        if self.time_inspector is not None:
+            self.time_inspector.dataset_time_filtered.connect(
+                self.histogram_plotter.plot_histogram
+            )
+        self.histogram_plotter.show()
+        self.histogram_plotter.activateWindow()
+
     @Slot(None, name="open_color_unmixer")
     def open_color_unmixer(self):
         """Initialize and open the color unmixer."""
         if self.color_unmixer is None:
-            self.color_unmixer = ColorUnmixer(self.processor, parent=self)
+            self.color_unmixer = ColorUnmixer(self.processor)
             self.color_unmixer.fluorophore_ids_assigned.connect(
                 self.wizard.set_fluorophore_list
             )
@@ -962,7 +1069,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_trace_stats_viewer(self):
         """Open the trace stats viewer."""
         if self.trace_stats_viewer is None:
-            self.trace_stats_viewer = TraceStatsViewer(self.processor, parent=self)
+            self.trace_stats_viewer = TraceStatsViewer(self.processor)
             self.request_sync_external_tools.connect(self.trace_stats_viewer.update)
             self.wizard.request_fluorophore_ids_reset.connect(
                 self.trace_stats_viewer.update
@@ -980,26 +1087,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.analyzer.data_filters_changed.connect(self.trace_stats_viewer.update)
         self.trace_stats_viewer.show()
         self.trace_stats_viewer.activateWindow()
-
-    @Slot(None, name="open_trace_length_viewer")
-    def open_trace_length_viewer(self):
-        """Open the trace length viewer."""
-        if self.trace_length_viewer is None:
-            self.trace_length_viewer = TraceLengthViewer(self.processor, parent=self)
-            self.request_sync_external_tools.connect(self.trace_length_viewer.update)
-            self.wizard.request_fluorophore_ids_reset.connect(
-                self.trace_length_viewer.update
-            )
-            self.wizard.wizard_filters_run.connect(self.trace_length_viewer.update)
-            self.wizard.fluorophore_id_changed.connect(self.trace_length_viewer.update)
-        if self.color_unmixer is not None:
-            self.color_unmixer.fluorophore_ids_assigned.connect(
-                self.trace_length_viewer.update
-            )
-        if self.analyzer is not None:
-            self.analyzer.data_filters_changed.connect(self.trace_length_viewer.update)
-        self.trace_length_viewer.show()
-        self.trace_length_viewer.activateWindow()
 
     @Slot(None, name="open_frc_tool")
     def open_frc_tool(self):
@@ -1100,7 +1187,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter.remove_points()
 
         # If there is nothing to plot, return here
-        if self.processor is None:
+        if self.processor is None or len(self.processor.filtered_dataframe.index) == 0:
+            print("No data to process.")
             return
 
         # If an only if the requested parameters are "x" and "y" (in any order),

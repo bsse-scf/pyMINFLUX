@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         """Constructor."""
 
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_WizardDialog()
@@ -183,7 +183,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     def prepare_filter_ranges(self):
         """Extract bounds from the EFO and CFR data and prefill the values."""
 
-        if self.processor is None:
+        if self.processor is None or len(self.processor.filtered_dataframe.index) == 0:
             return
 
         # Get the range for the EFO data
@@ -274,6 +274,10 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.ui.pbSaveData.setVisible(enabled)
         self.ui.pbExportData.setVisible(enabled)
 
+    def enable_save_button(self, enable):
+        """Enable or disable the save button."""
+        self.ui.pbSaveData.setEnabled(enable)
+
     def reset_fluorophores(self):
         """Reset the fluorophores."""
 
@@ -321,11 +325,6 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # The fluorophore index is 1 + the combobox current index
         self.fluorophore_id_changed.emit(index)
-
-    @Slot(None, name="change_cfr_threshold_factor")
-    def change_cfr_threshold_factor(self):
-        """Update the value of the cfr threshold factor."""
-        self.ui.leCFRSigma.setText(str(self.state.cfr_threshold_factor))
 
     @Slot(None, name="change_efo_bounds")
     def change_efo_bounds(self):

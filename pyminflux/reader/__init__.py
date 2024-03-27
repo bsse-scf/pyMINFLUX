@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 
 __doc__ = "Reader of MINFLUX data."
 __all__ = [
-    "Metadata",
     "NativeMetadataReader",
     "NativeArrayReader",
     "NativeDataFrameReader",
@@ -23,7 +22,6 @@ __all__ = [
 ]
 
 from ._native_reader import (
-    Metadata,
     NativeArrayReader,
     NativeDataFrameReader,
     NativeMetadataReader,

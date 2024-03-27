@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ from numpy.fft import ifftshift
 from scipy import signal
 from scipy.fft import fft2
 from scipy.signal import savgol_filter
+from scipy.signal.windows import gaussian
 
 from pyminflux.render import render_xy
 
@@ -149,7 +150,7 @@ def img_fourier_ring_correlation(
         return real + 1j * imag
 
     if kernel is None:
-        kernel = np.outer(signal.gaussian(31, std=1), signal.gaussian(31, std=1))
+        kernel = np.outer(gaussian(31, std=1), gaussian(31, std=1))
 
     # Physical size of the image (in meters!)
     physical_image_size = (image1.shape[0] * sy * 1e-9, image1.shape[1] * sx * 1e-9)

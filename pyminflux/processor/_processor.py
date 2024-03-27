@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@ import numpy as np
 import pandas as pd
 from scipy.stats import mode
 
+from pyminflux.analysis import (
+    calculate_time_steps,
+    calculate_total_distance_traveled,
+    calculate_trace_time,
+)
 from pyminflux.reader import MinFluxReader
 
 
@@ -101,6 +106,11 @@ class MinFluxProcessor:
                 index=self.full_dataframe.index,
             ),
         }
+
+    @property
+    def is_tracking(self):
+        """Minimum number of localizations for the trace to be kept."""
+        return self.reader.is_tracking
 
     @property
     def min_trace_length(self):
@@ -320,6 +330,9 @@ class MinFluxProcessor:
             "sz",
             "ez",
             "fluo",
+            "tim_tot",
+            "avg_speed",
+            "total_dist",
         ]
 
     def reset(self):
@@ -754,6 +767,56 @@ class MinFluxProcessor:
         self._stats_to_be_recomputed = True
         self._weighted_localizations_to_be_recomputed = True
 
+    def filter_by_1d_stats(self, x_prop_stats: str, x_range: tuple):
+        """Filter TIDs by min and max thresholding using the given property from the stats dataframe.
+
+        Parameters
+        ----------
+
+        x_prop_stats: str
+            Name of the property (column) from the stats dataframe used to filter.
+
+        x_range: tuple
+            Tuple containing the minimum and maximum values for the selected property.
+        """
+
+        # Make sure the property exists in the stats dataframe
+        if x_prop_stats not in self.filtered_dataframe_stats.columns:
+            raise ValueError(
+                f"The property {x_prop_stats} does not exist in `filtered_dataframe_stats`."
+            )
+
+        # Make sure that the ranges are increasing
+        x_min = x_range[0]
+        x_max = x_range[1]
+        if x_max < x_min:
+            x_max, x_min = x_min, x_max
+
+        # Find all TIDs for current fluorophore ID by which the requested stats property is inside the range
+        tids_to_keep = self.filtered_dataframe_stats[
+            (
+                (self.filtered_dataframe_stats[x_prop_stats] >= x_min)
+                & (self.filtered_dataframe_stats[x_prop_stats] <= x_max)
+            )
+        ]["tid"].values
+
+        # Rows of the filtered dataframe to keep
+        rows_to_keep = self.filtered_dataframe["tid"].isin(tids_to_keep)
+
+        # Apply filter
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 1:
+            self._selected_rows_dict[1] = self._selected_rows_dict[1] & rows_to_keep
+
+        if self.current_fluorophore_id == 0 or self.current_fluorophore_id == 2:
+            self._selected_rows_dict[2] = self._selected_rows_dict[2] & rows_to_keep
+
+        # Apply the global filters
+        self._apply_global_filters()
+
+        # Make sure to flag the derived data to be recomputed
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
+
     def _calculate_statistics(self):
         """Calculate per-trace statistics."""
 
@@ -810,6 +873,9 @@ class MinFluxProcessor:
         exy = sxy / np.sqrt(n)
         ez = sz / np.sqrt(n)
         fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
+        tot_tim, _, _ = calculate_trace_time(df)
+        total_distance, _, _ = calculate_total_distance_traveled(df)
+        speeds = total_distance["displacement"].values / tot_tim["tim_tot"].values
 
         # Prepare a dataframe with the statistics
         df_tid = pd.DataFrame(columns=MinFluxProcessor.trace_stats_properties())
@@ -828,6 +894,11 @@ class MinFluxProcessor:
         df_tid["sz"] = sz  # z localization precision
         df_tid["ez"] = ez  # Standard error of ez
         df_tid["fluo"] = fluo  # Assigned fluorophore ID
+        df_tid["tim_tot"] = tot_tim["tim_tot"].values  # Total time per trace
+        df_tid["avg_speed"] = speeds  # Average speed per trace
+        df_tid["total_dist"] = total_distance[
+            "displacement"
+        ].values  # Total travelled distance per trace
 
         # ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"] columns will contain
         # np.nan if n == 1: we replace them with 0.0.

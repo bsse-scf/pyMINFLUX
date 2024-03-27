@@ -104,12 +104,12 @@ class Ui_MainWindow(object):
         self.actionAnalyzer.setObjectName("actionAnalyzer")
         self.actionTrace_Stats_Viewer = QAction(MainWindow)
         self.actionTrace_Stats_Viewer.setObjectName("actionTrace_Stats_Viewer")
-        self.actionTrace_Length_Viewer = QAction(MainWindow)
-        self.actionTrace_Length_Viewer.setObjectName("actionTrace_Length_Viewer")
         self.actionLoad = QAction(MainWindow)
         self.actionLoad.setObjectName("actionLoad")
         self.actionSave = QAction(MainWindow)
         self.actionSave.setObjectName("actionSave")
+        self.actionHistogram_Plotter = QAction(MainWindow)
+        self.actionHistogram_Plotter.setObjectName("actionHistogram_Plotter")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -168,8 +168,8 @@ class Ui_MainWindow(object):
         self.menuAnalysis.addAction(self.actionTime_Inspector)
         self.menuAnalysis.addAction(self.actionAnalyzer)
         self.menuAnalysis.addSeparator()
+        self.menuAnalysis.addAction(self.actionHistogram_Plotter)
         self.menuAnalysis.addAction(self.actionTrace_Stats_Viewer)
-        self.menuAnalysis.addAction(self.actionTrace_Length_Viewer)
         self.menuAnalysis.addAction(self.actionFRC_analyzer)
 
         self.retranslateUi(MainWindow)
@@ -248,9 +248,6 @@ class Ui_MainWindow(object):
         self.actionTrace_Stats_Viewer.setText(
             QCoreApplication.translate("MainWindow", "Trace Stats Viewer", None)
         )
-        self.actionTrace_Length_Viewer.setText(
-            QCoreApplication.translate("MainWindow", "Trace Length Viewer", None)
-        )
         self.actionLoad.setText(QCoreApplication.translate("MainWindow", "Load", None))
         # if QT_CONFIG(shortcut)
         self.actionLoad.setShortcut(
@@ -263,6 +260,9 @@ class Ui_MainWindow(object):
             QCoreApplication.translate("MainWindow", "Ctrl+S", None)
         )
         # endif // QT_CONFIG(shortcut)
+        self.actionHistogram_Plotter.setText(
+            QCoreApplication.translate("MainWindow", "Histogram Plotter", None)
+        )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", "Help", None))

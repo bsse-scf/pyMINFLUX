@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ class PyMinFluxNativeWriter:
 
     def __init__(self, processor: MinFluxProcessor):
         self.processor = processor
-        self._state = State()
+        self.state = State()
         self._message = ""
 
     def write(self, file_name: Union[Path, str]) -> bool:
@@ -39,7 +39,7 @@ class PyMinFluxNativeWriter:
             with h5py.File(file_name, "w") as f:
 
                 # Set file version attribute
-                f.attrs["file_version"] = "1.0"
+                f.attrs["file_version"] = "2.0"
 
                 # Create groups
                 raw_data_group = f.create_group("raw")
@@ -111,14 +111,30 @@ class PyMinFluxNativeWriter:
 
         group.create_dataset("z_scaling_factor", data=self.processor.z_scaling_factor)
         group.create_dataset("min_trace_length", data=self.processor.min_trace_length)
-        if self._state.applied_efo_thresholds is not None:
+        if self.state.applied_efo_thresholds is not None:
             group.create_dataset(
                 "applied_efo_thresholds",
-                data=self._state.applied_efo_thresholds,
+                data=self.state.applied_efo_thresholds,
             )
-        if self._state.applied_cfr_thresholds is not None:
+        if self.state.applied_cfr_thresholds is not None:
             group.create_dataset(
                 "applied_cfr_thresholds",
-                data=self._state.applied_cfr_thresholds,
+                data=self.state.applied_cfr_thresholds,
+            )
+        if self.state.applied_tr_len_thresholds is not None:
+            group.create_dataset(
+                "applied_tr_len_thresholds",
+                data=self.state.applied_tr_len_thresholds,
+            )
+        if self.state.applied_time_thresholds is not None:
+            group.create_dataset(
+                "applied_time_thresholds",
+                data=self.state.applied_time_thresholds,
             )
         group.create_dataset("num_fluorophores", data=self.processor.num_fluorophores)
+        group.create_dataset("dwell_time", data=self.state.dwell_time)
+        group.create_dataset("scale_bar_size", data=self.state.scale_bar_size)
+
+        # HDF5 does not have a native boolean type, so we save as int8 and convert it
+        # back to boolean on read.
+        group.create_dataset("is_tracking", data=np.int8(self.state.is_tracking))

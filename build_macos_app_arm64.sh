@@ -1,4 +1,4 @@
-# Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+# Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,8 @@
 #  limitations under the License.
 #
 
-VERSION=0.3.0
+VERSION=0.4.0
+PYTHON_VERSION=3.11
 
 if [[ -z "$ANACONDA_HOME" ]]; then
     echo "Please set environment variable ANACONDA_HOME." 1>&2
@@ -24,7 +25,7 @@ fi
 source $ANACONDA_HOME/etc/profile.d/conda.sh
 
 # Create and activate a dedicated env
-conda create -n pyminflux-build python=3.10 -y
+conda create -n pyminflux-build python=$PYTHON_VERSION -y
 conda activate pyminflux-build
 
 # Install dependencies
@@ -59,4 +60,4 @@ cd ..
 
 # Remove the conda environment
 conda deactivate
-conda env remove -n pyminflux-build
+conda env remove -n pyminflux-build -y

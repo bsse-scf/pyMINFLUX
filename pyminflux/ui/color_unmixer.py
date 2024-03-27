@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -39,9 +39,9 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     # Signal that the fluorophore IDs have been assigned
     fluorophore_ids_assigned = Signal(int, name="fluorophore_ids_assigned")
 
-    def __init__(self, processor: MinFluxProcessor, parent):
+    def __init__(self, processor: MinFluxProcessor):
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_ColorUnmixer()
@@ -202,7 +202,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.plot_widget.removeItem(item)
 
         # Prepare some colors
-        brushes = ["b", "r", "g", "m", "c"]
+        brushes = ["g", "m", "b", "r", "c"]
 
         # Calculate the bar width as a function of the number of fluorophores
         bar_width = 0.9 / self.state.num_fluorophores
@@ -259,7 +259,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.plot_widget.removeItem(item)
 
         # Prepare some colors
-        brushes = ["b", "r", "g", "m", "c"]
+        brushes = ["g", "m", "b", "r", "c"]
 
         # Calculate the bar width as a function of the number of fluorophores
         bar_width = 0.9 / self.state.num_fluorophores

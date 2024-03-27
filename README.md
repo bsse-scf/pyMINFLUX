@@ -19,7 +19,7 @@ Compiled executables (apps) for Linux, macOS and Windows can be downloaded from 
 The latest version of pyMINFLUX can also be installed from [pypi.org](https://pypi.org/project/pyminflux/). pyMINFLUX is compatible with and tested on Python 3.10 and 3.11. It is recommended to install pyMINFLUX in a conda environment as follows:
 
 ```sh
-$ conda create -n pyminflux-env python=3.10  # or 3.11
+$ conda create -n pyminflux-env python=3.11  # or 3.10
 $ conda activate pyminflux-env
 $ pip install --upgrade pyminflux
 ```
@@ -35,11 +35,12 @@ $ pyminflux
 pyMINFLUX is compatible with and tested on Python 3.10 and 3.11. For development, it is recommended to install pyMINFLUX in editable mode in a [conda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links) environment as follows:
 
 ```sh
-$ conda create -n pyminflux-env python=3.10  # or 3.11
+$ conda create -n pyminflux-env python=3.11  # or 3.10
 $ conda activate pyminflux-env
 $ git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
 $ cd /path/to/pyminflux
 $ python -m pip install -e .
+$ pip install -r dev-requirements.txt
 ```
 
 ### Running pyMINFLUX from console

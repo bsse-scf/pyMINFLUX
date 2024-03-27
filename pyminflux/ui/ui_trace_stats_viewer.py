@@ -56,7 +56,7 @@ class Ui_TraceStatsViewer(object):
     def setupUi(self, TraceStatsViewer):
         if not TraceStatsViewer.objectName():
             TraceStatsViewer.setObjectName("TraceStatsViewer")
-        TraceStatsViewer.resize(850, 600)
+        TraceStatsViewer.resize(1100, 600)
         self.verticalLayout_2 = QVBoxLayout(TraceStatsViewer)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.main_layout = QVBoxLayout()

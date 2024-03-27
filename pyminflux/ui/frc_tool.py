@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -223,11 +223,11 @@ class ProcessorThread(QThread):
 
 
 class FRCTool(QDialog, Ui_FRCTool):
-    def __init__(self, processor: MinFluxProcessor, parent=None):
+    def __init__(self, processor: MinFluxProcessor):
         """Constructor."""
 
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_FRCTool()
@@ -341,6 +341,11 @@ class FRCTool(QDialog, Ui_FRCTool):
 
         # Mark that there is no plot ready to export
         self.plot_ready_to_export = False
+
+        # Is there data to process?
+        if len(self.processor.filtered_dataframe.index) == 0:
+            self.frc_plot.setTitle("No data.")
+            return
 
         # Get the common parameters
         sxy = self.state.frc_lateral_resolution

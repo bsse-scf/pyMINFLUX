@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -200,7 +200,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
-            assert file_version == "1.0", "Invalid attribute 'file_version'!"
+            assert file_version == "2.0", "Invalid attribute 'file_version'!"
 
             # Read the NumPy array explicitly
             data_array = f["raw/npy"][:]
@@ -360,7 +360,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
-            assert file_version == "1.0", "Invalid attribute 'file_version'!"
+            assert file_version == "2.0", "Invalid attribute 'file_version'!"
 
             # Read the NumPy array explicitly
             data_array = f["raw/npy"][:]

@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget
-from PySide6.QtCore import QPoint, Signal, Slot
+from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QFont, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 
 from pyminflux.state import State
 from pyminflux.ui.helpers import export_plot_interactive
+from pyminflux.ui.roi_ranges import ROIRanges
 from pyminflux.ui.ui_time_inspector import Ui_TimeInspector
 
 
@@ -36,9 +37,9 @@ class TimeInspector(QDialog, Ui_TimeInspector):
     processing_completed = Signal(None, name="processing_completed")
     dataset_time_filtered = Signal(None, name="dataset_time_filtered")
 
-    def __init__(self, processor, parent):
+    def __init__(self, processor):
         # Call the base class
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Initialize the dialog
         self.ui = Ui_TimeInspector()
@@ -49,6 +50,9 @@ class TimeInspector(QDialog, Ui_TimeInspector):
 
         # Keep a reference to the Processor
         self.processor = processor
+
+        # Keep track of whether there is a plot to export
+        self.plot_ready_to_export = False
 
         # Constants
         self.brush = pg.mkBrush(0, 0, 0, 255)
@@ -71,7 +75,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.localization_precision_stderr_per_unit_time_cache_z = None
 
         # Time resolution
-        # @TODO: This should be user definable!
+
         self.time_resolution_sec = 60
 
         # Remember visibility status of the region
@@ -79,6 +83,17 @@ class TimeInspector(QDialog, Ui_TimeInspector):
 
         # Create the main plot widget
         self.plot_widget = PlotWidget(parent=self, background="w", title="")
+
+        # Set data label to the ViewBox to be used when calling ROIRanges()
+        self.plot_widget.getViewBox().data_label = "time_inspector"
+
+        # Connect the main plot widget to the context menu callback
+        self.plot_widget.scene().sigMouseClicked.connect(
+            self.histogram_raise_context_menu
+        )
+
+        # Keep a reference to the ROIRanges dialog
+        self.roi_ranges_dialog = None
 
         # Add it to the UI
         self.ui.main_layout.addWidget(self.plot_widget)
@@ -122,8 +137,15 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         """Perform and plot the results of the selected analysis."""
 
         # Do we have something to plot?
-        if self.processor is None or self.processor.full_dataframe is None:
+        if (
+            self.processor is None
+            or self.processor.filtered_dataframe is None
+            or len(self.processor.filtered_dataframe.index) == 0
+        ):
             return
+
+        # Mark that there is no plot ready to export
+        self.plot_ready_to_export = False
 
         # Inform that processing started
         self.processing_started.emit()
@@ -136,7 +158,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         if self.ui.cbAnalysisSelection.currentIndex() == 0:
             self.plot_localizations_per_unit_time()
         elif self.ui.cbAnalysisSelection.currentIndex() == 1:
-            self.plot_localization_precision_per_unit_time()
+            self.plot_localization_precision_per_unit_time(std_err=False)
         elif self.ui.cbAnalysisSelection.currentIndex() == 2:
             self.plot_localization_precision_per_unit_time(std_err=True)
         else:
@@ -151,8 +173,14 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         # Create a linear region for setting filtering thresholds. We create it
         # small enough not to be in the way.
         if self.selection_range is None:
-            mn, mx = np.percentile(np.arange(self.x_axis[0], self.x_axis[-1]), [25, 75])
+            if self.state.time_thresholds is not None:
+                mn, mx = self.state.time_thresholds
+            else:
+                mn, mx = np.percentile(
+                    np.arange(self.x_axis[0], self.x_axis[-1]), [25, 75]
+                )
             self.selection_range = (mn, mx)
+            self.state.time_thresholds = (mn, mx)
         mn, mx = self.selection_range[0], self.selection_range[1]
         self.selection_region = pg.LinearRegionItem(
             values=[mn, mx],
@@ -181,9 +209,9 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.selection_region.sigRegionChangeFinished.connect(
             self.region_pos_changed_finished
         )
-        self.plot_widget.scene().sigMouseClicked.connect(
-            self.histogram_raise_context_menu
-        )
+
+        # Mark that there is a plot ready to export
+        self.plot_ready_to_export = True
 
         # Inform that processing completed
         self.processing_completed.emit()
@@ -388,8 +416,15 @@ class TimeInspector(QDialog, Ui_TimeInspector):
 
     def region_pos_changed_finished(self, item):
         """Called when the line region on one of the histogram plots has changed."""
+
+        # Get the bounds of the region
         mn, mx = item.getRegion()
+
+        # Update the selection range
         self.selection_range = (mn, mx)
+
+        # Upate the state as well
+        self.state.time_thresholds = (mn, mx)
 
     def toggle_region_visibility(self, b):
         """Toggles the visibility of the line region."""
@@ -428,6 +463,9 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         # Inform that the data has been filtered
         self.dataset_time_filtered.emit()
 
+        # Store thresholds
+        self.state.applied_time_thresholds = (mn, mx)
+
         # Update the plot
         self.plot_selected()
 
@@ -453,6 +491,9 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         # Inform that the data has been filtered
         self.dataset_time_filtered.emit()
 
+        # Store thresholds
+        self.state.applied_time_thresholds = (mn, mx)
+
         # Update the plot
         self.plot_selected()
 
@@ -464,7 +505,6 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.ui.pbAreaToggleVisibility.setEnabled(False)
         self.ui.pbSelectionCropData.setEnabled(False)
         self.ui.pbSelectionKeepData.setEnabled(False)
-        self.repaint()
 
     def enable_ui_elements(self):
         """Disable elements and inform that a processing is ongoing."""
@@ -474,12 +514,26 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.ui.pbAreaToggleVisibility.setEnabled(True)
         self.ui.pbSelectionCropData.setEnabled(True)
         self.ui.pbSelectionKeepData.setEnabled(True)
-        self.repaint()
 
     def histogram_raise_context_menu(self, ev):
         """Create a context menu on the plot."""
         if ev.button() == Qt.MouseButton.RightButton:
+            if not self.plot_ready_to_export:
+                return
+
             menu = QMenu()
+            ranges_action = QAction("Set range")
+            ranges_action.triggered.connect(
+                lambda checked: self.roi_open_ranges_dialog(ev.currentItem.data_label)
+            )
+            menu.addAction(ranges_action)
+            keep_action = QAction("Keep data")
+            keep_action.triggered.connect(self.keep_time_region)
+            menu.addAction(keep_action)
+            drop_action = QAction("Drop data")
+            drop_action.triggered.connect(self.crop_time_region)
+            menu.addAction(drop_action)
+            menu.addSeparator()
             export_action = QAction("Export plot")
             export_action.triggered.connect(
                 lambda checked: export_plot_interactive(ev.currentItem)
@@ -490,3 +544,32 @@ class TimeInspector(QDialog, Ui_TimeInspector):
             ev.accept()
         else:
             ev.ignore()
+
+    def roi_open_ranges_dialog(self, item):
+        """Open dialog to manually set the filter ranges"""
+        if self.roi_ranges_dialog is None:
+            self.roi_ranges_dialog = ROIRanges()
+            self.roi_ranges_dialog.data_ranges_changed.connect(
+                self.roi_changes_finished
+            )
+        else:
+            self.roi_ranges_dialog.update_fields()
+        self.roi_ranges_dialog.set_target(item)
+        self.roi_ranges_dialog.show()
+        self.roi_ranges_dialog.activateWindow()
+
+    @Slot(None, name="roi_changes_finished")
+    def roi_changes_finished(self):
+        """Called when the ROIChanges dialog has accepted the changes."""
+
+        # Signal blocker on self.efo_plot, self.cfr_plot and self.tr_len_plot
+        plot_blocker = QSignalBlocker(self.plot_widget)
+
+        # Block signals from the plot widget
+        plot_blocker.reblock()
+
+        # Update the thresholds
+        self.selection_region.setRegion(self.state.time_thresholds)
+
+        # Unblock the self.efo_plot and self.cfr_plot signals
+        plot_blocker.unblock()

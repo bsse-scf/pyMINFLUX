@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ __all__ = [
     "assign_data_to_clusters",
     "calculate_2d_histogram",
     "calculate_density_map",
+    "calculate_time_steps",
+    "calculate_trace_time",
+    "calculate_total_distance_traveled",
     "find_cutoff_near_value",
     "find_first_peak_bounds",
     "get_robust_threshold",
@@ -31,6 +34,9 @@ from ._analysis import (
     assign_data_to_clusters,
     calculate_2d_histogram,
     calculate_density_map,
+    calculate_time_steps,
+    calculate_total_distance_traveled,
+    calculate_trace_time,
     find_cutoff_near_value,
     find_first_peak_bounds,
     get_robust_threshold,

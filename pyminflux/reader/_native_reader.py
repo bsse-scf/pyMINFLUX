@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -11,21 +11,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
 
 import h5py
 import pandas as pd
 
-
-@dataclass
-class Metadata:
-    z_scaling_factor: float
-    min_trace_length: int
-    efo_thresholds: tuple[int, int]
-    cfr_thresholds: tuple[float, float]
-    num_fluorophores: int
+from pyminflux.reader.metadata import NativeMetadata
 
 
 class NativeMetadataReader:
@@ -48,12 +40,20 @@ class NativeMetadataReader:
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
-            if file_version != "1.0":
+            if file_version != "1.0" and file_version != "2.0":
                 return None
 
-            # Read the parameters
-            z_scaling_factor = f["parameters/z_scaling_factor"][()]
-            min_trace_length = f["parameters/min_trace_length"][()]
+            # Version 1 parameters
+            try:
+                z_scaling_factor = float(f["parameters/z_scaling_factor"][()])
+            except KeyError:
+                return None
+
+            try:
+                min_trace_length = int(f["parameters/min_trace_length"][()])
+            except KeyError:
+                return None
+
             try:
                 efo_thresholds = tuple(f["parameters/applied_efo_thresholds"][:])
             except KeyError as e:
@@ -62,15 +62,65 @@ class NativeMetadataReader:
                 cfr_thresholds = tuple(f["parameters/applied_cfr_thresholds"][:])
             except KeyError as e:
                 cfr_thresholds = None
-            num_fluorophores = f["parameters/num_fluorophores"][()]
+
+            try:
+                num_fluorophores = int(f["parameters/num_fluorophores"][()])
+            except KeyError:
+                return None
+
+            # Version 2.0 parameters
+            if file_version == "2.0":
+
+                try:
+                    # This setting can be missing
+                    tr_len_thresholds = tuple(
+                        f["parameters/applied_tr_len_thresholds"][:]
+                    )
+                except KeyError as e:
+                    tr_len_thresholds = None
+
+                try:
+                    dwell_time = float(f["parameters/dwell_time"][()])
+                except KeyError as e:
+                    return None
+
+                try:
+                    # This setting can be missing
+                    time_thresholds = tuple(f["parameters/applied_time_thresholds"][:])
+                except KeyError as e:
+                    time_thresholds = None
+
+                # HDF5 does not have a native boolean type, so we save as int8 and convert it
+                # back to boolean on read.
+                try:
+                    is_tracking = bool(f["parameters/is_tracking"][()])
+                except KeyError as e:
+                    return None
+
+                try:
+                    scale_bar_size = float(f["parameters/scale_bar_size"][()])
+                except KeyError as e:
+                    return None
+
+            else:
+                tr_len_thresholds = None
+                time_thresholds = None
+                dwell_time = 1.0
+                is_tracking = False
+                scale_bar_size = 500
 
         # Store and return
-        metadata = Metadata(
+        metadata = NativeMetadata(
             z_scaling_factor=z_scaling_factor,
             min_trace_length=min_trace_length,
             efo_thresholds=efo_thresholds,
             cfr_thresholds=cfr_thresholds,
+            time_thresholds=time_thresholds,
+            tr_len_thresholds=tr_len_thresholds,
             num_fluorophores=num_fluorophores,
+            dwell_time=dwell_time,
+            is_tracking=is_tracking,
+            scale_bar_size=scale_bar_size,
         )
 
         return metadata
@@ -96,7 +146,7 @@ class NativeArrayReader:
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
-            if file_version != "1.0":
+            if file_version != "1.0" and file_version != "2.0":
                 return None
 
             # We only read the raw NumPy array
@@ -124,7 +174,7 @@ class NativeDataFrameReader:
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
-            if file_version != "1.0":
+            if file_version != "1.0" and file_version != "2.0":
                 return None
 
             # Read dataset

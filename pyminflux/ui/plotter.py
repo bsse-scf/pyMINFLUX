@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2023 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import time
 
 import numpy as np
 import pyqtgraph as pg
@@ -19,10 +20,15 @@ from pyqtgraph import ROI, PlotCurveItem, PlotWidget, TextItem, ViewBox, mkPen
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMenu
+from PySide6.QtWidgets import QInputDialog, QMenu
 
 from ..state import ColorCode, State
-from .helpers import export_plot_interactive
+from .helpers import (
+    BottomLeftAnchoredScaleBar,
+    create_brushes_by,
+    export_plot_interactive,
+    update_brushes_by_,
+)
 
 
 class Plotter(PlotWidget):
@@ -52,8 +58,13 @@ class Plotter(PlotWidget):
         # Keep a reference to the singleton State class
         self.state = State()
 
-        # Keep a reference to the scatter plot object
-        self.scatter = None
+        # Keep track of the mapping between unique identifiers or fluorophore identifiers and cached QBrushes
+        self._id_to_brush = None
+        self._fid_to_brush = None
+
+        # Keep a reference to the scatter_plot/line plot objects
+        self.scatter_plot = None
+        self.line_plot = None
 
         # ROI for localizations selection
         self.ROI = None
@@ -68,6 +79,9 @@ class Plotter(PlotWidget):
         self._last_x_param = None
         self._last_y_param = None
 
+        # Keep track of the ScaleBar
+        self.scale_bar = None
+
     def enableAutoRange(self, enable: bool):
         """Enable/disable axes autorange."""
         self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=enable)
@@ -77,7 +91,7 @@ class Plotter(PlotWidget):
 
         # Is the user trying to initiate drawing an ROI?
         if (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.button() == Qt.MouseButton.LeftButton
             and ev.modifiers() == QtCore.Qt.ShiftModifier
         ):
@@ -110,7 +124,7 @@ class Plotter(PlotWidget):
             ev.accept()
 
         elif (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.button() == Qt.MouseButton.LeftButton
             and ev.modifiers() == QtCore.Qt.ControlModifier
             and self.state.x_param in ("x", "y")
@@ -148,13 +162,19 @@ class Plotter(PlotWidget):
         else:
 
             # Is the user trying to open a context menu?
-            if self.scatter is not None and ev.button() == Qt.MouseButton.RightButton:
+            if (
+                self.scatter_plot is not None
+                and ev.button() == Qt.MouseButton.RightButton
+            ):
                 menu = QMenu()
                 if self.ROI is not None:
                     crop_data_action = QAction("Crop data")
                     crop_data_action.triggered.connect(self.crop_data_by_roi_selection)
                     menu.addAction(crop_data_action)
                     menu.addSeparator()
+                set_scalebar_size_action = QAction("Set scale bar size")
+                set_scalebar_size_action.triggered.connect(self.set_scalebar_size)
+                menu.addAction(set_scalebar_size_action)
                 export_action = QAction("Export plot")
                 export_action.triggered.connect(
                     lambda checked: export_plot_interactive(self.getPlotItem())
@@ -172,7 +192,7 @@ class Plotter(PlotWidget):
     def mouseMoveEvent(self, ev):
         # Is the user drawing an ROI?
         if (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
             and self._roi_is_being_drawn
         ):
@@ -186,7 +206,7 @@ class Plotter(PlotWidget):
             ev.accept()
 
         elif (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
             and self._line_is_being_drawn
         ):
@@ -210,7 +230,7 @@ class Plotter(PlotWidget):
 
     def mouseReleaseEvent(self, ev):
         if (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.button() == Qt.MouseButton.LeftButton
             and self._roi_is_being_drawn
         ):
@@ -245,7 +265,7 @@ class Plotter(PlotWidget):
             ev.accept()
 
         elif (
-            self.scatter is not None
+            self.scatter_plot is not None
             and ev.button() == Qt.MouseButton.LeftButton
             and self._line_is_being_drawn
         ):
@@ -287,57 +307,122 @@ class Plotter(PlotWidget):
             ev.ignore()
             super().mouseReleaseEvent(ev)
 
+    def reset(self):
+        # Forget last plot
+        self._last_x_param = None
+        self._last_y_param = None
+        self.remove_points()
+
+        # Clear color caches
+        self._id_to_brush = None
+        self._fid_to_brush = None
+
     def remove_points(self):
         self.setBackground("w")
         self.clear()
 
     def plot_parameters(self, x, y, x_param, y_param, tid, fid):
-        """Plot localizations in a 2D scatter plot."""
+        """Plot localizations and other parameters in a 2D scatter_plot plot."""
 
-        # Create the scatter plot
-        self.scatter = pg.ScatterPlotItem(
+        # Color-code the data points
+        if self.state.color_code == ColorCode.NONE:
+            brushes = self.brush
+        elif self.state.color_code == ColorCode.BY_TID:
+            if self._id_to_brush is None:
+                brushes, self._id_to_brush = create_brushes_by(tid)
+            else:
+                brushes, self._id_to_brush = update_brushes_by_(tid, self._id_to_brush)
+        elif self.state.color_code == ColorCode.BY_FLUO:
+            if self._fid_to_brush is None:
+                brushes, self._fid_to_brush = create_brushes_by(
+                    fid, color_scheme="green-magenta"
+                )
+            else:
+                brushes, self._fid_to_brush = update_brushes_by_(
+                    fid, self._fid_to_brush
+                )
+        else:
+            raise ValueError("Unexpected request for color-coding the localizations!")
+
+        # Create the scatter_plot plot
+        self.scatter_plot = pg.ScatterPlotItem(
+            x=x,
+            y=y,
+            data=tid,
             size=5,
-            pen=self.pen,
-            brush=self.brush,
+            pen=None,
+            brush=brushes,
             hoverable=True,
             hoverSymbol="s",
             hoverSize=5,
             hoverPen=pg.mkPen("w", width=2),
             hoverBrush=None,
         )
-        self.scatter.sigClicked.connect(self.clicked)
-        if self.state.color_code == ColorCode.NONE:
-            brushes = self.brush
-        elif self.state.color_code == ColorCode.BY_TID:
-            brushes = tid
-        elif self.state.color_code == ColorCode.BY_FLUO:
-            brushes = [6 if i == 1 else 9 for i in fid]
-        else:
-            raise ValueError("Unexpected request for color-coding the localizations!")
+        self.scatter_plot.sigClicked.connect(self.clicked)
+        self.addItem(self.scatter_plot)
 
-        self.scatter.addPoints(
-            x=x,
-            y=y,
-            data=tid,
-            brush=brushes,
-        )
-        self.addItem(self.scatter)
+        # For a tracking dataset, we also add the connecting line_plot (for spatial parameters only)
+        if self.state.is_tracking and (
+            x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]
+        ):
+
+            # Add the line_plot within TIDs
+            line_indices = np.concatenate((np.diff(tid) == 0, [1])).astype(np.int32)
+            self.line_plot = pg.PlotDataItem(
+                x,
+                y,
+                connect=line_indices,
+                pen=mkPen(cosmetic=True, width=0.5, color="w"),
+                symbol=None,
+                brush=None,
+            )
+            self.addItem(self.line_plot)
+
         self.setLabel("bottom", text=x_param)
         self.setLabel("left", text=y_param)
         self.showAxis("bottom")
         self.showAxis("left")
         self.setBackground("k")
 
+        # Fix aspect ratio (if needed)
         if (self._last_x_param is None or self._last_x_param != x_param) or (
             self._last_y_param is None or self._last_y_param != y_param
         ):
             # Update range
             self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
 
-            # Fix aspect ratio
-            x_scale = (x.max() - x.min()) / (len(x) - 1)
-            y_scale = (y.max() - y.min()) / (len(y) - 1)
-            aspect_ratio = y_scale / x_scale
+            if x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]:
+                # Set fixed aspect ratio
+                aspect_ratio = 1.0
+
+                # Add scale bar
+                if self.scale_bar is None:
+                    self.scale_bar = BottomLeftAnchoredScaleBar(
+                        size=self.state.scale_bar_size,
+                        auto_resize=False,
+                        viewBox=self.getViewBox(),
+                        brush="w",
+                        pen=None,
+                        suffix="nm",
+                        offset=(50, -15),
+                    )
+                self.scale_bar.setEnabled(True)
+                self.scale_bar.setVisible(True)
+
+            else:
+                # Calculate aspect ratio
+                x_min, x_max = np.nanpercentile(x, (1, 99))
+                x_scale = x_max - x_min
+                y_min, y_max = np.nanpercentile(y, (1, 99))
+                y_scale = y_max - y_min
+                aspect_ratio = y_scale / x_scale
+                if np.isnan(aspect_ratio):
+                    aspect_ratio = 1.0
+
+                if self.scale_bar is not None:
+                    self.scale_bar.setEnabled(False)
+                    self.scale_bar.setVisible(False)
+
             self.getPlotItem().getViewBox().setAspectLocked(
                 lock=True, ratio=aspect_ratio
             )
@@ -408,3 +493,20 @@ class Plotter(PlotWidget):
             y_range = (self.ROI.pos()[1], self.ROI.pos()[1] + self.ROI.size()[1])
 
         return x_range, y_range
+
+    def set_scalebar_size(self):
+        """Ask the user to specify the size of the scalebar."""
+        size, ok = QInputDialog.getInt(
+            self,
+            "Scale bar",
+            "Set scale bar length (nm):",
+            self.state.scale_bar_size,
+            minValue=1,
+            maxValue=10000,
+        )
+        if ok:
+            # Set the new value
+            self.state.scale_bar_size = size
+
+            # Update the bar
+            self.scale_bar.setSize(self.state.scale_bar_size)

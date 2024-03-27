@@ -90,8 +90,8 @@
     <addaction name="actionTime_Inspector"/>
     <addaction name="actionAnalyzer"/>
     <addaction name="separator"/>
+    <addaction name="actionHistogram_Plotter"/>
     <addaction name="actionTrace_Stats_Viewer"/>
-    <addaction name="actionTrace_Length_Viewer"/>
     <addaction name="actionFRC_analyzer"/>
    </widget>
    <addaction name="menuFile"/>
@@ -218,11 +218,6 @@
     <string>Trace Stats Viewer</string>
    </property>
   </action>
-  <action name="actionTrace_Length_Viewer">
-   <property name="text">
-    <string>Trace Length Viewer</string>
-   </property>
-  </action>
   <action name="actionLoad">
    <property name="text">
     <string>Load</string>
@@ -237,6 +232,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionHistogram_Plotter">
+   <property name="text">
+    <string>Histogram Plotter</string>
    </property>
   </action>
  </widget>

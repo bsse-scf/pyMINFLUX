@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>390</width>
-    <height>140</height>
+    <width>479</width>
+    <height>168</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -22,8 +22,123 @@
     <height>16777215</height>
    </size>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="4" column="0">
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="1">
+    <layout class="QGridLayout" name="gridLayout">
+     <property name="verticalSpacing">
+      <number>0</number>
+     </property>
+     <item row="2" column="2">
+      <widget class="QLineEdit" name="leTrLenMin"/>
+     </item>
+     <item row="2" column="3">
+      <widget class="QLabel" name="lbTrLenMax">
+       <property name="text">
+        <string>max</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <widget class="QLabel" name="lbEFOMax">
+       <property name="text">
+        <string>max</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QLineEdit" name="leEFOMin"/>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLabel" name="lbTrLenMin">
+       <property name="text">
+        <string>min</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="4">
+      <widget class="QLineEdit" name="leCFRMax"/>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="lbMinCFR">
+       <property name="text">
+        <string>min</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLabel" name="lbEFOMin">
+       <property name="text">
+        <string>min</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="lbEFO">
+       <property name="text">
+        <string>EFO</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QLabel" name="lbCFRMax">
+       <property name="text">
+        <string>max</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="4">
+      <widget class="QLineEdit" name="leEFOMax"/>
+     </item>
+     <item row="0" column="2">
+      <widget class="QLineEdit" name="leCFRMin"/>
+     </item>
+     <item row="2" column="4">
+      <widget class="QLineEdit" name="leTrLenMax"/>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="lbCFR">
+       <property name="text">
+        <string>CFR</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="lbTrLen">
+       <property name="text">
+        <string>Trace length</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="lbTime">
+       <property name="text">
+        <string>Time</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLabel" name="lbTimeMin">
+       <property name="text">
+        <string>min</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="3">
+      <widget class="QLabel" name="lbTimeMax">
+       <property name="text">
+        <string>max</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QLineEdit" name="leTimeMin"/>
+     </item>
+     <item row="3" column="4">
+      <widget class="QLineEdit" name="leTimeMax"/>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -33,111 +148,13 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
-    <spacer name="verticalSpacer">
+   <item row="1" column="0" colspan="2">
+    <spacer name="verticalSpacer_bottom">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>5</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="2" column="0">
-    <layout class="QHBoxLayout" name="efo_layout">
-     <item>
-      <widget class="QLabel" name="lbEFO">
-       <property name="text">
-        <string>EFO</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="efo_spacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>0</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QLabel" name="lbEFOMin">
-       <property name="text">
-        <string>min</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="leEFOMin"/>
-     </item>
-     <item>
-      <widget class="QLabel" name="lbEFOMax">
-       <property name="text">
-        <string>max</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="leEFOMax"/>
-     </item>
-    </layout>
-   </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="cfr_layout">
-     <item>
-      <widget class="QLabel" name="lbCFR">
-       <property name="text">
-        <string>CFR</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="cfr_spacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>0</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QLabel" name="lbMinCFR">
-       <property name="text">
-        <string>min</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="leCFRMin"/>
-     </item>
-     <item>
-      <widget class="QLabel" name="lbCFRMax">
-       <property name="text">
-        <string>max</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="leCFRMax"/>
-     </item>
-    </layout>
-   </item>
-   <item row="0" column="0">
-    <spacer name="verticalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+     <property name="sizeType">
+      <enum>QSizePolicy::Expanding</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
