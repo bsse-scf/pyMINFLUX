@@ -133,7 +133,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
     #
     state.min_trace_length = 1
 
-    # 2D_ValidOnly.npy
+    # 2D_All.npy
     reader = MinFluxReader(
         Path(__file__).parent / "data" / "2D_All.npy", z_scaling_factor=0.7
     )

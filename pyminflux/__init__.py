@@ -27,7 +27,7 @@ This is the **development** documentation of the `pyminflux` core command-line A
 
 Currently, `pyminflux` is compatible with python 3.10 and 3.11.
 
-**Usage**: see [example notebook](https://github.com/bsse-scf/pyMINFLUX/blob/feature/extended_stats/examples/processing.ipynb).
+**Usage**: see [example notebook](https://github.com/bsse-scf/pyMINFLUX/blob/master/examples/processing.ipynb).
 
 **Project home**: [https://pyminflux.ethz.ch](https://pyminflux.ethz.ch)
 """

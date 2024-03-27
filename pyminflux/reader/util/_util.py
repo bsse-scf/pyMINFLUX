@@ -255,7 +255,7 @@ def find_last_valid_iteration(data_array: np.ndarray):
     # with more than one is NaN, the iteration does not relocalize, otherwise
     # it does.
 
-    # Is the first trace longer that two localizations?
+    # Is the first trace longer than two localizations?
     reloc_index = None
     if data_array["tid"][1] == data_array["tid"][0]:
         reloc_index = 1
@@ -266,6 +266,8 @@ def find_last_valid_iteration(data_array: np.ndarray):
                 # We already know that this tid only has one localization
                 continue
             (indices,) = np.where(data_array["tid"] == u_tid)
+            if len(indices) < 2:
+                continue
             if data_array["tid"][indices[1]] == data_array["tid"][indices[0]]:
                 # Found valid index
                 reloc_index = indices[1]
