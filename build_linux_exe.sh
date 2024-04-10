@@ -13,7 +13,7 @@
 #  limitations under the License.
 #
 
-VERSION=0.4.0
+VERSION=0.4.1
 PYTHON_VERSION=3.11
 
 if [[ -z "$ANACONDA_HOME" ]]; then

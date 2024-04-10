@@ -15,7 +15,7 @@ REM  limitations under the License.
 REM
 setlocal
 
-SET VERSION=0.4.0
+SET VERSION=0.4.1
 SET PYTHON_VERSION=3.11
 
 IF "%ANACONDA_HOME%"=="" ECHO Please set environment variable ANACONDA_HOME. && exit /b
