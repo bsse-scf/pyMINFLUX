@@ -61,7 +61,7 @@ REM Zip the executable
 cd dist
 set INPUT_FILE=pyMINFLUX.exe
 set OUTPUT_FILE=pyMINFLUX_%VERSION%_win.zip
-7z.exe a -tzip "%OUTPUT_FILE%" "%INPUT_FILE%" > NUL:
+7z.exe a -tzip "%OUTPUT_FILE%" "%INPUT_FILE%"
 
 REM Remove the conda environment
 call conda deactivate
