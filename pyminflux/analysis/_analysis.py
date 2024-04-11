@@ -146,7 +146,7 @@ def calculate_displacements(df: pd.DataFrame, is_3d: Optional[bool] = None):
         return group
 
     # Calculate displacements per tid
-    displacements = df.groupby("tid").apply(calculate_displacements)
+    displacements = df.groupby("tid", group_keys=True).apply(calculate_displacements)
     displacements.reset_index(drop=True, inplace=True)
 
     # Do we have data?
