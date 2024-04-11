@@ -29,7 +29,7 @@ conda create -n pyminflux-build python=$PYTHON_VERSION -y
 conda activate pyminflux-build
 
 # Install nuitka
-pip install nuitka ordered_set zstandard # patchelf  (Linux)
+python -m pip install nuitka ordered_set zstandard # patchelf  (Linux)
 
 # Install dependencies
 poetry install
