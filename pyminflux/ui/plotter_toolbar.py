@@ -84,7 +84,11 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         """Persist the selection for the second parameter."""
 
         # Enable the Average checkbox only for x, y plots
-        if self.state.x_param in ["x", "y"] and self.state.y_param in ["x", "y"]:
+        if (
+            not self.state.is_tracking
+            and self.state.x_param in ["x", "y"]
+            and self.state.y_param in ["x", "y"]
+        ):
             self.ui.cbPlotAveragePos.setEnabled(True)
         else:
             self.ui.cbPlotAveragePos.setEnabled(False)
@@ -117,3 +121,12 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
         # Emit signal
         self.plot_requested_parameters.emit()
+
+    def reset(self):
+        """Reset the toolbar."""
+        if self.state.is_tracking:
+            if self.state.plot_average_localisations is False:
+                print(
+                    "DEBUG: Inconsistent state! Both `self.state.is_tracking` and `self.state.plot_average_localisations` are true!"
+                )
+        self.toggle_average_state(None)

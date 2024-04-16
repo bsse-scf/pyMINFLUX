@@ -12,6 +12,9 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from typing import Sequence
+
+import numpy as np
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QDialog
 
@@ -23,7 +26,13 @@ class Importer(QDialog, Ui_Importer):
     A QDialog to support custom loading.
     """
 
-    def __init__(self, valid_cfr, relocalizations, dwell_time):
+    def __init__(
+        self,
+        valid_cfr: Sequence,
+        relocalizations: Sequence,
+        dwell_time: float,
+        is_tracking: bool,
+    ):
         # Call the base class
         super().__init__()
 
@@ -39,9 +48,7 @@ class Importer(QDialog, Ui_Importer):
         self._valid_cfr = valid_cfr
         self._relocalizations = relocalizations
         self._dwell_time = dwell_time
-
-        # Keep track of whether the dataset is a tracking dataset
-        self._is_tracking = False
+        self._is_tracking = is_tracking
 
         # Set the dwell time
         self.ui.leDwellTime.setText(f"{self._dwell_time}")

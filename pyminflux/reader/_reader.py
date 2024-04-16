@@ -67,7 +67,7 @@ class MinFluxReader:
         valid: bool = True,
         z_scaling_factor: float = 1.0,
         is_tracking: bool = False,
-        dwell_time: bool = 1.0,
+        dwell_time: float = 1.0,
     ):
         """Constructor.
 
