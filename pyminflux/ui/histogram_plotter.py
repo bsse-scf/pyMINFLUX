@@ -144,7 +144,7 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
         self.hist_plot.setLabel("left", f"{param} frequencies")
 
         # Set properties of the label for x-axis
-        self.hist_plot.setLabel("bottom", f"{param} bins")
+        self.hist_plot.setLabel("bottom", f"{param}")
 
         # Make sure to have valid ranges and widths
         x_range = [bins[0], bins[-1]]
