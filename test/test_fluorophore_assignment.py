@@ -197,6 +197,11 @@ class MockMinFluxReader:
         )
 
     @property
+    def is_tracking(self):
+        """This is a localization dataset and not a tracking one."""
+        return False
+
+    @property
     def test_swapped_fluorophore_ids(self):
         """Swapped fluorophore ids to be used for testing."""
         tmp = self.test_fluorophore_ids.copy()

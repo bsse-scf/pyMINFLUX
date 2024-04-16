@@ -77,6 +77,11 @@ class MockMinFluxReader:
         """Number of invalid entries."""
         return 0
 
+    @property
+    def is_tracking(self):
+        """This is a localization dataset and not a tracking one."""
+        return False
+
 
 @pytest.fixture(autouse=False)
 def extract_raw_npy_data_files(tmpdir):
