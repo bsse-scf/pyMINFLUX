@@ -51,8 +51,9 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX \
 --linux-icon=pyminflux/ui/assets/Logo_v3.ico \
 --enable-plugin=pylint-warnings \
 --enable-plugin=pyside6 \
---noinclude-pytest-mode=nofollow \
---noinclude-setuptools-mode=nofollow \
+--noinclude-default-mode=nofollow \
+--file-version=$VERSION \
+--product-version=$VERSION \
 --remove-output \
 --output-dir=./dist
 
