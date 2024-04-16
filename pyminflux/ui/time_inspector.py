@@ -119,7 +119,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.localization_precision_stderr_per_unit_time_cache_y = None
         self.localization_precision_stderr_per_unit_time_cache_z = None
 
-    @Slot(None, name="update")
+    @Slot(name="update")
     def update(self):
         """Update the plots as response to data changes."""
 
@@ -132,7 +132,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         # Plot
         self.plot_selected()
 
-    @Slot(None, name="plot_selected")
+    @Slot(name="plot_selected")
     def plot_selected(self):
         """Perform and plot the results of the selected analysis."""
 
@@ -558,7 +558,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.roi_ranges_dialog.show()
         self.roi_ranges_dialog.activateWindow()
 
-    @Slot(None, name="roi_changes_finished")
+    @Slot(name="roi_changes_finished")
     def roi_changes_finished(self):
         """Called when the ROIChanges dialog has accepted the changes."""
 

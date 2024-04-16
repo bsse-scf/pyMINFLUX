@@ -115,7 +115,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         # Persist the selection
         self.state.y_param = self.plotting_parameters[index]
 
-    @Slot(None, name="emit_plot_requested")
+    @Slot(name="emit_plot_requested")
     def emit_plot_requested(self):
         """Plot the requested parameters."""
 

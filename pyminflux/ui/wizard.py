@@ -326,7 +326,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # The fluorophore index is 1 + the combobox current index
         self.fluorophore_id_changed.emit(index)
 
-    @Slot(None, name="change_efo_bounds")
+    @Slot(name="change_efo_bounds")
     def change_efo_bounds(self):
         """Update the EFO bounds."""
 
@@ -344,7 +344,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         efo_lower_bound_blocker.unblock()
         efo_upper_bound_blocker.unblock()
 
-    @Slot(None, name="change_cfr_bounds")
+    @Slot(name="change_cfr_bounds")
     def change_cfr_bounds(self):
         """Update the CFR bounds."""
 
@@ -362,7 +362,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         cfr_lower_bound_blocker.unblock()
         cfr_upper_bound_blocker.unblock()
 
-    @Slot(None, name="run_efo_filter_and_broadcast")
+    @Slot(name="run_efo_filter_and_broadcast")
     def run_efo_filter_and_broadcast(self):
         """Run the EFO filter and broadcast the changes."""
 
@@ -387,7 +387,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Signal that the external viewers should be updated
         self.wizard_filters_run.emit()
 
-    @Slot(None, name="run_cfr_filter_and_broadcast")
+    @Slot(name="run_cfr_filter_and_broadcast")
     def run_cfr_filter_and_broadcast(self):
         """Run the CFR filter and broadcast the changes."""
 
@@ -412,7 +412,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Signal that the external viewers should be updated
         self.wizard_filters_run.emit()
 
-    @Slot(None, name="efo_change_bounds_and_broadcast")
+    @Slot(name="efo_change_bounds_and_broadcast")
     def efo_change_bounds_and_broadcast(self, text):
         """Update the EFO bounds and broadcast changes."""
 
@@ -461,7 +461,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             # Disable the filter push button
             self.ui.pbEFOFilter.setEnabled(False)
 
-    @Slot(None, name="cfr_change_bounds_and_broadcast")
+    @Slot(name="cfr_change_bounds_and_broadcast")
     def cfr_change_bounds_and_broadcast(self, text):
         """Update the CFR bounds and broadcast changes."""
 
@@ -510,7 +510,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             # Disable the filter push button
             self.ui.pbCFRFilter.setEnabled(False)
 
-    @Slot(None, name="reset_filters")
+    @Slot(name="reset_filters")
     def reset_filters(self):
         """Reset fluorophores pull-down menu in the wizard and broadcast changes to other tools."""
 

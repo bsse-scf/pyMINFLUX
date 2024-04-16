@@ -65,7 +65,7 @@ class TraceStatsViewer(QDialog, Ui_TraceStatsViewer):
         # Show the data
         self.trace_dataviewer.show()
 
-    @Slot(None, name="update")
+    @Slot(name="update")
     def update(self):
         """Update the viewer."""
         if self.processor is None:

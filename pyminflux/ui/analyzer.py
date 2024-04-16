@@ -96,7 +96,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # EFO cutoff frequency tab
         self.ui.leEFOExpectedCutoff.setText(str(self.state.efo_expected_frequency))
         self.ui.leEFOExpectedCutoff.setValidator(
-            QDoubleValidator(bottom=0.0, decimals=2)
+            QDoubleValidator(bottom=0.0, top=np.Inf, decimals=2)
         )
 
         # CFR filtering tab
@@ -470,6 +470,19 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     def plot(self):
         """Plot histograms."""
+
+        # Check that the necessary objects exist
+        if (
+            self.communication_label is None
+            or self.efo_plot is None
+            or self.cfr_plot is None
+            or self.tr_len_plot is None
+            or self.sx_plot is None
+            or self.sy_plot is None
+            or self.sz_plot is None
+            or self.processor.filtered_dataframe is None
+        ):
+            return
 
         # Hide the communications label
         self.communication_label.hide()
@@ -1052,7 +1065,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             value = f"{min(region)}"
         low_thresh_label.textItem.setPlainText(value)
 
-    @Slot(None, name="roi_changes_finished")
+    @Slot(name="roi_changes_finished")
     def roi_changes_finished(self):
         """Called when the ROIChanges dialog has accepted the changes."""
 

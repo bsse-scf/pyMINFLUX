@@ -81,6 +81,9 @@ class PyMinFluxNativeWriter:
     def _store_dataframe(self, group):
         """Write the Pandas DataFrame in a way that it can be reloaded without external dependencies."""
 
+        if self.processor.filtered_dataframe is None:
+            return
+
         dataset = group.create_dataset(
             "dataframe",
             data=self.processor.filtered_dataframe.to_numpy(),

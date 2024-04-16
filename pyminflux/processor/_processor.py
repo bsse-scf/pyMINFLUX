@@ -95,6 +95,9 @@ class MinFluxProcessor:
 
     def _init_selected_rows_dict(self):
         """Initialize the selected rows array."""
+        if self.full_dataframe is None:
+            return
+
         # How many fluorophores do we have?
         self._selected_rows_dict = {
             1: pd.Series(
@@ -181,6 +184,8 @@ class MinFluxProcessor:
     @property
     def num_fluorophores(self) -> int:
         """Return the number of fluorophores."""
+        if self.full_dataframe is None:
+            return 0
         return len(np.unique(self.full_dataframe["fluo"].values))
 
     @property
@@ -190,6 +195,9 @@ class MinFluxProcessor:
         # Copy the raw NumPy array
         raw_array = self.reader.valid_raw_data
         if raw_array is None:
+            return None
+
+        if self.full_dataframe is None or self._selected_rows_dict is None:
             return None
 
         # Append the fluorophore ID data
@@ -248,7 +256,7 @@ class MinFluxProcessor:
         filtered_dataframe_all: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
-        if self.full_dataframe is None:
+        if self.full_dataframe is None or self._selected_rows_dict is None:
             return None
 
         # Extract combination of fluorophore 1 and 2 filtered dataframes
@@ -274,6 +282,8 @@ class MinFluxProcessor:
             df = self.full_dataframe.loc[
                 self.full_dataframe["fluo"] == self.current_fluorophore_id
             ]
+            if self._selected_rows_dict is None:
+                return None
             return df.loc[self._selected_rows_dict[self.current_fluorophore_id]]
 
     @property
@@ -372,7 +382,7 @@ class MinFluxProcessor:
             If the acquisition is 2D, it will be ignored in any case.
         """
 
-        if self.full_dataframe is None:
+        if self.full_dataframe is None or self._selected_rows_dict is None:
             return
 
         # Make sure to work with NumPy arrays

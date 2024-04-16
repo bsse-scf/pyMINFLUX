@@ -117,7 +117,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             return
         self.state.dcr_manual_threshold = float(dcr_manual_threshold)
 
-    @Slot(None, name="plot_dcr_histogram")
+    @Slot(name="plot_dcr_histogram")
     def plot_dcr_histogram(self):
         """Plot the dcr histogram. This is always performed assuming all data belongs to one fluorophore."""
 
@@ -170,7 +170,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.histogram_raise_context_menu
         )
 
-    @Slot(None, name="preview_manual_assignment")
+    @Slot(name="preview_manual_assignment")
     def preview_manual_assignment(self):
         """Preview the manual assignment."""
 
@@ -236,7 +236,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Make sure to enable the assign button
         self.ui.pbManualAssign.setEnabled(True)
 
-    @Slot(None, name="detect_fluorophores")
+    @Slot(name="detect_fluorophores")
     def detect_fluorophores(self):
         """Detect fluorophores."""
 
@@ -296,7 +296,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Make sure to enable the assign button
         self.ui.pbAssign.setEnabled(True)
 
-    @Slot(None, name="assign_fluorophores_ids")
+    @Slot(name="assign_fluorophores_ids")
     def assign_fluorophores_ids(self):
         """Assign the fluorophores ids."""
 
