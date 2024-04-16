@@ -605,7 +605,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Update the reader object (we let the MinFluxProcessor
             # trigger the creation of the dataframe, hence the
             # process=False argument everywhere).
-            # reader.set_tracking(selection["is_tracking"], process=False)
+            reader.set_tracking(selection["is_tracking"], process=False)
             reader.set_indices(
                 selection["iteration"], selection["cfr_iteration"], process=False
             )
