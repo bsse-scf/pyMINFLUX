@@ -64,6 +64,10 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_All.npy")
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
+    assert reader.processed_dataframe is not None, "Failed processing dataframe."
+    assert processor.full_dataframe is not None, "Failed retrieving full dataframe."
+    assert processor.filtered_dataframe is not None, "Failed filtering dataframe."
+
     # Assign fluorophores
     np.random.seed(42)
     fluo = np.random.randint(1, 3, len(processor.filtered_dataframe.index))
@@ -101,6 +105,13 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
         # And pass it to a new MinFluxProcessor
         reloaded_processor = MinFluxProcessor(reloaded_reader)
 
+    assert (
+        reloaded_processor.full_dataframe is not None
+    ), "Failed retrieving full dataframe."
+    assert (
+        reloaded_processor.filtered_dataframe is not None
+    ), "Failed filtering dataframe."
+
     # Now compare the processed file with its reloaded version
     assert (
         len(processor.full_dataframe.index) == 12580
@@ -115,15 +126,15 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
         reloaded_processor.filtered_dataframe.index
     ), "Unexpected number of entries in reloaded .npy file."
     assert np.all(
-        processor.filtered_dataframe["fluo"].values
-        == reloaded_processor.filtered_dataframe["fluo"].values
+        processor.filtered_dataframe["fluo"].to_numpy()
+        == reloaded_processor.filtered_dataframe["fluo"].to_numpy()
     ), "Mismatch in fluorophore assignments."
     assert np.allclose(
-        processor.filtered_dataframe.values, processor.filtered_dataframe.values
+        processor.filtered_dataframe.to_numpy(), processor.filtered_dataframe.to_numpy()
     ), "Reloaded .npy file does not match the original."
     assert np.all(
-        processor.filtered_dataframe.columns.values
-        == reloaded_processor.filtered_dataframe.columns.values
+        processor.filtered_dataframe.columns.to_numpy()
+        == reloaded_processor.filtered_dataframe.columns.to_numpy()
     ), "Unexpected columns."
 
 
@@ -138,6 +149,10 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
     # 2D_ValidOnly.npy
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_All.npy")
     processor = MinFluxProcessor(reader, min_trace_length=1)
+
+    assert reader.processed_dataframe is not None, "Failed processing dataframe."
+    assert processor.full_dataframe is not None, "Failed retrieving full dataframe."
+    assert processor.filtered_dataframe is not None, "Failed filtering dataframe."
 
     # Assign fluorophores
     np.random.seed(42)
@@ -183,20 +198,20 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
     # And finally, compare the extracted data
     assert len(filtered_dataframe_all.index) == len(filtered_numpy_array_all)
     assert np.all(
-        (filtered_dataframe_all["fluo"] == 1).values
+        (filtered_dataframe_all["fluo"] == 1).to_numpy()
         == (filtered_numpy_array_all["fluo"] == 1)
     ), "Fluorophore ID mismatch"
     assert np.all(
-        (filtered_dataframe_all["fluo"] == 2).values
+        (filtered_dataframe_all["fluo"] == 2).to_numpy()
         == (filtered_numpy_array_all["fluo"] == 2)
     ), "Fluorophore ID mismatch"
     assert len(filtered_dataframe_1.index) == len(filtered_numpy_array_1)
     assert np.all(
-        (filtered_dataframe_1["fluo"] == 1).values
+        (filtered_dataframe_1["fluo"] == 1).to_numpy()
         == (filtered_numpy_array_1["fluo"] == 1)
     ), "Fluorophore ID mismatch"
     assert np.all(
-        (filtered_dataframe_1["fluo"] == 2).values
+        (filtered_dataframe_1["fluo"] == 2).to_numpy()
         == (filtered_numpy_array_1["fluo"] == 2)
     ), "Fluorophore ID mismatch"
     assert (
@@ -204,11 +219,11 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
     ).sum() == 0, "There should be no localizations for fluorophore 2."
     assert len(filtered_dataframe_2.index) == len(filtered_numpy_array_2)
     assert np.all(
-        (filtered_dataframe_2["fluo"] == 1).values
+        (filtered_dataframe_2["fluo"] == 1).to_numpy()
         == (filtered_numpy_array_2["fluo"] == 1)
     ), "Fluorophore ID mismatch"
     assert np.all(
-        (filtered_dataframe_2["fluo"] == 2).values
+        (filtered_dataframe_2["fluo"] == 2).to_numpy()
         == (filtered_numpy_array_2["fluo"] == 2)
     ), "Fluorophore ID mismatch"
     assert (
@@ -225,57 +240,73 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
 
     # All fluorophores
     assert np.all(
-        filtered_dataframe_all["tid"].values == filtered_numpy_array_all["tid"]
+        filtered_dataframe_all["tid"].to_numpy() == filtered_numpy_array_all["tid"]
     ), "Content mismatch."
     assert np.allclose(
-        filtered_dataframe_all["tim"].values, filtered_numpy_array_all["tim"]
+        filtered_dataframe_all["tim"].to_numpy(), filtered_numpy_array_all["tim"]
     ), "Content mismatch."
     efo = filtered_numpy_array_all["itr"][:, efo_index]["efo"]
-    assert np.allclose(filtered_dataframe_all["efo"].values, efo), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_all["efo"].to_numpy(), efo
+    ), "Content mismatch."
     cfr = filtered_numpy_array_all["itr"][:, cfr_index]["cfr"]
-    assert np.allclose(filtered_dataframe_all["cfr"].values, cfr), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_all["cfr"].to_numpy(), cfr
+    ), "Content mismatch."
     loc = filtered_numpy_array_all["itr"][:, loc_index]["loc"] * factor
     assert np.allclose(
-        filtered_dataframe_all["x"].values, loc[:, 0]
+        filtered_dataframe_all["x"].to_numpy(), loc[:, 0]
     ), "Content mismatch."
     assert np.allclose(
-        filtered_dataframe_all["y"].values, loc[:, 1]
+        filtered_dataframe_all["y"].to_numpy(), loc[:, 1]
     ), "Content mismatch."
     assert np.allclose(
-        filtered_dataframe_all["z"].values, loc[:, 2]
+        filtered_dataframe_all["z"].to_numpy(), loc[:, 2]
     ), "Content mismatch."
 
     # Fluorphore 1
     assert np.all(
-        filtered_dataframe_1["tid"].values == filtered_numpy_array_1["tid"]
+        filtered_dataframe_1["tid"].to_numpy() == filtered_numpy_array_1["tid"]
     ), "Content mismatch."
     assert np.allclose(
-        filtered_dataframe_1["tim"].values, filtered_numpy_array_1["tim"]
+        filtered_dataframe_1["tim"].to_numpy(), filtered_numpy_array_1["tim"]
     ), "Content mismatch."
     efo = filtered_numpy_array_1["itr"][:, efo_index]["efo"]
-    assert np.allclose(filtered_dataframe_1["efo"].values, efo), "Content mismatch."
+    assert np.allclose(filtered_dataframe_1["efo"].to_numpy(), efo), "Content mismatch."
     cfr = filtered_numpy_array_1["itr"][:, cfr_index]["cfr"]
-    assert np.allclose(filtered_dataframe_1["cfr"].values, cfr), "Content mismatch."
+    assert np.allclose(filtered_dataframe_1["cfr"].to_numpy(), cfr), "Content mismatch."
     loc = filtered_numpy_array_1["itr"][:, loc_index]["loc"] * factor
-    assert np.allclose(filtered_dataframe_1["x"].values, loc[:, 0]), "Content mismatch."
-    assert np.allclose(filtered_dataframe_1["y"].values, loc[:, 1]), "Content mismatch."
-    assert np.allclose(filtered_dataframe_1["z"].values, loc[:, 2]), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_1["x"].to_numpy(), loc[:, 0]
+    ), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_1["y"].to_numpy(), loc[:, 1]
+    ), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_1["z"].to_numpy(), loc[:, 2]
+    ), "Content mismatch."
 
     # Fluorphore 2
     assert np.all(
-        filtered_dataframe_2["tid"].values == filtered_numpy_array_2["tid"]
+        filtered_dataframe_2["tid"].to_numpy() == filtered_numpy_array_2["tid"]
     ), "Content mismatch."
     assert np.allclose(
-        filtered_dataframe_2["tim"].values, filtered_numpy_array_2["tim"]
+        filtered_dataframe_2["tim"].to_numpy(), filtered_numpy_array_2["tim"]
     ), "Content mismatch."
     efo = filtered_numpy_array_2["itr"][:, efo_index]["efo"]
-    assert np.allclose(filtered_dataframe_2["efo"].values, efo), "Content mismatch."
+    assert np.allclose(filtered_dataframe_2["efo"].to_numpy(), efo), "Content mismatch."
     cfr = filtered_numpy_array_2["itr"][:, cfr_index]["cfr"]
-    assert np.allclose(filtered_dataframe_2["cfr"].values, cfr), "Content mismatch."
+    assert np.allclose(filtered_dataframe_2["cfr"].to_numpy(), cfr), "Content mismatch."
     loc = filtered_numpy_array_2["itr"][:, loc_index]["loc"] * factor
-    assert np.allclose(filtered_dataframe_2["x"].values, loc[:, 0]), "Content mismatch."
-    assert np.allclose(filtered_dataframe_2["y"].values, loc[:, 1]), "Content mismatch."
-    assert np.allclose(filtered_dataframe_2["z"].values, loc[:, 2]), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_2["x"].to_numpy(), loc[:, 0]
+    ), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_2["y"].to_numpy(), loc[:, 1]
+    ), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_2["z"].to_numpy(), loc[:, 2]
+    ), "Content mismatch."
 
 
 def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
@@ -290,6 +321,10 @@ def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_All.npy")
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
+    assert reader.processed_dataframe is not None, "Failed processing dataframe."
+    assert processor.full_dataframe is not None, "Failed retrieving full dataframe."
+    assert processor.filtered_dataframe is not None, "Failed filtering dataframe."
+
     # Assign fluorophores
     np.random.seed(42)
     fluo = np.random.randint(1, 3, len(processor.filtered_dataframe.index))
@@ -297,6 +332,7 @@ def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
 
     # Apply EFO filter and check counts
     processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
+
     assert (
         len(reader.processed_dataframe.index) == 12580
     ), "Wrong total number of entries"
@@ -335,11 +371,13 @@ def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
         reloaded_dataframe.index
     ), "Unexpected number of entries in reloaded .npy file."
     assert np.all(
-        processor.filtered_dataframe["fluo"].values == reloaded_dataframe["fluo"].values
+        processor.filtered_dataframe["fluo"].to_numpy()
+        == reloaded_dataframe["fluo"].to_numpy()
     ), "Mismatch in fluorophore assignments."
     assert np.allclose(
-        processor.filtered_dataframe.values, processor.filtered_dataframe.values
+        processor.filtered_dataframe.to_numpy(), processor.filtered_dataframe.to_numpy()
     ), "Reloaded .npy file does not match the original."
     assert np.all(
-        processor.filtered_dataframe.columns.values == reloaded_dataframe.columns.values
+        processor.filtered_dataframe.columns.to_numpy()
+        == reloaded_dataframe.columns.to_numpy()
     ), "Unexpected columns."

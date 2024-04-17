@@ -64,7 +64,7 @@ def test_compare_readers(extract_multi_format_data_files):
     ), "Dimensions mismatch."
     # Compare the read dataframes
     assert np.allclose(
-        reader_npy.processed_dataframe.values,
-        reader_mat.processed_dataframe.values,
+        reader_npy.processed_dataframe.to_numpy(),
+        reader_mat.processed_dataframe.to_numpy(),
         equal_nan=True,
     ), "Mismatch in read values."

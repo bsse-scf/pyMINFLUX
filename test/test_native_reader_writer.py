@@ -275,8 +275,8 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             == processor_new.filtered_dataframe.columns
         ), "Reloaded dataframe mismatch."
         assert np.allclose(
-            processor.filtered_dataframe.values,
-            processor_new.filtered_dataframe.values,
+            processor.filtered_dataframe.to_numpy(),
+            processor_new.filtered_dataframe.to_numpy(),
             equal_nan=True,
         ), "Reloaded dataframe mismatch."
 
@@ -435,7 +435,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             == processor_new.filtered_dataframe.columns
         ), "Reloaded dataframe mismatch."
         assert np.allclose(
-            processor.filtered_dataframe.values,
-            processor_new.filtered_dataframe.values,
+            processor.filtered_dataframe.to_numpy(),
+            processor_new.filtered_dataframe.to_numpy(),
             equal_nan=True,
         ), "Reloaded dataframe mismatch."

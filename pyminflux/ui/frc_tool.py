@@ -209,9 +209,9 @@ class ProcessorThread(QThread):
         # Clear the ThreadPool queue
         self.thread_pool.clear()
 
-    @Slot(int, np.ndarray, name="store_result")
+    @Slot(int, np.ndarray)
     def store_result(self, index, result):
-        if result is not None:
+        if result is not None and self.all_resolutions is not None:
             self.all_resolutions[index, :] = result
 
     def broadcast_update_progress(self, value):
@@ -262,12 +262,14 @@ class FRCTool(QDialog, Ui_FRCTool):
 
         # Lateral (xy) resolution
         self.ui.leLateralResolution.setText(str(self.state.frc_lateral_resolution))
-        self.ui.leNumRepeats.setValidator(QDoubleValidator(bottom=0.0, decimals=2))
+        self.ui.leNumRepeats.setValidator(
+            QDoubleValidator(bottom=0.0, top=np.Inf, decimals=2)
+        )
 
         # Temporal (s) resolution
         self.ui.leTemporalResolution.setText(str(self.state.frc_temporal_resolution))
         self.ui.leTemporalResolution.setValidator(
-            QDoubleValidator(bottom=0.0, decimals=1)
+            QDoubleValidator(bottom=0.0, top=np.Inf, decimals=1)
         )
 
         # Endpoint estimation
@@ -323,7 +325,7 @@ class FRCTool(QDialog, Ui_FRCTool):
         """Reset the internal state."""
         self.processor = processor
 
-    @Slot(int, name="persist_frc_endpoint_only")
+    @Slot(int)
     def persist_frc_endpoint_only(self, value):
         """Persist the selection for plotting average positions."""
         if value == Qt.CheckState.Checked.value:
@@ -335,9 +337,15 @@ class FRCTool(QDialog, Ui_FRCTool):
             self.ui.lbTemporalResolution.setEnabled(True)
             self.ui.leTemporalResolution.setEnabled(True)
 
-    @Slot(name="run_frc_analysis")
+    @Slot()
     def run_frc_analysis(self):
         """Run FRC analysis to estimate signal resolution."""
+
+        if self.frc_plot is None:
+            raise Exception("The PlotWidget object is not ready!")
+
+        if self.processor is None or self.processor.filtered_dataframe is None:
+            return
 
         # Mark that there is no plot ready to export
         self.plot_ready_to_export = False
@@ -401,13 +409,13 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Now process in the local processor_thread
         self.processor_thread.start()
 
-    @Slot(name="stop_frc_analysis")
+    @Slot()
     def stop_frc_analysis(self):
         if self.processor_thread is None:
             return
         self.processor_thread.stop()
 
-    @Slot(str, name="persist_frc_lateral_resolution")
+    @Slot(str)
     def persist_frc_lateral_resolution(self, text):
         try:
             frc_lateral_resolution = float(text)
@@ -415,7 +423,7 @@ class FRCTool(QDialog, Ui_FRCTool):
             return
         self.state.frc_lateral_resolution = frc_lateral_resolution
 
-    @Slot(str, name="persist_frc_temporal_resolution")
+    @Slot(str)
     def persist_frc_temporal_resolution(self, text):
         try:
             frc_temporal_resolution = float(text)
@@ -423,7 +431,7 @@ class FRCTool(QDialog, Ui_FRCTool):
             return
         self.state.frc_temporal_resolution = frc_temporal_resolution
 
-    @Slot(str, name="persist_frc_num_repeats")
+    @Slot(str)
     def persist_frc_num_repeats(self, text):
         try:
             frc_num_repeats = int(text)
@@ -431,12 +439,15 @@ class FRCTool(QDialog, Ui_FRCTool):
             return
         self.state.frc_num_repeats = frc_num_repeats
 
-    @Slot(int, name="update_progress_bar")
+    @Slot(int)
     def update_progress_bar(self, value):
         self.ui.progress_bar.setValue(value)
 
     def plot(self, time_steps, resolutions):
         """Plot histograms."""
+
+        if self.frc_plot is None:
+            raise Exception("The PlotWidget object is not ready!")
 
         # Clear the plot
         self.clear_plot()
@@ -527,6 +538,9 @@ class FRCTool(QDialog, Ui_FRCTool):
 
     def clear_plot(self):
         """Clear the plot."""
+
+        if self.frc_plot is None:
+            raise Exception("The PlotWidget object ois not ready!")
 
         for item in self.frc_plot.allChildItems():
             self.frc_plot.removeItem(item)

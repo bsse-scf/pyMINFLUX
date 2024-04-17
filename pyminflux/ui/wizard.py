@@ -15,6 +15,7 @@
 
 from pathlib import Path
 
+import numpy as np
 from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
 from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import QDialog, QMessageBox
@@ -27,20 +28,20 @@ from .ui_wizard import Ui_WizardDialog
 
 
 class WizardDialog(QDialog, Ui_WizardDialog):
-    load_data_triggered = Signal(None, name="load_data_triggered")
-    load_filename_triggered = Signal(str, name="load_filename_triggered")
-    save_data_triggered = Signal(None, name="save_data_triggered")
-    reset_filters_triggered = Signal(None, name="reset_filters_triggered")
-    open_unmixer_triggered = Signal(None, name="open_unmixer_triggered")
-    open_time_inspector_triggered = Signal(None, name="open_time_inspector_triggered")
-    open_analyzer_triggered = Signal(None, name="open_analyzer_triggered")
-    fluorophore_id_changed = Signal(int, name="fluorophore_id_changed")
-    request_fluorophore_ids_reset = Signal(None, name="request_fluorophore_ids_reset")
-    efo_bounds_modified = Signal(None, name="efo_bounds_modified")
-    cfr_bounds_modified = Signal(None, name="cfr_bounds_modified")
-    cfr_robust_threshold_modified = Signal(float, name="cfr_robust_threshold_modified ")
-    wizard_filters_run = Signal(None, name="wizard_filters_run")
-    export_data_triggered = Signal(None, name="export_data_triggered")
+    load_data_triggered = Signal()
+    load_filename_triggered = Signal(str)
+    save_data_triggered = Signal()
+    reset_filters_triggered = Signal()
+    open_unmixer_triggered = Signal()
+    open_time_inspector_triggered = Signal()
+    open_analyzer_triggered = Signal()
+    fluorophore_id_changed = Signal(int)
+    request_fluorophore_ids_reset = Signal()
+    efo_bounds_modified = Signal()
+    cfr_bounds_modified = Signal()
+    cfr_robust_threshold_modified = Signal(float)
+    wizard_filters_run = Signal()
+    export_data_triggered = Signal()
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -74,13 +75,21 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Fill the fields
         self.ui.leEFOLowerBound.setText("")
-        self.ui.leEFOLowerBound.setValidator(QDoubleValidator(decimals=0))
+        self.ui.leEFOLowerBound.setValidator(
+            QDoubleValidator(bottom=-np.Inf, top=np.Inf, decimals=0)
+        )
         self.ui.leEFOUpperBound.setText("")
-        self.ui.leEFOUpperBound.setValidator(QDoubleValidator(decimals=0))
+        self.ui.leEFOUpperBound.setValidator(
+            QDoubleValidator(bottom=-np.Inf, top=np.Inf, decimals=0)
+        )
         self.ui.leCFRLowerBound.setText("")
-        self.ui.leCFRLowerBound.setValidator(QDoubleValidator(decimals=2))
+        self.ui.leCFRLowerBound.setValidator(
+            QDoubleValidator(bottom=-np.Inf, top=np.Inf, decimals=2)
+        )
         self.ui.leCFRUpperBound.setText("")
-        self.ui.leCFRUpperBound.setValidator(QDoubleValidator(decimals=2))
+        self.ui.leCFRUpperBound.setValidator(
+            QDoubleValidator(bottom=-np.Inf, top=np.Inf, decimals=2)
+        )
 
         # Set up connections
         self.setup_conn()
@@ -189,7 +198,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Get the range for the EFO data
         if self.state.efo_thresholds is None:
             _, efo_bin_edges, _, _ = prepare_histogram(
-                self.processor.filtered_dataframe["efo"].values,
+                self.processor.filtered_dataframe["efo"].to_numpy(),
                 auto_bins=self.state.efo_bin_size_hz == 0,
                 bin_size=self.state.efo_bin_size_hz,
             )
@@ -197,7 +206,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
         # Get the range for the CFR data
         _, cfr_bin_edges, _, _ = prepare_histogram(
-            self.processor.filtered_dataframe["cfr"].values,
+            self.processor.filtered_dataframe["cfr"].to_numpy(),
             auto_bins=True,
             bin_size=0.0,
         )
@@ -287,7 +296,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Update the color selection combo box
         self.set_fluorophore_list(1)
 
-    @Slot(int, name="set_fluorophore_list")
+    @Slot(int)
     def set_fluorophore_list(self, num_fluorophores):
         """Update the fluorophores pull-down menu."""
 
@@ -315,7 +324,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # This is allowed to signal.
         self.ui.cmActiveColor.setCurrentIndex(0)
 
-    @Slot(int, name="fluorophore_index_changed")
+    @Slot(int)
     def fluorophore_index_changed(self, index):
         """Emit a signal informing that the fluorophore id has changed."""
 
@@ -326,9 +335,12 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # The fluorophore index is 1 + the combobox current index
         self.fluorophore_id_changed.emit(index)
 
-    @Slot(name="change_efo_bounds")
+    @Slot()
     def change_efo_bounds(self):
         """Update the EFO bounds."""
+
+        if self.state.efo_thresholds is None:
+            raise Exception("self.state.efo_thresholds is None!")
 
         # Block signals from self.ui.leEFOLowerBound and self.ui.leEFOUpperBound
         efo_lower_bound_blocker = QSignalBlocker(self.ui.leEFOLowerBound)
@@ -344,9 +356,12 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         efo_lower_bound_blocker.unblock()
         efo_upper_bound_blocker.unblock()
 
-    @Slot(name="change_cfr_bounds")
+    @Slot()
     def change_cfr_bounds(self):
         """Update the CFR bounds."""
+
+        if self.state.cfr_thresholds is None:
+            raise Exception("self.state.cfr_thresholds is None!")
 
         # Block signals from self.ui.leEFOLowerBound and self.ui.leEFOUpperBound
         cfr_lower_bound_blocker = QSignalBlocker(self.ui.leCFRLowerBound)
@@ -362,13 +377,19 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         cfr_lower_bound_blocker.unblock()
         cfr_upper_bound_blocker.unblock()
 
-    @Slot(name="run_efo_filter_and_broadcast")
+    @Slot()
     def run_efo_filter_and_broadcast(self):
         """Run the EFO filter and broadcast the changes."""
+
+        if self.processor is None:
+            return
 
         # Make sure that we have valid bounds
         if not (self.valid["leEFOLowerBound"] and self.valid["leEFOUpperBound"]):
             return
+
+        if self.state.efo_thresholds is None:
+            raise Exception("self.state.efo_thresholds is None!")
 
         # Apply the EFO filter if needed
         if self.state.efo_thresholds is not None:
@@ -387,13 +408,19 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Signal that the external viewers should be updated
         self.wizard_filters_run.emit()
 
-    @Slot(name="run_cfr_filter_and_broadcast")
+    @Slot()
     def run_cfr_filter_and_broadcast(self):
         """Run the CFR filter and broadcast the changes."""
+
+        if self.processor is None:
+            return
 
         # Make sure that we have valid bounds
         if not (self.valid["leCFRLowerBound"] and self.valid["leCFRUpperBound"]):
             return
+
+        if self.state.cfr_thresholds is None:
+            raise Exception("self.state.cfr_thresholds is None!")
 
         # Apply the CFR filter if needed
         if self.state.cfr_thresholds is not None:
@@ -412,7 +439,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Signal that the external viewers should be updated
         self.wizard_filters_run.emit()
 
-    @Slot(name="efo_change_bounds_and_broadcast")
+    @Slot()
     def efo_change_bounds_and_broadcast(self, text):
         """Update the EFO bounds and broadcast changes."""
 
@@ -461,7 +488,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             # Disable the filter push button
             self.ui.pbEFOFilter.setEnabled(False)
 
-    @Slot(name="cfr_change_bounds_and_broadcast")
+    @Slot()
     def cfr_change_bounds_and_broadcast(self, text):
         """Update the CFR bounds and broadcast changes."""
 
@@ -510,7 +537,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             # Disable the filter push button
             self.ui.pbCFRFilter.setEnabled(False)
 
-    @Slot(name="reset_filters")
+    @Slot()
     def reset_filters(self):
         """Reset fluorophores pull-down menu in the wizard and broadcast changes to other tools."""
 

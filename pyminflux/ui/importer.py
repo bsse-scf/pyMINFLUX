@@ -119,7 +119,7 @@ class Importer(QDialog, Ui_Importer):
             self.widgets_list[i][0].setProperty("index", i)
             self.widgets_list[i][0].clicked.connect(self.set_all_iterations)
 
-    @Slot(str, name="persist_dwell_time")
+    @Slot(str)
     def persist_dwell_time(self, text):
         try:
             dwell_time = float(text)
@@ -127,11 +127,11 @@ class Importer(QDialog, Ui_Importer):
             return
         self._dwell_time = dwell_time
 
-    @Slot(int, name="persist_is_tracking")
+    @Slot(int)
     def persist_is_tracking(self, state):
         self._is_tracking = state != 0
 
-    @Slot(name="set_last_valid")
+    @Slot()
     def set_last_valid(self):
         """Set the indices to correspond to the last valid index
         for the general iteration and the cfr iteration."""
@@ -152,7 +152,7 @@ class Importer(QDialog, Ui_Importer):
         # Highlight relocalized field
         self.highlight_relocalization(self._cfr_iteration)
 
-    @Slot(int, name="set_all_iterations")
+    @Slot(int)
     def set_all_iterations(self, checked):
 
         # Get the index of the button

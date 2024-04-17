@@ -88,8 +88,8 @@ def test_update_localizations(extract_raw_npy_data_files):
     )
 
     # Check the stats
-    mx = processor.filtered_dataframe_stats["mx"].values
-    my = processor.filtered_dataframe_stats["my"].values
+    mx = processor.filtered_dataframe_stats["mx"].to_numpy()
+    my = processor.filtered_dataframe_stats["my"].to_numpy()
 
     # Test
     assert np.isclose(mx.sum(), 0.0), "Unexpected mean x localization."
@@ -103,8 +103,8 @@ def test_update_localizations(extract_raw_npy_data_files):
     processor.update_localizations(x=-3.0 * np.ones(n), y=-3.0 * np.ones(n))
 
     # Check the stats
-    mx = processor.filtered_dataframe_stats["mx"].values
-    my = processor.filtered_dataframe_stats["my"].values
+    mx = processor.filtered_dataframe_stats["mx"].to_numpy()
+    my = processor.filtered_dataframe_stats["my"].to_numpy()
 
     # Test
     assert np.isclose(mx.mean(), -3.0), "Unexpected mean x localization."
@@ -114,8 +114,8 @@ def test_update_localizations(extract_raw_npy_data_files):
     processor.current_fluorophore_id = 2
 
     # Check the stats
-    mx = processor.filtered_dataframe_stats["mx"].values
-    my = processor.filtered_dataframe_stats["my"].values
+    mx = processor.filtered_dataframe_stats["mx"].to_numpy()
+    my = processor.filtered_dataframe_stats["my"].to_numpy()
 
     # Test
     assert np.isclose(mx.mean(), 0.0), "Unexpected mean x localization."
@@ -126,8 +126,8 @@ def test_update_localizations(extract_raw_npy_data_files):
     processor.update_localizations(x=-7.0 * np.ones(n), y=-7.0 * np.ones(n))
 
     # Check the stats
-    mx = processor.filtered_dataframe_stats["mx"].values
-    my = processor.filtered_dataframe_stats["my"].values
+    mx = processor.filtered_dataframe_stats["mx"].to_numpy()
+    my = processor.filtered_dataframe_stats["my"].to_numpy()
 
     # Test
     assert np.isclose(mx.mean(), -7.0), "Unexpected mean x localization."
@@ -137,8 +137,8 @@ def test_update_localizations(extract_raw_npy_data_files):
     processor.current_fluorophore_id = 1
 
     # Check the stats
-    mx = processor.filtered_dataframe_stats["mx"].values
-    my = processor.filtered_dataframe_stats["my"].values
+    mx = processor.filtered_dataframe_stats["mx"].to_numpy()
+    my = processor.filtered_dataframe_stats["my"].to_numpy()
 
     # Test
     assert np.isclose(mx.mean(), -3.0), "Unexpected mean x localization."
@@ -165,14 +165,14 @@ def test_update_localizations(extract_raw_npy_data_files):
         # Check that the fluorophore are set, and that x, y, and z
         # coordinates are the updated ones
         reloaded_processor.current_fluorophore_id = 1
-        mx = reloaded_processor.filtered_dataframe_stats["mx"].values
-        my = reloaded_processor.filtered_dataframe_stats["my"].values
+        mx = reloaded_processor.filtered_dataframe_stats["mx"].to_numpy()
+        my = reloaded_processor.filtered_dataframe_stats["my"].to_numpy()
         assert np.isclose(mx.mean(), -3.0), "Unexpected mean x localization."
         assert np.isclose(my.mean(), -3.0), "Unexpected mean x localization."
 
         reloaded_processor.current_fluorophore_id = 2
-        mx = reloaded_processor.filtered_dataframe_stats["mx"].values
-        my = reloaded_processor.filtered_dataframe_stats["my"].values
+        mx = reloaded_processor.filtered_dataframe_stats["mx"].to_numpy()
+        my = reloaded_processor.filtered_dataframe_stats["my"].to_numpy()
 
         # Test
         assert np.isclose(mx.mean(), -7.0), "Unexpected mean x localization."

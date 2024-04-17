@@ -161,9 +161,9 @@ def test_estimate_drift_3d_mat(extract_raw_npy_data_files):
     )
 
     # Extract tid, x and y coordinates
-    tid = df["tid"].values
-    t = df["t"].values
-    pos = df[["x", "y", "z"]].values
+    tid = df["tid"].to_numpy()
+    t = df["t"].to_numpy()
+    pos = df[["x", "y", "z"]].to_numpy()
     x = pos[:, 0]
     y = pos[:, 1]
     z = pos[:, 2]

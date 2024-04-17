@@ -33,11 +33,9 @@ from .helpers import (
 
 class Plotter(PlotWidget):
     # Signals
-    locations_selected = Signal(list, name="locations_selected")
-    locations_selected_by_range = Signal(
-        str, str, tuple, tuple, name="locations_selected_by_range"
-    )
-    crop_region_selected = Signal(str, str, tuple, tuple, name="crop_region_selected")
+    locations_selected = Signal(list)
+    locations_selected_by_range = Signal(str, str, tuple, tuple)
+    crop_region_selected = Signal(str, str, tuple, tuple)
 
     def __init__(self):
         super().__init__()

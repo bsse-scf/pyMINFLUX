@@ -347,7 +347,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_trace_length].values) == 0
+    assert len(counts[counts < processor.min_trace_length].to_numpy()) == 0
 
     # Assign the test fluorophore ids
     processor.set_fluorophore_ids(reader.test_fluorophore_ids)
@@ -372,7 +372,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_trace_length].values) == 0
+    assert len(counts[counts < processor.min_trace_length].to_numpy()) == 0
 
     # Set the fluorophore id to 2
     processor.current_fluorophore_id = 2
@@ -394,7 +394,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_trace_length].values) == 0
+    assert len(counts[counts < processor.min_trace_length].to_numpy()) == 0
 
     #
     # MockMinFluxReader
@@ -417,7 +417,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_trace_length].values) == 0
+    assert len(counts[counts < processor.min_trace_length].to_numpy()) == 0
 
     # Expected TIDs
     extracted_tids = np.unique(processor.filtered_dataframe["tid"])
@@ -447,7 +447,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_trace_length].values) == 0
+    assert len(counts[counts < processor.min_trace_length].to_numpy()) == 0
 
     # Set the fluorophore id to 2
     processor.current_fluorophore_id = 2
@@ -469,7 +469,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert len(counts[counts < processor.min_trace_length].values) == 0
+    assert len(counts[counts < processor.min_trace_length].to_numpy()) == 0
 
 
 def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
@@ -491,26 +491,26 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     assert np.all(
-        stats["tid"].values == np.array([51, 54, 70, 97, 102, 151, 171, 176])
+        stats["tid"].to_numpy() == np.array([51, 54, 70, 97, 102, 151, 171, 176])
     ), "Unexpected TID grouping."
     assert np.all(
-        stats["n"].values == np.array([1, 6, 5, 7, 1, 3, 9, 8])
+        stats["n"].to_numpy() == np.array([1, 6, 5, 7, 1, 3, 9, 8])
     ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].values) == len(
+    assert np.sum(stats["n"].to_numpy()) == len(
         processor.filtered_dataframe.index
     ), "Unexpected total number of entries in the stats dataframe."
 
-    for tid in stats["tid"].values:
+    for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
             processor.filtered_dataframe["tid"] == tid
         ]
-        mx = rows["x"].values.mean()
-        my = rows["y"].values.mean()
-        mz = rows["z"].values.mean()
+        mx = rows["x"].to_numpy().mean()
+        my = rows["y"].to_numpy().mean()
+        mz = rows["z"].to_numpy().mean()
         if rows.shape[0] > 1:
-            sx = rows["x"].values.std(ddof=1)
-            sy = rows["y"].values.std(ddof=1)
-            sz = rows["z"].values.std(ddof=1)
+            sx = rows["x"].to_numpy().std(ddof=1)
+            sy = rows["y"].to_numpy().std(ddof=1)
+            sz = rows["z"].to_numpy().std(ddof=1)
         else:
             sx = np.nan
             sy = np.nan
@@ -521,12 +521,24 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
             sy = 0.0
         if np.isnan(sz):
             sz = 0.0
-        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
-        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
-        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
-        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
-        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
-        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+        assert np.allclose(
+            mx, stats.loc[stats["tid"] == tid, "mx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            my, stats.loc[stats["tid"] == tid, "my"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            mz, stats.loc[stats["tid"] == tid, "mz"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sx, stats.loc[stats["tid"] == tid, "sx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sy, stats.loc[stats["tid"] == tid, "sy"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sz, stats.loc[stats["tid"] == tid, "sz"].to_numpy(), atol=1e-6
+        )
 
     # Reset the processor
     processor.reset()
@@ -538,26 +550,26 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     assert np.all(
-        stats["tid"].values == np.array([51, 54, 70, 97, 102, 151, 171, 176])
+        stats["tid"].to_numpy() == np.array([51, 54, 70, 97, 102, 151, 171, 176])
     ), "Unexpected TID grouping."
     assert np.all(
-        stats["n"].values == np.array([1, 6, 5, 7, 1, 3, 9, 8])
+        stats["n"].to_numpy() == np.array([1, 6, 5, 7, 1, 3, 9, 8])
     ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].values) == len(
+    assert np.sum(stats["n"].to_numpy()) == len(
         processor.filtered_dataframe.index
     ), "Unexpected total number of entries in the stats dataframe."
 
-    for tid in stats["tid"].values:
+    for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
             processor.filtered_dataframe["tid"] == tid
         ]
-        mx = rows["x"].values.mean()
-        my = rows["y"].values.mean()
-        mz = rows["z"].values.mean()
+        mx = rows["x"].to_numpy().mean()
+        my = rows["y"].to_numpy().mean()
+        mz = rows["z"].to_numpy().mean()
         if rows.shape[0] > 1:
-            sx = rows["x"].values.std(ddof=1)
-            sy = rows["y"].values.std(ddof=1)
-            sz = rows["z"].values.std(ddof=1)
+            sx = rows["x"].to_numpy().std(ddof=1)
+            sy = rows["y"].to_numpy().std(ddof=1)
+            sz = rows["z"].to_numpy().std(ddof=1)
         else:
             sx = np.nan
             sy = np.nan
@@ -568,12 +580,24 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
             sy = 0.0
         if np.isnan(sz):
             sz = 0.0
-        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
-        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
-        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
-        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
-        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
-        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+        assert np.allclose(
+            mx, stats.loc[stats["tid"] == tid, "mx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            my, stats.loc[stats["tid"] == tid, "my"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            mz, stats.loc[stats["tid"] == tid, "mz"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sx, stats.loc[stats["tid"] == tid, "sx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sy, stats.loc[stats["tid"] == tid, "sy"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sz, stats.loc[stats["tid"] == tid, "sz"].to_numpy(), atol=1e-6
+        )
 
     # Reset the processor
     processor.reset()
@@ -595,26 +619,26 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     assert np.all(
-        stats["tid"].values == np.array([51, 54, 70, 97, 102, 151, 171, 176])
+        stats["tid"].to_numpy() == np.array([51, 54, 70, 97, 102, 151, 171, 176])
     ), "Unexpected TID grouping."
     assert np.all(
-        stats["n"].values == np.array([1, 6, 5, 7, 1, 3, 9, 8])
+        stats["n"].to_numpy() == np.array([1, 6, 5, 7, 1, 3, 9, 8])
     ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].values) == len(
+    assert np.sum(stats["n"].to_numpy()) == len(
         processor.filtered_dataframe.index
     ), "Unexpected total number of entries in the stats dataframe."
 
-    for tid in stats["tid"].values:
+    for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
             processor.filtered_dataframe["tid"] == tid
         ]
-        mx = rows["x"].values.mean()
-        my = rows["y"].values.mean()
-        mz = rows["z"].values.mean()
+        mx = rows["x"].to_numpy().mean()
+        my = rows["y"].to_numpy().mean()
+        mz = rows["z"].to_numpy().mean()
         if rows.shape[0] > 1:
-            sx = rows["x"].values.std(ddof=1)
-            sy = rows["y"].values.std(ddof=1)
-            sz = rows["z"].values.std(ddof=1)
+            sx = rows["x"].to_numpy().std(ddof=1)
+            sy = rows["y"].to_numpy().std(ddof=1)
+            sz = rows["z"].to_numpy().std(ddof=1)
         else:
             sx = np.nan
             sy = np.nan
@@ -625,12 +649,24 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
             sy = 0.0
         if np.isnan(sz):
             sz = 0.0
-        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
-        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
-        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
-        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
-        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
-        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+        assert np.allclose(
+            mx, stats.loc[stats["tid"] == tid, "mx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            my, stats.loc[stats["tid"] == tid, "my"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            mz, stats.loc[stats["tid"] == tid, "mz"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sx, stats.loc[stats["tid"] == tid, "sx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sy, stats.loc[stats["tid"] == tid, "sy"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sz, stats.loc[stats["tid"] == tid, "sz"].to_numpy(), atol=1e-6
+        )
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -639,26 +675,26 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     assert np.all(
-        stats["tid"].values == np.array([51, 54, 97, 176])
+        stats["tid"].to_numpy() == np.array([51, 54, 97, 176])
     ), "Unexpected TID grouping."
     assert np.all(
-        stats["n"].values == np.array([1, 6, 7, 8])
+        stats["n"].to_numpy() == np.array([1, 6, 7, 8])
     ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].values) == len(
+    assert np.sum(stats["n"].to_numpy()) == len(
         processor.filtered_dataframe.index
     ), "Unexpected total number of entries in the stats dataframe."
 
-    for tid in stats["tid"].values:
+    for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
             processor.filtered_dataframe["tid"] == tid
         ]
-        mx = rows["x"].values.mean()
-        my = rows["y"].values.mean()
-        mz = rows["z"].values.mean()
+        mx = rows["x"].to_numpy().mean()
+        my = rows["y"].to_numpy().mean()
+        mz = rows["z"].to_numpy().mean()
         if rows.shape[0] > 1:
-            sx = rows["x"].values.std(ddof=1)
-            sy = rows["y"].values.std(ddof=1)
-            sz = rows["z"].values.std(ddof=1)
+            sx = rows["x"].to_numpy().std(ddof=1)
+            sy = rows["y"].to_numpy().std(ddof=1)
+            sz = rows["z"].to_numpy().std(ddof=1)
         else:
             sx = np.nan
             sy = np.nan
@@ -669,12 +705,24 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
             sy = 0.0
         if np.isnan(sz):
             sz = 0.0
-        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
-        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
-        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
-        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
-        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
-        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+        assert np.allclose(
+            mx, stats.loc[stats["tid"] == tid, "mx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            my, stats.loc[stats["tid"] == tid, "my"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            mz, stats.loc[stats["tid"] == tid, "mz"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sx, stats.loc[stats["tid"] == tid, "sx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sy, stats.loc[stats["tid"] == tid, "sy"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sz, stats.loc[stats["tid"] == tid, "sz"].to_numpy(), atol=1e-6
+        )
 
     # Reset the processor
     processor.reset()
@@ -695,26 +743,26 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     assert np.all(
-        stats["tid"].values == np.array([70, 102, 151, 171])
+        stats["tid"].to_numpy() == np.array([70, 102, 151, 171])
     ), "Unexpected TID grouping."
     assert np.all(
-        stats["n"].values == np.array([5, 1, 3, 9])
+        stats["n"].to_numpy() == np.array([5, 1, 3, 9])
     ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].values) == len(
+    assert np.sum(stats["n"].to_numpy()) == len(
         processor.filtered_dataframe.index
     ), "Unexpected total number of entries in the stats dataframe."
 
-    for tid in stats["tid"].values:
+    for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
             processor.filtered_dataframe["tid"] == tid
         ]
-        mx = rows["x"].values.mean()
-        my = rows["y"].values.mean()
-        mz = rows["z"].values.mean()
+        mx = rows["x"].to_numpy().mean()
+        my = rows["y"].to_numpy().mean()
+        mz = rows["z"].to_numpy().mean()
         if rows.shape[0] > 1:
-            sx = rows["x"].values.std(ddof=1)
-            sy = rows["y"].values.std(ddof=1)
-            sz = rows["z"].values.std(ddof=1)
+            sx = rows["x"].to_numpy().std(ddof=1)
+            sy = rows["y"].to_numpy().std(ddof=1)
+            sz = rows["z"].to_numpy().std(ddof=1)
         else:
             sx = np.nan
             sy = np.nan
@@ -725,12 +773,24 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
             sy = 0.0
         if np.isnan(sz):
             sz = 0.0
-        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
-        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
-        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
-        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
-        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
-        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+        assert np.allclose(
+            mx, stats.loc[stats["tid"] == tid, "mx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            my, stats.loc[stats["tid"] == tid, "my"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            mz, stats.loc[stats["tid"] == tid, "mz"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sx, stats.loc[stats["tid"] == tid, "sx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sy, stats.loc[stats["tid"] == tid, "sy"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sz, stats.loc[stats["tid"] == tid, "sz"].to_numpy(), atol=1e-6
+        )
 
     #
     # Check filtering by x and y range
@@ -815,37 +875,49 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     assert np.all(
-        stats["tid"].values == np.array([54, 70, 97, 171, 176])
+        stats["tid"].to_numpy() == np.array([54, 70, 97, 171, 176])
     ), "Unexpected TID grouping."
     assert np.all(
-        stats["n"].values == np.array([6, 5, 7, 9, 8])
+        stats["n"].to_numpy() == np.array([6, 5, 7, 9, 8])
     ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].values) == len(
+    assert np.sum(stats["n"].to_numpy()) == len(
         processor.filtered_dataframe.index
     ), "Unexpected total number of entries in the stats dataframe."
 
-    for tid in stats["tid"].values:
+    for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
             processor.filtered_dataframe["tid"] == tid
         ]
-        mx = rows["x"].values.mean()
-        my = rows["y"].values.mean()
-        mz = rows["z"].values.mean()
-        sx = rows["x"].values.std(ddof=1)
-        sy = rows["y"].values.std(ddof=1)
-        sz = rows["z"].values.std(ddof=1)
+        mx = rows["x"].to_numpy().mean()
+        my = rows["y"].to_numpy().mean()
+        mz = rows["z"].to_numpy().mean()
+        sx = rows["x"].to_numpy().std(ddof=1)
+        sy = rows["y"].to_numpy().std(ddof=1)
+        sz = rows["z"].to_numpy().std(ddof=1)
         if np.isnan(sx):
             sx = 0.0
         if np.isnan(sy):
             sy = 0.0
         if np.isnan(sz):
             sz = 0.0
-        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
-        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
-        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
-        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
-        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
-        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+        assert np.allclose(
+            mx, stats.loc[stats["tid"] == tid, "mx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            my, stats.loc[stats["tid"] == tid, "my"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            mz, stats.loc[stats["tid"] == tid, "mz"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sx, stats.loc[stats["tid"] == tid, "sx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sy, stats.loc[stats["tid"] == tid, "sy"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sz, stats.loc[stats["tid"] == tid, "sz"].to_numpy(), atol=1e-6
+        )
 
     # Reset the processor
     processor.reset()
@@ -857,37 +929,49 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     assert np.all(
-        stats["tid"].values == np.array([54, 70, 97, 171, 176])
+        stats["tid"].to_numpy() == np.array([54, 70, 97, 171, 176])
     ), "Unexpected TID grouping."
     assert np.all(
-        stats["n"].values == np.array([6, 5, 7, 9, 8])
+        stats["n"].to_numpy() == np.array([6, 5, 7, 9, 8])
     ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].values) == len(
+    assert np.sum(stats["n"].to_numpy()) == len(
         processor.filtered_dataframe.index
     ), "Unexpected total number of entries in the stats dataframe."
 
-    for tid in stats["tid"].values:
+    for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
             processor.filtered_dataframe["tid"] == tid
         ]
-        mx = rows["x"].values.mean()
-        my = rows["y"].values.mean()
-        mz = rows["z"].values.mean()
-        sx = rows["x"].values.std(ddof=1)
-        sy = rows["y"].values.std(ddof=1)
-        sz = rows["z"].values.std(ddof=1)
+        mx = rows["x"].to_numpy().mean()
+        my = rows["y"].to_numpy().mean()
+        mz = rows["z"].to_numpy().mean()
+        sx = rows["x"].to_numpy().std(ddof=1)
+        sy = rows["y"].to_numpy().std(ddof=1)
+        sz = rows["z"].to_numpy().std(ddof=1)
         if np.isnan(sx):
             sx = 0.0
         if np.isnan(sy):
             sy = 0.0
         if np.isnan(sz):
             sz = 0.0
-        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
-        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
-        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
-        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
-        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
-        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+        assert np.allclose(
+            mx, stats.loc[stats["tid"] == tid, "mx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            my, stats.loc[stats["tid"] == tid, "my"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            mz, stats.loc[stats["tid"] == tid, "mz"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sx, stats.loc[stats["tid"] == tid, "sx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sy, stats.loc[stats["tid"] == tid, "sy"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sz, stats.loc[stats["tid"] == tid, "sz"].to_numpy(), atol=1e-6
+        )
 
     # Reset the processor
     processor.reset()
@@ -914,37 +998,49 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     assert np.all(
-        stats["tid"].values == np.array([54, 70, 97, 171, 176])
+        stats["tid"].to_numpy() == np.array([54, 70, 97, 171, 176])
     ), "Unexpected TID grouping."
     assert np.all(
-        stats["n"].values == np.array([6, 5, 7, 9, 8])
+        stats["n"].to_numpy() == np.array([6, 5, 7, 9, 8])
     ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].values) == len(
+    assert np.sum(stats["n"].to_numpy()) == len(
         processor.filtered_dataframe.index
     ), "Unexpected total number of entries in the stats dataframe."
 
-    for tid in stats["tid"].values:
+    for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
             processor.filtered_dataframe["tid"] == tid
         ]
-        mx = rows["x"].values.mean()
-        my = rows["y"].values.mean()
-        mz = rows["z"].values.mean()
-        sx = rows["x"].values.std(ddof=1)
-        sy = rows["y"].values.std(ddof=1)
-        sz = rows["z"].values.std(ddof=1)
+        mx = rows["x"].to_numpy().mean()
+        my = rows["y"].to_numpy().mean()
+        mz = rows["z"].to_numpy().mean()
+        sx = rows["x"].to_numpy().std(ddof=1)
+        sy = rows["y"].to_numpy().std(ddof=1)
+        sz = rows["z"].to_numpy().std(ddof=1)
         if np.isnan(sx):
             sx = 0.0
         if np.isnan(sy):
             sy = 0.0
         if np.isnan(sz):
             sz = 0.0
-        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
-        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
-        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
-        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
-        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
-        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+        assert np.allclose(
+            mx, stats.loc[stats["tid"] == tid, "mx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            my, stats.loc[stats["tid"] == tid, "my"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            mz, stats.loc[stats["tid"] == tid, "mz"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sx, stats.loc[stats["tid"] == tid, "sx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sy, stats.loc[stats["tid"] == tid, "sy"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sz, stats.loc[stats["tid"] == tid, "sz"].to_numpy(), atol=1e-6
+        )
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -953,35 +1049,49 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     assert np.all(
-        stats["tid"].values == np.array([54, 97, 176])
+        stats["tid"].to_numpy() == np.array([54, 97, 176])
     ), "Unexpected TID grouping."
-    assert np.all(stats["n"].values == np.array([6, 7, 8])), "Unexpected TID grouping."
-    assert np.sum(stats["n"].values) == len(
+    assert np.all(
+        stats["n"].to_numpy() == np.array([6, 7, 8])
+    ), "Unexpected TID grouping."
+    assert np.sum(stats["n"].to_numpy()) == len(
         processor.filtered_dataframe.index
     ), "Unexpected total number of entries in the stats dataframe."
 
-    for tid in stats["tid"].values:
+    for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
             processor.filtered_dataframe["tid"] == tid
         ]
-        mx = rows["x"].values.mean()
-        my = rows["y"].values.mean()
-        mz = rows["z"].values.mean()
-        sx = rows["x"].values.std(ddof=1)
-        sy = rows["y"].values.std(ddof=1)
-        sz = rows["z"].values.std(ddof=1)
+        mx = rows["x"].to_numpy().mean()
+        my = rows["y"].to_numpy().mean()
+        mz = rows["z"].to_numpy().mean()
+        sx = rows["x"].to_numpy().std(ddof=1)
+        sy = rows["y"].to_numpy().std(ddof=1)
+        sz = rows["z"].to_numpy().std(ddof=1)
         if np.isnan(sx):
             sx = 0.0
         if np.isnan(sy):
             sy = 0.0
         if np.isnan(sz):
             sz = 0.0
-        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
-        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
-        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
-        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
-        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
-        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+        assert np.allclose(
+            mx, stats.loc[stats["tid"] == tid, "mx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            my, stats.loc[stats["tid"] == tid, "my"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            mz, stats.loc[stats["tid"] == tid, "mz"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sx, stats.loc[stats["tid"] == tid, "sx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sy, stats.loc[stats["tid"] == tid, "sy"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sz, stats.loc[stats["tid"] == tid, "sz"].to_numpy(), atol=1e-6
+        )
 
     # Reset the processor
     processor.reset()
@@ -1002,35 +1112,47 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     assert np.all(
-        stats["tid"].values == np.array([70, 171])
+        stats["tid"].to_numpy() == np.array([70, 171])
     ), "Unexpected TID grouping."
-    assert np.all(stats["n"].values == np.array([5, 9])), "Unexpected TID grouping."
-    assert np.sum(stats["n"].values) == len(
+    assert np.all(stats["n"].to_numpy() == np.array([5, 9])), "Unexpected TID grouping."
+    assert np.sum(stats["n"].to_numpy()) == len(
         processor.filtered_dataframe.index
     ), "Unexpected total number of entries in the stats dataframe."
 
-    for tid in stats["tid"].values:
+    for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
             processor.filtered_dataframe["tid"] == tid
         ]
-        mx = rows["x"].values.mean()
-        my = rows["y"].values.mean()
-        mz = rows["z"].values.mean()
-        sx = rows["x"].values.std(ddof=1)
-        sy = rows["y"].values.std(ddof=1)
-        sz = rows["z"].values.std(ddof=1)
+        mx = rows["x"].to_numpy().mean()
+        my = rows["y"].to_numpy().mean()
+        mz = rows["z"].to_numpy().mean()
+        sx = rows["x"].to_numpy().std(ddof=1)
+        sy = rows["y"].to_numpy().std(ddof=1)
+        sz = rows["z"].to_numpy().std(ddof=1)
         if np.isnan(sx):
             sx = 0.0
         if np.isnan(sy):
             sy = 0.0
         if np.isnan(sz):
             sz = 0.0
-        assert np.allclose(mx, stats.loc[stats["tid"] == tid, "mx"].values, atol=1e-6)
-        assert np.allclose(my, stats.loc[stats["tid"] == tid, "my"].values, atol=1e-6)
-        assert np.allclose(mz, stats.loc[stats["tid"] == tid, "mz"].values, atol=1e-6)
-        assert np.allclose(sx, stats.loc[stats["tid"] == tid, "sx"].values, atol=1e-6)
-        assert np.allclose(sy, stats.loc[stats["tid"] == tid, "sy"].values, atol=1e-6)
-        assert np.allclose(sz, stats.loc[stats["tid"] == tid, "sz"].values, atol=1e-6)
+        assert np.allclose(
+            mx, stats.loc[stats["tid"] == tid, "mx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            my, stats.loc[stats["tid"] == tid, "my"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            mz, stats.loc[stats["tid"] == tid, "mz"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sx, stats.loc[stats["tid"] == tid, "sx"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sy, stats.loc[stats["tid"] == tid, "sy"].to_numpy(), atol=1e-6
+        )
+        assert np.allclose(
+            sz, stats.loc[stats["tid"] == tid, "sz"].to_numpy(), atol=1e-6
+        )
 
 
 def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):

@@ -22,11 +22,9 @@ from .ui_plotter_toolbar import Ui_PlotterToolbar
 
 
 class PlotterToolbar(QWidget, Ui_PlotterToolbar):
-    plot_requested_parameters = Signal(None, name="plot_requested_parameters")
-    color_code_locs_changed = Signal(int, name="color_code_locs_changed")
-    plot_average_positions_state_changed = Signal(
-        None, name="plot_average_positions_state_changed"
-    )
+    plot_requested_parameters = Signal()
+    color_code_locs_changed = Signal(int)
+    plot_average_positions_state_changed = Signal()
 
     def __init__(self):
         """Constructor."""
@@ -70,7 +68,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
             self.persist_plot_average_localisations_and_broadcast
         )
 
-    @Slot(int, name="persist_plot_average_localisations_and_broadcast")
+    @Slot(int)
     def persist_plot_average_localisations_and_broadcast(self, value):
         """Persist the selection for plotting average positions."""
         if value == Qt.CheckState.Checked.value:
@@ -79,7 +77,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
             self.state.plot_average_localisations = False
         self.plot_average_positions_state_changed.emit()
 
-    @Slot(int, name="toggle_average_state")
+    @Slot(int)
     def toggle_average_state(self, index):
         """Persist the selection for the second parameter."""
 
@@ -93,7 +91,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         else:
             self.ui.cbPlotAveragePos.setEnabled(False)
 
-    @Slot(int, name="persist_color_code_and_broadcast")
+    @Slot(int)
     def persist_color_code_and_broadcast(self, index):
         """Persist the selection of the color code and broadcast a change."""
         self.state.color_code = ColorCode(index)
@@ -101,21 +99,21 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         # Broadcast the change
         self.color_code_locs_changed.emit(self.state.color_code.value)
 
-    @Slot(int, name="persist_first_param")
+    @Slot(int)
     def persist_first_param(self, index):
         """Persist the selection for the first parameter."""
 
         # Persist the selection
         self.state.x_param = self.plotting_parameters[index]
 
-    @Slot(int, name="persist_second_param")
+    @Slot(int)
     def persist_second_param(self, index):
         """Persist the selection for the second parameter."""
 
         # Persist the selection
         self.state.y_param = self.plotting_parameters[index]
 
-    @Slot(name="emit_plot_requested")
+    @Slot()
     def emit_plot_requested(self):
         """Plot the requested parameters."""
 
@@ -124,9 +122,9 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
     def reset(self):
         """Reset the toolbar."""
-        if self.state.is_tracking:
-            if self.state.plot_average_localisations is False:
-                print(
-                    "DEBUG: Inconsistent state! Both `self.state.is_tracking` and `self.state.plot_average_localisations` are true!"
-                )
+        if self.state.is_tracking and self.state.plot_average_localisations:
+            print(
+                "DEBUG: Inconsistent state! Both `self.state.is_tracking` and `self.state.plot_average_localisations` are true!"
+            )
+            self.state.plot_average_localisations = False
         self.toggle_average_state(None)

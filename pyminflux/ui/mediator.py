@@ -339,7 +339,7 @@ class Mediator:
 
         # Install the custom output stream
         sys.stdout = EmittingStream()
-        sys.stdout.signal_textWritten.connect(
+        sys.stdout.signal_text_written.connect(
             self.dialogs["main_window"].print_to_console
         )
 
