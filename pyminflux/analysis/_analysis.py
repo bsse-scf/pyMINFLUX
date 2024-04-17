@@ -52,10 +52,10 @@ def calculate_time_steps(df: pd.DataFrame, unit_factor: float = 1e3):
     """
 
     # Work on a shallow copy
-    df_copy = df.copy()
+    df_copy = df[["tid", "tim"]].copy()
 
     # Calculate time differences and apply unit factor
-    df_copy["tim_diff"] = df_copy.groupby("tid")["tim"].diff() * unit_factor
+    df_copy.loc[:, "tim_diff"] = df_copy.groupby("tid")["tim"].diff() * unit_factor
 
     # Calculate the median and the mad
     med = np.nanmedian(df_copy["tim_diff"].to_numpy())
