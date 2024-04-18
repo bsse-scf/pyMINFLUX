@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -38,8 +37,9 @@ import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader, NativeMetadataReader
-from pyminflux.settings import Settings
+from pyminflux.settings import Settings, UpdateSettings
 from pyminflux.state import State
+from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.dataviewer import DataViewer
@@ -86,6 +86,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Keep a reference to the state machine
         self.state = State()
+
+        # Keep a reference to the AutoUpdateCheckWorker
+        self.update_worker = None
+
+        # Interval in seconds since last check for updates
+        self._check_interval_in_seconds = 60 * 60 * 24 * 7
 
         # Keep track of the last selected path
         self.last_selected_path = ""
@@ -160,6 +166,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Print a welcome message to the console
         print(f"Welcome to {__APP_NAME__} v{__version__}.")
+
+        # Check for updates
+        self.auto_check_remote_for_updates()
 
     def load_and_apply_settings(self):
         """Read the application settings and update the State."""
@@ -911,19 +920,85 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Process the output
         if code == -1:
             # Something went wrong: report
-            html = f"<b>Error! {error}</b><br /><br /><br />Please make sure you are connected to the internet.<br />If this error persists, please <a href='https://github.com/bsse-scf/pyMINFLUX/issues/'>report it</a>."
+            html = (
+                f"<b>Error! {error}</b><br /><br /><br />Please make sure you are connected to the internet.<br />"
+                f"If this error persists, please <a href='https://github.com/bsse-scf/pyMINFLUX/issues/'>report it</a>."
+            )
 
         elif code == 0:
             # No new version
-            html = f"<b>Congratulations!</b><br /><br />You are running the latest version ({pyminflux.__version__}) of {pyminflux.__APP_NAME__}."
+            html = (
+                f"<b>Congratulations!</b><br /><br />You are running the latest version ({pyminflux.__version__}) "
+                f"of {pyminflux.__APP_NAME__}."
+            )
 
         elif code == 1:
             # Show a dialog with a link to the download page
-            html = f"<b>There is a new version ({version}) of {pyminflux.__APP_NAME__}!</b><br /><br />You can download it from the <a href='https://github.com/bsse-scf/pyMINFLUX/releases/latest'>release page</a>."
+            html = (
+                f"<b>There is a new version ({version}) of {pyminflux.__APP_NAME__}!</b><br /><br />"
+                f"You can download it from the <a href='https://github.com/bsse-scf/pyMINFLUX/releases/latest'>release page</a>."
+            )
 
         else:
             raise ValueError("Unexpected code!")
 
+        # Update last check time
+        update_settings = UpdateSettings(self._check_interval_in_seconds)
+        update_settings.update_last_check_time()
+
+        # Show the dialog
+        self.show_update_result_dialog(html)
+
+    def auto_check_remote_for_updates(self):
+        """Automatic check for application updates."""
+
+        # Check if it is time to check
+        update_settings = UpdateSettings(self._check_interval_in_seconds)
+        if not update_settings.is_elapsed():
+            return
+
+        # For simplicity, we already update the last check timestamp
+        update_settings.update_last_check_time()
+
+        # Create the worker
+        self.update_worker = AutoUpdateCheckerWorker()
+
+        # Connect the signals
+        self.update_worker.result.connect(self.complete_check_remote_for_updates)
+
+        # Start the worker
+        self.update_worker.start()
+
+    def complete_check_remote_for_updates(self, is_update, version):
+        """Automatic check for application updates."""
+
+        # Only display the dialog if there is an update
+        if not is_update:
+            return
+
+        # Show a dialog with a link to the download page
+        html = (
+            f"<b>There is a new version ({version}) of {pyminflux.__APP_NAME__}!</b><br /><br />"
+            f"You can download it from the <a href='https://github.com/bsse-scf/pyMINFLUX/releases/latest'>release page</a>."
+        )
+
+        # Show the dialog
+        self.show_update_result_dialog(html)
+
+    @Slot()
+    def open_analyzer(self):
+        """Initialize and open the analyzer."""
+        if self.processor is None:
+            return
+        if self.analyzer is None:
+            self.analyzer = Analyzer(self.processor)
+            self.mediator.register_dialog("analyzer", self.analyzer)
+        self.analyzer.plot()
+        self.analyzer.show()
+        self.analyzer.activateWindow()
+
+    def show_update_result_dialog(self, html):
+        """Display the outcome of the update check in a dialog."""
         # Show the dialog
         dialog = QDialog()
         dialog.setWindowTitle("Check for updates")
@@ -939,18 +1014,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         button.clicked.connect(dialog.close)
         layout.addWidget(button)
         dialog.exec_()
-
-    @Slot()
-    def open_analyzer(self):
-        """Initialize and open the analyzer."""
-        if self.processor is None:
-            return
-        if self.analyzer is None:
-            self.analyzer = Analyzer(self.processor)
-            self.mediator.register_dialog("analyzer", self.analyzer)
-        self.analyzer.plot()
-        self.analyzer.show()
-        self.analyzer.activateWindow()
 
     @Slot()
     def open_time_inspector(self):

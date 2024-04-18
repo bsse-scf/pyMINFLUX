@@ -13,4 +13,4 @@
 #   limitations under the License.
 #
 
-from ._threads import *
+from .update import *

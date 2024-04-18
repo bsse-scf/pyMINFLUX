@@ -14,3 +14,4 @@
 #
 
 from ._settings import Settings
+from ._update_settings import UpdateSettings
