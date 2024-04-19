@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file. Detailed in
 ### Net features
 
 * More efficient calculation of tracking-related statistics.
+* Add option to pool DCR values for all relocalized iterations weighted by their photon count.
 * Allow measuring distances in the main Plotter along all spatial directions.
 * Implement automatic update check (currently at fixed 1-week interval).
 * Switch to new build mode for faster app startup and execution.

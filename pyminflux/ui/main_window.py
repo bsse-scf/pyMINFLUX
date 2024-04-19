@@ -619,7 +619,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 relocalizations=reader.relocalizations,
                 dwell_time=self.state.dwell_time,
                 is_tracking=self.state.is_tracking,
-                bin_dcr=self.state.bin_dcr,
+                pool_dcr=self.state.pool_dcr,
             )
             if importer.exec_() != QDialog.Accepted:
                 # The user cancelled the dialog
@@ -637,14 +637,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 selection["iteration"], selection["cfr_iteration"], process=False
             )
             reader.set_dwell_time(selection["dwell_time"], process=False)
-            reader.set_bin_dcr(selection["bin_dcr"], process=False)
+            reader.set_pool_dcr(selection["pool_dcr"], process=False)
 
             # Update the state as well
             self.state.is_tracking = selection["is_tracking"]
             self.state.dwell_time = selection["dwell_time"]
             if self.state.is_tracking:
                 self.state.plot_average_localisations = False
-            self.state.bin_dcr = selection["bin_dcr"]
+            self.state.pool_dcr = selection["pool_dcr"]
 
             # Show some info
             print(reader)

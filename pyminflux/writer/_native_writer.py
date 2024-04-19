@@ -141,4 +141,4 @@ class PyMinFluxNativeWriter:
         # HDF5 does not have a native boolean type, so we save as int8 and convert it
         # back to boolean on read.
         group.create_dataset("is_tracking", data=np.int8(self.state.is_tracking))
-        group.create_dataset("bin_dcr", data=np.int8(self.state.bin_dcr))
+        group.create_dataset("pool_dcr", data=np.int8(self.state.pool_dcr))

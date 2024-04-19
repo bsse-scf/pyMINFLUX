@@ -33,7 +33,7 @@ class MinFluxReader:
     __docs__ = "Reader of MINFLUX data in `.pmx`, `.npy` or `.mat` formats."
 
     __slots__ = [
-        "_bin_dcr",
+        "_pool_dcr",
         "_cfr_index",
         "_data_array",
         "_data_df",
@@ -68,7 +68,7 @@ class MinFluxReader:
         valid: bool = True,
         z_scaling_factor: float = 1.0,
         is_tracking: bool = False,
-        bin_dcr: bool = False,
+        pool_dcr: bool = False,
         dwell_time: float = 1.0,
     ):
         """Constructor.
@@ -89,8 +89,8 @@ class MinFluxReader:
             Whether the dataset comes from a tracking experiment; otherwise, it is considered as a
             localization experiment.
 
-        bin_dcr: bool (optional, default = False)
-            Whether to bin DCR values weighted by the relative ECO of all relocalized iterations.
+        pool_dcr: bool (optional, default = False)
+            Whether to pool DCR values weighted by the relative ECO of all relocalized iterations.
 
         dwell_time: float (optional, default 1.0)
             Dwell time in milliseconds.
@@ -129,8 +129,8 @@ class MinFluxReader:
         # Whether the acquisition is a tracking dataset
         self._is_tracking: bool = is_tracking
 
-        # Whether to bin the dcr values
-        self._bin_dcr = bin_dcr
+        # Whether to pool the dcr values
+        self._pool_dcr = pool_dcr
 
         # Whether the file contains aggregate measurements
         self._is_aggregated: bool = False
@@ -365,14 +365,14 @@ class MinFluxReader:
         if process:
             self._process()
 
-    def set_bin_dcr(self, bin_dcr: bool, process: bool = True):
+    def set_pool_dcr(self, pool_dcr: bool, process: bool = True):
         """
-        Sets whether the DCR values should be binned (and weighted by ECO).
+        Sets whether the DCR values should be pooled (and weighted by ECO).
 
         Parameters
         ----------
-        bin_dcr: bool
-            Whether the DCR values should be binned (and weighted by ECO).
+        pool_dcr: bool
+            Whether the DCR values should be pooled (and weighted by ECO).
 
         process: bool (Optional, default = True)
             By default, when setting the DCR binning flag, the data is rescanned
@@ -382,7 +382,7 @@ class MinFluxReader:
         """
 
         # Update the flag
-        self._bin_dcr = bin_dcr
+        self._pool_dcr = pool_dcr
 
         # Re-process the file?
         if process:
@@ -559,8 +559,8 @@ class MinFluxReader:
             # Extract ECO
             eco = itr[:, self._eco_index]["dcr"]
 
-            # Bin DCR?
-            if self._bin_dcr and np.sum(self._relocalizations) > 1:
+            # Pool DCR values?
+            if self._pool_dcr and np.sum(self._relocalizations) > 1:
 
                 # Calculate ECO contributions
                 eco_all = itr[:, self._relocalizations]["eco"]

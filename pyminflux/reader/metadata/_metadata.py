@@ -33,7 +33,7 @@ class NativeMetadata:
 
     Version 2.0
     -----------
-        bin_dcr: bool
+        pool_dcr: bool
         dwell_time: float
         is_tracking: bool
         scale_bar_size: float
@@ -50,7 +50,7 @@ class NativeMetadata:
         z_scaling_factor: float
     """
 
-    bin_dcr: bool
+    pool_dcr: bool
     cfr_thresholds: Union[None, tuple[float, float]]
     dwell_time: float
     efo_thresholds: Union[None, tuple[int, int]]

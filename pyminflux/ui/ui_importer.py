@@ -634,10 +634,10 @@ class Ui_Importer(object):
 
         self.gridLayout.addWidget(self.pbIter_11, 12, 0, 1, 1)
 
-        self.cbBinDCR = QCheckBox(Importer)
-        self.cbBinDCR.setObjectName("cbBinDCR")
+        self.cbPoolDCR = QCheckBox(Importer)
+        self.cbPoolDCR.setObjectName("cbPoolDCR")
 
-        self.gridLayout.addWidget(self.cbBinDCR, 26, 0, 1, 1)
+        self.gridLayout.addWidget(self.cbPoolDCR, 26, 0, 1, 3)
 
         self.retranslateUi(Importer)
         self.buttonBox.accepted.connect(Importer.accept)
@@ -761,8 +761,10 @@ class Ui_Importer(object):
         self.pbIter_11.setText(
             QCoreApplication.translate("Importer", "Iteration 11", None)
         )
-        self.cbBinDCR.setText(
-            QCoreApplication.translate("Importer", "Bin DCR values", None)
+        self.cbPoolDCR.setText(
+            QCoreApplication.translate(
+                "Importer", "Pool photon-count weighted DCR values", None
+            )
         )
 
     # retranslateUi
