@@ -58,7 +58,7 @@ class Importer(QDialog, Ui_Importer):
         self.ui.cbTracking.setChecked(self._is_tracking)
 
         # Set the bin DCR checkbox
-        self.ui.cbBinDCR.setChecked(self._pool_dcr)
+        self.ui.cbPoolDCR.setChecked(self._pool_dcr)
 
         # Characters
         self.valid_char = "✓"
