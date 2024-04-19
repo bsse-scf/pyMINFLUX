@@ -57,7 +57,7 @@ class Importer(QDialog, Ui_Importer):
         # Set the tracking checkbox
         self.ui.cbTracking.setChecked(self._is_tracking)
 
-        # Set the bin DCR checkbox
+        # Set the pool DCR checkbox
         self.ui.cbPoolDCR.setChecked(self._pool_dcr)
 
         # Characters
@@ -118,7 +118,7 @@ class Importer(QDialog, Ui_Importer):
     def set_connections(self):
         self.ui.leDwellTime.textChanged.connect(self.persist_dwell_time)
         self.ui.cbTracking.stateChanged.connect(self.persist_is_tracking)
-        self.ui.cbBinDCR.stateChanged.connect(self.persist_pool_dcr)
+        self.ui.cbPoolDCR.stateChanged.connect(self.persist_pool_dcr)
         self.ui.pb_last_valid.clicked.connect(self.set_last_valid)
         for i in range(len(self.widgets_list)):
             self.widgets_list[i][0].setProperty("index", i)
