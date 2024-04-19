@@ -32,6 +32,7 @@ class Importer(QDialog, Ui_Importer):
         relocalizations: Sequence,
         dwell_time: float,
         is_tracking: bool,
+        bin_dcr: bool,
     ):
         # Call the base class
         super().__init__()
@@ -49,12 +50,16 @@ class Importer(QDialog, Ui_Importer):
         self._relocalizations = relocalizations
         self._dwell_time = dwell_time
         self._is_tracking = is_tracking
+        self._bin_dcr = bin_dcr
 
         # Set the dwell time
         self.ui.leDwellTime.setText(f"{self._dwell_time}")
 
         # Set the tracking checkbox
         self.ui.cbTracking.setChecked(self._is_tracking)
+
+        # Set the bin DCR checkbox
+        self.ui.cbBinDCR.setChecked(self._bin_dcr)
 
         # Characters
         self.valid_char = "✓"
@@ -95,7 +100,7 @@ class Importer(QDialog, Ui_Importer):
         # Highlight cfr index
         self.highlight_cfr(self._cfr_iteration)
 
-        # Highlight relocalize index
+        # Highlight relocalization index
         self.highlight_relocalization(self._cfr_iteration)
 
         # Adjust the size of the dialog
@@ -114,6 +119,7 @@ class Importer(QDialog, Ui_Importer):
     def set_connections(self):
         self.ui.leDwellTime.textChanged.connect(self.persist_dwell_time)
         self.ui.cbTracking.stateChanged.connect(self.persist_is_tracking)
+        self.ui.cbBinDCR.stateChanged.connect(self.persist_bin_dcr)
         self.ui.pb_last_valid.clicked.connect(self.set_last_valid)
         for i in range(len(self.widgets_list)):
             self.widgets_list[i][0].setProperty("index", i)
@@ -130,6 +136,10 @@ class Importer(QDialog, Ui_Importer):
     @Slot(int)
     def persist_is_tracking(self, state):
         self._is_tracking = state != 0
+
+    @Slot(int)
+    def persist_bin_dcr(self, state):
+        self._bin_dcr = state != 0
 
     @Slot()
     def set_last_valid(self):
@@ -181,6 +191,7 @@ class Importer(QDialog, Ui_Importer):
             "cfr_iteration": self._cfr_iteration,
             "is_tracking": self._is_tracking,
             "dwell_time": self._dwell_time,
+            "bin_dcr": self._bin_dcr,
         }
 
     def hide_to(self, to_value: int):

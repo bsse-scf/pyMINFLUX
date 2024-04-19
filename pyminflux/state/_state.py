@@ -38,6 +38,7 @@ class State(metaclass=Singleton):
         "applied_efo_thresholds",
         "applied_time_thresholds",
         "applied_tr_len_thresholds",
+        "bin_dcr",
         "cfr_range",
         "cfr_threshold_factor",
         "cfr_thresholds",
@@ -133,6 +134,9 @@ class State(metaclass=Singleton):
         self.dcr_bin_size: float = 0.0
         self.dcr_manual_threshold: float = 0.0
 
+        # Bin DCR (weighted by ECO)
+        self.bin_dcr = False
+
         # Z scaling factor
         self.z_scaling_factor: float = 0.7
 
@@ -164,6 +168,7 @@ class State(metaclass=Singleton):
             "applied_efo_thresholds": self.applied_efo_thresholds,
             "applied_time_thresholds": self.applied_time_thresholds,
             "applied_tr_len_thresholds": self.applied_tr_len_thresholds,
+            "bin_dcr": self.bin_dcr,
             "cfr_range": self.cfr_range,
             "cfr_threshold_factor": self.cfr_threshold_factor,
             "cfr_thresholds": self.cfr_thresholds,
@@ -218,6 +223,7 @@ class State(metaclass=Singleton):
         self.applied_efo_thresholds = None
         self.applied_time_thresholds = None
         self.applied_tr_len_thresholds = None
+        self.bin_dcr = False
         self.cfr_range = None
         self.cfr_threshold_factor = 2.0
         self.cfr_thresholds = None
@@ -257,6 +263,7 @@ class State(metaclass=Singleton):
         self.applied_cfr_thresholds = metadata.cfr_thresholds
         self.applied_efo_thresholds = metadata.efo_thresholds
         self.applied_tr_len_thresholds = metadata.tr_len_thresholds
+        self.bin_dcr = metadata.bin_dcr
         self.cfr_thresholds = metadata.cfr_thresholds
         self.dwell_time = metadata.dwell_time
         self.efo_thresholds = metadata.efo_thresholds

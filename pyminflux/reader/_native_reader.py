@@ -98,6 +98,13 @@ class NativeMetadataReader:
                     return None
 
                 try:
+                    bin_dcr = bool(f["parameters/bin_dcr"][()])
+                except KeyError as e:
+                    # This is an addendum to version 2.0, and we allow it to be missing.
+                    # It will fall back to False.
+                    bin_dcr = False
+
+                try:
                     scale_bar_size = float(f["parameters/scale_bar_size"][()])
                 except KeyError as e:
                     return None
@@ -111,16 +118,17 @@ class NativeMetadataReader:
 
         # Store and return
         metadata = NativeMetadata(
-            z_scaling_factor=z_scaling_factor,
-            min_trace_length=min_trace_length,
-            efo_thresholds=efo_thresholds,
+            bin_dcr=bin_dcr,
             cfr_thresholds=cfr_thresholds,
+            dwell_time=dwell_time,
+            efo_thresholds=efo_thresholds,
+            is_tracking=is_tracking,
+            min_trace_length=min_trace_length,
+            num_fluorophores=num_fluorophores,
+            scale_bar_size=scale_bar_size,
             time_thresholds=time_thresholds,
             tr_len_thresholds=tr_len_thresholds,
-            num_fluorophores=num_fluorophores,
-            dwell_time=dwell_time,
-            is_tracking=is_tracking,
-            scale_bar_size=scale_bar_size,
+            z_scaling_factor=z_scaling_factor,
         )
 
         return metadata
