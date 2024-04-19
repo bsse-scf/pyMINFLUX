@@ -1224,7 +1224,7 @@
    <item row="26" column="0" colspan="3">
     <widget class="QCheckBox" name="cbPoolDCR">
      <property name="text">
-      <string>Pool photon-count weighted DCR values</string>
+      <string>Pool DCR values (ECO-weighted)</string>
      </property>
     </widget>
    </item>

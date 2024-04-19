@@ -763,7 +763,7 @@ class Ui_Importer(object):
         )
         self.cbPoolDCR.setText(
             QCoreApplication.translate(
-                "Importer", "Pool photon-count weighted DCR values", None
+                "Importer", "Pool DCR values (ECO-weighted)", None
             )
         )
 
