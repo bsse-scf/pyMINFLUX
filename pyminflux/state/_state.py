@@ -141,7 +141,7 @@ class State(metaclass=Singleton):
         self.z_scaling_factor: float = 0.7
 
         # Resolution for exporting plots as images
-        self.plot_export_dpi: int = 600
+        self.plot_export_dpi: int = 300
 
         # FRC analysis
         self.frc_lateral_resolution: float = 4.0
