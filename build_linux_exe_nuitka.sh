@@ -57,12 +57,17 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX \
 --remove-output \
 --output-dir=./dist
 
+# Move into "pyMINFLUX" directory
+mkdir -p dist/target
+mv dist/pyMINFLUX dist/target/
+mv dist/target dist/pyMINFLUX
+
 # Copy the icon
-cp pyminflux/ui/assets/Logo_v3.png dist/icon.png
+cp pyminflux/ui/assets/Logo_v3.png dist/pyMINFLUX/icon.png
 
 # Zip the archive
 cd dist
-zip -r pyMINFLUX_${VERSION}_linux.zip pyMINFLUX icon.png
+zip -r pyMINFLUX_${VERSION}_linux.zip pyMINFLUX
 cd ..
 
 # Remove the conda environment
