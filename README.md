@@ -67,6 +67,10 @@ The official pyMINFLUX website is on https://pyminflux.ethz.ch.
 
 Join the [pyMINFLUX mailing list](https://sympa.ethz.ch/sympa/subscribe/pyminflux) for release announcements and further discussions.
 
+## Contributing to pyMINFLUX
+
+We value the contribution of our community members, and to make sure that everyone can profit from this collaboration, we ask you to have a look at our [CONTRIBUTING](./CONTRIBUTING.md) and [CODE OF CONDUCT](./CODE_OF_CONDUCT.md) documents.
+
 ## Citing pyMINFLUX
 
 If you use pyMINFLUX in your research, please cite this repository as follows:
