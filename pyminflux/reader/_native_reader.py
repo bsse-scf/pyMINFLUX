@@ -114,6 +114,7 @@ class NativeMetadataReader:
                 time_thresholds = None
                 dwell_time = 1.0
                 is_tracking = False
+                pool_dcr = False
                 scale_bar_size = 500
 
         # Store and return
