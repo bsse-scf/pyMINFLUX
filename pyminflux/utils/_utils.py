@@ -43,15 +43,22 @@ def check_for_updates():
     error = ""
 
     # Get the redirect from the latest release URL
-    response = requests.get(
-        "https://github.com/bsse-scf/pyMINFLUX/releases/latest", allow_redirects=False
-    )
+    try:
+        response = requests.get(
+            "https://github.com/bsse-scf/pyMINFLUX/releases/latest",
+            allow_redirects=False,
+        )
 
-    # This should redirect (status code 301 or 302)
-    if response.status_code in (301, 302):
-        redirect_url = response.headers["Location"]
-    else:
-        error = "Could not check for updates!"
+        # This should redirect (status code 301 or 302)
+        if response.status_code in (301, 302):
+            redirect_url = response.headers["Location"]
+        else:
+            error = "Could not check for updates!"
+            return code, version, error
+
+    except Exception as e:
+        # Could not connect at all
+        error = "Could not retrieve version information from server!"
         return code, version, error
 
     # Try retrieving the version string
