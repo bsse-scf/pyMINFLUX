@@ -32,13 +32,10 @@ REM Install 7zip for compression
 call conda install 7zip -y
 
 REM Install nuitka
-python -m pip install nuitka ordered_set
+python -m pip install nuitka ordered_set zstandard
 
 REM Install dependencies
 poetry.exe install
-
-REM Remove zstandard (seems to trigger a false positive from Windows Defender)
-python -m pip uninstall zstandard -y
 
 REM Delete build and dist folders
 rmdir /s /q build
