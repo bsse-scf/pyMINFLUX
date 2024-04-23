@@ -32,10 +32,13 @@ REM Install 7zip for compression
 call conda install 7zip -y
 
 REM Install nuitka
-python -m pip install nuitka ordered_set zstandard
+python -m pip install nuitka ordered_set
 
 REM Install dependencies
 poetry.exe install
+
+REM Remove zstandard (seems to trigger a false positive from Windows Defender)
+python -m pip uninstall zstandard -y
 
 REM Delete build and dist folders
 rmdir /s /q build
@@ -52,8 +55,7 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX ^
 --windows-icon-from-ico=pyminflux\\ui\\assets\\Logo_v3.ico ^
 --enable-plugin=pylint-warnings ^
 --enable-plugin=pyside6 ^
---noinclude-pytest-mode=nofollow ^
---noinclude-setuptools-mode=nofollow ^
+--noinclude-default-mode=nofollow ^
 --remove-output ^
 --output-dir=./dist
 
