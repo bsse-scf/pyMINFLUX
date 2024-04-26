@@ -14,6 +14,7 @@
 #
 
 from enum import IntEnum
+from pathlib import Path
 from typing import Union
 
 from ..base import Singleton
@@ -57,6 +58,7 @@ class State(metaclass=Singleton):
         "frc_num_repeats",
         "frc_temporal_resolution",
         "is_tracking",
+        "last_selected_path",
         "loc_precision_range",
         "min_trace_length",
         "num_fluorophores",
@@ -161,6 +163,9 @@ class State(metaclass=Singleton):
         # Scale bar size in um
         self.scale_bar_size: float = 500.0
 
+        # Last selected path
+        self.last_selected_path: Union[None, Path] = None
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -187,6 +192,7 @@ class State(metaclass=Singleton):
             "frc_num_repeats": self.frc_num_repeats,
             "frc_temporal_resolution": self.frc_temporal_resolution,
             "is_tracking": self.is_tracking,
+            "last_selected_path": self.last_selected_path,
             "loc_precision_range": self.loc_precision_range,
             "min_trace_length": self.min_trace_length,
             "num_fluorophores": self.num_fluorophores,
@@ -242,6 +248,7 @@ class State(metaclass=Singleton):
         self.frc_num_repeats = 5
         self.frc_temporal_resolution = 1800.0
         self.is_tracking = False
+        self.last_selected_path = None
         self.loc_precision_range = None
         self.min_trace_length = 1
         self.num_fluorophores = 1
