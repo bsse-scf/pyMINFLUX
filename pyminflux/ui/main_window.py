@@ -93,9 +93,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Interval in seconds since last check for updates
         self._check_interval_in_seconds = 60 * 60 * 24 * 7
 
-        # Keep track of the last selected path
-        self.last_selected_path = ""
-
         # Keep a reference to the MinFluxProcessor
         self.processor = None
 
@@ -176,8 +173,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Open settings file
         settings = Settings()
 
-        # Read and set 'last_selected_path' option
-        self.last_selected_path = Path(
+        # Read and set "last_selected_path" option
+        self.state.last_selected_path = Path(
             settings.instance.value("io/last_selected_path", ".")
         )
 
@@ -432,10 +429,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.frc_tool = None
 
             # Store the application settings
-            if self.last_selected_path != "":
+            if self.state.last_selected_path is not None:
                 settings = Settings()
                 settings.instance.setValue(
-                    "io/last_selected_path", str(self.last_selected_path)
+                    "io/last_selected_path", str(self.state.last_selected_path)
                 )
 
             # Unregister the text console and the Main Window
@@ -497,7 +494,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Get current filename to build the suggestion output
         if self.processor.filename is None:
-            out_filename = str(self.last_selected_path)
+            # Just use the path
+            out_filename = str(self.state.last_selected_path)
         else:
             out_filename = str(
                 self.processor.filename.parent / f"{self.processor.filename.stem}.pmx"
@@ -544,10 +542,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Do we have a filename?
         if filename is None or not filename:
             # Open a file dialog for the user to pick a .pmx, .npy or .mat file
+            if self.state.last_selected_path is not None:
+                save_path = str(self.state.last_selected_path)
+            else:
+                save_path = str(Path(".").absolute())
+
             res = QFileDialog.getOpenFileName(
                 self,
                 "Load file",
-                str(self.last_selected_path),
+                save_path,
                 "All Supported Files (*.pmx *.npy *.mat);;"
                 "pyMINFLUX file (*.pmx);;"
                 "Imspector NumPy files (*.npy);;"
@@ -650,7 +653,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             print(reader)
 
             # Process the file
-            self.last_selected_path = Path(filename).parent
+            self.state.last_selected_path = Path(filename).parent
 
             # Add initialize the processor with the reader
             self.processor = MinFluxProcessor(reader, self.state.min_trace_length)
@@ -765,7 +768,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Get current filename to build the suggestion output
         if self.processor.filename is None:
-            out_filename = str(self.last_selected_path)
+            out_filename = str(f"{Path('.') / self.processor.filename.stem}.csv")
         else:
             out_filename = str(
                 self.processor.filename.parent / f"{self.processor.filename.stem}.csv"
@@ -825,7 +828,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Get current filename to build the suggestion output
         if self.processor.filename is None:
-            out_filename = str(self.last_selected_path)
+            out_filename = str(f"{Path('.') / self.processor.filename.stem}.csv")
         else:
             out_filename = str(
                 self.processor.filename.parent

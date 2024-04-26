@@ -36,11 +36,20 @@ def export_plot_interactive(item, parent=None):
     else:
         return
 
+    # Get the State
+    state = State()
+
+    # Default to the input data path
+    if state.last_selected_path is not None:
+        save_path = str(state.last_selected_path)
+    else:
+        save_path = str(Path(".").absolute())
+
     # Ask the user to pick a file name
     filename, ext = QFileDialog.getSaveFileName(
         parent,
         "Export filtered data",
-        ".",
+        save_path,
         "PNG images (*.png)",
     )
 
@@ -51,9 +60,6 @@ def export_plot_interactive(item, parent=None):
     # Make sure to add the extension
     if not filename.lower().endswith(".png"):
         filename += ".png"
-
-    # Get the dpi from the State
-    state = State()
 
     # Save the scene to file
     export_to_image(view_box, filename, dpi=state.plot_export_dpi)
