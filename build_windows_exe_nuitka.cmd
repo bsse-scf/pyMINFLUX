@@ -28,9 +28,6 @@ REM Create and activate a dedicated env
 call conda create -n pyminflux-build python=%PYTHON_VERSION% -y
 call conda activate pyminflux-build
 
-REM Install 7zip for compression
-call conda install 7zip -y
-
 REM Install nuitka
 python -m pip install nuitka ordered_set zstandard
 
@@ -56,11 +53,13 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX ^
 --remove-output ^
 --output-dir=./dist
 
-REM Zip the executable
-cd dist
-set INPUT_FILE=pyMINFLUX.exe
-set OUTPUT_FILE=pyMINFLUX_%VERSION%_win.zip
-7z.exe a -tzip "%OUTPUT_FILE%" "%INPUT_FILE%"
+REM Zip the app
+set TMP_FOLDER=%~dp0dist\tmp
+IF NOT EXIST "%TMP_FOLDER%" MKDIR "%TMP_FOLDER%"
+IF NOT EXIST "%TMP_FOLDER%\pyMINFLUX" MKDIR "%TMP_FOLDER%\pyMINFLUX"
+XCOPY /I "%~dp0dist\pyMINFLUX.exe" "%TMP_FOLDER%\pyMINFLUX\"
+set OUTPUT_FILE=%~dp0dist\pyMINFLUX_%VERSION%_win.zip
+powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('%TMP_FOLDER%', '%OUTPUT_FILE%'); }"
 
 REM Remove the conda environment
 call conda deactivate
