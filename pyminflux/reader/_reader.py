@@ -161,8 +161,11 @@ class MinFluxReader:
             raise IOError(f"The file {self._filename} is not a valid MINFLUX file.")
 
     @property
-    def is_last_valid(self) -> bool:
-        """Return True if the selected iterations are the "last valid", False otherwise."""
+    def is_last_valid(self) -> Union[bool, None]:
+        """Return True if the selected iteration is the "last valid", False otherwise.
+        If the dataframe has not been processed yet, `is_last_valid` will be None."""
+        if self._data_df is None:
+            return None
         return self._is_last_valid
 
     @property
@@ -184,6 +187,16 @@ class MinFluxReader:
     def is_tracking(self) -> bool:
         """Returns True for a tracking acquisition, False otherwise."""
         return self._is_tracking
+
+    @property
+    def is_pool_dcr(self) -> bool:
+        """Returns True if the DCR values over all relocalized iterations (to use all photons)."""
+        return self._pool_dcr
+
+    @property
+    def dwell_time(self) -> float:
+        """Returns the dwell time."""
+        return self._dwell_time
 
     @property
     def num_valid_entries(self) -> int:
@@ -277,6 +290,10 @@ class MinFluxReader:
             and the dataframe is rebuilt. In case several properties of
             the MinFluxReader are modified sequentially, the processing
             can be disabled and run only once after the last change.
+            However, this only applies after the first load/scan, when
+            the processed dataframe has not been created yet. If the
+            dataframe already exists, this flag will be ignored and the
+            processing will take place.
         """
 
         # Make sure there is loaded data
@@ -314,8 +331,9 @@ class MinFluxReader:
         self._tim_index: int = 0
         self._vld_index: int = 0
 
-        # Re-process the file?
-        if process:
+        # Re-process the file? If the processed dataframe already exists,
+        # the processing will take place anyway.
+        if process or self._data_df is not None:
             self._process()
 
     def set_tracking(self, is_tracking: bool, process: bool = True):
@@ -333,13 +351,17 @@ class MinFluxReader:
             and the dataframe is rebuilt. In case several properties of
             the MinFluxReader are modified sequentially, the processing
             can be disabled and run only once after the last change.
+            However, this only applies after the first load/scan, when
+            the processed dataframe has not been created yet. If the
+            dataframe already exists, this flag will be ignored and the
+            processing will take place.
         """
 
         # Update the flag
         self._is_tracking = is_tracking
 
         # Re-process the file?
-        if process:
+        if process or self._data_df is not None:
             self._process()
 
     def set_dwell_time(self, dwell_time: float, process: bool = True):
@@ -356,13 +378,17 @@ class MinFluxReader:
             and the dataframe is rebuilt. In case several properties of
             the MinFluxReader are modified sequentially, the processing
             can be disabled and run only once after the last change.
+            However, this only applies after the first load/scan, when
+            the processed dataframe has not been created yet. If the
+            dataframe already exists, this flag will be ignored and the
+            processing will take place.
         """
 
         # Update the flag
         self._dwell_time = dwell_time
 
         # Re-process the file?
-        if process:
+        if process or self._data_df is not None:
             self._process()
 
     def set_pool_dcr(self, pool_dcr: bool, process: bool = True):
@@ -379,13 +405,17 @@ class MinFluxReader:
             and the dataframe is rebuilt. In case several properties of
             the MinFluxReader are modified sequentially, the processing
             can be disabled and run only once after the last change.
+            However, this only applies after the first load/scan, when
+            the processed dataframe has not been created yet. If the
+            dataframe already exists, this flag will be ignored and the
+            processing will take place.
         """
 
         # Update the flag
         self._pool_dcr = pool_dcr
 
         # Re-process the file?
-        if process:
+        if process or self._data_df is not None:
             self._process()
 
     @classmethod
@@ -557,7 +587,7 @@ class MinFluxReader:
             cfr = itr[:, self._cfr_index]["cfr"]
 
             # Extract ECO
-            eco = itr[:, self._eco_index]["dcr"]
+            eco = itr[:, self._eco_index]["eco"]
 
             # Pool DCR values?
             if self._pool_dcr and np.sum(self._relocalizations) > 1:
@@ -603,7 +633,7 @@ class MinFluxReader:
         df = df.dropna(subset=["x"])
 
         # Check if the selected indices correspond to the last valid iteration
-        self._is_last_valid = (
+        self._is_last_valid = bool(
             self._cfr_index == self._last_valid_cfr
             and self._efo_index == self._last_valid
         )
