@@ -43,6 +43,8 @@ $ python -m pip install -e .
 $ pip install -r dev-requirements.txt
 ```
 
+If you want to participate to the development of pyMINFLUX, please have a look at [how you can contribute](CONTRIBUTING.md) and at our [code of conduct](CODE_OF_CONDUCT.md).
+
 ### Running pyMINFLUX from console
 
 ```sh

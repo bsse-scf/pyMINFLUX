@@ -268,7 +268,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         bar_width = 0.9 / self.state.num_fluorophores
         offset = self.dcr_bin_width / self.state.num_fluorophores
 
-        # Keep track of the total number of values for histogrm normalization
+        # Keep track of the total number of values for histogram normalization
         n_values = len(dcr)
 
         # Create new histograms
