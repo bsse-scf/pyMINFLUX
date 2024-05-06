@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. Detailed in
 
 ## [0.4.1] - TBD
 
-### Net features
+### New features
 
 * More efficient calculation of tracking-related statistics.
 * Add option to pool DCR values for all relocalized iterations weighted by their photon count.
@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file. Detailed in
 
 ### Bug fixes
 
+* Make `pyminflux_reader.py` plug-in compatible with ParaView 5.12.
 * Only calculate and export tracking statistics for tracking datasets.
 * Do not allow plotting average localization of tracking datasets.
 

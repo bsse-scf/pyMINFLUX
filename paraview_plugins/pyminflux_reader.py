@@ -176,7 +176,7 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         layout = CreateLayout("pyMINFLUX")
 
         # Create a render view
-        render_view = CreateView("RenderView", "Localizations")
+        render_view = CreateView("RenderView")
         render_view.AxesGrid = "GridAxes3DActor"
         render_view.Background = [0.0, 0.0, 0.0]
         render_view.UseColorPaletteForBackground = 0
