@@ -293,7 +293,9 @@ def create_brushes_by(
 
 
 def update_brushes_by_(
-    identifiers: np.ndarray, id_to_brush: dict[tuple[int, Any], Any]
+    identifiers: np.ndarray,
+    id_to_brush: dict[tuple[int, Any], Any],
+    color_scheme: Optional[str] = None,
 ) -> tuple[list[Any], dict[tuple[int, Any], Any]]:
     """Updated the QBrush instances to be used in a ScatterPlotItem my mapping
     an (updated) list to identifier to the dictionary of cached unique ID to QBrush
@@ -308,6 +310,15 @@ def update_brushes_by_(
     id_to_brush: dict[tuple[int, Any], Any]
         Cached map of unique ID to QBrush associations. This map is returned
         by `pyminflux.ui.helpers.create_brushes_by()`.
+
+    color_scheme: Optional[str] = None
+        Pre-defined color scheme for the QBrush creation. The color scheme
+        presupposes a fixed number of unique identifiers (as for instance,
+        when the spots are labeled by fluorophore ID (either, 1 or 2).
+        Currently supported color schemes:
+
+        "blue-red": two-color scheme := [[ 0, 0, 255], [255, 0, 0]]
+        "green-magenta": two-color scheme := [[ 0, 255, 0], [255, 0, 255]]
 
     Returns
     -------
@@ -324,7 +335,9 @@ def update_brushes_by_(
     if not np.isin(np.unique(identifiers), np.array(list(id_to_brush.keys()))).all():
         # Recreate the brushes
         # @TODO: Just recreate the missing ones
-        brushes_for_ids, id_to_brush = create_brushes_by(identifiers)
+        brushes_for_ids, id_to_brush = create_brushes_by(
+            identifiers, color_scheme=color_scheme
+        )
     else:
         # Update the mapping from each identifier in the full array to its corresponding QBrush for fast lookup
         brushes_for_ids = [id_to_brush[identifier] for identifier in identifiers]

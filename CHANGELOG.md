@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file. Detailed in
 ### Bug fixes
 
 * Fix `pyminflux_reader.py` plug-in incompatibility with ParaView 5.12.
+* Fix issue with fluorophore colors being reassigned at random after unmixing.
 * Only calculate and export tracking statistics for tracking datasets.
 * Do not allow plotting average localization of tracking datasets.
 

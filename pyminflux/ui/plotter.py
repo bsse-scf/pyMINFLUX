@@ -349,7 +349,7 @@ class Plotter(PlotWidget):
                 )
             else:
                 brushes, self._fid_to_brush = update_brushes_by_(
-                    fid, self._fid_to_brush
+                    fid, self._fid_to_brush, color_scheme="green-magenta"
                 )
         else:
             raise ValueError("Unexpected request for color-coding the localizations!")
