@@ -6,15 +6,16 @@ All notable changes to this project will be documented in this file. Detailed in
 
 ### New features
 
-* More efficient calculation of tracking-related statistics.
 * Add option to pool DCR values for all relocalized iterations weighted by their photon count.
+* More efficient calculation of tracking-related statistics.
+* Allow exporting all Analyzer plots in one action.
 * Allow measuring distances in the main Plotter along all spatial directions.
 * Implement automatic update check (currently at fixed 1-week interval).
-* Switch to new build mode for faster app startup and execution.
+* Switch to new build mode ([Nuitka](https://nuitka.net/)) for faster app startup and execution.
 
 ### Bug fixes
 
-* Make `pyminflux_reader.py` plug-in compatible with ParaView 5.12.
+* Fix `pyminflux_reader.py` plug-in incompatibility with ParaView 5.12.
 * Only calculate and export tracking statistics for tracking datasets.
 * Do not allow plotting average localization of tracking datasets.
 
