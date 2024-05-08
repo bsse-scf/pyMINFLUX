@@ -11,6 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -48,7 +50,7 @@ def export_plot_interactive(item, parent=None):
     # Ask the user to pick a file name
     filename, ext = QFileDialog.getSaveFileName(
         parent,
-        "Export filtered data",
+        "Export current plot",
         save_path,
         "PNG images (*.png)",
     )
@@ -63,6 +65,64 @@ def export_plot_interactive(item, parent=None):
 
     # Save the scene to file
     export_to_image(view_box, filename, dpi=state.plot_export_dpi)
+
+
+def export_all_plots_interactive(items: dict, parent=None):
+    """Save the content of the current scene to a PNG image."""
+
+    if len(items) == 0:
+        return
+
+    # Get the State
+    state = State()
+
+    # Default to the input data path
+    if state.last_selected_path is not None:
+        save_path = str(state.last_selected_path)
+    else:
+        save_path = str(Path(".").absolute())
+
+    # Ask the user to pick a file name
+    filename, ext = QFileDialog.getSaveFileName(
+        parent,
+        "Set plots common name",
+        save_path,
+        "PNG images (*.png)",
+    )
+
+    # Did the user cancel?
+    if filename == "":
+        return
+
+    # Turn filename into a Path object
+    filename = Path(filename)
+
+    # Test if any of the output file names already exists
+    timestamp = ""
+    for name, item in items.items():
+        # Build the filename
+        test_filename = filename.parent / f"{filename.stem}_{name}.png"
+        if test_filename.exists():
+            timestamp = "_" + datetime.fromtimestamp(time.time()).strftime(
+                "%Y%m%d_%H%M%S"
+            )
+            break
+
+    for name, item in items.items():
+        if isinstance(item, ViewBox):
+            view_box = item
+        elif isinstance(item, AxisItem):
+            view_box = item.getViewBox()
+        elif isinstance(item, pg.PlotItem):
+            view_box = item.getViewBox()
+        else:
+            return
+
+        # Build the filename
+        out_filename = str(filename.parent / f"{filename.stem}_{name}{timestamp}.png")
+
+        # Save the scene to file
+        export_to_image(view_box, out_filename, dpi=state.plot_export_dpi)
 
 
 def export_to_image(item: pg.ViewBox, out_file_name: Union[Path, str], dpi: int = 600):

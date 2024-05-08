@@ -32,7 +32,11 @@ from ..analysis import (
 from ..processor import MinFluxProcessor
 from ..state import State
 from ..utils import intersect_2d_ranges
-from .helpers import add_median_line, export_plot_interactive
+from .helpers import (
+    add_median_line,
+    export_all_plots_interactive,
+    export_plot_interactive,
+)
 from .roi_ranges import ROIRanges
 from .ui_analyzer import Ui_Analyzer
 
@@ -949,38 +953,69 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
+
             ranges_action = QAction("Set range")
             ranges_action.triggered.connect(
                 lambda checked: self.roi_open_ranges_dialog(ev.currentItem.data_label)
             )
             menu.addAction(ranges_action)
+
             filter_action = QAction("Filter")
             filter_action.triggered.connect(
                 lambda checked: self.trigger_filter_action(ev.currentItem)
             )
             menu.addAction(filter_action)
             menu.addSeparator()
+
             reset_action = QAction("Reset default axis range")
             reset_action.triggered.connect(
                 lambda checked: self.reset_default_axis_range(ev.currentItem)
             )
             menu.addAction(reset_action)
+
             shift_action = QAction("Move x axis origin to 0")
             shift_action.triggered.connect(
                 lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
             )
             menu.addAction(shift_action)
             menu.addSeparator()
+
             export_action = QAction("Export plot")
             export_action.triggered.connect(
                 lambda checked: export_plot_interactive(ev.currentItem)
             )
             menu.addAction(export_action)
+
+            export_all_action = QAction("Export all plots")
+            export_all_action.triggered.connect(self.collect_and_export_all_plots)
+            menu.addAction(export_all_action)
+
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
             ev.accept()
         else:
             ev.ignore()
+
+    def collect_and_export_all_plots(self):
+        items = {
+            "efo": self.efo_plot.getPlotItem().getViewBox(),
+            "cfr": self.cfr_plot.getPlotItem().getViewBox(),
+            "tr_len": self.tr_len_plot.getPlotItem().getViewBox(),
+            self.sx_plot.getPlotItem()
+            .getViewBox()
+            .data_label: self.sx_plot.getPlotItem()
+            .getViewBox(),
+            self.sy_plot.getPlotItem()
+            .getViewBox()
+            .data_label: self.sy_plot.getPlotItem()
+            .getViewBox(),
+        }
+        if self.processor.is_tracking or self.processor.is_3d:
+            items[
+                self.sz_plot.getPlotItem().getViewBox().data_label
+            ] = self.sz_plot.getPlotItem().getViewBox()
+
+        export_all_plots_interactive(items)
 
     def roi_open_ranges_dialog(self, item):
         """Open dialog to manually set the filter ranges"""
