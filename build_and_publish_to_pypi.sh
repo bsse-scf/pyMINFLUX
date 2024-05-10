@@ -14,6 +14,7 @@
 #
 
 VERSION=0.4.1
+PYTHON_VERSION=3.11
 
 if [[ -z "$ANACONDA_HOME" ]]; then
     echo "Please set environment variable ANACONDA_HOME." 1>&2
@@ -24,7 +25,7 @@ fi
 source $ANACONDA_HOME/etc/profile.d/conda.sh
 
 # Create and activate a dedicated env
-conda create -n pyminflux-build python=3.11 -y
+conda create -n pyminflux-build python=$PYTHON_VERSION -y
 conda activate pyminflux-build
 
 # Install dependencies
@@ -43,4 +44,3 @@ poetry publish
 # Remove the conda environment
 conda deactivate
 conda env remove -n pyminflux-build -y
-
