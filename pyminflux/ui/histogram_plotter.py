@@ -85,7 +85,7 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
         self.ui.hlPlot.addWidget(self.hist_plot)
         self.hist_plot.show()
 
-    @Slot(int, name="persist_selected_param")
+    @Slot(int)
     def persist_selected_param(self, index):
         """Persist the selection for the parameter."""
 
@@ -98,7 +98,7 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
         # Do not capture key events for now
         ev.ignore()
 
-    @Slot(name="plot_histogram")
+    @Slot()
     def plot_histogram(self):
         """Plot the histogram of the selected parameter."""
 
@@ -106,7 +106,7 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
         self.plot_ready_to_export = False
 
         # Get the data for the histogram
-        data = self.processor.filtered_dataframe[self.selected_parameter].values
+        data = self.processor.filtered_dataframe[self.selected_parameter].to_numpy()
 
         # Is there data?
         if len(data) == 0:
@@ -144,7 +144,7 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
         self.hist_plot.setLabel("left", f"{param} frequencies")
 
         # Set properties of the label for x-axis
-        self.hist_plot.setLabel("bottom", f"{param} bins")
+        self.hist_plot.setLabel("bottom", f"{param}")
 
         # Make sure to have valid ranges and widths
         x_range = [bins[0], bins[-1]]

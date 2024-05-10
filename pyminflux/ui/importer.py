@@ -12,6 +12,8 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from typing import Sequence
+
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QDialog
 
@@ -23,7 +25,14 @@ class Importer(QDialog, Ui_Importer):
     A QDialog to support custom loading.
     """
 
-    def __init__(self, valid_cfr, relocalizations, dwell_time):
+    def __init__(
+        self,
+        valid_cfr: Sequence,
+        relocalizations: Sequence,
+        dwell_time: float,
+        is_tracking: bool,
+        pool_dcr: bool,
+    ):
         # Call the base class
         super().__init__()
 
@@ -39,15 +48,17 @@ class Importer(QDialog, Ui_Importer):
         self._valid_cfr = valid_cfr
         self._relocalizations = relocalizations
         self._dwell_time = dwell_time
-
-        # Keep track of whether the dataset is a tracking dataset
-        self._is_tracking = False
+        self._is_tracking = is_tracking
+        self._pool_dcr = pool_dcr
 
         # Set the dwell time
         self.ui.leDwellTime.setText(f"{self._dwell_time}")
 
         # Set the tracking checkbox
         self.ui.cbTracking.setChecked(self._is_tracking)
+
+        # Set the pool DCR checkbox
+        self.ui.cbPoolDCR.setChecked(self._pool_dcr)
 
         # Characters
         self.valid_char = "✓"
@@ -88,7 +99,7 @@ class Importer(QDialog, Ui_Importer):
         # Highlight cfr index
         self.highlight_cfr(self._cfr_iteration)
 
-        # Highlight relocalize index
+        # Highlight relocalization index
         self.highlight_relocalization(self._cfr_iteration)
 
         # Adjust the size of the dialog
@@ -107,12 +118,13 @@ class Importer(QDialog, Ui_Importer):
     def set_connections(self):
         self.ui.leDwellTime.textChanged.connect(self.persist_dwell_time)
         self.ui.cbTracking.stateChanged.connect(self.persist_is_tracking)
+        self.ui.cbPoolDCR.stateChanged.connect(self.persist_pool_dcr)
         self.ui.pb_last_valid.clicked.connect(self.set_last_valid)
         for i in range(len(self.widgets_list)):
             self.widgets_list[i][0].setProperty("index", i)
             self.widgets_list[i][0].clicked.connect(self.set_all_iterations)
 
-    @Slot(str, name="persist_dwell_time")
+    @Slot(str)
     def persist_dwell_time(self, text):
         try:
             dwell_time = float(text)
@@ -120,11 +132,15 @@ class Importer(QDialog, Ui_Importer):
             return
         self._dwell_time = dwell_time
 
-    @Slot(int, name="persist_is_tracking")
+    @Slot(int)
     def persist_is_tracking(self, state):
         self._is_tracking = state != 0
 
-    @Slot(name="set_last_valid")
+    @Slot(int)
+    def persist_pool_dcr(self, state):
+        self._pool_dcr = state != 0
+
+    @Slot()
     def set_last_valid(self):
         """Set the indices to correspond to the last valid index
         for the general iteration and the cfr iteration."""
@@ -145,7 +161,7 @@ class Importer(QDialog, Ui_Importer):
         # Highlight relocalized field
         self.highlight_relocalization(self._cfr_iteration)
 
-    @Slot(int, name="set_all_iterations")
+    @Slot(int)
     def set_all_iterations(self, checked):
 
         # Get the index of the button
@@ -174,6 +190,7 @@ class Importer(QDialog, Ui_Importer):
             "cfr_iteration": self._cfr_iteration,
             "is_tracking": self._is_tracking,
             "dwell_time": self._dwell_time,
+            "pool_dcr": self._pool_dcr,
         }
 
     def hide_to(self, to_value: int):

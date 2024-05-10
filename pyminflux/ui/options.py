@@ -26,11 +26,9 @@ from .ui_options import Ui_Options
 
 class Options(QDialog, Ui_Options):
     # Signal that the options have changed
-    min_trace_length_option_changed = Signal(name="min_trace_length_option_changed")
-    efo_bin_size_hz_option_changed = Signal(name="efo_bin_size_hz_option_changed")
-    weigh_avg_localization_by_eco_option_changed = Signal(
-        name="weigh_avg_localization_by_eco_option_changed"
-    )
+    min_trace_length_option_changed = Signal()
+    efo_bin_size_hz_option_changed = Signal()
+    weigh_avg_localization_by_eco_option_changed = Signal()
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -210,7 +208,7 @@ class Options(QDialog, Ui_Options):
             )
         )
 
-    @Slot(str, name="persist_min_trace_length")
+    @Slot(str)
     def persist_min_trace_length(self, text):
         try:
             min_trace_length = int(text)
@@ -225,7 +223,7 @@ class Options(QDialog, Ui_Options):
         # Signal the change
         self.min_trace_length_option_changed.emit()
 
-    @Slot(str, name="persist_z_scaling_factor")
+    @Slot(str)
     def persist_z_scaling_factor(self, text):
         try:
             z_scaling_factor = float(text)
@@ -237,7 +235,7 @@ class Options(QDialog, Ui_Options):
         self.valid["leZScalingFactor"] = True
         self.state.z_scaling_factor = z_scaling_factor
 
-    @Slot(str, name="persist_plot_export_dpi")
+    @Slot(str)
     def persist_plot_export_dpi(self, text):
         try:
             plot_export_dpi = int(text)
@@ -249,7 +247,7 @@ class Options(QDialog, Ui_Options):
         self.valid["lePlotExportDPI"] = True
         self.state.plot_export_dpi = plot_export_dpi
 
-    @Slot(str, name="persist_efo_bin_size_hz")
+    @Slot(str)
     def persist_efo_bin_size_hz(self, text):
         try:
             efo_bin_size_hz = float(text)
@@ -264,7 +262,7 @@ class Options(QDialog, Ui_Options):
         # Signal the change
         self.efo_bin_size_hz_option_changed.emit()
 
-    @Slot(str, name="persist_efo_expected_cutoff")
+    @Slot(str)
     def persist_efo_expected_cutoff(self, text):
         try:
             efo_expected_frequency = float(text)
@@ -276,7 +274,7 @@ class Options(QDialog, Ui_Options):
         self.valid["leEFOSingleEmitterFrequency"] = True
         self.state.efo_expected_frequency = efo_expected_frequency
 
-    @Slot(str, name="persist_cfr_range")
+    @Slot(str)
     def persist_cfr_range(self, _):
         """Persist CFR range."""
 
@@ -315,7 +313,7 @@ class Options(QDialog, Ui_Options):
                 self.ui.leCFRRangeMax.setStyleSheet("background-color: red;")
                 self.valid["leCFRRangeMax"] = False
 
-    @Slot(str, name="persist_efo_range")
+    @Slot(str)
     def persist_efo_range(self, _):
         """Persist EFO range."""
 
@@ -354,7 +352,7 @@ class Options(QDialog, Ui_Options):
                 self.ui.leEFORangeMax.setStyleSheet("background-color: red;")
                 self.valid["leEFORangeMax"] = False
 
-    @Slot(str, name="persist_loc_prec_range")
+    @Slot(str)
     def persist_loc_prec_range(self, _):
         """Persist localization precision range."""
 
@@ -393,18 +391,18 @@ class Options(QDialog, Ui_Options):
                 self.ui.leLocPrecRangeMax.setStyleSheet("background-color: red;")
                 self.valid["leLocPrecRangeMax"] = False
 
-    @Slot(str, name="persist_weigh_avg_localization_by_eco")
+    @Slot(str)
     def persist_weigh_avg_localization_by_eco(self, state):
         self.state.weigh_avg_localization_by_eco = state != 0
 
         # Signal the change
         self.weigh_avg_localization_by_eco_option_changed.emit()
 
-    @Slot(str, name="persist_open_console_at_start")
+    @Slot(str)
     def persist_open_console_at_start(self, state):
         self.state.open_console_at_start = state != 0
 
-    @Slot(str, name="set_as_new_default")
+    @Slot(str)
     def set_as_new_default(self, text):
         """Persist current selection as new default options."""
 

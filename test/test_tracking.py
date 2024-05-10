@@ -179,16 +179,16 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     assert processor.is_3d is False
 
     _, _, median_sx, mad_sx = get_robust_threshold(
-        processor.filtered_dataframe_stats["sx"].values
+        processor.filtered_dataframe_stats["sx"].to_numpy()
     )
     _, _, median_sy, mad_sy = get_robust_threshold(
-        processor.filtered_dataframe_stats["sy"].values
+        processor.filtered_dataframe_stats["sy"].to_numpy()
     )
     _, _, median_sz, mad_sz = get_robust_threshold(
-        processor.filtered_dataframe_stats["sz"].values
+        processor.filtered_dataframe_stats["sz"].to_numpy()
     )
     _, _, median_n, mad_n = get_robust_threshold(
-        processor.filtered_dataframe_stats["n"].values
+        processor.filtered_dataframe_stats["n"].to_numpy()
     )
     tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
@@ -236,16 +236,16 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     assert processor.is_3d is False
 
     _, _, median_sx, mad_sx = get_robust_threshold(
-        processor.filtered_dataframe_stats["sx"].values
+        processor.filtered_dataframe_stats["sx"].to_numpy()
     )
     _, _, median_sy, mad_sy = get_robust_threshold(
-        processor.filtered_dataframe_stats["sy"].values
+        processor.filtered_dataframe_stats["sy"].to_numpy()
     )
     _, _, median_sz, mad_sz = get_robust_threshold(
-        processor.filtered_dataframe_stats["sz"].values
+        processor.filtered_dataframe_stats["sz"].to_numpy()
     )
     _, _, median_n, mad_n = get_robust_threshold(
-        processor.filtered_dataframe_stats["n"].values
+        processor.filtered_dataframe_stats["n"].to_numpy()
     )
     tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
@@ -293,16 +293,16 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     assert processor.is_3d is True
 
     _, _, median_sx, mad_sx = get_robust_threshold(
-        processor.filtered_dataframe_stats["sx"].values
+        processor.filtered_dataframe_stats["sx"].to_numpy()
     )
     _, _, median_sy, mad_sy = get_robust_threshold(
-        processor.filtered_dataframe_stats["sy"].values
+        processor.filtered_dataframe_stats["sy"].to_numpy()
     )
     _, _, median_sz, mad_sz = get_robust_threshold(
-        processor.filtered_dataframe_stats["sz"].values
+        processor.filtered_dataframe_stats["sz"].to_numpy()
     )
     _, _, median_n, mad_n = get_robust_threshold(
-        processor.filtered_dataframe_stats["n"].values
+        processor.filtered_dataframe_stats["n"].to_numpy()
     )
     tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
@@ -350,16 +350,16 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     assert processor.is_3d is False
 
     _, _, median_sx, mad_sx = get_robust_threshold(
-        processor.filtered_dataframe_stats["sx"].values
+        processor.filtered_dataframe_stats["sx"].to_numpy()
     )
     _, _, median_sy, mad_sy = get_robust_threshold(
-        processor.filtered_dataframe_stats["sy"].values
+        processor.filtered_dataframe_stats["sy"].to_numpy()
     )
     _, _, median_sz, mad_sz = get_robust_threshold(
-        processor.filtered_dataframe_stats["sz"].values
+        processor.filtered_dataframe_stats["sz"].to_numpy()
     )
     _, _, median_n, mad_n = get_robust_threshold(
-        processor.filtered_dataframe_stats["n"].values
+        processor.filtered_dataframe_stats["n"].to_numpy()
     )
     tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
@@ -407,16 +407,16 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     assert processor.is_3d is True
 
     _, _, median_sx, mad_sx = get_robust_threshold(
-        processor.filtered_dataframe_stats["sx"].values
+        processor.filtered_dataframe_stats["sx"].to_numpy()
     )
     _, _, median_sy, mad_sy = get_robust_threshold(
-        processor.filtered_dataframe_stats["sy"].values
+        processor.filtered_dataframe_stats["sy"].to_numpy()
     )
     _, _, median_sz, mad_sz = get_robust_threshold(
-        processor.filtered_dataframe_stats["sz"].values
+        processor.filtered_dataframe_stats["sz"].to_numpy()
     )
     _, _, median_n, mad_n = get_robust_threshold(
-        processor.filtered_dataframe_stats["n"].values
+        processor.filtered_dataframe_stats["n"].to_numpy()
     )
     tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
@@ -464,16 +464,16 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     assert processor.is_3d is False
 
     _, _, median_sx, mad_sx = get_robust_threshold(
-        processor.filtered_dataframe_stats["sx"].values
+        processor.filtered_dataframe_stats["sx"].to_numpy()
     )
     _, _, median_sy, mad_sy = get_robust_threshold(
-        processor.filtered_dataframe_stats["sy"].values
+        processor.filtered_dataframe_stats["sy"].to_numpy()
     )
     _, _, median_sz, mad_sz = get_robust_threshold(
-        processor.filtered_dataframe_stats["sz"].values
+        processor.filtered_dataframe_stats["sz"].to_numpy()
     )
     _, _, median_n, mad_n = get_robust_threshold(
-        processor.filtered_dataframe_stats["n"].values
+        processor.filtered_dataframe_stats["n"].to_numpy()
     )
     tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 
@@ -521,16 +521,16 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     assert processor.is_3d is False
 
     _, _, median_sx, mad_sx = get_robust_threshold(
-        processor.filtered_dataframe_stats["sx"].values
+        processor.filtered_dataframe_stats["sx"].to_numpy()
     )
     _, _, median_sy, mad_sy = get_robust_threshold(
-        processor.filtered_dataframe_stats["sy"].values
+        processor.filtered_dataframe_stats["sy"].to_numpy()
     )
     _, _, median_sz, mad_sz = get_robust_threshold(
-        processor.filtered_dataframe_stats["sz"].values
+        processor.filtered_dataframe_stats["sz"].to_numpy()
     )
     _, _, median_n, mad_n = get_robust_threshold(
-        processor.filtered_dataframe_stats["n"].values
+        processor.filtered_dataframe_stats["n"].to_numpy()
     )
     tim, median_tim, mad_tim = calculate_time_steps(processor.filtered_dataframe)
 

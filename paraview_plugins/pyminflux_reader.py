@@ -111,7 +111,7 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
 
         # Create a new object
         points = vtkPoints()
-        points.SetData(vnp.numpy_to_vtk(df[["x", "y", "z"]].values))
+        points.SetData(vnp.numpy_to_vtk(df[["x", "y", "z"]].to_numpy()))
         mfx_data = vtkUnstructuredGrid()
         ugrid = dsa.WrapDataObject(mfx_data)
         ugrid.Points = points
@@ -128,7 +128,7 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         for col in df.columns:
             if col in ["x", "y"]:  # We keep z for depth-coloring
                 continue
-            vtk_array = vnp.numpy_to_vtk(df[col].values)
+            vtk_array = vnp.numpy_to_vtk(df[col].to_numpy())
             vtk_array.SetName(col)  # Sets the name of the attribute
             mfx_data.GetPointData().AddArray(vtk_array)
 
@@ -176,7 +176,7 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
         layout = CreateLayout("pyMINFLUX")
 
         # Create a render view
-        render_view = CreateView("RenderView", "Localizations")
+        render_view = CreateView("RenderView")
         render_view.AxesGrid = "GridAxes3DActor"
         render_view.Background = [0.0, 0.0, 0.0]
         render_view.UseColorPaletteForBackground = 0

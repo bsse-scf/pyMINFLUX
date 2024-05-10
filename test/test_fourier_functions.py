@@ -259,8 +259,8 @@ def test_render_xy(extract_raw_npy_data_files):
 
     # Render the 2D image as simple histogram
     img, xi, yi, m = render_xy(
-        processor.filtered_dataframe["x"].values,
-        processor.filtered_dataframe["y"].values,
+        processor.filtered_dataframe["x"].to_numpy(),
+        processor.filtered_dataframe["y"].to_numpy(),
         sx=sx,
         sy=sy,
         rx=None,
@@ -269,7 +269,7 @@ def test_render_xy(extract_raw_npy_data_files):
 
     # Check the returned values
     assert np.isclose(
-        img.sum(), len(processor.filtered_dataframe["x"].values)
+        img.sum(), len(processor.filtered_dataframe["x"].to_numpy())
     ), "Unexpected signal integral."
     assert np.isclose(xi.min(), 1648.111058125942), "Unexpected x grid (min value)."
     assert np.isclose(xi.max(), 5677.111058125942), "Unexpected x grid (max) value)."
@@ -277,7 +277,7 @@ def test_render_xy(extract_raw_npy_data_files):
     assert np.isclose(yi.max(), -11623.73531581803), "Unexpected y grid (max value)."
     assert m.sum() == 12580.0, "Unexpected number of considered elements."
     assert m.sum() == len(
-        processor.filtered_dataframe["x"].values
+        processor.filtered_dataframe["x"].to_numpy()
     ), "Unexpected number of considered elements."
 
     # Render the 2D image as a Gaussian fit
@@ -299,7 +299,7 @@ def test_render_xy(extract_raw_npy_data_files):
     assert np.isclose(yi.max(), -11623.73531581803), "Unexpected y grid (max value)."
     assert m.sum() == 12566.0, "Unexpected number of considered elements."
     assert m.sum() < len(
-        processor.filtered_dataframe["x"].values
+        processor.filtered_dataframe["x"].to_numpy()
     ), "Unexpected number of considered elements."
 
 
@@ -340,9 +340,9 @@ def test_render_xyz(extract_raw_npy_data_files):
 
     # Render the 3D image as simple histogram
     img, xi, yi, zi, m = render_xyz(
-        processor.filtered_dataframe["x"].values,
-        processor.filtered_dataframe["y"].values,
-        processor.filtered_dataframe["z"].values,
+        processor.filtered_dataframe["x"].to_numpy(),
+        processor.filtered_dataframe["y"].to_numpy(),
+        processor.filtered_dataframe["z"].to_numpy(),
         sx=sx,
         sy=sy,
         sz=sz,
@@ -373,7 +373,7 @@ def test_render_xyz(extract_raw_npy_data_files):
         / "data"
         / "Fig2_U2OS_Tom70-Dreiklang_ATP5B_AB_Minflux3D.csv",
     )
-    pos = df[["x", "y", "z"]].values
+    pos = df[["x", "y", "z"]].to_numpy()
 
     # Rendering resolution (in nm)
     sx = 3.0
@@ -441,8 +441,8 @@ def test_fourier_ring_correlation_all_pos(extract_raw_npy_data_files):
     assert np.isclose(rz[1], 0.0), "Unexpected upper boundary for z."
 
     # Work on 2D data
-    x = processor.filtered_dataframe["x"].values
-    y = processor.filtered_dataframe["y"].values
+    x = processor.filtered_dataframe["x"].to_numpy()
+    y = processor.filtered_dataframe["y"].to_numpy()
 
     # Initialize the random number generator
     rng = np.random.default_rng(2023)
@@ -566,8 +566,8 @@ def test_fourier_ring_correlation_per_tid(extract_raw_npy_data_files):
     assert np.isclose(rz[1], 0.0), "Unexpected upper boundary for z."
 
     # Work on averaged 2D data
-    x = processor.filtered_dataframe_stats["mx"].values
-    y = processor.filtered_dataframe_stats["my"].values
+    x = processor.filtered_dataframe_stats["mx"].to_numpy()
+    y = processor.filtered_dataframe_stats["my"].to_numpy()
 
     # Initialize the random number generator
     rng = np.random.default_rng(2023)
@@ -770,8 +770,8 @@ def test_estimate_resolution(extract_raw_npy_data_files):
     assert np.isclose(rz[1], 0.0), "Unexpected upper boundary for z."
 
     # Work on averaged 2D data
-    x = processor.filtered_dataframe_stats["mx"].values
-    y = processor.filtered_dataframe_stats["my"].values
+    x = processor.filtered_dataframe_stats["mx"].to_numpy()
+    y = processor.filtered_dataframe_stats["my"].to_numpy()
 
     # Expected values
     expected_resolution = 1.3880534697293937e-08

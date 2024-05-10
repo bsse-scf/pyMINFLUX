@@ -98,6 +98,13 @@ class NativeMetadataReader:
                     return None
 
                 try:
+                    pool_dcr = bool(f["parameters/pool_dcr"][()])
+                except KeyError as e:
+                    # This is an addendum to version 2.0, and we allow it to be missing.
+                    # It will fall back to False.
+                    pool_dcr = False
+
+                try:
                     scale_bar_size = float(f["parameters/scale_bar_size"][()])
                 except KeyError as e:
                     return None
@@ -107,20 +114,22 @@ class NativeMetadataReader:
                 time_thresholds = None
                 dwell_time = 1.0
                 is_tracking = False
+                pool_dcr = False
                 scale_bar_size = 500
 
         # Store and return
         metadata = NativeMetadata(
-            z_scaling_factor=z_scaling_factor,
-            min_trace_length=min_trace_length,
-            efo_thresholds=efo_thresholds,
+            pool_dcr=pool_dcr,
             cfr_thresholds=cfr_thresholds,
+            dwell_time=dwell_time,
+            efo_thresholds=efo_thresholds,
+            is_tracking=is_tracking,
+            min_trace_length=min_trace_length,
+            num_fluorophores=num_fluorophores,
+            scale_bar_size=scale_bar_size,
             time_thresholds=time_thresholds,
             tr_len_thresholds=tr_len_thresholds,
-            num_fluorophores=num_fluorophores,
-            dwell_time=dwell_time,
-            is_tracking=is_tracking,
-            scale_bar_size=scale_bar_size,
+            z_scaling_factor=z_scaling_factor,
         )
 
         return metadata

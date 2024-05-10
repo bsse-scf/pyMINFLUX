@@ -77,6 +77,11 @@ class MockMinFluxReader:
         """Number of invalid entries."""
         return 0
 
+    @property
+    def is_tracking(self):
+        """This is a localization dataset and not a tracking one."""
+        return False
+
 
 @pytest.fixture(autouse=False)
 def extract_raw_npy_data_files(tmpdir):
@@ -203,7 +208,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_trace_length) == 0
+    assert np.sum(counts.to_numpy() < processor.min_trace_length) == 0
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
@@ -217,7 +222,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_trace_length) == 0
+    assert np.sum(counts.to_numpy() < processor.min_trace_length) == 0
 
     # Reset all filters and confirm counts
     processor.reset()
@@ -317,7 +322,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_trace_length) == 0
+    assert np.sum(counts.to_numpy() < processor.min_trace_length) == 0
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
@@ -331,7 +336,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_trace_length) == 0
+    assert np.sum(counts.to_numpy() < processor.min_trace_length) == 0
 
     # Reset all filters and confirm counts
     processor.reset()
@@ -431,7 +436,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_trace_length) == 0
+    assert np.sum(counts.to_numpy() < processor.min_trace_length) == 0
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
@@ -445,7 +450,7 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
-    assert np.sum(counts.values < processor.min_trace_length) == 0
+    assert np.sum(counts.to_numpy() < processor.min_trace_length) == 0
 
     # Reset all filters and confirm counts
     processor.reset()
@@ -467,7 +472,7 @@ def test_eco_value_extraction(extract_raw_npy_data_files):
     reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
 
     # Test first 15 eco values
-    eco = reader.processed_dataframe["eco"].values
+    eco = reader.processed_dataframe["eco"].to_numpy()
     assert np.all(
         eco[:15]
         == np.array(
@@ -489,7 +494,7 @@ def test_eco_value_extraction(extract_raw_npy_data_files):
     reader = MinFluxReader(Path(__file__).parent / "data" / "3D_ValidOnly.npy")
 
     # Test first 15 eco values
-    eco = reader.processed_dataframe["eco"].values
+    eco = reader.processed_dataframe["eco"].to_numpy()
     assert np.all(
         eco[:15]
         == np.array(
@@ -520,13 +525,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     processor.use_weighted_localizations = True
 
     # Get weighted localizations
-    df_loc = processor.weighted_localizations
+    df_loc = processor.weighted_localizations.copy()
 
     # Get filtered dataframe
-    df_filt = processor.filtered_dataframe
+    df_filt = processor.filtered_dataframe.copy()
 
     # Make sure the TIDs match
-    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+    assert np.all(
+        np.unique(df_loc["tid"].to_numpy()) == np.unique(df_filt["tid"].to_numpy())
+    )
 
     # Test extracted localizations
     for tid, frame in df_filt.groupby("tid"):
@@ -534,9 +541,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -555,22 +562,24 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     processor.use_weighted_localizations = False
 
     # Get weighted localizations
-    df_loc = processor.weighted_localizations
+    df_loc = processor.weighted_localizations.copy()
 
     # Get filtered dataframe
-    df_filt = processor.filtered_dataframe
+    df_filt = processor.filtered_dataframe.copy()
 
     # Make sure the TIDs match
-    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+    assert np.all(
+        np.unique(df_loc["tid"].to_numpy()) == np.unique(df_filt["tid"].to_numpy())
+    )
 
     # Test extracted localizations
     for tid, frame in df_filt.groupby("tid"):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -595,13 +604,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     processor.use_weighted_localizations = True
 
     # Get weighted localizations
-    df_loc = processor.weighted_localizations
+    df_loc = processor.weighted_localizations.copy()
 
     # Get filtered dataframe
-    df_filt = processor.filtered_dataframe
+    df_filt = processor.filtered_dataframe.copy()
 
     # Make sure the TIDs match
-    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+    assert np.all(
+        np.unique(df_loc["tid"].to_numpy()) == np.unique(df_filt["tid"].to_numpy())
+    )
 
     # Test extracted localizations
     for tid, frame in df_filt.groupby("tid"):
@@ -609,9 +620,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -630,22 +641,24 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     processor.use_weighted_localizations = False
 
     # Get weighted localizations
-    df_loc = processor.weighted_localizations
+    df_loc = processor.weighted_localizations.copy()
 
     # Get filtered dataframe
-    df_filt = processor.filtered_dataframe
+    df_filt = processor.filtered_dataframe.copy()
 
     # Make sure the TIDs match
-    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+    assert np.all(
+        np.unique(df_loc["tid"].to_numpy()) == np.unique(df_filt["tid"].to_numpy())
+    )
 
     # Test extracted localizations
     for tid, frame in df_filt.groupby("tid"):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -670,13 +683,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     processor.use_weighted_localizations = True
 
     # Get weighted localizations
-    df_loc = processor.weighted_localizations
+    df_loc = processor.weighted_localizations.copy()
 
     # Get filtered dataframe
-    df_filt = processor.filtered_dataframe
+    df_filt = processor.filtered_dataframe.copy()
 
     # Make sure the TIDs match
-    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+    assert np.all(
+        np.unique(df_loc["tid"].to_numpy()) == np.unique(df_filt["tid"].to_numpy())
+    )
 
     # Test extracted localizations
     for tid, frame in df_filt.groupby("tid"):
@@ -684,9 +699,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -705,22 +720,24 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     processor.use_weighted_localizations = False
 
     # Get weighted localizations
-    df_loc = processor.weighted_localizations
+    df_loc = processor.weighted_localizations.copy()
 
     # Get filtered dataframe
-    df_filt = processor.filtered_dataframe
+    df_filt = processor.filtered_dataframe.copy()
 
     # Make sure the TIDs match
-    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+    assert np.all(
+        np.unique(df_loc["tid"].to_numpy()) == np.unique(df_filt["tid"].to_numpy())
+    )
 
     # Test extracted localizations
     for tid, frame in df_filt.groupby("tid"):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -745,13 +762,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     processor.use_weighted_localizations = True
 
     # Get weighted localizations
-    df_loc = processor.weighted_localizations
+    df_loc = processor.weighted_localizations.copy()
 
     # Get filtered dataframe
-    df_filt = processor.filtered_dataframe
+    df_filt = processor.filtered_dataframe.copy()
 
     # Make sure the TIDs match
-    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+    assert np.all(
+        np.unique(df_loc["tid"].to_numpy()) == np.unique(df_filt["tid"].to_numpy())
+    )
 
     # Test extracted localizations
     for tid, frame in df_filt.groupby("tid"):
@@ -759,9 +778,9 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         x_w = (frame["x"] * eco_rel).sum()
         y_w = (frame["y"] * eco_rel).sum()
         z_w = (frame["z"] * eco_rel).sum()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -780,22 +799,24 @@ def test_weighted_localizations(extract_raw_npy_data_files):
     processor.use_weighted_localizations = False
 
     # Get weighted localizations
-    df_loc = processor.weighted_localizations
+    df_loc = processor.weighted_localizations.copy()
 
     # Get filtered dataframe
-    df_filt = processor.filtered_dataframe
+    df_filt = processor.filtered_dataframe.copy()
 
     # Make sure the TIDs match
-    assert np.all(np.unique(df_loc["tid"].values) == np.unique(df_filt["tid"].values))
+    assert np.all(
+        np.unique(df_loc["tid"].to_numpy()) == np.unique(df_filt["tid"].to_numpy())
+    )
 
     # Test extracted localizations
     for tid, frame in df_filt.groupby("tid"):
         x_w = frame["x"].mean()
         y_w = frame["y"].mean()
         z_w = frame["z"].mean()
-        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].values[0])
-        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].values[0])
-        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].values[0])
+        exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
+        exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
+        exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
         assert (
             pytest.approx(x_w, 1e-4) == exp_x_w
         ), "The weighted x localization is wrong!"
@@ -997,8 +1018,8 @@ def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
 
     # There should be just one TID difference
-    select_tids = np.unique(df["tid"].values)
-    filter_tids = np.unique(processor.filtered_dataframe["tid"].values)
+    select_tids = np.unique(df["tid"].to_numpy())
+    filter_tids = np.unique(processor.filtered_dataframe["tid"].to_numpy())
     diff = np.setdiff1d(select_tids, filter_tids, assume_unique=True)
 
     assert len(diff) == 1, "Unexpected number of different TIDs."
@@ -1126,9 +1147,13 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
         len(processor.filtered_dataframe.index) == 10600
     ), "Wrong total number of filtered entries"
     selected = (
-        (processor.filtered_dataframe["tim"] >= 2000)
-        & (processor.filtered_dataframe["tim"] < 3000)
-    ).values.sum()
+        (
+            (processor.filtered_dataframe["tim"] >= 2000)
+            & (processor.filtered_dataframe["tim"] < 3000)
+        )
+        .to_numpy()
+        .sum()
+    )
     assert selected == 0, "Failed filtering."
     assert (processor.filtered_dataframe["x"] < 2000).sum() == 1102, "Failed filtering."
     assert (
@@ -1154,9 +1179,13 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
         len(processor.filtered_dataframe.index) == 10053
     ), "Wrong total number of filtered entries"
     selected = (
-        (processor.filtered_dataframe["tim"] >= 2000)
-        & (processor.filtered_dataframe["tim"] < 3000)
-    ).values.sum()
+        (
+            (processor.filtered_dataframe["tim"] >= 2000)
+            & (processor.filtered_dataframe["tim"] < 3000)
+        )
+        .to_numpy()
+        .sum()
+    )
     assert selected == 0, "Failed filtering."
     assert (processor.filtered_dataframe["x"] < 1046).sum() == 0, "Failed filtering."
     assert (processor.filtered_dataframe["x"] >= 5882).sum() == 0, "Failed filtering."
@@ -1194,10 +1223,10 @@ def test_filter_by_1d_stats_mock_reader():
 
     # Test
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0
     ), "No TIDs expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0
     ), "No TIDs expected."
 
     #
@@ -1225,16 +1254,16 @@ def test_filter_by_1d_stats_mock_reader():
 
     # Test
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 2
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 2
     ), "Two TIDs expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51, 54])
+        np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([51, 54])
     ), "TIDs 51 and 54 expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 2
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 2
     ), "Two TIDs expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe_stats["tid"].values)
+        np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
         == np.array([51, 54])
     ), "TIDs 51 and 54 expected."
 
@@ -1259,16 +1288,17 @@ def test_filter_by_1d_stats_mock_reader():
 
     # Test
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1
     ), "One TID expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])
+        np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([51])
     ), "TID 51 expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1
     ), "Two TIDs expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])
+        np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
+        == np.array([51])
     ), "TID 51 expected."
 
 
@@ -1298,16 +1328,16 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 2
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 2
     ), "Two TIDs expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51, 54])
+        np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([51, 54])
     ), "TIDs 51 and 54 expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 2
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 2
     ), "Two TIDs expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe_stats["tid"].values)
+        np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
         == np.array([51, 54])
     ), "TIDs 51 and 54 expected."
 
@@ -1334,10 +1364,10 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
 
     # Test
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0
     ), "No TIDs expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0
     ), "No TIDs expected."
 
     # IF we change to fluorophore ID == 2, the TID 51 should still be there
@@ -1345,16 +1375,17 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
 
     # Test
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1
     ), "One TID expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])
+        np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([51])
     ), "TID 51 expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1
     ), "One TID expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])
+        np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
+        == np.array([51])
     ), "TID 51 expected."
 
     #
@@ -1380,16 +1411,17 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
 
     # Test
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1
     ), "One TID expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe["tid"].values) == np.array([51])
+        np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([51])
     ), "TID 51 expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1
     ), "One TID expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([51])
+        np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
+        == np.array([51])
     ), "TID 51 expected."
 
     # If we change to fluorophore ID == 1, the TID 54 should still be there
@@ -1397,16 +1429,17 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
 
     # Test
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1
     ), "One TID expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe["tid"].values) == np.array([54])
+        np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([54])
     ), "TID 51 expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1
     ), "One TID expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([54])
+        np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
+        == np.array([54])
     ), "TID 51 expected."
 
     #
@@ -1431,10 +1464,10 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0
     ), "No TIDs expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0
     ), "No TIDs expected."
 
     # If we change to fluorophore ID == 1, the TID 54 should still be there
@@ -1442,26 +1475,27 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
 
     # Test
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 1
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1
     ), "One TID expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe["tid"].values) == np.array([54])
+        np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([54])
     ), "TID 51 expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 1
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1
     ), "One TID expected."
     assert np.all(
-        np.unique(processor.filtered_dataframe_stats["tid"].values) == np.array([54])
+        np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
+        == np.array([54])
     ), "TID 51 expected."
 
     # If we now apply the filter again, also 54 should go.
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     assert (
-        len(np.unique(processor.filtered_dataframe["tid"].values)) == 0
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0
     ), "No TIDs expected."
     assert (
-        len(np.unique(processor.filtered_dataframe_stats["tid"].values)) == 0
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0
     ), "No TIDs expected."
 
 
@@ -1489,24 +1523,24 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
     # Make sure that the extracted TIDs are correct
     assert len(subset.index) == 1245, "Wrong number of extracted TIDs."
     assert (
-        np.sum((subset["n"] < x_range[0]).values)
-        + np.sum((subset["n"] > x_range[1]).values)
+        np.sum((subset["n"] < x_range[0]).to_numpy())
+        + np.sum((subset["n"] > x_range[1]).to_numpy())
         == 0
     ), "No TIDs should be in the rejected range."
-    valid_tids = subset["tid"].values
+    valid_tids = subset["tid"].to_numpy()
 
     # Filter all traces that have less than 100 localizations
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Now check the filtered dataframe
     assert np.all(
-        np.unique(processor.filtered_dataframe["tid"].values) == valid_tids
+        np.unique(processor.filtered_dataframe["tid"].to_numpy()) == valid_tids
     ), "Unexpected subset of selected TIDs."
 
     # Make sure the filtered stats dataframe has been updated as well.
     assert (
-        np.sum((processor.filtered_dataframe_stats["n"] < x_range[0]).values)
-        + np.sum((processor.filtered_dataframe_stats["n"] > x_range[1]).values)
+        np.sum((processor.filtered_dataframe_stats["n"] < x_range[0]).to_numpy())
+        + np.sum((processor.filtered_dataframe_stats["n"] > x_range[1]).to_numpy())
         == 0
     ), "The filtered stats dataframe has not been update or has been updated incorrectly"
 
@@ -1527,12 +1561,12 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
             (processor.filtered_dataframe_stats["n"] < x_range[0])
             | (processor.filtered_dataframe_stats["n"] > x_range[1])
         )
-    ]["tid"].values
+    ]["tid"].to_numpy()
 
     # Assign the first half (of the TIDs) to fluorophore ID 2 and the second half to fluorophore ID 1
-    thresh = np.median(processor.filtered_dataframe_stats["tid"].values)
+    thresh = np.median(processor.filtered_dataframe_stats["tid"].to_numpy())
     fluo_ids = np.ones(len(processor.filtered_dataframe.index))
-    fluo_ids[processor.filtered_dataframe["tid"].values < thresh] = 2
+    fluo_ids[processor.filtered_dataframe["tid"].to_numpy() < thresh] = 2
     processor.set_fluorophore_ids(fluorophore_ids=fluo_ids.astype(int))
 
     # Rejected TIDs per fluorophore
@@ -1541,10 +1575,10 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
 
     # Check the number of assigned fluorophores
     assert (
-        int(np.sum(processor.filtered_dataframe["fluo"].values == 0)) == 0
+        int(np.sum(processor.filtered_dataframe["fluo"].to_numpy() == 0)) == 0
     ), "All rows should be assigned to fluo 1 or 2."
-    n_fluo_1 = int(np.sum(processor.filtered_dataframe["fluo"].values == 1))
-    n_fluo_2 = int(np.sum(processor.filtered_dataframe["fluo"].values == 2))
+    n_fluo_1 = int(np.sum(processor.filtered_dataframe["fluo"].to_numpy() == 1))
+    n_fluo_2 = int(np.sum(processor.filtered_dataframe["fluo"].to_numpy() == 2))
     assert n_fluo_1 + n_fluo_2 == len(
         processor.filtered_dataframe.index
     ), "All rows should be assigned to fluo 1 or 2."
@@ -1560,7 +1594,7 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
     # Now check that only the TIDs that where associated to fluorophore 1 were filtered by x_range
     subset_fluo_1 = processor.filtered_dataframe_stats[["tid", "n"]]
     assert np.all(
-        subset_fluo_1["tid"].values >= thresh
+        subset_fluo_1["tid"].to_numpy() >= thresh
     ), "Unexpected TIDs for fluorophore 1."
     tids_outside_fluo_1 = tids_outside[tids_outside >= thresh]
     assert np.all(
@@ -1576,7 +1610,7 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
     # Now check that only the TIDs that where associated to fluorophore 1 were filtered by x_range
     subset_fluo_2 = processor.filtered_dataframe_stats[["tid", "n"]]
     assert np.all(
-        subset_fluo_2["tid"].values < thresh
+        subset_fluo_2["tid"].to_numpy() < thresh
     ), "Unexpected TIDs for fluorophore 2."
     tids_outside_fluo_2 = tids_outside[tids_outside < thresh]
     assert np.all(

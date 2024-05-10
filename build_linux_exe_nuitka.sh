@@ -28,6 +28,9 @@ source $ANACONDA_HOME/etc/profile.d/conda.sh
 conda create -n pyminflux-build python=$PYTHON_VERSION -y
 conda activate pyminflux-build
 
+# Install nuitka
+python -m pip install nuitka ordered_set zstandard patchelf
+
 # Install dependencies
 poetry install
 
@@ -35,27 +38,36 @@ poetry install
 rm -fR build
 rm -fR dist
 
-# Build the app
-pyinstaller pyminflux/main.py \
---clean \
---windowed \
---hidden-import="sklearn.neighbors._typedefs" \
---hidden-import="sklearn.metrics._pairwise_distances_reduction._datasets_pair" \
---hidden-import="sklearn.metrics._pairwise_distances_reduction._middle_term_computer" \
---noconsole \
---icon pyminflux/ui/assets/Logo_v3.icns \
---name pyMINFLUX \
---target-architecture=x86_64 \
---osx-bundle-identifier 'ch.ethz.pyminflux' \
---noconfirm
+# Install static python lib
+conda install libpython-static -y
 
+# Build the executable
+python -m nuitka pyminflux/main.py -o pyMINFLUX \
+--assume-yes-for-downloads \
+--disable-console \
+--noinclude-default-mode=error \
+--standalone \
+--onefile \
+--linux-icon=pyminflux/ui/assets/Logo_v3.ico \
+--enable-plugin=pylint-warnings \
+--enable-plugin=pyside6 \
+--noinclude-default-mode=nofollow \
+--file-version=$VERSION \
+--product-version=$VERSION \
+--remove-output \
+--output-dir=./dist
+
+# Move into "pyMINFLUX" directory
+mkdir -p dist/target
+mv dist/pyMINFLUX dist/target/
+mv dist/target dist/pyMINFLUX
 
 # Copy the icon
-cp pyminflux/ui/assets/Logo_v3.png dist/pyMINFLUX
+cp pyminflux/ui/assets/Logo_v3.png dist/pyMINFLUX/icon.png
 
 # Zip the archive
 cd dist
-zip -r pyMINFLUX_${VERSION}_macos.zip pyMINFLUX.app
+zip -r pyMINFLUX_${VERSION}_linux.zip pyMINFLUX
 cd ..
 
 # Remove the conda environment

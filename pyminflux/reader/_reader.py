@@ -33,32 +33,33 @@ class MinFluxReader:
     __docs__ = "Reader of MINFLUX data in `.pmx`, `.npy` or `.mat` formats."
 
     __slots__ = [
-        "_filename",
-        "_last_valid_cfr",
-        "_last_valid",
-        "_is_last_valid",
-        "_valid",
-        "_unit_scaling_factor",
+        "_pool_dcr",
+        "_cfr_index",
         "_data_array",
         "_data_df",
         "_data_full_df",
-        "_valid_entries",
+        "_dcr_index",
+        "_dwell_time",
+        "_eco_index",
+        "_efo_index",
+        "_filename",
         "_is_3d",
         "_is_aggregated",
+        "_is_last_valid",
         "_is_tracking",
-        "_reps",
-        "_efo_index",
-        "_cfr_index",
-        "_eco_index",
-        "_dcr_index",
+        "_last_valid",
+        "_last_valid_cfr",
         "_loc_index",
+        "_relocalizations",
+        "_reps",
         "_tid_index",
         "_tim_index",
+        "_unit_scaling_factor",
+        "_valid",
+        "_valid_cfr",
+        "_valid_entries",
         "_vld_index",
         "_z_scaling_factor",
-        "_dwell_time",
-        "_valid_cfr",
-        "_relocalizations",
     ]
 
     def __init__(
@@ -67,7 +68,8 @@ class MinFluxReader:
         valid: bool = True,
         z_scaling_factor: float = 1.0,
         is_tracking: bool = False,
-        dwell_time: bool = 1.0,
+        pool_dcr: bool = False,
+        dwell_time: float = 1.0,
     ):
         """Constructor.
 
@@ -86,6 +88,9 @@ class MinFluxReader:
         is_tracking: bool (optional, default = False)
             Whether the dataset comes from a tracking experiment; otherwise, it is considered as a
             localization experiment.
+
+        pool_dcr: bool (optional, default = False)
+            Whether to pool DCR values weighted by the relative ECO of all relocalized iterations.
 
         dwell_time: float (optional, default 1.0)
             Dwell time in milliseconds.
@@ -124,6 +129,9 @@ class MinFluxReader:
         # Whether the acquisition is a tracking dataset
         self._is_tracking: bool = is_tracking
 
+        # Whether to pool the dcr values
+        self._pool_dcr = pool_dcr
+
         # Whether the file contains aggregate measurements
         self._is_aggregated: bool = False
 
@@ -153,8 +161,11 @@ class MinFluxReader:
             raise IOError(f"The file {self._filename} is not a valid MINFLUX file.")
 
     @property
-    def is_last_valid(self) -> bool:
-        """Return True if the selected iterations are the "last valid", False otherwise."""
+    def is_last_valid(self) -> Union[bool, None]:
+        """Return True if the selected iteration is the "last valid", False otherwise.
+        If the dataframe has not been processed yet, `is_last_valid` will be None."""
+        if self._data_df is None:
+            return None
         return self._is_last_valid
 
     @property
@@ -176,6 +187,16 @@ class MinFluxReader:
     def is_tracking(self) -> bool:
         """Returns True for a tracking acquisition, False otherwise."""
         return self._is_tracking
+
+    @property
+    def is_pool_dcr(self) -> bool:
+        """Returns True if the DCR values over all relocalized iterations (to use all photons)."""
+        return self._pool_dcr
+
+    @property
+    def dwell_time(self) -> float:
+        """Returns the dwell time."""
+        return self._dwell_time
 
     @property
     def num_valid_entries(self) -> int:
@@ -269,6 +290,10 @@ class MinFluxReader:
             and the dataframe is rebuilt. In case several properties of
             the MinFluxReader are modified sequentially, the processing
             can be disabled and run only once after the last change.
+            However, this only applies after the first load/scan, when
+            the processed dataframe has not been created yet. If the
+            dataframe already exists, this flag will be ignored and the
+            processing will take place.
         """
 
         # Make sure there is loaded data
@@ -306,8 +331,9 @@ class MinFluxReader:
         self._tim_index: int = 0
         self._vld_index: int = 0
 
-        # Re-process the file?
-        if process:
+        # Re-process the file? If the processed dataframe already exists,
+        # the processing will take place anyway.
+        if process or self._data_df is not None:
             self._process()
 
     def set_tracking(self, is_tracking: bool, process: bool = True):
@@ -321,17 +347,21 @@ class MinFluxReader:
             acquisition.
 
         process: bool (Optional, default = True)
-            By default, when setting the indices, the data is rescanned
+            By default, when setting the tracking flag, the data is rescanned
             and the dataframe is rebuilt. In case several properties of
             the MinFluxReader are modified sequentially, the processing
             can be disabled and run only once after the last change.
+            However, this only applies after the first load/scan, when
+            the processed dataframe has not been created yet. If the
+            dataframe already exists, this flag will be ignored and the
+            processing will take place.
         """
 
         # Update the flag
         self._is_tracking = is_tracking
 
         # Re-process the file?
-        if process:
+        if process or self._data_df is not None:
             self._process()
 
     def set_dwell_time(self, dwell_time: float, process: bool = True):
@@ -344,17 +374,48 @@ class MinFluxReader:
             Dwell time.
 
         process: bool (Optional, default = True)
-            By default, when setting the indices, the data is rescanned
+            By default, when setting the dwell time, the data is rescanned
             and the dataframe is rebuilt. In case several properties of
             the MinFluxReader are modified sequentially, the processing
             can be disabled and run only once after the last change.
+            However, this only applies after the first load/scan, when
+            the processed dataframe has not been created yet. If the
+            dataframe already exists, this flag will be ignored and the
+            processing will take place.
         """
 
         # Update the flag
         self._dwell_time = dwell_time
 
         # Re-process the file?
-        if process:
+        if process or self._data_df is not None:
+            self._process()
+
+    def set_pool_dcr(self, pool_dcr: bool, process: bool = True):
+        """
+        Sets whether the DCR values should be pooled (and weighted by ECO).
+
+        Parameters
+        ----------
+        pool_dcr: bool
+            Whether the DCR values should be pooled (and weighted by ECO).
+
+        process: bool (Optional, default = True)
+            By default, when setting the DCR binning flag, the data is rescanned
+            and the dataframe is rebuilt. In case several properties of
+            the MinFluxReader are modified sequentially, the processing
+            can be disabled and run only once after the last change.
+            However, this only applies after the first load/scan, when
+            the processed dataframe has not been created yet. If the
+            dataframe already exists, this flag will be ignored and the
+            processing will take place.
+        """
+
+        # Update the flag
+        self._pool_dcr = pool_dcr
+
+        # Re-process the file?
+        if process or self._data_df is not None:
             self._process()
 
     @classmethod
@@ -528,8 +589,23 @@ class MinFluxReader:
             # Extract ECO
             eco = itr[:, self._eco_index]["eco"]
 
-            # Extract DCR
-            dcr = itr[:, self._dcr_index]["dcr"]
+            # Pool DCR values?
+            if self._pool_dcr and np.sum(self._relocalizations) > 1:
+
+                # Calculate ECO contributions
+                eco_all = itr[:, self._relocalizations]["eco"]
+                eco_sum = eco_all.sum(axis=1)
+                eco_all_norm = eco_all / eco_sum.reshape(-1, 1)
+
+                # Extract DCR values and weigh them by the relative ECO contributions
+                dcr = itr[:, self._relocalizations]["dcr"]
+                dcr = dcr * eco_all_norm
+                dcr = dcr.sum(axis=1)
+
+            else:
+
+                # Extract DCR
+                dcr = itr[:, self._dcr_index]["dcr"]
 
             # Calculate dwell
             dwell = np.around((eco / (efo / 1000)) / self._dwell_time, decimals=0)
@@ -557,7 +633,7 @@ class MinFluxReader:
         df = df.dropna(subset=["x"])
 
         # Check if the selected indices correspond to the last valid iteration
-        self._is_last_valid = (
+        self._is_last_valid = bool(
             self._cfr_index == self._last_valid_cfr
             and self._efo_index == self._last_valid
         )

@@ -33,11 +33,9 @@ from .helpers import (
 
 class Plotter(PlotWidget):
     # Signals
-    locations_selected = Signal(list, name="locations_selected")
-    locations_selected_by_range = Signal(
-        str, str, tuple, tuple, name="locations_selected_by_range"
-    )
-    crop_region_selected = Signal(str, str, tuple, tuple, name="crop_region_selected")
+    locations_selected = Signal(list)
+    locations_selected_by_range = Signal(str, str, tuple, tuple)
+    crop_region_selected = Signal(str, str, tuple, tuple)
 
     def __init__(self):
         super().__init__()
@@ -127,8 +125,8 @@ class Plotter(PlotWidget):
             self.scatter_plot is not None
             and ev.button() == Qt.MouseButton.LeftButton
             and ev.modifiers() == QtCore.Qt.ControlModifier
-            and self.state.x_param in ("x", "y")
-            and self.state.y_param in ("x", "y")
+            and self.state.x_param in ("x", "y", "z")
+            and self.state.y_param in ("x", "y", "z")
         ):
             # Is the user trying to initiate drawing a line?
 
@@ -194,6 +192,7 @@ class Plotter(PlotWidget):
         if (
             self.scatter_plot is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
+            and self.ROI is not None
             and self._roi_is_being_drawn
         ):
             # Resize the ROI
@@ -208,6 +207,7 @@ class Plotter(PlotWidget):
         elif (
             self.scatter_plot is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
+            and self.line is not None
             and self._line_is_being_drawn
         ):
             # Is the user drawing a line?
@@ -229,83 +229,93 @@ class Plotter(PlotWidget):
             super().mouseMoveEvent(ev)
 
     def mouseReleaseEvent(self, ev):
-        if (
-            self.scatter_plot is not None
-            and ev.button() == Qt.MouseButton.LeftButton
-            and self._roi_is_being_drawn
-        ):
-            # Extract the ranges
-            x_range, y_range = self._get_ranges_from_roi()
+        if self.scatter_plot is not None and ev.button() == Qt.MouseButton.LeftButton:
+            if self._roi_is_being_drawn:
+                # Extract the ranges
+                x_range, y_range = self._get_ranges_from_roi()
+                if x_range is None or y_range is None:
+                    # Handle the case where ranges are None
+                    return
 
-            # Get current parameters
-            x_param = self.state.x_param
-            y_param = self.state.y_param
+                # Get current parameters
+                x_param = self.state.x_param
+                y_param = self.state.y_param
 
-            # Update the DataViewer with current selection
-            if x_range is not None and y_range is not None:
+                # Update the DataViewer with current selection
                 self.locations_selected_by_range.emit(
                     x_param, y_param, x_range, y_range
                 )
 
-            # Reset flags
-            self._roi_start_point = None
-            self._roi_is_being_drawn = False
+                # Reset flags
+                self._roi_start_point = None
+                self._roi_is_being_drawn = False
 
-            # If the ROI has 0 size (when a shift-click has been used to remove a previous ROI),
-            # clean it up properly.
-            if (
-                np.abs(x_range[1] - x_range[0]) < 1e-4
-                or np.abs(y_range[1] - y_range[0]) < 1e-4
-            ):
-                self.removeItem(self.ROI)
-                self.ROI.deleteLater()
-                self.ROI = None
+                # Check if the ROI has 0 size
+                if (
+                    np.abs(x_range[1] - x_range[0]) < 1e-4
+                    or np.abs(y_range[1] - y_range[0]) < 1e-4
+                ):
+                    if hasattr(self, "ROI") and self.ROI:
+                        self.removeItem(self.ROI)
+                        self.ROI.deleteLater()
+                        self.ROI = None
 
-            # Accept the event
-            ev.accept()
+                # Accept the event
+                ev.accept()
 
-        elif (
-            self.scatter_plot is not None
-            and ev.button() == Qt.MouseButton.LeftButton
-            and self._line_is_being_drawn
-        ):
-            # Display the measurement
-            x_data, y_data = self.line.getData()
-            center = np.array(
-                [0.5 * (x_data[0] + x_data[1]), 0.5 * (y_data[0] + y_data[1])]
-            )
-            delta_y = np.array(y_data[1] - y_data[0])
-            delta_x = np.array(x_data[1] - x_data[0])
-            v = np.array([-1.0 * delta_y, delta_x])
-            norm = np.linalg.norm(v)
-            if np.abs(norm) >= 1e-4:
-                v_norm = v / norm
-                length = np.sqrt(delta_x * delta_x + delta_y * delta_y)
-                pos = center + 1.0 * v_norm
-                if self.state.color_code == ColorCode.NONE:
-                    clr = (255, 255, 0)
+            elif self._line_is_being_drawn:
+                if self.line:
+                    # Display the measurement
+                    x_data, y_data = self.line.getData()
+                    if (
+                        x_data is None
+                        or len(x_data) < 2
+                        or y_data is None
+                        or len(y_data) < 2
+                    ):  # Check if data is incomplete
+                        return
+
+                    center = np.array(
+                        [0.5 * (x_data[0] + x_data[1]), 0.5 * (y_data[0] + y_data[1])]
+                    )
+                    delta_y = y_data[1] - y_data[0]
+                    delta_x = x_data[1] - x_data[0]
+                    v = np.array([-1.0 * delta_y, delta_x])
+                    norm = np.linalg.norm(v)
+
+                    if norm >= 1e-4:
+                        v_norm = v / norm
+                        length = np.sqrt(delta_x**2 + delta_y**2)
+                        pos = center + 1.0 * v_norm
+                        clr = (
+                            (255, 255, 0)
+                            if self.state.color_code == ColorCode.NONE
+                            else (255, 255, 255)
+                        )
+                        self.line_text = TextItem(text=f"{length:.2f} nm", color=clr)
+                        self.line_text.setPos(pos[0], pos[1])
+                        self.addItem(self.line_text)
+                    else:
+                        self.removeItem(self.line)
+                        self.line.deleteLater()
+                        self.line = None
+
+                    # Reset flags
+                    self._line_start_point = None
+                    self._line_is_being_drawn = False
+
+                    # Accept the event
+                    ev.accept()
                 else:
-                    clr = (255, 255, 255)
-                self.line_text = TextItem(text=f"{length:.2f} nm", color=clr)
-                self.line_text.setPos(pos[0], pos[1])
-                self.addItem(self.line_text)
+                    # If line is None, safely ignore the operation
+                    ev.ignore()
+
             else:
-                if self.line is not None:
-                    self.removeItem(self.line)
-                    self.line.deleteLater()
-                    self.line = None
-
-            # Reset flags
-            self._line_start_point = None
-            self._line_is_being_drawn = False
-
-            # Accept the event
-            ev.accept()
-
+                # Call the parent method if no conditions are met
+                super().mouseReleaseEvent(ev)
         else:
-            # Call the parent method
+            # Properly ignore the event if conditions are not met
             ev.ignore()
-            super().mouseReleaseEvent(ev)
 
     def reset(self):
         # Forget last plot
@@ -339,7 +349,7 @@ class Plotter(PlotWidget):
                 )
             else:
                 brushes, self._fid_to_brush = update_brushes_by_(
-                    fid, self._fid_to_brush
+                    fid, self._fid_to_brush, color_scheme="green-magenta"
                 )
         else:
             raise ValueError("Unexpected request for color-coding the localizations!")

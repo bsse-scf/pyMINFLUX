@@ -32,10 +32,10 @@ class TimeInspector(QDialog, Ui_TimeInspector):
     """
 
     # Signal that the fluorophore IDs have been assigned
-    fluorophore_ids_assigned = Signal(int, name="fluorophore_ids_assigned")
-    processing_started = Signal(None, name="processing_started")
-    processing_completed = Signal(None, name="processing_completed")
-    dataset_time_filtered = Signal(None, name="dataset_time_filtered")
+    fluorophore_ids_assigned = Signal(int)
+    processing_started = Signal()
+    processing_completed = Signal()
+    dataset_time_filtered = Signal()
 
     def __init__(self, processor):
         # Call the base class
@@ -119,7 +119,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.localization_precision_stderr_per_unit_time_cache_y = None
         self.localization_precision_stderr_per_unit_time_cache_z = None
 
-    @Slot(None, name="update")
+    @Slot()
     def update(self):
         """Update the plots as response to data changes."""
 
@@ -132,7 +132,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         # Plot
         self.plot_selected()
 
-    @Slot(None, name="plot_selected")
+    @Slot()
     def plot_selected(self):
         """Perform and plot the results of the selected analysis."""
 
@@ -237,7 +237,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
 
             # Calculate the histogram of localizations per unit time
             self.localizations_per_unit_time_cache, _ = np.histogram(
-                self.processor.filtered_dataframe["tim"].values,
+                self.processor.filtered_dataframe["tim"].to_numpy(),
                 bins=bin_edges,
                 density=False,
             )
@@ -558,7 +558,7 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.roi_ranges_dialog.show()
         self.roi_ranges_dialog.activateWindow()
 
-    @Slot(None, name="roi_changes_finished")
+    @Slot()
     def roi_changes_finished(self):
         """Called when the ROIChanges dialog has accepted the changes."""
 

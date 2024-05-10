@@ -43,6 +43,8 @@ $ python -m pip install -e .
 $ pip install -r dev-requirements.txt
 ```
 
+If you want to participate to the development of pyMINFLUX, please have a look at [how you can contribute](CONTRIBUTING.md) and at our [code of conduct](CODE_OF_CONDUCT.md).
+
 ### Running pyMINFLUX from console
 
 ```sh
@@ -66,6 +68,10 @@ The official pyMINFLUX website is on https://pyminflux.ethz.ch.
 ## pyMINFLUX mailing list
 
 Join the [pyMINFLUX mailing list](https://sympa.ethz.ch/sympa/subscribe/pyminflux) for release announcements and further discussions.
+
+## Contributing to pyMINFLUX
+
+We value the contribution of our community members, and to make sure that everyone can profit from this collaboration, we ask you to have a look at our [CONTRIBUTING](./CONTRIBUTING.md) and [CODE OF CONDUCT](./CODE_OF_CONDUCT.md) documents.
 
 ## Citing pyMINFLUX
 

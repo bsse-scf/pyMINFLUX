@@ -32,22 +32,26 @@ from ..analysis import (
 from ..processor import MinFluxProcessor
 from ..state import State
 from ..utils import intersect_2d_ranges
-from .helpers import add_median_line, export_plot_interactive
+from .helpers import (
+    add_median_line,
+    export_all_plots_interactive,
+    export_plot_interactive,
+)
 from .roi_ranges import ROIRanges
 from .ui_analyzer import Ui_Analyzer
 
 
 class Analyzer(QDialog, Ui_Analyzer):
     # Signal that the data viewers should be updated
-    data_filters_changed = Signal(name="data_filters_changed")
-    plotting_started = Signal(name="plotting_started")
-    plotting_completed = Signal(name="plotting_completed")
-    efo_bounds_changed = Signal(name="efo_bounds_changed")
-    cfr_bounds_changed = Signal(name="cfr_bounds_changed")
-    cfr_threshold_factor_changed = Signal(name="cfr_threshold_factor_changed")
-    cfr_lower_bound_state_changed = Signal(name="cfr_lower_bound_state_changed")
-    cfr_upper_bound_state_changed = Signal(name="cfr_upper_bound_state_changed")
-    tr_len_bounds_changed = Signal(name="tr_len_bounds_changed")
+    data_filters_changed = Signal()
+    plotting_started = Signal()
+    plotting_completed = Signal()
+    efo_bounds_changed = Signal()
+    cfr_bounds_changed = Signal()
+    cfr_threshold_factor_changed = Signal()
+    cfr_lower_bound_state_changed = Signal()
+    cfr_upper_bound_state_changed = Signal()
+    tr_len_bounds_changed = Signal()
 
     def __init__(self, processor: MinFluxProcessor, parent=None):
         """Constructor."""
@@ -96,7 +100,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # EFO cutoff frequency tab
         self.ui.leEFOExpectedCutoff.setText(str(self.state.efo_expected_frequency))
         self.ui.leEFOExpectedCutoff.setValidator(
-            QDoubleValidator(bottom=0.0, decimals=2)
+            QDoubleValidator(bottom=0.0, top=np.Inf, decimals=2)
         )
 
         # CFR filtering tab
@@ -250,7 +254,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.tr_len_range = self.state.tr_len_range
         self.loc_precision_range = self.state.loc_precision_range
 
-    @Slot(name="run_efo_cutoff_frequency_detection")
+    @Slot()
     def run_efo_cutoff_frequency_detection(self):
         """Run EFO cutoff frequency detection."""
 
@@ -262,7 +266,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Calculate thresholds for EFO
         n_efo, _, b_efo, _ = prepare_histogram(
-            self.processor.filtered_dataframe["efo"].values,
+            self.processor.filtered_dataframe["efo"].to_numpy(),
             auto_bins=efo_auto_bins,
             bin_size=self.state.efo_bin_size_hz,
         )
@@ -277,14 +281,14 @@ class Analyzer(QDialog, Ui_Analyzer):
             return
 
         # Set the new upper bound and reset the lower bound
-        min_efo = self.processor.filtered_dataframe["efo"].values.min()
+        min_efo = self.processor.filtered_dataframe["efo"].to_numpy().min()
         max_efo = cutoff_frequency
         self.state.efo_thresholds = (min_efo, max_efo)
 
         # Update plot
         self.efo_region.setRegion(self.state.efo_thresholds)
 
-    @Slot(name="run_cfr_auto_threshold")
+    @Slot()
     def run_cfr_auto_threshold(self):
         """Run auto-threshold on CFR values and update the plots."""
 
@@ -296,17 +300,20 @@ class Analyzer(QDialog, Ui_Analyzer):
             print("Both lower and upper CFR thresholds are disabled.")
             return
 
+        if self.processor.filtered_dataframe is None:
+            return
+
         # Initialize values
         if self.state.cfr_thresholds is None:
-            min_cfr = self.processor.filtered_dataframe["cfr"].values.min()
-            max_cfr = self.processor.filtered_dataframe["cfr"].values.max()
+            min_cfr = self.processor.filtered_dataframe["cfr"].to_numpy().min()
+            max_cfr = self.processor.filtered_dataframe["cfr"].to_numpy().max()
         else:
             min_cfr = self.state.cfr_thresholds[0]
             max_cfr = self.state.cfr_thresholds[1]
 
         # Calculate thresholds for CFR
         upper_thresh_cfr, lower_thresh_cfr, _, _ = get_robust_threshold(
-            self.processor.filtered_dataframe["cfr"].values,
+            self.processor.filtered_dataframe["cfr"].to_numpy(),
             factor=self.state.cfr_threshold_factor,
         )
         if self.state.enable_cfr_lower_threshold:
@@ -318,12 +325,12 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Update plot
         self.cfr_region.setRegion(self.state.cfr_thresholds)
 
-    @Slot(name="run_tr_len_auto_threshold")
+    @Slot()
     def run_tr_len_auto_threshold(self):
         """Run auto-run_tr_len_auto_threshold on Trace Length values and update the plots."""
 
         # Calculate the top percentile
-        n = self.processor.filtered_dataframe_stats["n"].values
+        n = self.processor.filtered_dataframe_stats["n"].to_numpy()
 
         # Get the value of the percentile
         percentile = float(self.ui.leTrLenTopPercentile.text())
@@ -338,17 +345,17 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Update plot
         self.tr_len_region.setRegion(self.state.tr_len_thresholds)
 
-    @Slot(int, name="persist_cfr_lower_threshold")
+    @Slot(int)
     def persist_cfr_lower_threshold(self, state):
         self.state.enable_cfr_lower_threshold = state != 0
         self.cfr_lower_bound_state_changed.emit()
 
-    @Slot(int, name="persist_cfr_upper_threshold")
+    @Slot(int)
     def persist_cfr_upper_threshold(self, state):
         self.state.enable_cfr_upper_threshold = state != 0
         self.cfr_upper_bound_state_changed.emit()
 
-    @Slot(str, name="persist_efo_expected_frequency")
+    @Slot(str)
     def persist_efo_expected_frequency(self, text):
         try:
             efo_expected_frequency = float(text)
@@ -357,7 +364,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         self.state.efo_expected_frequency = efo_expected_frequency
 
-    @Slot(str, name="persist_cfr_threshold_factor")
+    @Slot(str)
     def persist_cfr_threshold_factor(self, text):
         try:
             cfr_threshold_factor = float(text)
@@ -368,7 +375,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Broadcast
         self.cfr_threshold_factor_changed.emit()
 
-    @Slot(str, name="persist_tr_len_top_percentile")
+    @Slot(str)
     def persist_tr_len_top_percentile(self, text):
         try:
             tr_len_top_percentile = float(text)
@@ -382,7 +389,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.ui.leTrLenTopPercentile.setText(str(tr_len_top_percentile))
         self.state.tr_len_top_percentile = tr_len_top_percentile
 
-    @Slot(name="run_efo_filter_and_broadcast_viewers_update")
+    @Slot()
     def run_efo_filter_and_broadcast_viewers_update(self):
         """Apply the EFO filter and inform the rest of the application that the data viewers should be updated."""
 
@@ -406,7 +413,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Signal that the external viewers should be updated
         self.data_filters_changed.emit()
 
-    @Slot(name="run_cfr_filter_and_broadcast_viewers_update")
+    @Slot()
     def run_cfr_filter_and_broadcast_viewers_update(self):
         """Apply the CFR filter and inform the rest of the application that the data viewers should be updated."""
 
@@ -430,7 +437,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Signal that the external viewers should be updated
         self.data_filters_changed.emit()
 
-    @Slot(name="run_tr_len_filter_and_broadcast_viewers_update")
+    @Slot()
     def run_tr_len_filter_and_broadcast_viewers_update(self):
         """Apply the Trace Length filter and inform the rest of the application that the data viewers should be updated."""
 
@@ -454,14 +461,14 @@ class Analyzer(QDialog, Ui_Analyzer):
         # Signal that the external viewers should be updated
         self.data_filters_changed.emit()
 
-    @Slot(name="disable_buttons")
+    @Slot()
     def disable_buttons(self):
         self.ui.pbDetectCutoffFrequency.setEnabled(False)
         self.ui.pbCFRRunAutoThreshold.setEnabled(False)
         self.ui.pbEFORunFilter.setEnabled(False)
         self.ui.pbCFRRunFilter.setEnabled(False)
 
-    @Slot(name="enable_buttons")
+    @Slot()
     def enable_buttons(self):
         self.ui.pbDetectCutoffFrequency.setEnabled(True)
         self.ui.pbCFRRunAutoThreshold.setEnabled(True)
@@ -470,6 +477,19 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     def plot(self):
         """Plot histograms."""
+
+        # Check that the necessary objects exist
+        if (
+            self.communication_label is None
+            or self.efo_plot is None
+            or self.cfr_plot is None
+            or self.tr_len_plot is None
+            or self.sx_plot is None
+            or self.sy_plot is None
+            or self.sz_plot is None
+            or self.processor.filtered_dataframe is None
+        ):
+            return
 
         # Hide the communications label
         self.communication_label.hide()
@@ -516,12 +536,12 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         # Calculate the proper aspect ratio and view ranges for the relevant plots
         n_efo, efo_bin_edges, efo_bin_centers, efo_bin_width = prepare_histogram(
-            self.processor.filtered_dataframe["efo"].values,
+            self.processor.filtered_dataframe["efo"].to_numpy(),
             auto_bins=efo_auto_bins,
             bin_size=self.state.efo_bin_size_hz,
         )
         n_cfr, cfr_bin_edges, cfr_bin_centers, cfr_bin_width = prepare_histogram(
-            self.processor.filtered_dataframe["cfr"].values,
+            self.processor.filtered_dataframe["cfr"].to_numpy(),
             auto_bins=True,
             bin_size=0.0,
         )
@@ -636,7 +656,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 n_tim_bin_centers,
                 n_tim_bin_width,
             ) = prepare_histogram(
-                tim["tim_diff"].values,
+                tim["tim_diff"].to_numpy(),
                 normalize=False,
                 auto_bins=True,
             )
@@ -652,7 +672,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 brush="k",
                 support_thresholding=False,
             )
-            add_median_line(self.sx_plot, tim["tim_diff"].values, unit="ms")
+            add_median_line(self.sx_plot, tim["tim_diff"].to_numpy(), unit="ms")
             self.sx_plot.setTitle("Time resolution")
             self.sx_plot.show()
 
@@ -663,7 +683,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 n_speeds_bin_centers,
                 n_speeds_bin_width,
             ) = prepare_histogram(
-                self.processor.filtered_dataframe_stats["avg_speed"].values,
+                self.processor.filtered_dataframe_stats["avg_speed"].to_numpy(),
                 normalize=False,
                 auto_bins=True,
             )
@@ -680,7 +700,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             )
             add_median_line(
                 self.sy_plot,
-                self.processor.filtered_dataframe_stats["avg_speed"].values,
+                self.processor.filtered_dataframe_stats["avg_speed"].to_numpy(),
                 unit="nm/ms",
             )
             self.sy_plot.setTitle("Average speed per trace")
@@ -693,7 +713,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 n_trav_bin_centers,
                 n_trav_bin_width,
             ) = prepare_histogram(
-                self.processor.filtered_dataframe_stats["total_dist"].values,
+                self.processor.filtered_dataframe_stats["total_dist"].to_numpy(),
                 normalize=False,
                 auto_bins=True,
             )
@@ -719,7 +739,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             )
             add_median_line(
                 self.sz_plot,
-                self.processor.filtered_dataframe_stats["total_dist"].values,
+                self.processor.filtered_dataframe_stats["total_dist"].to_numpy(),
                 unit="nm",
             )
             self.sz_plot.setTitle("Total distance traveled per trace")
@@ -733,7 +753,7 @@ class Analyzer(QDialog, Ui_Analyzer):
 
             # sx
             n_sx, sx_bin_edges, sx_bin_centers, sx_bin_width = prepare_histogram(
-                self.processor.filtered_dataframe_stats["sx"].values,
+                self.processor.filtered_dataframe_stats["sx"].to_numpy(),
                 auto_bins=True,
                 bin_size=0.0,
             )
@@ -749,14 +769,14 @@ class Analyzer(QDialog, Ui_Analyzer):
                 support_thresholding=False,
             )
             add_median_line(
-                self.sx_plot, self.processor.filtered_dataframe_stats["sx"].values
+                self.sx_plot, self.processor.filtered_dataframe_stats["sx"].to_numpy()
             )
             self.sx_plot.setTitle("σx")
             self.sx_plot.show()
 
             # sy
             n_sy, sy_bin_edges, sy_bin_centers, sy_bin_width = prepare_histogram(
-                self.processor.filtered_dataframe_stats["sy"].values,
+                self.processor.filtered_dataframe_stats["sy"].to_numpy(),
                 auto_bins=True,
                 bin_size=0.0,
             )
@@ -772,7 +792,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 support_thresholding=False,
             )
             add_median_line(
-                self.sy_plot, self.processor.filtered_dataframe_stats["sy"].values
+                self.sy_plot, self.processor.filtered_dataframe_stats["sy"].to_numpy()
             )
             self.sy_plot.setTitle("σy")
             self.sy_plot.show()
@@ -780,7 +800,7 @@ class Analyzer(QDialog, Ui_Analyzer):
             # sz
             if self.processor.is_3d:
                 n_sz, sz_bin_edges, sz_bin_centers, sz_bin_width = prepare_histogram(
-                    self.processor.filtered_dataframe_stats["sz"].values,
+                    self.processor.filtered_dataframe_stats["sz"].to_numpy(),
                     auto_bins=True,
                     bin_size=0.0,
                 )
@@ -797,7 +817,7 @@ class Analyzer(QDialog, Ui_Analyzer):
                 )
                 add_median_line(
                     self.sz_plot,
-                    self.processor.filtered_dataframe_stats["sz"].values,
+                    self.processor.filtered_dataframe_stats["sz"].to_numpy(),
                 )
                 self.sz_plot.setTitle("σz")
                 self.sz_plot.show()
@@ -933,38 +953,69 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
+
             ranges_action = QAction("Set range")
             ranges_action.triggered.connect(
                 lambda checked: self.roi_open_ranges_dialog(ev.currentItem.data_label)
             )
             menu.addAction(ranges_action)
+
             filter_action = QAction("Filter")
             filter_action.triggered.connect(
                 lambda checked: self.trigger_filter_action(ev.currentItem)
             )
             menu.addAction(filter_action)
             menu.addSeparator()
+
             reset_action = QAction("Reset default axis range")
             reset_action.triggered.connect(
                 lambda checked: self.reset_default_axis_range(ev.currentItem)
             )
             menu.addAction(reset_action)
+
             shift_action = QAction("Move x axis origin to 0")
             shift_action.triggered.connect(
                 lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
             )
             menu.addAction(shift_action)
             menu.addSeparator()
+
             export_action = QAction("Export plot")
             export_action.triggered.connect(
                 lambda checked: export_plot_interactive(ev.currentItem)
             )
             menu.addAction(export_action)
+
+            export_all_action = QAction("Export all plots")
+            export_all_action.triggered.connect(self.collect_and_export_all_plots)
+            menu.addAction(export_all_action)
+
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
             ev.accept()
         else:
             ev.ignore()
+
+    def collect_and_export_all_plots(self):
+        items = {
+            "efo": self.efo_plot.getPlotItem().getViewBox(),
+            "cfr": self.cfr_plot.getPlotItem().getViewBox(),
+            "tr_len": self.tr_len_plot.getPlotItem().getViewBox(),
+            self.sx_plot.getPlotItem()
+            .getViewBox()
+            .data_label: self.sx_plot.getPlotItem()
+            .getViewBox(),
+            self.sy_plot.getPlotItem()
+            .getViewBox()
+            .data_label: self.sy_plot.getPlotItem()
+            .getViewBox(),
+        }
+        if self.processor.is_tracking or self.processor.is_3d:
+            items[
+                self.sz_plot.getPlotItem().getViewBox().data_label
+            ] = self.sz_plot.getPlotItem().getViewBox()
+
+        export_all_plots_interactive(items)
 
     def roi_open_ranges_dialog(self, item):
         """Open dialog to manually set the filter ranges"""
@@ -987,6 +1038,8 @@ class Analyzer(QDialog, Ui_Analyzer):
             view_box = item.getViewBox()
         else:
             return
+        if view_box is None:
+            return
         view_range = view_box.viewRange()
         view_box.setRange(xRange=(0.0, view_range[0][1]))
 
@@ -997,18 +1050,23 @@ class Analyzer(QDialog, Ui_Analyzer):
             view_box = item.getViewBox()
         else:
             return
-        if item.data_label == "efo":
+        if view_box is None:
+            return
+        if item.data_label == "efo" and self.state.efo_range is not None:
             view_box.setRange(xRange=(self.state.efo_range[0], self.state.efo_range[1]))
             self.efo_range = self.state.efo_range
-        elif item.data_label == "cfr":
+        elif item.data_label == "cfr" and self.state.cfr_range is not None:
             view_box.setRange(xRange=(self.state.cfr_range[0], self.state.cfr_range[1]))
             self.cfr_range = self.state.cfr_range
-        elif item.data_label == "tr_len":
+        elif item.data_label == "tr_len" and self.state.tr_len_range is not None:
             view_box.setRange(
                 xRange=(self.state.tr_len_range[0], self.state.tr_len_range[1])
             )
             self.tr_len_range = self.state.tr_len_range
-        elif item.data_label in ["sx", "sy", "sz"]:
+        elif (
+            item.data_label in ["sx", "sy", "sz"]
+            and self.state.loc_precision_range is not None
+        ):
             view_box.setRange(
                 xRange=(
                     self.state.loc_precision_range[0],
@@ -1025,6 +1083,10 @@ class Analyzer(QDialog, Ui_Analyzer):
         elif isinstance(item, AxisItem):
             view_box = item.getViewBox()
         else:
+            return
+        if view_box is None:
+            return
+        if not hasattr(view_box, "data_label"):
             return
         plot_id = view_box.data_label
         if plot_id == "efo":
@@ -1052,9 +1114,16 @@ class Analyzer(QDialog, Ui_Analyzer):
             value = f"{min(region)}"
         low_thresh_label.textItem.setPlainText(value)
 
-    @Slot(None, name="roi_changes_finished")
+    @Slot()
     def roi_changes_finished(self):
         """Called when the ROIChanges dialog has accepted the changes."""
+
+        if (
+            self.efo_region is None
+            or self.cfr_region is None
+            or self.tr_len_region is None
+        ):
+            return
 
         # Signal blocker on self.efo_plot, self.cfr_plot and self.tr_len_plot
         cfr_plot_blocker = QSignalBlocker(self.cfr_plot)
@@ -1111,6 +1180,9 @@ class Analyzer(QDialog, Ui_Analyzer):
     def change_efo_bounds(self):
         """Update the efo bounds on the histogram (without broadcasting any events)."""
 
+        if self.efo_region is None:
+            return
+
         # Signal blocker on self.efo_plot
         efo_plot_blocker = QSignalBlocker(self.efo_plot)
 
@@ -1125,6 +1197,9 @@ class Analyzer(QDialog, Ui_Analyzer):
 
     def change_cfr_bounds(self):
         """Update the cfr bounds on the histogram (without broadcasting any events)."""
+
+        if self.cfr_region is None:
+            return
 
         # Signal blocker on self.efo_plot
         cfr_plot_blocker = QSignalBlocker(self.cfr_plot)

@@ -20,11 +20,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import mode
 
-from pyminflux.analysis import (
-    calculate_time_steps,
-    calculate_total_distance_traveled,
-    calculate_trace_time,
-)
+from pyminflux.analysis import calculate_total_distance_traveled, calculate_trace_time
 from pyminflux.reader import MinFluxReader
 
 
@@ -95,6 +91,9 @@ class MinFluxProcessor:
 
     def _init_selected_rows_dict(self):
         """Initialize the selected rows array."""
+        if self.full_dataframe is None:
+            return
+
         # How many fluorophores do we have?
         self._selected_rows_dict = {
             1: pd.Series(
@@ -181,7 +180,9 @@ class MinFluxProcessor:
     @property
     def num_fluorophores(self) -> int:
         """Return the number of fluorophores."""
-        return len(np.unique(self.full_dataframe["fluo"].values))
+        if self.full_dataframe is None:
+            return 0
+        return len(np.unique(self.full_dataframe["fluo"].to_numpy()))
 
     @property
     def filtered_numpy_array_all(self):
@@ -190,6 +191,9 @@ class MinFluxProcessor:
         # Copy the raw NumPy array
         raw_array = self.reader.valid_raw_data
         if raw_array is None:
+            return None
+
+        if self.full_dataframe is None or self._selected_rows_dict is None:
             return None
 
         # Append the fluorophore ID data
@@ -248,7 +252,7 @@ class MinFluxProcessor:
         filtered_dataframe_all: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
-        if self.full_dataframe is None:
+        if self.full_dataframe is None or self._selected_rows_dict is None:
             return None
 
         # Extract combination of fluorophore 1 and 2 filtered dataframes
@@ -274,6 +278,8 @@ class MinFluxProcessor:
             df = self.full_dataframe.loc[
                 self.full_dataframe["fluo"] == self.current_fluorophore_id
             ]
+            if self._selected_rows_dict is None:
+                return None
             return df.loc[self._selected_rows_dict[self.current_fluorophore_id]]
 
     @property
@@ -330,6 +336,12 @@ class MinFluxProcessor:
             "sz",
             "ez",
             "fluo",
+        ]
+
+    @classmethod
+    def trace_stats_with_tracking_properties(cls):
+        """Return the columns of the filtered_dataframe_stats with tracking columns."""
+        return MinFluxProcessor.trace_stats_properties() + [
             "tim_tot",
             "avg_speed",
             "total_dist",
@@ -372,7 +384,12 @@ class MinFluxProcessor:
             If the acquisition is 2D, it will be ignored in any case.
         """
 
-        if self.full_dataframe is None:
+        if (
+            self.full_dataframe is None
+            or self._selected_rows_dict is None
+            or self.reader._data_df is None
+            or self.reader._valid_entries is None
+        ):
             return
 
         # Make sure to work with NumPy arrays
@@ -392,10 +409,12 @@ class MinFluxProcessor:
             mask = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
 
         # Make sure that the lengths match
-        assert np.sum(mask.values) == len(x), "Unexpected number of elements in x."
-        assert np.sum(mask.values) == len(y), "Unexpected number of elements in y."
+        assert np.sum(mask.to_numpy()) == len(x), "Unexpected number of elements in x."
+        assert np.sum(mask.to_numpy()) == len(y), "Unexpected number of elements in y."
         if z is not None and self.is_3d:
-            assert np.sum(mask.values) == len(z), "Unexpected number of elements in z."
+            assert np.sum(mask.to_numpy()) == len(
+                z
+            ), "Unexpected number of elements in z."
 
         # Re-assign the data at the reader level
         self.reader._data_df.loc[mask, "x"] = x
@@ -430,6 +449,8 @@ class MinFluxProcessor:
 
     def set_fluorophore_ids(self, fluorophore_ids: np.ndarray[int]):
         """Assign the fluorophore IDs."""
+        if self.full_dataframe is None:
+            return
         if len(fluorophore_ids) != len(self.full_dataframe.index):
             raise ValueError(
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
@@ -503,14 +524,17 @@ class MinFluxProcessor:
             x_max, x_min = x_min, x_max
 
         if from_weighted_locs:
+            if self._weighted_localizations is None:
+                return None
             return self._weighted_localizations.loc[
                 (self._weighted_localizations[x_prop] >= x_min)
                 & (self._weighted_localizations[x_prop] < x_max)
             ]
         else:
             # Work with currently selected rows
+            if self.filtered_dataframe is None:
+                return None
             df = self.filtered_dataframe
-
             return df.loc[(df[x_prop] >= x_min) & (df[x_prop] < x_max)]
 
     def select_by_2d_range(
@@ -559,6 +583,8 @@ class MinFluxProcessor:
             y_max, y_min = y_min, y_max
 
         if from_weighted_locs:
+            if self._weighted_localizations is None:
+                return None
             return self._weighted_localizations.loc[
                 (self._weighted_localizations[x_prop] >= x_min)
                 & (self._weighted_localizations[x_prop] < x_max)
@@ -567,8 +593,9 @@ class MinFluxProcessor:
             ]
         else:
             # Work with currently selected rows
+            if self.filtered_dataframe is None:
+                return None
             df = self.filtered_dataframe
-
             return df.loc[
                 (df[x_prop] >= x_min)
                 & (df[x_prop] < x_max)
@@ -798,7 +825,7 @@ class MinFluxProcessor:
                 (self.filtered_dataframe_stats[x_prop_stats] >= x_min)
                 & (self.filtered_dataframe_stats[x_prop_stats] <= x_max)
             )
-        ]["tid"].values
+        ]["tid"].to_numpy()
 
         # Rows of the filtered dataframe to keep
         rows_to_keep = self.filtered_dataframe["tid"].isin(tids_to_keep)
@@ -832,7 +859,7 @@ class MinFluxProcessor:
         df = self.filtered_dataframe
 
         # Calculate the statistics
-        df_tid = self.calculate_statistics_on(df)
+        df_tid = self.calculate_statistics_on(df, self.reader.is_tracking)
 
         # Store the results
         self._filtered_stats_dataframe = df_tid
@@ -841,7 +868,9 @@ class MinFluxProcessor:
         self._stats_to_be_recomputed = False
 
     @staticmethod
-    def calculate_statistics_on(df: pd.DataFrame) -> pd.DataFrame:
+    def calculate_statistics_on(
+        df: pd.DataFrame, is_tracking: bool = False
+    ) -> pd.DataFrame:
         """Calculate per-trace statistics for the selected dataframe.
 
         Parameters
@@ -856,29 +885,41 @@ class MinFluxProcessor:
             Per-trace statistics calculated on the passed DataFrame selection (view).
         """
 
+        # Prepare a dataframe with the statistics
+        if is_tracking:
+            df_tid = pd.DataFrame(
+                columns=MinFluxProcessor.trace_stats_with_tracking_properties()
+            )
+        else:
+            df_tid = pd.DataFrame(columns=MinFluxProcessor.trace_stats_properties())
+
         # Calculate some statistics per TID on the passed dataframe
         df_grouped = df.groupby("tid")
 
-        tid = df_grouped["tid"].first().values
-        n = df_grouped["tid"].count().values
-        mx = df_grouped["x"].mean().values
-        my = df_grouped["y"].mean().values
-        mz = df_grouped["z"].mean().values
-        sx = df_grouped["x"].std().values
-        sy = df_grouped["y"].std().values
-        sz = df_grouped["z"].std().values
+        # Base statistics
+        tid = df_grouped["tid"].first().to_numpy()
+        n = df_grouped["tid"].count().to_numpy()
+        mx = df_grouped["x"].mean().to_numpy()
+        my = df_grouped["y"].mean().to_numpy()
+        mz = df_grouped["z"].mean().to_numpy()
+        sx = df_grouped["x"].std().to_numpy()
+        sy = df_grouped["y"].std().to_numpy()
+        sz = df_grouped["z"].std().to_numpy()
         tmp = np.power(sx, 2) + np.power(sy, 2)
         sxy = np.sqrt(tmp)
         rms_xy = np.sqrt(tmp / 2)
         exy = sxy / np.sqrt(n)
         ez = sz / np.sqrt(n)
-        fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
-        tot_tim, _, _ = calculate_trace_time(df)
-        total_distance, _, _ = calculate_total_distance_traveled(df)
-        speeds = total_distance["displacement"].values / tot_tim["tim_tot"].values
+        fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).to_numpy()
 
-        # Prepare a dataframe with the statistics
-        df_tid = pd.DataFrame(columns=MinFluxProcessor.trace_stats_properties())
+        # Optional tracking statistics
+        if is_tracking:
+            tot_tim, _, _ = calculate_trace_time(df)
+            total_distance, _, _ = calculate_total_distance_traveled(df)
+            speeds = (
+                total_distance["displacement"].to_numpy()
+                / tot_tim["tim_tot"].to_numpy()
+            )
 
         # Store trace stats
         df_tid["tid"] = tid  # Trace ID
@@ -894,11 +935,12 @@ class MinFluxProcessor:
         df_tid["sz"] = sz  # z localization precision
         df_tid["ez"] = ez  # Standard error of ez
         df_tid["fluo"] = fluo  # Assigned fluorophore ID
-        df_tid["tim_tot"] = tot_tim["tim_tot"].values  # Total time per trace
-        df_tid["avg_speed"] = speeds  # Average speed per trace
-        df_tid["total_dist"] = total_distance[
-            "displacement"
-        ].values  # Total travelled distance per trace
+        if is_tracking:
+            df_tid["tim_tot"] = tot_tim["tim_tot"].to_numpy()  # Total time per trace
+            df_tid["avg_speed"] = speeds  # Average speed per trace
+            df_tid["total_dist"] = total_distance[
+                "displacement"
+            ].to_numpy()  # Total travelled distance per trace
 
         # ["sx", "sy", "sxy", "rms_xy", "exy", "sz", "ez"] columns will contain
         # np.nan if n == 1: we replace them with 0.0.
@@ -913,60 +955,63 @@ class MinFluxProcessor:
     def _calculate_weighted_positions(self):
         """Calculate per-trace localization weighted by relative photon count."""
 
-        # Make sure we have processed dataframe to work on
-        if self.full_dataframe is None:
+        if self.filtered_dataframe is None:
             return
 
-        # Only recompute weighted localizations if needed
         if not self._weighted_localizations_to_be_recomputed:
             return
 
-        # Work with currently selected rows
-        df = self.filtered_dataframe
+        # Work with a copy of a subset of current filtered dataframe
+        df = self.filtered_dataframe[["tid", "eco", "x", "y", "z", "fluo"]].copy()
 
-        # Normal or weighted averaging?
         if self._use_weighted_localizations:
-            # Calculate weighing factors for TIDs
-            df = df.assign(
-                eco_rel=df["eco"].groupby(df["tid"]).transform(lambda x: x / x.sum())
-            )
+            # Calculate weights for each coordinate based on 'eco'
+            total_eco_per_tid = df.groupby("tid")["eco"].transform("sum")
+            eco_rel = df["eco"] / total_eco_per_tid
 
-            # Calculate relative contributions of (x, y, z)_i for each TID
-            df["x_rel"] = df["x"] * df["eco_rel"]
-            df["y_rel"] = df["y"] * df["eco_rel"]
-            df["z_rel"] = df["z"] * df["eco_rel"]
+            # Calculate weighted positions
+            df.loc[:, "x_rel"] = df["x"] * eco_rel
+            df.loc[:, "y_rel"] = df["y"] * eco_rel
+            df.loc[:, "z_rel"] = df["z"] * eco_rel
 
-            # Calculate the weighted localizations
+            # Summing up the relative contributions
             df_grouped = df.groupby("tid")
-            tid = df_grouped["tid"].first().values
-            x_w = df_grouped["x_rel"].sum().values
-            y_w = df_grouped["y_rel"].sum().values
-            z_w = df_grouped["z_rel"].sum().values
-            fluo = (
-                df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
-            )  # Return the most frequent fluo ID
+            x_w = df_grouped["x_rel"].sum()
+            y_w = df_grouped["y_rel"].sum()
+            z_w = df_grouped["z_rel"].sum()
+
+            # Return the most frequent fluo ID: traces should be homogeneous with respect
+            # to their fluorophore assignment, but we search anyway for safety.
+            fluo_mode = df_grouped["fluo"].agg(
+                lambda x: x.mode()[0] if not x.empty else np.nan
+            )
 
         else:
             # Calculate simple average of localizations by TID
-            df_grouped = df.groupby(df["tid"])
-            tid = df_grouped["tid"].first().values
-            x_w = df_grouped["x"].mean().values
-            y_w = df_grouped["y"].mean().values
-            z_w = df_grouped["z"].mean().values
-            fluo = (
-                df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).values
-            )  # Return the most frequent fluo ID
+            df_grouped = df.groupby("tid")
+            x_w = df_grouped["x"].mean()
+            y_w = df_grouped["y"].mean()
+            z_w = df_grouped["z"].mean()
+
+            # Return the most frequent fluo ID: traces should be homogeneous with respect
+            # to their fluorophore assignment, but we search anyway for safety.
+            fluo_mode = df_grouped["fluo"].agg(
+                lambda x: x.mode()[0] if not x.empty else np.nan
+            )
 
         # Prepare a dataframe with the weighted localizations
-        df_loc = pd.DataFrame(columns=["tid", "x", "y", "z", "fluo"])
-        df_loc["tid"] = tid
-        df_loc["x"] = x_w
-        df_loc["y"] = y_w
-        df_loc["z"] = z_w
-        df_loc["fluo"] = fluo
+        df_loc = pd.DataFrame(
+            {
+                "tid": x_w.index,
+                "x": x_w.to_numpy(),
+                "y": y_w.to_numpy(),
+                "z": z_w.to_numpy(),
+                "fluo": fluo_mode.to_numpy(),
+            }
+        )
 
-        # Store the results
+        # Update the weighted localization dataframe
         self._weighted_localizations = df_loc
 
-        # Make sure to flag the derived data to be recomputed
+        # Flag the results as up-to-date
         self._weighted_localizations_to_be_recomputed = False

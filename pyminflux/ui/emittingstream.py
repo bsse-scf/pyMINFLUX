@@ -23,10 +23,10 @@ class EmittingStream(QObject):
     Redirect standard output and error to be displayed by a QWidget.
     """
 
-    signal_textWritten = Signal(str, name="signal_textWritten")
+    signal_text_written = Signal(str)
 
     def write(self, text):
-        self.signal_textWritten.emit(str(text))
+        self.signal_text_written.emit(str(text))
 
     def flush(self):
         sys.stdout = sys.__stdout__

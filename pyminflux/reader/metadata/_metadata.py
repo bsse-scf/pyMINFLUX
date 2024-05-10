@@ -33,22 +33,24 @@ class NativeMetadata:
 
     Version 2.0
     -----------
-        time_thresholds: Union[None, tuple[float, float]]
-        tr_len_thresholds: Union[None, tuple[int, int]]
+        pool_dcr: bool
         dwell_time: float
         is_tracking: bool
         scale_bar_size: float
+        time_thresholds: Union[None, tuple[float, float]]
+        tr_len_thresholds: Union[None, tuple[int, int]]
         (+ version 1.0)
 
     Version 1.0
     -----------
-        z_scaling_factor: float
-        min_trace_length: int
-        efo_thresholds: tuple[int, int]
         cfr_thresholds: tuple[float, float]
+        efo_thresholds: tuple[int, int]
+        min_trace_length: int
         num_fluorophores: int
+        z_scaling_factor: float
     """
 
+    pool_dcr: bool
     cfr_thresholds: Union[None, tuple[float, float]]
     dwell_time: float
     efo_thresholds: Union[None, tuple[int, int]]

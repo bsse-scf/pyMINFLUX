@@ -11,6 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -36,11 +38,20 @@ def export_plot_interactive(item, parent=None):
     else:
         return
 
+    # Get the State
+    state = State()
+
+    # Default to the input data path
+    if state.last_selected_path is not None:
+        save_path = str(state.last_selected_path)
+    else:
+        save_path = str(Path(".").absolute())
+
     # Ask the user to pick a file name
     filename, ext = QFileDialog.getSaveFileName(
         parent,
-        "Export filtered data",
-        ".",
+        "Export current plot",
+        save_path,
         "PNG images (*.png)",
     )
 
@@ -52,11 +63,66 @@ def export_plot_interactive(item, parent=None):
     if not filename.lower().endswith(".png"):
         filename += ".png"
 
-    # Get the dpi from the State
-    state = State()
-
     # Save the scene to file
     export_to_image(view_box, filename, dpi=state.plot_export_dpi)
+
+
+def export_all_plots_interactive(items: dict, parent=None):
+    """Save the content of the current scene to a PNG image."""
+
+    if len(items) == 0:
+        return
+
+    # Get the State
+    state = State()
+
+    # Default to the input data path
+    if state.last_selected_path is not None:
+        save_path = str(state.last_selected_path)
+    else:
+        save_path = str(Path(".").absolute())
+
+    # Ask the user to pick a file name
+    filename, ext = QFileDialog.getSaveFileName(
+        parent,
+        "Set plots common name",
+        save_path,
+        "PNG images (*.png)",
+    )
+
+    # Did the user cancel?
+    if filename == "":
+        return
+
+    # Turn filename into a Path object
+    filename = Path(filename)
+
+    # Test if any of the output file names already exists
+    timestamp = ""
+    for name, item in items.items():
+        # Build the filename
+        test_filename = filename.parent / f"{filename.stem}_{name}.png"
+        if test_filename.exists():
+            timestamp = "_" + datetime.fromtimestamp(time.time()).strftime(
+                "%Y%m%d_%H%M%S"
+            )
+            break
+
+    for name, item in items.items():
+        if isinstance(item, ViewBox):
+            view_box = item
+        elif isinstance(item, AxisItem):
+            view_box = item.getViewBox()
+        elif isinstance(item, pg.PlotItem):
+            view_box = item.getViewBox()
+        else:
+            return
+
+        # Build the filename
+        out_filename = str(filename.parent / f"{filename.stem}_{name}{timestamp}.png")
+
+        # Save the scene to file
+        export_to_image(view_box, out_filename, dpi=state.plot_export_dpi)
 
 
 def export_to_image(item: pg.ViewBox, out_file_name: Union[Path, str], dpi: int = 600):
@@ -227,7 +293,9 @@ def create_brushes_by(
 
 
 def update_brushes_by_(
-    identifiers: np.ndarray, id_to_brush: dict[tuple[int, Any], Any]
+    identifiers: np.ndarray,
+    id_to_brush: dict[tuple[int, Any], Any],
+    color_scheme: Optional[str] = None,
 ) -> tuple[list[Any], dict[tuple[int, Any], Any]]:
     """Updated the QBrush instances to be used in a ScatterPlotItem my mapping
     an (updated) list to identifier to the dictionary of cached unique ID to QBrush
@@ -242,6 +310,15 @@ def update_brushes_by_(
     id_to_brush: dict[tuple[int, Any], Any]
         Cached map of unique ID to QBrush associations. This map is returned
         by `pyminflux.ui.helpers.create_brushes_by()`.
+
+    color_scheme: Optional[str] = None
+        Pre-defined color scheme for the QBrush creation. The color scheme
+        presupposes a fixed number of unique identifiers (as for instance,
+        when the spots are labeled by fluorophore ID (either, 1 or 2).
+        Currently supported color schemes:
+
+        "blue-red": two-color scheme := [[ 0, 0, 255], [255, 0, 0]]
+        "green-magenta": two-color scheme := [[ 0, 255, 0], [255, 0, 255]]
 
     Returns
     -------
@@ -258,7 +335,9 @@ def update_brushes_by_(
     if not np.isin(np.unique(identifiers), np.array(list(id_to_brush.keys()))).all():
         # Recreate the brushes
         # @TODO: Just recreate the missing ones
-        brushes_for_ids, id_to_brush = create_brushes_by(identifiers)
+        brushes_for_ids, id_to_brush = create_brushes_by(
+            identifiers, color_scheme=color_scheme
+        )
     else:
         # Update the mapping from each identifier in the full array to its corresponding QBrush for fast lookup
         brushes_for_ids = [id_to_brush[identifier] for identifier in identifiers]

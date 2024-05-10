@@ -37,7 +37,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     """
 
     # Signal that the fluorophore IDs have been assigned
-    fluorophore_ids_assigned = Signal(int, name="fluorophore_ids_assigned")
+    fluorophore_ids_assigned = Signal(int)
 
     def __init__(self, processor: MinFluxProcessor):
         # Call the base class
@@ -95,7 +95,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.pbPreview.clicked.connect(self.preview_manual_assignment)
         self.ui.pbManualAssign.clicked.connect(self.assign_fluorophores_ids)
 
-    @Slot(str, name="persist_dcr_bin_size")
+    @Slot(str)
     def persist_dcr_bin_size(self, text):
         try:
             dcr_bin_size = float(text)
@@ -103,13 +103,13 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             return
         self.state.dcr_bin_size = dcr_bin_size
 
-    @Slot(str, name="persist_num_fluorophores")
+    @Slot(str)
     def persist_num_fluorophores(self, text):
         num_fluorophores = self.ui.cbNumFluorophores.currentIndex() + 1
         self.state.num_fluorophores = num_fluorophores
         self.ui.pbAssign.setEnabled(False)
 
-    @Slot(str, name="persist_dcr_manual_threshold")
+    @Slot(str)
     def persist_dcr_manual_threshold(self, text):
         try:
             dcr_manual_threshold = float(text)
@@ -117,7 +117,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             return
         self.state.dcr_manual_threshold = float(dcr_manual_threshold)
 
-    @Slot(None, name="plot_dcr_histogram")
+    @Slot()
     def plot_dcr_histogram(self):
         """Plot the dcr histogram. This is always performed assuming all data belongs to one fluorophore."""
 
@@ -128,13 +128,13 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         if self.state.dcr_bin_size == 0:
             # Calculate the dcr histogram
             n_dcr, dcr_bin_edges, dcr_bin_centers, dcr_bin_width = prepare_histogram(
-                self.processor.full_dataframe["dcr"].values,
+                self.processor.full_dataframe["dcr"].to_numpy(),
                 auto_bins=True,
             )
         else:
             # Calculate the dcr histogram
             n_dcr, dcr_bin_edges, dcr_bin_centers, dcr_bin_width = prepare_histogram(
-                self.processor.full_dataframe["dcr"].values,
+                self.processor.full_dataframe["dcr"].to_numpy(),
                 auto_bins=False,
                 bin_size=self.state.dcr_bin_size,
             )
@@ -170,12 +170,15 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.histogram_raise_context_menu
         )
 
-    @Slot(None, name="preview_manual_assignment")
+    @Slot()
     def preview_manual_assignment(self):
         """Preview the manual assignment."""
 
+        if self.processor is None or self.processor.full_dataframe is None:
+            return
+
         # Get the data
-        dcr = self.processor.full_dataframe["dcr"].values
+        dcr = self.processor.full_dataframe["dcr"].to_numpy()
         if len(dcr) == 0:
             return
 
@@ -236,12 +239,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Make sure to enable the assign button
         self.ui.pbManualAssign.setEnabled(True)
 
-    @Slot(None, name="detect_fluorophores")
+    @Slot()
     def detect_fluorophores(self):
         """Detect fluorophores."""
 
         # Get the data
-        dcr = self.processor.full_dataframe["dcr"].values
+        dcr = self.processor.full_dataframe["dcr"].to_numpy()
         if len(dcr) == 0:
             return
 
@@ -265,7 +268,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         bar_width = 0.9 / self.state.num_fluorophores
         offset = self.dcr_bin_width / self.state.num_fluorophores
 
-        # Keep track of the total number of values for histogrm normalization
+        # Keep track of the total number of values for histogram normalization
         n_values = len(dcr)
 
         # Create new histograms
@@ -296,7 +299,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Make sure to enable the assign button
         self.ui.pbAssign.setEnabled(True)
 
-    @Slot(None, name="assign_fluorophores_ids")
+    @Slot()
     def assign_fluorophores_ids(self):
         """Assign the fluorophores ids."""
 

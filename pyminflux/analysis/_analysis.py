@@ -52,15 +52,15 @@ def calculate_time_steps(df: pd.DataFrame, unit_factor: float = 1e3):
     """
 
     # Work on a shallow copy
-    df_copy = df.copy()
+    df_copy = df[["tid", "tim"]].copy()
 
     # Calculate time differences and apply unit factor
-    df_copy["tim_diff"] = df_copy.groupby("tid")["tim"].diff() * unit_factor
+    df_copy.loc[:, "tim_diff"] = df_copy.groupby("tid")["tim"].diff() * unit_factor
 
     # Calculate the median and the mad
-    med = np.nanmedian(df_copy["tim_diff"].values)
+    med = np.nanmedian(df_copy["tim_diff"].to_numpy())
     mad = stats.median_abs_deviation(
-        df_copy["tim_diff"].values, scale=0.67449, nan_policy="omit"
+        df_copy["tim_diff"].to_numpy(), scale=0.67449, nan_policy="omit"
     )
 
     return df_copy[["tid", "tim_diff"]], med, mad
@@ -101,9 +101,9 @@ def calculate_trace_time(df: pd.DataFrame, unit_factor: float = 1e3):
     tim_tot = tim_diff.groupby("tid")["tim_diff"].sum().reset_index(name="tim_tot")
 
     # Calculate median and mad per trace
-    med_tot = np.nanmedian(tim_tot["tim_tot"].values)
+    med_tot = np.nanmedian(tim_tot["tim_tot"].to_numpy())
     mad_tot = stats.median_abs_deviation(
-        tim_tot["tim_tot"].values, scale=0.67449, nan_policy="omit"
+        tim_tot["tim_tot"].to_numpy(), scale=0.67449, nan_policy="omit"
     )
 
     return tim_tot, med_tot, mad_tot
@@ -137,29 +137,29 @@ def calculate_displacements(df: pd.DataFrame, is_3d: Optional[bool] = None):
 
     # Determine if 3D calculations are needed
     if is_3d is None:
-        is_3d = np.any(df["z"] != 0)
+        is_3d = bool(np.any(df["z"] != 0))
 
-    def calculate_displacements(group):
-        """Calculate displacements per tid."""
-        diffs = group[["x", "y", "z"]].diff() if is_3d else group[["x", "y"]].diff()
-        group["displacement"] = np.sqrt(np.sum(diffs.values**2, axis=1))
-        return group
+    # Selecting columns based on whether the data is 3D
+    cols = ["tid", "x", "y", "z"] if is_3d else ["tid", "x", "y"]
+    df_subset = df[cols].copy()
+
+    # Calculate translations per tid
+    diffs = df_subset.groupby("tid").diff()
 
     # Calculate displacements per tid
-    displacements = df.groupby("tid").apply(calculate_displacements)
-    displacements.reset_index(drop=True, inplace=True)
+    df_subset.loc[:, "displacement"] = np.linalg.norm(diffs.to_numpy(), axis=1)
 
     # Do we have data?
-    if len(displacements.index) == 0 or "displacement" not in displacements.columns:
-        displacements["displacement"] = []
-    med = float(np.nanmedian(displacements["displacement"].values))
+    if len(df_subset.index) == 0 or "displacement" not in df_subset.columns:
+        df_subset["displacement"] = []
+    med = float(np.nanmedian(df_subset["displacement"].to_numpy()))
     mad = float(
         stats.median_abs_deviation(
-            displacements["displacement"].values, scale=0.67449, nan_policy="omit"
+            df_subset["displacement"].to_numpy(), scale=0.67449, nan_policy="omit"
         )
     )
 
-    return displacements[["tid", "displacement"]], med, mad
+    return df_subset[["tid", "displacement"]], med, mad
 
 
 def calculate_total_distance_traveled(df: pd.DataFrame, is_3d: Optional[bool] = None):
@@ -195,10 +195,10 @@ def calculate_total_distance_traveled(df: pd.DataFrame, is_3d: Optional[bool] = 
     total_distance = displacements.groupby("tid")["displacement"].sum().reset_index()
 
     # Calculate median and mad of the total distance
-    med = float(np.nanmedian(total_distance["displacement"].values))
+    med = float(np.nanmedian(total_distance["displacement"].to_numpy()))
     mad = float(
         stats.median_abs_deviation(
-            total_distance["displacement"].values, scale=0.67449, nan_policy="omit"
+            total_distance["displacement"].to_numpy(), scale=0.67449, nan_policy="omit"
         )
     )
 

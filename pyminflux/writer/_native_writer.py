@@ -81,6 +81,9 @@ class PyMinFluxNativeWriter:
     def _store_dataframe(self, group):
         """Write the Pandas DataFrame in a way that it can be reloaded without external dependencies."""
 
+        if self.processor.filtered_dataframe is None:
+            return
+
         dataset = group.create_dataset(
             "dataframe",
             data=self.processor.filtered_dataframe.to_numpy(),
@@ -138,3 +141,4 @@ class PyMinFluxNativeWriter:
         # HDF5 does not have a native boolean type, so we save as int8 and convert it
         # back to boolean on read.
         group.create_dataset("is_tracking", data=np.int8(self.state.is_tracking))
+        group.create_dataset("pool_dcr", data=np.int8(self.state.pool_dcr))

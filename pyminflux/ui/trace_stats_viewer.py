@@ -32,7 +32,7 @@ class TraceStatsViewer(QDialog, Ui_TraceStatsViewer):
     A QDialog to display trace statistics.
     """
 
-    export_trace_stats_requested = Signal(None, name="export_trace_stats_requested")
+    export_trace_stats_requested = Signal()
 
     def __init__(self, processor: MinFluxProcessor):
         # Call the base class
@@ -65,7 +65,7 @@ class TraceStatsViewer(QDialog, Ui_TraceStatsViewer):
         # Show the data
         self.trace_dataviewer.show()
 
-    @Slot(None, name="update")
+    @Slot()
     def update(self):
         """Update the viewer."""
         if self.processor is None:

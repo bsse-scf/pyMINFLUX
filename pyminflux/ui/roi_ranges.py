@@ -23,7 +23,7 @@ from .ui_roi_ranges import Ui_ROIRanges
 
 class ROIRanges(QDialog, Ui_ROIRanges):
     # Signal that the data viewers should be updated
-    data_ranges_changed = Signal(None, name="data_ranges_changed")
+    data_ranges_changed = Signal()
 
     def __init__(self, parent=None):
         """Constructor."""

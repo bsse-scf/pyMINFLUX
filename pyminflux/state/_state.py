@@ -14,6 +14,7 @@
 #
 
 from enum import IntEnum
+from pathlib import Path
 from typing import Union
 
 from ..base import Singleton
@@ -38,6 +39,7 @@ class State(metaclass=Singleton):
         "applied_efo_thresholds",
         "applied_time_thresholds",
         "applied_tr_len_thresholds",
+        "pool_dcr",
         "cfr_range",
         "cfr_threshold_factor",
         "cfr_thresholds",
@@ -56,6 +58,7 @@ class State(metaclass=Singleton):
         "frc_num_repeats",
         "frc_temporal_resolution",
         "is_tracking",
+        "last_selected_path",
         "loc_precision_range",
         "min_trace_length",
         "num_fluorophores",
@@ -133,11 +136,14 @@ class State(metaclass=Singleton):
         self.dcr_bin_size: float = 0.0
         self.dcr_manual_threshold: float = 0.0
 
+        # Pool DCR (weighted by ECO)
+        self.pool_dcr = False
+
         # Z scaling factor
         self.z_scaling_factor: float = 0.7
 
         # Resolution for exporting plots as images
-        self.plot_export_dpi: int = 600
+        self.plot_export_dpi: int = 300
 
         # FRC analysis
         self.frc_lateral_resolution: float = 4.0
@@ -157,6 +163,9 @@ class State(metaclass=Singleton):
         # Scale bar size in um
         self.scale_bar_size: float = 500.0
 
+        # Last selected path
+        self.last_selected_path: Union[None, Path] = None
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -164,6 +173,7 @@ class State(metaclass=Singleton):
             "applied_efo_thresholds": self.applied_efo_thresholds,
             "applied_time_thresholds": self.applied_time_thresholds,
             "applied_tr_len_thresholds": self.applied_tr_len_thresholds,
+            "pool_dcr": self.pool_dcr,
             "cfr_range": self.cfr_range,
             "cfr_threshold_factor": self.cfr_threshold_factor,
             "cfr_thresholds": self.cfr_thresholds,
@@ -182,6 +192,7 @@ class State(metaclass=Singleton):
             "frc_num_repeats": self.frc_num_repeats,
             "frc_temporal_resolution": self.frc_temporal_resolution,
             "is_tracking": self.is_tracking,
+            "last_selected_path": self.last_selected_path,
             "loc_precision_range": self.loc_precision_range,
             "min_trace_length": self.min_trace_length,
             "num_fluorophores": self.num_fluorophores,
@@ -218,6 +229,7 @@ class State(metaclass=Singleton):
         self.applied_efo_thresholds = None
         self.applied_time_thresholds = None
         self.applied_tr_len_thresholds = None
+        self.pool_dcr = False
         self.cfr_range = None
         self.cfr_threshold_factor = 2.0
         self.cfr_thresholds = None
@@ -236,6 +248,7 @@ class State(metaclass=Singleton):
         self.frc_num_repeats = 5
         self.frc_temporal_resolution = 1800.0
         self.is_tracking = False
+        self.last_selected_path = None
         self.loc_precision_range = None
         self.min_trace_length = 1
         self.num_fluorophores = 1
@@ -257,6 +270,7 @@ class State(metaclass=Singleton):
         self.applied_cfr_thresholds = metadata.cfr_thresholds
         self.applied_efo_thresholds = metadata.efo_thresholds
         self.applied_tr_len_thresholds = metadata.tr_len_thresholds
+        self.pool_dcr = metadata.pool_dcr
         self.cfr_thresholds = metadata.cfr_thresholds
         self.dwell_time = metadata.dwell_time
         self.efo_thresholds = metadata.efo_thresholds

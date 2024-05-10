@@ -13,7 +13,7 @@
 #  limitations under the License.
 #
 
-VERSION=0.4.0
+VERSION=0.4.1
 PYTHON_VERSION=3.11
 
 if [[ -z "$ANACONDA_HOME" ]]; then
@@ -46,7 +46,7 @@ pyinstaller pyminflux/main.py \
 --icon pyminflux/ui/assets/Logo_v3.icns \
 --name pyMINFLUX \
 --target-architecture=arm64 \
---osx-bundle-identifier 'ch.ethz.pyminflux' \
+--osx-bundle-identifier='ch.ethz.pyminflux' \
 --noconfirm
 
 
