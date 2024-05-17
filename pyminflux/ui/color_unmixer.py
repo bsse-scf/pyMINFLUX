@@ -161,7 +161,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             brush=self.brush,
         )
         self.plot_widget.setMouseEnabled(x=False, y=False)
-        self.plot_widget.setXRange(self.dcr_bin_centers[0], self.dcr_bin_centers[-1])
+        self.plot_widget.setXRange(0.0, 1.0)
         self.plot_widget.setYRange(0.0, self.n_dcr_max)
         self.plot_widget.setLabel("bottom", "Complete dataset")
         self.plot_widget.setMenuEnabled(False)
