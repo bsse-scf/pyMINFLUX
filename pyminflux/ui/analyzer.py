@@ -920,22 +920,30 @@ class Analyzer(QDialog, Ui_Analyzer):
 
         if ev.button() == Qt.MouseButton.RightButton:
             menu = QMenu()
+
             reset_action = QAction("Reset default axis range")
             reset_action.triggered.connect(
                 lambda checked: self.reset_default_axis_range(ev.currentItem)
             )
             menu.addAction(reset_action)
+
             shift_action = QAction("Move x axis origin to 0")
             shift_action.triggered.connect(
                 lambda checked: self.shift_x_axis_origin_to_zero(ev.currentItem)
             )
             menu.addAction(shift_action)
             menu.addSeparator()
+
             export_action = QAction("Export plot")
             export_action.triggered.connect(
                 lambda checked: export_plot_interactive(ev.currentItem)
             )
             menu.addAction(export_action)
+
+            export_all_action = QAction("Export all plots")
+            export_all_action.triggered.connect(self.collect_and_export_all_plots)
+            menu.addAction(export_all_action)
+
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
             ev.accept()
