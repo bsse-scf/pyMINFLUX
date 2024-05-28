@@ -275,12 +275,16 @@ class MinFluxProcessor:
         if self.current_fluorophore_id == 0:
             return self._filtered_dataframe_all()
         else:
-            df = self.full_dataframe.loc[
+            # Use .loc to filter the dataframe in a single step
+            filtered_df = self.full_dataframe.loc[
                 self.full_dataframe["fluo"] == self.current_fluorophore_id
             ]
             if self._selected_rows_dict is None:
                 return None
-            return df.loc[self._selected_rows_dict[self.current_fluorophore_id]]
+            selected_indices = self._selected_rows_dict.get(
+                self.current_fluorophore_id, []
+            )
+            return filtered_df.loc[selected_indices]
 
     @property
     def filtered_dataframe_stats(self) -> Union[None, pd.DataFrame]:
