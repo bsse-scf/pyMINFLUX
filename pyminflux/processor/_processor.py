@@ -129,6 +129,9 @@ class MinFluxProcessor:
             )
         self._min_trace_length = value
 
+        # Run the global filters
+        self._apply_global_filters()
+
     @property
     def is_3d(self) -> bool:
         """Return True if the acquisition is 3D.
