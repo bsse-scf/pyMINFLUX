@@ -455,7 +455,27 @@ class MinFluxProcessor:
         self._weighted_localizations_to_be_recomputed = True
 
     def set_fluorophore_ids(self, fluorophore_ids: np.ndarray[int]):
-        """Assign the fluorophore IDs."""
+        """Assign the fluorophore IDs to current filtered dataset."""
+        if self.filtered_dataframe is None:
+            return
+        if len(fluorophore_ids) != len(self.filtered_dataframe.index):
+            raise ValueError(
+                "The number of fluorophore IDs does not match the number of entries in the dataframe."
+            )
+
+        # Extract combination of fluorophore 1 and 2 filtered dataframes
+        mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
+        mask_2 = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
+        mask = mask_1 | mask_2
+        self.full_dataframe.loc[mask, "fluo"] = fluorophore_ids
+        self.full_dataframe.loc[~mask, "fluo"] = 0
+
+        # Apply global filters
+        self._init_selected_rows_dict()
+        self._apply_global_filters()
+
+    def set_full_fluorophore_ids(self, fluorophore_ids: np.ndarray[int]):
+        """Assign the fluorophore IDs to the original, full dataframe ignoring current filters."""
         if self.full_dataframe is None:
             return
         if len(fluorophore_ids) != len(self.full_dataframe.index):
@@ -463,6 +483,8 @@ class MinFluxProcessor:
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
         self.full_dataframe["fluo"] = fluorophore_ids
+
+        # Apply global filters
         self._init_selected_rows_dict()
         self._apply_global_filters()
 

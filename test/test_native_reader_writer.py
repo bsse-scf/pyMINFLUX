@@ -142,7 +142,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
     # Assign fluorophores
     np.random.seed(42)
     fluo = np.random.randint(1, 3, len(processor.filtered_dataframe.index))
-    processor.set_fluorophore_ids(fluo)
+    processor.set_full_fluorophore_ids(fluo)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
 
@@ -298,7 +298,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
     # Assign fluorophores
     np.random.seed(42)
     fluo = np.random.randint(1, 3, len(processor.full_dataframe.index))
-    processor.set_fluorophore_ids(fluo)
+    processor.set_full_fluorophore_ids(fluo)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
 

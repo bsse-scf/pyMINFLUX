@@ -425,7 +425,7 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     assert np.all(extracted_tids == expected_tids), "Unexpected set of filtered TIDs."
 
     # Assign the test fluorophore ids
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set the fluorophore id to 1
     processor.current_fluorophore_id = 1
@@ -606,7 +606,7 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     assert processor.current_fluorophore_id == 0, "Default fluorophore must be 0."
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Make sure that rows for both fluorophores are returned
     # Make sure that rows for both fluorophores are returned
@@ -737,7 +737,7 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     processor.current_fluorophore_id = 2
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Get statistics
     stats = processor.filtered_dataframe_stats
@@ -803,7 +803,7 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     assert processor.current_fluorophore_id == 0, "Default fluorophore must be 0."
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # We filter with a range that only contains traces of fluorophore 2:
     # this should return 4 rows (for the four TIDs from fluorophore 2)
@@ -841,7 +841,7 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     assert processor.current_fluorophore_id == 0, "Default fluorophore must be 0."
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 2
     processor.current_fluorophore_id = 2
@@ -986,7 +986,7 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     assert len(df.index) == 35, "Unexpected total number of entries in the dataframe."
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Make sure that rows for fluorophores are returned
     df = processor.filtered_dataframe
@@ -1100,13 +1100,13 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     assert processor.current_fluorophore_id == 0, "Default fluorophore must be 0."
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 2
     processor.current_fluorophore_id = 2
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Get statistics
     stats = processor.filtered_dataframe_stats
@@ -1168,7 +1168,7 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -1187,7 +1187,7 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 2
     processor.current_fluorophore_id = 2
@@ -1212,7 +1212,7 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -1231,7 +1231,7 @@ def test_select_by_fluorophore_id_with_mock_reader(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 2
     processor.current_fluorophore_id = 2
@@ -1265,7 +1265,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -1310,7 +1310,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -1359,7 +1359,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -1402,7 +1402,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -1449,7 +1449,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -1492,7 +1492,7 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -1543,7 +1543,7 @@ def test_extract_filtered_fluorophore_ids():
     ), "Unexpected number of entries."
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Check that we have the default fluorophore (0)
     assert processor.current_fluorophore_id == 0, "Default fluorophore ID must be 0."
@@ -1610,7 +1610,7 @@ def test_extract_filtered_fluorophore_ids():
     processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Check that there are 35 entries
     assert (
@@ -1730,7 +1730,7 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
     ), "Unexpected number of entries."
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     #
     # Switch through fluorophore IDs to check that the number of returned items is correct.
@@ -1779,7 +1779,7 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
     ), "Unexpected number of entries."
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     #
     # Switch through fluorophore IDs to check that the number of returned items is correct.
@@ -1829,7 +1829,7 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     ), "Unexpected number of entries."
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Check that we have the default fluorophore (0)
     assert processor.current_fluorophore_id == 0, "Default fluorophore ID must be 0."
@@ -1911,7 +1911,7 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     ), "Unexpected number of entries."
 
     # Reassign the fluorophore IDs
-    processor.set_fluorophore_ids(reader.test_fluorophore_ids)
+    processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Check that we have the default fluorophore (0)
     assert processor.current_fluorophore_id == 0, "Default fluorophore ID must be 0."

@@ -758,7 +758,16 @@ def assign_data_to_clusters(
 
 
 def reassign_fluo_ids_by_majority_vote(fluo_ids: np.ndarray, tids: np.ndarray):
-    """Reassign IDs of fluorophores by majority so that TIDs have only one fluorophore ID assigned."""
+    """Reassign IDs of fluorophores by majority so that TIDs have only one fluorophore ID assigned.
+
+    Parameters
+    ----------
+    fluo_ids: np.ndarray
+        Array of fluorophores IDs.
+
+    tids : np.ndarray
+        Array of trace IDs.
+    """
 
     # Work on a copy of fluo_ids
     work_fluo_ids = fluo_ids.copy()
@@ -774,7 +783,7 @@ def reassign_fluo_ids_by_majority_vote(fluo_ids: np.ndarray, tids: np.ndarray):
     # Reassign by majority vote
     for i, s in enumerate(split_fluo_ids):
         if not np.all(s == s[0]):
-            # Only process tids that have more than one fluo_id associated to them
+            # Only process TIDs that have more than one fluo_id associated to them
             majority_class = np.argmax(np.bincount(s))
             split_fluo_ids[i][:] = majority_class
 

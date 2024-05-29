@@ -122,22 +122,32 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         """Plot the dcr histogram. This is always performed assuming all data belongs to one fluorophore."""
 
         # Do we have something to plot?
-        if self.processor is None or self.processor.full_dataframe is None:
+        if self.processor is None or self.processor.filtered_dataframe is None:
             return
 
+        # Keep track of current fluorophore ID
+        current_fluo_id = self.processor.current_fluorophore_id
+
+        # Make sure to work on all (filtered) colors
+        self.processor.current_fluorophore_id = 0
+
+        # Retrieve the filtered data
         if self.state.dcr_bin_size == 0:
             # Calculate the dcr histogram
             n_dcr, dcr_bin_edges, dcr_bin_centers, dcr_bin_width = prepare_histogram(
-                self.processor.full_dataframe["dcr"].to_numpy(),
+                self.processor.filtered_dataframe["dcr"].to_numpy(),
                 auto_bins=True,
             )
         else:
             # Calculate the dcr histogram
             n_dcr, dcr_bin_edges, dcr_bin_centers, dcr_bin_width = prepare_histogram(
-                self.processor.full_dataframe["dcr"].to_numpy(),
+                self.processor.filtered_dataframe["dcr"].to_numpy(),
                 auto_bins=False,
                 bin_size=self.state.dcr_bin_size,
             )
+
+        # Restore the previous fluorophore ID
+        self.processor.current_fluorophore_id = current_fluo_id
 
         # Remember the global histogram range and step
         self.n_dcr_max = n_dcr.max()
@@ -163,7 +173,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.plot_widget.setMouseEnabled(x=False, y=False)
         self.plot_widget.setXRange(0.0, 1.0)
         self.plot_widget.setYRange(0.0, self.n_dcr_max)
-        self.plot_widget.setLabel("bottom", "Complete dataset")
+        self.plot_widget.setLabel("bottom", "Filtered dataset")
         self.plot_widget.setMenuEnabled(False)
         self.plot_widget.addItem(chart)
         self.plot_widget.scene().sigMouseClicked.connect(
@@ -174,13 +184,22 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     def preview_manual_assignment(self):
         """Preview the manual assignment."""
 
-        if self.processor is None or self.processor.full_dataframe is None:
+        if self.processor is None or self.processor.filtered_dataframe is None:
             return
 
+        # Keep track of current fluorophore ID
+        current_fluo_id = self.processor.current_fluorophore_id
+
+        # Make sure to work on all (filtered) colors
+        self.processor.current_fluorophore_id = 0
+
         # Get the data
-        dcr = self.processor.full_dataframe["dcr"].to_numpy()
+        dcr = self.processor.filtered_dataframe["dcr"].to_numpy()
         if len(dcr) == 0:
             return
+
+        # Restore the previous fluorophore ID
+        self.processor.current_fluorophore_id = current_fluo_id
 
         # Get the threshold
         threshold = float(self.ui.leManualThreshold.text())
@@ -197,7 +216,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Reassign fluorophore IDs majority vote if necessary
         if self.state.num_fluorophores > 1:
             fluo_ids = reassign_fluo_ids_by_majority_vote(
-                fluo_ids, self.processor.full_dataframe["tid"]
+                fluo_ids, self.processor.filtered_dataframe["tid"]
             )
 
         # It one or more charts already exists, remove them
@@ -243,10 +262,19 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     def detect_fluorophores(self):
         """Detect fluorophores."""
 
+        # Keep track of current fluorophore ID
+        current_fluo_id = self.processor.current_fluorophore_id
+
+        # Make sure to work on all (filtered) colors
+        self.processor.current_fluorophore_id = 0
+
         # Get the data
-        dcr = self.processor.full_dataframe["dcr"].to_numpy()
+        dcr = self.processor.filtered_dataframe["dcr"].to_numpy()
         if len(dcr) == 0:
             return
+
+        # Restore the previous fluorophore ID
+        self.processor.current_fluorophore_id = current_fluo_id
 
         # Fit the data to the requested number of clusters
         fluo_ids = assign_data_to_clusters(dcr, self.state.num_fluorophores, seed=42)
@@ -254,7 +282,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Reassign fluorophore IDs majority vote if necessary
         if self.state.num_fluorophores > 1:
             fluo_ids = reassign_fluo_ids_by_majority_vote(
-                fluo_ids, self.processor.full_dataframe["tid"]
+                fluo_ids, self.processor.filtered_dataframe["tid"]
             )
 
         # It one or more charts already exists, remove them
