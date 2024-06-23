@@ -196,7 +196,7 @@ def create_empty_data_array(n_entries: int, n_iters: int) -> np.ndarray:
                 ("act", "?"),
                 ("dos", "<i4"),
                 ("sky", "<i4"),
-                ("fluo", "<i1"),
+                ("fluo", "<u1"),
             ]
         ),
     )
@@ -325,7 +325,7 @@ def migrate_npy_array(data_array) -> Union[np.ndarray, None]:
 
     # Make sure to initialize the "fluo" column
     if "fluo" not in data_array.dtype.names:
-        new_array["fluo"] = 0
+        new_array["fluo"] = np.uint8(0)
 
     # Return the migrated array
     return new_array

@@ -454,7 +454,7 @@ class MinFluxProcessor:
         self._stats_to_be_recomputed = True
         self._weighted_localizations_to_be_recomputed = True
 
-    def set_fluorophore_ids(self, fluorophore_ids: np.ndarray[int]):
+    def set_fluorophore_ids(self, fluorophore_ids: np.ndarray[np.uint8]):
         """Assign the fluorophore IDs to current filtered dataset."""
         if self.filtered_dataframe is None:
             return
@@ -467,8 +467,8 @@ class MinFluxProcessor:
         mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
         mask_2 = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
         mask = mask_1 | mask_2
-        self.full_dataframe.loc[mask, "fluo"] = fluorophore_ids
-        self.full_dataframe.loc[~mask, "fluo"] = 0
+        self.full_dataframe.loc[mask, "fluo"] = fluorophore_ids.astype(np.uint8)
+        self.full_dataframe.loc[~mask, "fluo"] = np.uint8(0)
 
         # Apply global filters
         self._init_selected_rows_dict()
@@ -482,7 +482,7 @@ class MinFluxProcessor:
             raise ValueError(
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
-        self.full_dataframe["fluo"] = fluorophore_ids
+        self.full_dataframe["fluo"] = fluorophore_ids.astype(np.uint8)
 
         # Apply global filters
         self._init_selected_rows_dict()
