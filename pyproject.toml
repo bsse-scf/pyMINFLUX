@@ -53,11 +53,11 @@ combine_as_imports = true
 known_third_party = ["PySide6", "h5py", "numpy", "pandas", "paraview", "pyqtgraph", "pytest", "requests", "scipy", "sklearn", "vtkmodules"]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.10,<3.13"
 numpy = "^1.23.4"
 pandas = "^2.2.0"
-pyarrow = "^15.0.0"
-pyside6 = ">=6.4.0.1"
+pyarrow = "^16.0.0"
+pyside6 = "^6.4.0.1"
 pyqtgraph = "^0.13.2"
 scipy = "^1.9.3"
 scikit-learn = "^1.2.0"
