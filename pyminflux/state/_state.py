@@ -13,18 +13,12 @@
 #   limitations under the License.
 #
 
-from enum import IntEnum
 from pathlib import Path
 from typing import Union
 
 from ..base import Singleton
 from ..reader.metadata import NativeMetadata
-
-
-class ColorCode(IntEnum):
-    NONE = 0
-    BY_TID = 1
-    BY_FLUO = 2
+from ..ui.colors import ColorCode
 
 
 class State(metaclass=Singleton):

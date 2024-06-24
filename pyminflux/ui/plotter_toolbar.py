@@ -17,7 +17,8 @@ from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
 from PySide6.QtWidgets import QWidget
 
 from ..reader import MinFluxReader
-from ..state import ColorCode, State
+from ..state import State
+from .colors import ColorCode
 from .ui_plotter_toolbar import Ui_PlotterToolbar
 
 

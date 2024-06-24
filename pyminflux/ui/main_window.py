@@ -42,6 +42,7 @@ from pyminflux.state import State
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
+from pyminflux.ui.colors import Colors
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.histogram_plotter import HistogramPlotter
@@ -110,6 +111,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.data_viewer = None
         self.analyzer = None
         self.plotter = None
+        self.plotter3d = None
         self.histogram_plotter = None
         self.color_unmixer = None
         self.time_inspector = None
@@ -128,6 +130,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.wizard_dock.setWidget(self.wizard)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.wizard_dock)
         self.mediator.register_dialog("wizard", self.wizard)
+
+        # Initialize colors
+        self.colors = Colors()
 
         # Initialize Plotter and DataViewer
         self.plotter = Plotter()
@@ -1246,6 +1251,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             x_param=self.state.x_param,
             y_param=self.state.y_param,
         )
+
+        # self.plotter3d.plot(dataframe[["x", "y", "z"]], tid, fid)
 
     def show_processed_dataframe(self, dataframe=None):
         """
