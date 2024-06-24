@@ -50,7 +50,7 @@ force_grid_wrap = 0
 use_parentheses = true
 line_length = 88
 combine_as_imports = true
-known_third_party = ["PySide6", "h5py", "numpy", "pandas", "paraview", "pyqtgraph", "pytest", "requests", "scipy", "sklearn", "vtkmodules"]
+known_third_party = ["PySide6", "h5py", "numpy", "pandas", "paraview", "pyqtgraph", "pytest", "requests", "scipy", "sklearn", "vispy", "vtkmodules"]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
