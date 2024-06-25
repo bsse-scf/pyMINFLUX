@@ -23,7 +23,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QInputDialog, QMenu
 
 from ..state import State
-from .colors import ColorCode, Colors
+from .colors import ColorCode, Colors, ColorsToBrushes
 from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
 
 
@@ -331,8 +331,7 @@ class Plotter(PlotWidget):
         """Plot localizations and other parameters in a 2D scatter plot."""
 
         # Get the colors singleton
-        colors = Colors()
-        brushes = colors.get_brushes(self.state.color_code, tid, fid)
+        brushes = ColorsToBrushes().get_brushes(self.state.color_code, tid, fid)
 
         # Create the scatter plot
         self.scatter_plot = pg.ScatterPlotItem(
