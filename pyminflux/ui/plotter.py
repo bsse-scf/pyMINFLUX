@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import time
 
 import numpy as np
 import pyqtgraph as pg
@@ -23,7 +22,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QInputDialog, QMenu
 
 from ..state import State
-from .colors import ColorCode, Colors, ColorsToBrushes
+from .colors import ColorCode, ColorsToBrushes
 from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
 
 
@@ -77,7 +76,7 @@ class Plotter(PlotWidget):
         self.scale_bar = None
 
     def enableAutoRange(self, enable: bool):
-        """Enable/disable axes autorange."""
+        """Enable/disable axes auto-range."""
         self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=enable)
 
     def mousePressEvent(self, ev):

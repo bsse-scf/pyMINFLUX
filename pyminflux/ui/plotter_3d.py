@@ -14,13 +14,12 @@
 #
 
 import numpy as np
-from PySide6.QtWidgets import QMenu, QVBoxLayout, QWidget
-from scipy.spatial import cKDTree
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 from vispy import scene
 from vispy.visuals import transforms
 
 from ..state import State
-from .colors import Colors
+from .colors import Colors, ColorsToRGB
 
 
 class Plotter3D(QWidget):
@@ -30,7 +29,7 @@ class Plotter3D(QWidget):
         self.canvas = scene.SceneCanvas(keys="interactive", show=True)
         self.layout.addWidget(self.canvas.native)
         self.view = self.canvas.central_widget.add_view()
-        self.view.camera = scene.cameras.ArcballCamera(fov=0, up="+z")
+        self.view.camera = scene.cameras.ArcballCamera(fov=0)
         self.scatter = scene.visuals.Markers()
         self.view.add(self.scatter)
 
@@ -40,7 +39,7 @@ class Plotter3D(QWidget):
         # Keep a reference to the singleton State class
         self.state = State()
 
-    def clear_plot(self):
+    def clear(self):
         """Remove the current scatter plot from the view."""
         # Remove the data
         self.scatter.set_data(None)
@@ -57,7 +56,7 @@ class Plotter3D(QWidget):
 
         # Remove the dots from the scatter plot
         if not self.scatter_is_empty:
-            self.clear_plot()
+            self.clear()
 
         # Reset the colors
         colors = Colors()
@@ -70,12 +69,12 @@ class Plotter3D(QWidget):
         positions = positions.to_numpy().astype(np.float32)
 
         # Get the colors singleton
-        colors = Colors()
-        rgb = colors.get_rgb(self.state.color_code, tid, fid)
+        rgb = ColorsToRGB().get_rgb(self.state.color_code, tid, fid)
 
         # Plot the data
         self.scatter.set_data(positions, face_color=rgb, size=5)
 
+        # Reset scene
         if self.scatter_is_empty:
             self._reset_camera_and_axes(positions)
 
@@ -84,16 +83,7 @@ class Plotter3D(QWidget):
 
     def contextMenuEvent(self, event):
         """Create and display a context menu."""
-        context_menu = QMenu(self)
-        reset_action = context_menu.addAction("Reset View")
-        clear_action = context_menu.addAction("Clear Plot")
-
-        action = context_menu.exec_(self.mapToGlobal(event.pos()))
-
-        if action == reset_action:
-            self.view.camera.reset()
-        elif action == clear_action:
-            self.clear_plot()
+        event.ignore()
 
     def _reset_camera_and_axes(self, positions: np.ndarray):
         """Initializes or resets camera position and orientation based on data.

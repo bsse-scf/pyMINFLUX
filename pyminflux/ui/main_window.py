@@ -50,6 +50,7 @@ from pyminflux.ui.importer import Importer
 from pyminflux.ui.mediator import Mediator
 from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
+from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
@@ -142,6 +143,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.data_viewer = DataViewer()
         self.mediator.register_dialog("data_viewer", self.data_viewer)
 
+        # Initialize Plotter3D
+        self.plotter3d = Plotter3D()
+        self.mediator.register_dialog("plotter3d", self.plotter3d)
+
         # Create the output console
         self.txt_console = QTextEdit()
         self.txt_console.setReadOnly(True)
@@ -153,9 +158,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Add them to the splitter
         self.ui.splitter_layout.addWidget(self.plotter)
+        self.ui.splitter_layout.addWidget(self.plotter3d)
         self.ui.splitter_layout.addWidget(self.plotter_toolbar)
         self.ui.splitter_layout.addWidget(self.data_viewer)
         self.ui.splitter_layout.addWidget(self.txt_console)
+        self.ui.splitter_layout.setStretchFactor(0, 1)
+        self.ui.splitter_layout.setStretchFactor(1, 1)
+        self.ui.splitter_layout.setStretchFactor(2, 0)
+        self.ui.splitter_layout.setStretchFactor(3, 0)
+        self.ui.splitter_layout.setStretchFactor(4, 0)
 
         # Make sure to only show the console if requested
         self.toggle_console_visibility()
@@ -327,10 +338,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter is None:
             raise Exception("Plotter object not ready!")
 
+        if self.plotter3d is None:
+            raise Exception("Plotter3D object not ready!")
+
         if self.data_viewer is None:
             raise Exception("DataViewer object not ready!")
 
-        self.plotter.show()  # Always show
+        # Always show one of the plotters
+        self.toggle_plotter()
+
         if enabled:
             self.plotter_toolbar.show()
             self.data_viewer.show()
@@ -358,10 +374,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter is None:
             raise Exception("Plotter object not ready!")
 
+        if self.plotter3d is None:
+            raise Exception("Plotter3D object not ready!")
+
         if self.data_viewer is None:
             raise Exception("DataViewer object not ready!")
 
         self.plotter.clear()
+        self.plotter3d.clear()
         self.plot_selected_parameters()
         self.data_viewer.clear()
         if self.processor is not None and self.processor.filtered_dataframe is not None:
@@ -446,6 +466,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Now exit
             event.accept()
+
+    @Slot()
+    def toggle_plotter(self):
+        """Enable the requested plotter."""
+        if self.state.plot_3d:
+            self.plotter.hide()
+            self.plotter3d.show()
+        else:
+            self.plotter3d.hide()
+            self.plotter.show()
 
     @Slot()
     def reset_filters_and_broadcast(self):
@@ -677,6 +707,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.plotter is None:
                 raise Exception("Plotter object not ready!")
             self.plotter.reset()
+
+            # Reset the plotter3D
+            if self.plotter3d is None:
+                raise Exception("Plotter3D object not ready!")
+            self.plotter3d.reset()
 
             # Reset the plotter toolbar
             if self.plotter_toolbar is None:
@@ -1204,8 +1239,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter is None:
             raise Exception("Plotter object not ready!")
 
-        # Remove the previous plots
-        self.plotter.remove_points()
+        if self.plotter3d is None:
+            raise Exception("Plotter3D object not ready!")
 
         # If there is nothing to plot, return here
         if (
@@ -1216,11 +1251,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             print("No data to process.")
             return
 
-        # If an only if the requested parameters are "x" and "y" (in any order),
-        # we consider the State.plot_average_localisations property.
-        if (self.state.x_param == "x" and self.state.y_param == "y") or (
-            self.state.x_param == "y" and self.state.y_param == "x"
-        ):
+        if self.state.plot_3d:
+
+            # Extract filtered (and optionally averaged) localizations
             if self.state.plot_average_localisations:
                 # Get the (potentially filtered) averaged dataframe
                 dataframe = self.processor.weighted_localizations
@@ -1228,31 +1261,57 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 # Get the (potentially filtered) full dataframe
                 dataframe = self.processor.filtered_dataframe
 
+            # Do we have data to plot
+            if dataframe is None:
+                return
+
+            # Extract identifiers
+            tid = dataframe["tid"].to_numpy()
+            fid = dataframe["fluo"].to_numpy()
+
+            # Plot localizations in 3D
+            self.plotter3d.plot(dataframe[["x", "y", "z"]], tid, fid)
+
         else:
-            # Get the (potentially filtered) full dataframe
-            dataframe = self.processor.filtered_dataframe
 
-        # Do we have data to plot
-        if dataframe is None:
-            return
+            # Remove the previous plots
+            self.plotter.remove_points()
 
-        # Extract values
-        x = dataframe[self.state.x_param].to_numpy()
-        y = dataframe[self.state.y_param].to_numpy()
-        tid = dataframe["tid"].to_numpy()
-        fid = dataframe["fluo"].to_numpy()
+            # If an only if the requested parameters are "x" and "y" (in any order),
+            # we consider the State.plot_average_localisations property.
+            if (self.state.x_param == "x" and self.state.y_param == "y") or (
+                self.state.x_param == "y" and self.state.y_param == "x"
+            ):
+                if self.state.plot_average_localisations:
+                    # Get the (potentially filtered) averaged dataframe
+                    dataframe = self.processor.weighted_localizations
+                else:
+                    # Get the (potentially filtered) full dataframe
+                    dataframe = self.processor.filtered_dataframe
 
-        # Always plot the (x, y) coordinates in the 2D plotter
-        self.plotter.plot_parameters(
-            tid=tid,
-            fid=fid,
-            x=x,
-            y=y,
-            x_param=self.state.x_param,
-            y_param=self.state.y_param,
-        )
+            else:
+                # Get the (potentially filtered) full dataframe
+                dataframe = self.processor.filtered_dataframe
 
-        # self.plotter3d.plot(dataframe[["x", "y", "z"]], tid, fid)
+            # Do we have data to plot
+            if dataframe is None:
+                return
+
+            # Extract values
+            x = dataframe[self.state.x_param].to_numpy()
+            y = dataframe[self.state.y_param].to_numpy()
+            tid = dataframe["tid"].to_numpy()
+            fid = dataframe["fluo"].to_numpy()
+
+            # Always plot the (x, y) coordinates in the 2D plotter
+            self.plotter.plot_parameters(
+                tid=tid,
+                fid=fid,
+                x=x,
+                y=y,
+                x_param=self.state.x_param,
+                y_param=self.state.y_param,
+            )
 
     def show_processed_dataframe(self, dataframe=None):
         """

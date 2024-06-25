@@ -23,9 +23,12 @@ from .ui_plotter_toolbar import Ui_PlotterToolbar
 
 
 class PlotterToolbar(QWidget, Ui_PlotterToolbar):
+
+    # Signals
     plot_requested_parameters = Signal()
     color_code_locs_changed = Signal(int)
     plot_average_positions_state_changed = Signal()
+    plotter_changed = Signal()
 
     def __init__(self):
         """Constructor."""
@@ -63,6 +66,11 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
             self.persist_color_code_and_broadcast
         )
 
+        # Set the state of the 3D checkbox
+        self.ui.cbPlot3D.setChecked(self.state.plot_3d)
+        self.update_ui()
+        self.ui.cbPlot3D.stateChanged.connect(self.persist_plot_3d_and_broadcast)
+
         # Set the state of the average checkbox
         self.ui.cbPlotAveragePos.setChecked(self.state.plot_average_localisations)
         self.ui.cbPlotAveragePos.stateChanged.connect(
@@ -71,12 +79,29 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
     @Slot(int)
     def persist_plot_average_localisations_and_broadcast(self, value):
-        """Persist the selection for plotting average positions."""
+        """Persist the selection for plotting average positions and broadcast the change."""
         if value == Qt.CheckState.Checked.value:
             self.state.plot_average_localisations = True
         else:
             self.state.plot_average_localisations = False
         self.plot_average_positions_state_changed.emit()
+
+    @Slot(int)
+    def persist_plot_3d_and_broadcast(self, value):
+        """Persist the selection for 2D vs. 3D plotting and update the UI."""
+        if value == Qt.CheckState.Checked.value:
+            self.state.plot_3d = True
+        else:
+            self.state.plot_3d = False
+        self.update_ui()
+        self.plotter_changed.emit()
+
+    def update_ui(self):
+        """Update UI elements as a function of the plotter type."""
+        self.ui.line.setVisible(not self.state.plot_3d)
+        self.ui.cbFirstParam.setVisible(not self.state.plot_3d)
+        self.ui.cbSecondParam.setVisible(not self.state.plot_3d)
+        self.ui.pbPlot.setVisible(not self.state.plot_3d)
 
     @Slot(int)
     def toggle_average_state(self, index):

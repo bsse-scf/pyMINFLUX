@@ -23,8 +23,8 @@ class Colors(metaclass=Singleton):
         """Constructor."""
         self._seed = seed
         self._fid_color_scheme = fid_color_scheme
-        self._white = np.array([255, 255, 255, 128], dtype=int)
-        self._white_float = self._white / 255.0
+        self._white = np.array([255, 255, 255, 127], dtype=int)
+        self._white_float = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)
         self._unique_tid = None
         self._unique_tid_colors = None
         self._unique_tid_colors_float = None
@@ -203,6 +203,7 @@ class ColorsToBrushes(metaclass=Singleton):
         # Update what needs to be updated
         if (
             Colors().unique_tid is None
+            or self._tid_to_brush_map is None
             or not np.isin(current_unique_tid, Colors().unique_tid).all()
         ):
 
