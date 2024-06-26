@@ -48,6 +48,10 @@ class Mediator:
         elif dialog_name == "plotter":
             self._setup_plotter_connections()
 
+        # Plotter3D
+        elif dialog_name == "plotter3d":
+            self._setup_plotter3d_connections()
+
         # Wizard
         elif dialog_name == "wizard":
             self._setup_wizard_connections()
@@ -226,6 +230,26 @@ class Mediator:
         )
         self.dialogs["plotter"].crop_region_selected.connect(
             self.dialogs["main_window"].crop_data_by_range
+        )
+
+    def _setup_plotter3d_connections(self):
+        """Set up the Plotter3D connections."""
+
+        if "plotter3d" not in self.dialogs:
+            raise Exception("The Plotter must always be registered in the Mediator.")
+
+        if "plotter_toolbar" not in self.dialogs:
+            raise Exception(
+                "The Plotter Toolbar must always be registered in the Mediator."
+            )
+
+        self.dialogs["plotter_toolbar"].plotter_changed.connect(
+            self.dialogs["main_window"].plot_selected_parameters
+        )
+
+        # Toggle the plotter after plotting
+        self.dialogs["plotter_toolbar"].plotter_changed.connect(
+            self.dialogs["main_window"].toggle_plotter
         )
 
     def _setup_plotter_toolbar_connections(self):

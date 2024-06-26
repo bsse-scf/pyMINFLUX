@@ -1,24 +1,9 @@
 # -*- coding: utf-8 -*-
 
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#   limitations under the License.
-#
-
 ################################################################################
 ## Form generated from reading UI file 'plotter_toolbar.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.7.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -74,7 +59,9 @@ class Ui_PlotterToolbar(object):
         if not PlotterToolbar.objectName():
             PlotterToolbar.setObjectName("PlotterToolbar")
         PlotterToolbar.resize(1077, 34)
-        sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy(
+            QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(PlotterToolbar.sizePolicy().hasHeightForWidth())
@@ -83,10 +70,15 @@ class Ui_PlotterToolbar(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.horizontalLayout.setContentsMargins(-1, 3, -1, 3)
         self.horizontalSpacer_2 = QSpacerItem(
-            10, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            10, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
         )
 
         self.horizontalLayout.addItem(self.horizontalSpacer_2)
+
+        self.cbPlot3D = QCheckBox(PlotterToolbar)
+        self.cbPlot3D.setObjectName("cbPlot3D")
+
+        self.horizontalLayout.addWidget(self.cbPlot3D)
 
         self.lbOptions = QLabel(PlotterToolbar)
         self.lbOptions.setObjectName("lbOptions")
@@ -108,8 +100,8 @@ class Ui_PlotterToolbar(object):
 
         self.line = QFrame(PlotterToolbar)
         self.line.setObjectName("line")
-        self.line.setFrameShape(QFrame.VLine)
-        self.line.setFrameShadow(QFrame.Sunken)
+        self.line.setFrameShape(QFrame.Shape.VLine)
+        self.line.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.horizontalLayout.addWidget(self.line)
 
@@ -137,7 +129,7 @@ class Ui_PlotterToolbar(object):
         self.horizontalLayout.addWidget(self.pbPlot)
 
         self.horizontalSpacer_4 = QSpacerItem(
-            10, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+            10, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
         )
 
         self.horizontalLayout.addItem(self.horizontalSpacer_4)
@@ -152,6 +144,7 @@ class Ui_PlotterToolbar(object):
         PlotterToolbar.setWindowTitle(
             QCoreApplication.translate("PlotterToolbar", "Form", None)
         )
+        self.cbPlot3D.setText(QCoreApplication.translate("PlotterToolbar", "3D", None))
         self.lbOptions.setText(
             QCoreApplication.translate("PlotterToolbar", "Options:", None)
         )

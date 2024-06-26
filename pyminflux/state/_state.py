@@ -13,18 +13,12 @@
 #   limitations under the License.
 #
 
-from enum import IntEnum
 from pathlib import Path
 from typing import Union
 
 from ..base import Singleton
 from ..reader.metadata import NativeMetadata
-
-
-class ColorCode(IntEnum):
-    NONE = 0
-    BY_TID = 1
-    BY_FLUO = 2
+from ..ui.colors import ColorCode
 
 
 class State(metaclass=Singleton):
@@ -63,6 +57,7 @@ class State(metaclass=Singleton):
         "min_trace_length",
         "num_fluorophores",
         "open_console_at_start",
+        "plot_3d",
         "plot_average_localisations",
         "plot_export_dpi",
         "scale_bar_size",
@@ -166,6 +161,9 @@ class State(metaclass=Singleton):
         # Last selected path
         self.last_selected_path: Union[None, Path] = None
 
+        # Toggle 3D plotter
+        self.plot_3d: bool = True
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -197,6 +195,7 @@ class State(metaclass=Singleton):
             "min_trace_length": self.min_trace_length,
             "num_fluorophores": self.num_fluorophores,
             "open_console_at_start": self.open_console_at_start,
+            "plot_3d": self.plot_3d,
             "plot_average_localisations": self.plot_average_localisations,
             "plot_export_dpi": self.plot_export_dpi,
             "scale_bar_size": self.scale_bar_size,
@@ -254,6 +253,7 @@ class State(metaclass=Singleton):
         self.num_fluorophores = 1
         self.open_console_at_start = False
         self.plot_average_localisations = False
+        self.plot_3d = True
         self.plot_export_dpi = 300
         self.scale_bar_size = 500.0
         self.time_thresholds = None

@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import time
 
 import numpy as np
 import pyqtgraph as pg
@@ -22,13 +21,9 @@ from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QInputDialog, QMenu
 
-from ..state import ColorCode, State
-from .helpers import (
-    BottomLeftAnchoredScaleBar,
-    create_brushes_by,
-    export_plot_interactive,
-    update_brushes_by_,
-)
+from ..state import State
+from .colors import ColorCode, ColorsToBrushes
+from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
 
 
 class Plotter(PlotWidget):
@@ -60,7 +55,7 @@ class Plotter(PlotWidget):
         self._id_to_brush = None
         self._fid_to_brush = None
 
-        # Keep a reference to the scatter_plot/line plot objects
+        # Keep a reference to the scatter plot/line plot objects
         self.scatter_plot = None
         self.line_plot = None
 
@@ -81,7 +76,7 @@ class Plotter(PlotWidget):
         self.scale_bar = None
 
     def enableAutoRange(self, enable: bool):
-        """Enable/disable axes autorange."""
+        """Enable/disable axes auto-range."""
         self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=enable)
 
     def mousePressEvent(self, ev):
@@ -332,29 +327,12 @@ class Plotter(PlotWidget):
         self.clear()
 
     def plot_parameters(self, x, y, x_param, y_param, tid, fid):
-        """Plot localizations and other parameters in a 2D scatter_plot plot."""
+        """Plot localizations and other parameters in a 2D scatter plot."""
 
-        # Color-code the data points
-        if self.state.color_code == ColorCode.NONE:
-            brushes = self.brush
-        elif self.state.color_code == ColorCode.BY_TID:
-            if self._id_to_brush is None:
-                brushes, self._id_to_brush = create_brushes_by(tid)
-            else:
-                brushes, self._id_to_brush = update_brushes_by_(tid, self._id_to_brush)
-        elif self.state.color_code == ColorCode.BY_FLUO:
-            if self._fid_to_brush is None:
-                brushes, self._fid_to_brush = create_brushes_by(
-                    fid, color_scheme="green-magenta"
-                )
-            else:
-                brushes, self._fid_to_brush = update_brushes_by_(
-                    fid, self._fid_to_brush, color_scheme="green-magenta"
-                )
-        else:
-            raise ValueError("Unexpected request for color-coding the localizations!")
+        # Get the colors singleton
+        brushes = ColorsToBrushes().get_brushes(self.state.color_code, tid, fid)
 
-        # Create the scatter_plot plot
+        # Create the scatter plot
         self.scatter_plot = pg.ScatterPlotItem(
             x=x,
             y=y,

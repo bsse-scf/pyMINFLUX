@@ -14,6 +14,7 @@
 #
 
 __doc__ = "State machine with all settings."
-__all__ = ["ColorCode", "State"]
+__all__ = ["State"]
 
-from ._state import ColorCode, State
+from ..ui.colors import ColorCode
+from ._state import State
