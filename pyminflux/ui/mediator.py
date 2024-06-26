@@ -247,11 +247,6 @@ class Mediator:
             self.dialogs["main_window"].plot_selected_parameters
         )
 
-        # Toggle the plotter after plotting
-        self.dialogs["plotter_toolbar"].plotter_changed.connect(
-            self.dialogs["main_window"].toggle_plotter
-        )
-
     def _setup_plotter_toolbar_connections(self):
         """Set up the Plotter Toolbar connections."""
 

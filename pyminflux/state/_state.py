@@ -162,7 +162,7 @@ class State(metaclass=Singleton):
         self.last_selected_path: Union[None, Path] = None
 
         # Toggle 3D plotter
-        self.plot_3d: bool = True
+        self.plot_3d: bool = False
 
     def asdict(self) -> dict:
         """Return class as dictionary."""
@@ -253,7 +253,7 @@ class State(metaclass=Singleton):
         self.num_fluorophores = 1
         self.open_console_at_start = False
         self.plot_average_localisations = False
-        self.plot_3d = True
+        self.plot_3d = False
         self.plot_export_dpi = 300
         self.scale_bar_size = 500.0
         self.time_thresholds = None

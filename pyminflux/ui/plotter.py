@@ -34,7 +34,7 @@ class Plotter(PlotWidget):
 
     def __init__(self):
         super().__init__()
-        self.setBackground("w")
+        self.setBackground("k")
         self.brush = pg.mkBrush(255, 255, 255, 128)
         self.pen = pg.mkPen(None)
         self.remove_points()
@@ -323,7 +323,7 @@ class Plotter(PlotWidget):
         self._fid_to_brush = None
 
     def remove_points(self):
-        self.setBackground("w")
+        self.setBackground("k")
         self.clear()
 
     def plot_parameters(self, x, y, x_param, y_param, tid, fid):

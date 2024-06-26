@@ -18,13 +18,15 @@ from PySide6.QtWidgets import QVBoxLayout, QWidget
 from vispy import scene
 from vispy.visuals import transforms
 
+from ..processor import MinFluxProcessor
 from ..state import State
-from .colors import Colors, ColorsToRGB, reset_all_colors
+from .colors import ColorsToRGB, reset_all_colors
 
 
 class Plotter3D(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.processor = None
         self.layout = QVBoxLayout(self)
         self.canvas = scene.SceneCanvas(keys="interactive", show=True)
         self.layout.addWidget(self.canvas.native)
@@ -38,6 +40,10 @@ class Plotter3D(QWidget):
 
         # Keep a reference to the singleton State class
         self.state = State()
+
+    def set_processor(self, processor: MinFluxProcessor):
+        """Set the processor."""
+        self.processor = processor
 
     def clear(self):
         """Remove the current scatter plot from the view."""
@@ -58,9 +64,6 @@ class Plotter3D(QWidget):
         if not self.scatter_is_empty:
             self.clear()
 
-        # Reset all colors
-        reset_all_colors()
-
     def plot(self, positions, tid, fid):
         """Plot localizations in a 3D scatter plot."""
 
@@ -70,8 +73,17 @@ class Plotter3D(QWidget):
         # Get the colors singleton
         rgb = ColorsToRGB().get_rgb(self.state.color_code, tid, fid)
 
+        # If the average locations are plotted, set the diameter to fit the worst localization precision
+        if self.state.plot_average_localisations:
+            sz = np.max(
+                self.processor.filtered_dataframe_stats[["sx", "sy", "sz"]].to_numpy(),
+                axis=1,
+            )
+        else:
+            sz = 5
+
         # Plot the data
-        self.scatter.set_data(positions, face_color=rgb, size=5)
+        self.scatter.set_data(positions, face_color=rgb, size=sz)
 
         # Reset scene
         if self.scatter_is_empty:

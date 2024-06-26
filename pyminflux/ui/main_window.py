@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QStackedWidget,
     QTextBrowser,
     QTextEdit,
     QVBoxLayout,
@@ -42,7 +43,7 @@ from pyminflux.state import State
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
-from pyminflux.ui.colors import Colors
+from pyminflux.ui.colors import Colors, reset_all_colors
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.histogram_plotter import HistogramPlotter
@@ -132,9 +133,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self.wizard_dock)
         self.mediator.register_dialog("wizard", self.wizard)
 
-        # Initialize colors
-        self.colors = Colors()
-
         # Initialize Plotter and DataViewer
         self.plotter = Plotter()
         self.mediator.register_dialog("plotter", self.plotter)
@@ -157,18 +155,20 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.mediator.register_dialog("txt_console", self.txt_console)
 
         # Add them to the splitter
-        self.ui.splitter_layout.addWidget(self.plotter)
-        self.ui.splitter_layout.addWidget(self.plotter3d)
+        self.stacked_widget = QStackedWidget()
+        self.ui.splitter_layout.addWidget(self.stacked_widget)
+        self.stacked_widget.addWidget(self.plotter)
+        self.stacked_widget.addWidget(self.plotter3d)
         self.ui.splitter_layout.addWidget(self.plotter_toolbar)
         self.ui.splitter_layout.addWidget(self.data_viewer)
         self.ui.splitter_layout.addWidget(self.txt_console)
         self.ui.splitter_layout.setStretchFactor(0, 1)
-        self.ui.splitter_layout.setStretchFactor(1, 1)
+        self.ui.splitter_layout.setStretchFactor(1, 0)
         self.ui.splitter_layout.setStretchFactor(2, 0)
         self.ui.splitter_layout.setStretchFactor(3, 0)
-        self.ui.splitter_layout.setStretchFactor(4, 0)
 
-        # Make sure to only show the console if requested
+        # Make sure to only show the console and the dataviewer if requested
+        self.toggle_dataviewer_visibility()
         self.toggle_console_visibility()
 
         # Set initial visibility and enabled states
@@ -349,11 +349,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         if enabled:
             self.plotter_toolbar.show()
-            self.data_viewer.show()
-            self.plotter_toolbar.show()
         else:
-            self.plotter_toolbar.hide()
-            self.data_viewer.hide()
             self.plotter_toolbar.hide()
         self.ui.actionSave.setEnabled(enabled)
         self.ui.actionExport_data.setEnabled(enabled)
@@ -471,11 +467,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def toggle_plotter(self):
         """Enable the requested plotter."""
         if self.state.plot_3d:
-            self.plotter.hide()
-            self.plotter3d.show()
+            self.stacked_widget.setCurrentIndex(1)
         else:
-            self.plotter3d.hide()
-            self.plotter.show()
+            self.stacked_widget.setCurrentIndex(0)
 
     @Slot()
     def reset_filters_and_broadcast(self):
@@ -703,6 +697,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
 
+            # Reset the color caches
+            reset_all_colors()
+
             # Reset the plotter
             if self.plotter is None:
                 raise Exception("Plotter object not ready!")
@@ -712,6 +709,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.plotter3d is None:
                 raise Exception("Plotter3D object not ready!")
             self.plotter3d.reset()
+
+            # Inject the Processor
+            self.plotter3d.set_processor(processor=self.processor)
 
             # Reset the plotter toolbar
             if self.plotter_toolbar is None:
@@ -1312,6 +1312,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 x_param=self.state.x_param,
                 y_param=self.state.y_param,
             )
+
+        # Bring the active plot forward
+        self.toggle_plotter()
 
     def show_processed_dataframe(self, dataframe=None):
         """

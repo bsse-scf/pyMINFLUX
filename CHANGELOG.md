@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. Detailed information can be found in the [git log](https://github.com/bsse-scf/pyMINFLUX/commits/master/).
 
+## [0.5.0] - TBD
+
+### New features
+
+* Add 3D scatter plot for localizations.
+* When trace mean localizations are plotted, make the plot size proportional to the localization precision.
+* Allow color unmixing on filtered dataset.
+
+### Bug fixes
+
+* Run global filters after updating the min trace length in the MinFluxProcessor.
+* Add "Export all plots" option to the context menu of the results histograms in the Analyzer.
+* Fix the x-axis limits in the Color Unmixer for the DCR histogram to (0.0, 1.0).
+
 ## [0.4.1] - 2024-05-10
 
 ### New features
