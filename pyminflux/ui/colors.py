@@ -8,6 +8,13 @@ from PySide6.QtGui import QBrush
 from pyminflux.base import Singleton
 
 
+def reset_all_colors():
+    """Reset all colors."""
+    Colors().reset()
+    ColorsToBrushes().reset()
+    ColorsToRGB().reset()
+
+
 class ColorCode(IntEnum):
     """Used to color-code dots in Plotter and Plotter3D."""
 
@@ -85,6 +92,7 @@ class Colors(metaclass=Singleton):
 
     def reset(self):
         """Reset the color caches: only the TID caches need to be reset."""
+        self._unique_tid = None
         self._unique_tid_colors = None
         self._unique_tid_colors_float = None
 
@@ -169,11 +177,15 @@ class ColorsToBrushes(metaclass=Singleton):
     def reset(self):
         """Reset the color caches."""
         self._tid_brushes = None
-        self._fid_brushes = None
         self._tid_to_brush_map = None
-        self._fid_to_brush_map = None
         self._last_tid = None
         self._last_fid = None
+
+        # Map each unique fid identifier to a unique QBrush
+        self._fid_to_brush_map = {
+            1: pg.mkBrush(Colors().unique_fid_colors[0]),
+            2: pg.mkBrush(Colors().unique_fid_colors[1]),
+        }
 
     def _get_or_create_brush_by_tid(self, tid: np.ndarray) -> list:
         """Create QBrush instances to be used in a ScatterPlotItem to prevent
@@ -339,9 +351,7 @@ class ColorsToRGB(metaclass=Singleton):
     def reset(self):
         """Reset the color caches."""
         self._tid_colors = None
-        self._fid_colors = None
         self._tid_to_color_map = None
-        self._fid_to_color_map = None
         self._last_tid = None
         self._last_fid = None
 

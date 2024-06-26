@@ -19,7 +19,7 @@ from vispy import scene
 from vispy.visuals import transforms
 
 from ..state import State
-from .colors import Colors, ColorsToRGB
+from .colors import Colors, ColorsToRGB, reset_all_colors
 
 
 class Plotter3D(QWidget):
@@ -58,9 +58,8 @@ class Plotter3D(QWidget):
         if not self.scatter_is_empty:
             self.clear()
 
-        # Reset the colors
-        colors = Colors()
-        colors.reset()
+        # Reset all colors
+        reset_all_colors()
 
     def plot(self, positions, tid, fid):
         """Plot localizations in a 3D scatter plot."""
