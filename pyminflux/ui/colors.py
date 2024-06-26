@@ -206,7 +206,6 @@ class ColorsToBrushes(metaclass=Singleton):
             or self._tid_to_brush_map is None
             or not np.isin(current_unique_tid, Colors().unique_tid).all()
         ):
-
             # Generate unique colors for each brush (and identifier)
             Colors().generate_tid_colors(tid)
 
@@ -368,24 +367,25 @@ class ColorsToRGB(metaclass=Singleton):
         # Update what needs to be updated
         if (
             Colors().unique_tid is None
+            or self._tid_to_color_map is None
             or not np.isin(current_unique_tid, Colors().unique_tid).all()
         ):
-
             # Generate unique colors for each brush (and identifier)
             Colors().generate_tid_colors(tid)
 
-        # Map each unique identifier to a unique RGB color
+            # Map each unique identifier to a unique RGB color
+            unique_tid_colors_float = Colors().unique_tid_colors_float
+            self._tid_to_color_map = {
+                uid: unique_tid_colors_float[i]
+                for i, uid in enumerate(current_unique_tid)
+            }
+
         if (
             self._last_tid is None
             or len(self._last_tid) != len(tid)
             or np.any(self._last_tid != tid)
         ):
-            unique_tid_colors_float = Colors().unique_tid_colors_float
             self._tid_colors = np.zeros((len(tid), 3), dtype=np.float32)
-            self._tid_to_color_map = {
-                tid: unique_tid_colors_float[i]
-                for i, tid in enumerate(current_unique_tid)
-            }
             for i, t in enumerate(tid):
                 self._tid_colors[i] = self._tid_to_color_map[t]
 
