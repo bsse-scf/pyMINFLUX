@@ -14,7 +14,7 @@
 #
 
 VERSION=0.5.0
-PYTHON_VERSION=3.11
+PYTHON_VERSION=3.12
 
 if [[ -z "$ANACONDA_HOME" ]]; then
     echo "Please set environment variable ANACONDA_HOME." 1>&2
@@ -34,6 +34,15 @@ python -m pip install nuitka ordered_set zstandard # patchelf  (Linux)
 # Install dependencies
 poetry install
 
+# Determine the path to the vispy glsl directory
+VISPY_GLSL_DIR=$(python -c "import vispy, os; print(os.path.join(os.path.dirname(vispy.__file__), 'glsl'))")
+
+# Check if the path was found
+if [ -z "$VISPY_GLSL_DIR" ]; then
+    echo "Could not determine vispy glsl directory"
+    exit 1
+fi
+
 # Delete build and dist folders
 rm -fR build
 rm -fR dist
@@ -42,7 +51,6 @@ rm -fR dist
 python -m nuitka pyminflux/main.py -o pyMINFLUX \
 --clang \
 --assume-yes-for-downloads \
---disable-console \
 --noinclude-default-mode=error \
 --standalone \
 --macos-create-app-bundle \
@@ -50,10 +58,12 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX \
 --macos-app-name="pyMINFLUX" \
 --macos-app-version=$VERSION \
 --macos-app-icon=pyminflux/ui/assets/Logo_v3.icns \
+--include-module=scipy.special._special_ufuncs \
+--include-module=vispy.app.backends._pyside6 \
+--include-data-dir="$VISPY_GLSL_DIR=vispy/glsl" \
 --enable-plugin=pylint-warnings \
 --enable-plugin=pyside6 \
 --noinclude-default-mode=nofollow \
---remove-output \
 --output-dir=./dist
 
 # Rename the bundle
