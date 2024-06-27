@@ -76,19 +76,19 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Fill the fields
         self.ui.leEFOLowerBound.setText("")
         self.ui.leEFOLowerBound.setValidator(
-            QDoubleValidator(bottom=-np.Inf, top=np.Inf, decimals=0)
+            QDoubleValidator(bottom=-np.inf, top=np.inf, decimals=0)
         )
         self.ui.leEFOUpperBound.setText("")
         self.ui.leEFOUpperBound.setValidator(
-            QDoubleValidator(bottom=-np.Inf, top=np.Inf, decimals=0)
+            QDoubleValidator(bottom=-np.inf, top=np.inf, decimals=0)
         )
         self.ui.leCFRLowerBound.setText("")
         self.ui.leCFRLowerBound.setValidator(
-            QDoubleValidator(bottom=-np.Inf, top=np.Inf, decimals=2)
+            QDoubleValidator(bottom=-np.inf, top=np.inf, decimals=2)
         )
         self.ui.leCFRUpperBound.setText("")
         self.ui.leCFRUpperBound.setValidator(
-            QDoubleValidator(bottom=-np.Inf, top=np.Inf, decimals=2)
+            QDoubleValidator(bottom=-np.inf, top=np.inf, decimals=2)
         )
 
         # Set up connections

@@ -100,7 +100,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         # EFO cutoff frequency tab
         self.ui.leEFOExpectedCutoff.setText(str(self.state.efo_expected_frequency))
         self.ui.leEFOExpectedCutoff.setValidator(
-            QDoubleValidator(bottom=0.0, top=np.Inf, decimals=2)
+            QDoubleValidator(bottom=0.0, top=np.inf, decimals=2)
         )
 
         # CFR filtering tab

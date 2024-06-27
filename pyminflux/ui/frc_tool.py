@@ -68,13 +68,13 @@ class FRCTool(QDialog, Ui_FRCTool):
         # Lateral (xy) resolution
         self.ui.leLateralResolution.setText(str(self.state.frc_lateral_resolution))
         self.ui.leNumRepeats.setValidator(
-            QDoubleValidator(bottom=0.0, top=np.Inf, decimals=2)
+            QDoubleValidator(bottom=0.0, top=np.inf, decimals=2)
         )
 
         # Temporal (s) resolution
         self.ui.leTemporalResolution.setText(str(self.state.frc_temporal_resolution))
         self.ui.leTemporalResolution.setValidator(
-            QDoubleValidator(bottom=0.0, top=np.Inf, decimals=1)
+            QDoubleValidator(bottom=0.0, top=np.inf, decimals=1)
         )
 
         # Endpoint estimation
