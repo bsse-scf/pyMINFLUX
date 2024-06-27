@@ -14,7 +14,7 @@
 #
 
 VERSION=0.5.0
-PYTHON_VERSION=3.11
+PYTHON_VERSION=3.12
 
 if [[ -z "$ANACONDA_HOME" ]]; then
     echo "Please set environment variable ANACONDA_HOME." 1>&2
@@ -31,23 +31,34 @@ conda activate pyminflux-build
 # Install nuitka
 python -m pip install nuitka ordered_set zstandard patchelf
 
+# Install static python lib
+conda install libpython-static -y
+
 # Install dependencies
 poetry install
+
+# Determine the path to the vispy glsl directory
+VISPY_GLSL_DIR=$(python -c "import vispy, os; print(os.path.join(os.path.dirname(vispy.__file__), 'glsl'))")
+
+# Check if the path was found
+if [ -z "$VISPY_GLSL_DIR" ]; then
+    echo "Could not determine vispy glsl directory"
+    exit 1
+fi
 
 # Delete build and dist folders
 rm -fR build
 rm -fR dist
 
-# Install static python lib
-conda install libpython-static -y
-
 # Build the executable
 python -m nuitka pyminflux/main.py -o pyMINFLUX \
 --assume-yes-for-downloads \
---disable-console \
 --noinclude-default-mode=error \
 --standalone \
 --onefile \
+--include-module=scipy.special._special_ufuncs \
+--include-module=vispy.app.backends._pyside6 \
+--include-data-dir="$VISPY_GLSL_DIR=vispy/glsl" \
 --linux-icon=pyminflux/ui/assets/Logo_v3.ico \
 --enable-plugin=pylint-warnings \
 --enable-plugin=pyside6 \
@@ -55,6 +66,8 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX \
 --file-version=$VERSION \
 --product-version=$VERSION \
 --remove-output \
+--follow-imports \
+--static-libpython=yes \
 --output-dir=./dist
 
 # Move into "pyMINFLUX" directory
