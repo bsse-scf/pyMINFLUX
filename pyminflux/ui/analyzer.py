@@ -1019,9 +1019,9 @@ class Analyzer(QDialog, Ui_Analyzer):
             .getViewBox(),
         }
         if self.processor.is_tracking or self.processor.is_3d:
-            items[
-                self.sz_plot.getPlotItem().getViewBox().data_label
-            ] = self.sz_plot.getPlotItem().getViewBox()
+            items[self.sz_plot.getPlotItem().getViewBox().data_label] = (
+                self.sz_plot.getPlotItem().getViewBox()
+            )
 
         export_all_plots_interactive(items)
 

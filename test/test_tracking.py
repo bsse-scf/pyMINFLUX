@@ -588,7 +588,11 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     )
 
     # Calculate the total distance traveled per tid
-    (total_distance, med, mad,) = calculate_total_distance_traveled(
+    (
+        total_distance,
+        med,
+        mad,
+    ) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
@@ -628,7 +632,11 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     )
 
     # Calculate the total distance traveled per tid
-    (total_distance, med, mad,) = calculate_total_distance_traveled(
+    (
+        total_distance,
+        med,
+        mad,
+    ) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
@@ -668,7 +676,11 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     )
 
     # Calculate the total distance traveled per tid
-    (total_distance, med, mad,) = calculate_total_distance_traveled(
+    (
+        total_distance,
+        med,
+        mad,
+    ) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
@@ -708,7 +720,11 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     )
 
     # Calculate the total distance traveled per tid
-    (total_distance, med, mad,) = calculate_total_distance_traveled(
+    (
+        total_distance,
+        med,
+        mad,
+    ) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
@@ -748,7 +764,11 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     )
 
     # Calculate the total distance traveled per tid
-    (total_distance, med, mad,) = calculate_total_distance_traveled(
+    (
+        total_distance,
+        med,
+        mad,
+    ) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 
@@ -788,7 +808,11 @@ def test_calculate_total_distance_traveled(extract_tracking_archives):
     )
 
     # Calculate the total distance traveled per tid
-    (total_distance, med, mad,) = calculate_total_distance_traveled(
+    (
+        total_distance,
+        med,
+        mad,
+    ) = calculate_total_distance_traveled(
         processor.filtered_dataframe, is_3d=processor.is_3d
     )
 

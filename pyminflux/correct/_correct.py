@@ -161,9 +161,7 @@ def drift_correction_time_windows_2d(
             d = d.flatten() - np.min(d)
             d = d / np.sum(d)
             for k in range(20):
-                wc = np.exp(
-                    -4 * np.log(2) * ((xc - gx) ** 2 + (yc - gy) ** 2) / CR**2
-                )
+                wc = np.exp(-4 * np.log(2) * ((xc - gx) ** 2 + (yc - gy) ** 2) / CR**2)
                 n = np.sum(wc * d)
                 xc = np.sum(gx * d * wc) / n
                 yc = np.sum(gy * d * wc) / n
