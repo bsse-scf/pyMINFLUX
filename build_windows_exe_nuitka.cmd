@@ -20,7 +20,7 @@ REM `python -m nuitka` call.
 setlocal
 
 SET VERSION=0.5.0
-SET PYTHON_VERSION=3.11
+SET PYTHON_VERSION=3.12
 
 IF "%ANACONDA_HOME%"=="" ECHO Please set environment variable ANACONDA_HOME. && exit /b
 
@@ -34,6 +34,15 @@ python -m pip install nuitka ordered_set zstandard
 REM Install dependencies
 poetry.exe install
 
+REM Determine the path to the vispy glsl directory
+for /f "delims=" %%i in ('python -c "import vispy, os; print(os.path.join(os.path.dirname(vispy.__file__), 'glsl'))"') do set VISPY_GLSL_DIR=%%i
+
+REM Check if the path was found
+if "%VISPY_GLSL_DIR%"=="" (
+    echo Could not determine vispy glsl directory
+    exit /b 1
+)
+
 REM Delete build and dist folders
 rmdir /s /q build
 rmdir /s /q dist
@@ -42,10 +51,13 @@ REM Build the executable
 python -m nuitka pyminflux/main.py -o pyMINFLUX ^
 --mingw64 ^
 --assume-yes-for-downloads ^
---disable-console ^
+--windows-console-mode=disable ^
 --noinclude-default-mode=error ^
 --standalone ^
 --onefile ^
+--include-module=scipy.special._special_ufuncs ^
+--include-module=vispy.app.backends._pyside6 ^
+--include-data-dir=%VISPY_GLSL_DIR%=vispy/glsl ^
 --windows-icon-from-ico=pyminflux\\ui\\assets\\Logo_v3.ico ^
 --enable-plugin=pylint-warnings ^
 --enable-plugin=pyside6 ^
