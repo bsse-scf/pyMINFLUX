@@ -12,6 +12,8 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+import vispy
+vispy.use("pyside6", "gl2")
 
 import numpy as np
 from PySide6.QtWidgets import QVBoxLayout, QWidget
@@ -28,12 +30,9 @@ class Plotter3D(QWidget):
         super().__init__(parent)
         self.processor = None
         self.layout = QVBoxLayout(self)
-        self.canvas = scene.SceneCanvas(keys="interactive", show=True)
-        self.layout.addWidget(self.canvas.native)
-        self.view = self.canvas.central_widget.add_view()
-        self.view.camera = scene.cameras.ArcballCamera(fov=0)
-        self.scatter = scene.visuals.Markers()
-        self.view.add(self.scatter)
+        self.canvas = None
+        self.view = None
+        self.scatter = None
 
         # Keep track of whether we have already plotted something
         self.scatter_is_empty = True
@@ -45,9 +44,22 @@ class Plotter3D(QWidget):
         """Set the processor."""
         self.processor = processor
 
+    def init_scene(self):
+        """Explicitly set up scene. In Windows, this is needed to first
+        allow the QApplication to properly start."""
+        self.canvas = scene.SceneCanvas(keys="interactive", show=False)
+        self.layout.addWidget(self.canvas.native)
+        self.view = self.canvas.central_widget.add_view()
+        self.view.camera = scene.cameras.ArcballCamera(fov=0)
+        self.scatter = scene.visuals.Markers()
+        self.view.add(self.scatter)
+
     def clear(self):
         """Remove the current scatter plot from the view."""
         # Remove the data
+        if self.scatter is None:
+            return
+
         self.scatter.set_data(None)
         self.scatter_is_empty = True
 
@@ -60,12 +72,19 @@ class Plotter3D(QWidget):
     def reset(self):
         """Reset the plotter."""
 
+        if self.scatter is None:
+            return
+
         # Remove the dots from the scatter plot
         if not self.scatter_is_empty:
             self.clear()
 
     def plot(self, positions, tid, fid):
         """Plot localizations in a 3D scatter plot."""
+
+        # Initialize scene if needed
+        if self.scatter is None:
+            self.init_scene()
 
         # Make sure to have the correct datatype
         positions = positions.to_numpy().astype(np.float32)
@@ -105,6 +124,9 @@ class Plotter3D(QWidget):
         positions: np.ndarray
             Nx3 NumPy array with coordinates [x, y, z].
         """
+
+        if self.scatter is None:
+            return
 
         # Get data range and center
         x_range = [positions[:, 0].min(), positions[:, 0].max()]
