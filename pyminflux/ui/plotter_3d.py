@@ -12,8 +12,8 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import vispy
-vispy.use("pyside6", "gl2")
+
+from PySide6.QtCore import Slot
 
 import numpy as np
 from PySide6.QtWidgets import QVBoxLayout, QWidget
@@ -28,11 +28,18 @@ from .colors import ColorsToRGB
 class Plotter3D(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # Initialize the reference to the processor
         self.processor = None
-        self.layout = QVBoxLayout(self)
+
+        # Initialize references to the graphical objects
         self.canvas = None
         self.view = None
         self.scatter = None
+
+        # Create the layout
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
 
         # Keep track of whether we have already plotted something
         self.scatter_is_empty = True
@@ -40,19 +47,38 @@ class Plotter3D(QWidget):
         # Keep a reference to the singleton State class
         self.state = State()
 
+    @Slot()
+    def on_show(self):
+        # Initialize the canvas only when the main window is shown
+        if self.canvas is None:
+            # Initialize the canvas
+            self.canvas = scene.SceneCanvas(
+                keys=None,
+                show=False,
+                app="pyside6",
+                create_native=True,
+                decorate=False,
+            )
+
+            # Add the native widget
+            self.layout.addWidget(self.canvas.native)
+
+            # Set up the view
+            self.view = self.canvas.central_widget.add_view()
+
+            # Create the camera
+            self.view.camera = scene.cameras.ArcballCamera(fov=0)
+
+            # Create and add the scatter plot
+            self.scatter = scene.visuals.Markers()
+            self.view.add(self.scatter)
+
+            # Show the canvas
+            self.canvas.show()
+
     def set_processor(self, processor: MinFluxProcessor):
         """Set the processor."""
         self.processor = processor
-
-    def init_scene(self):
-        """Explicitly set up scene. In Windows, this is needed to first
-        allow the QApplication to properly start."""
-        self.canvas = scene.SceneCanvas(keys="interactive", show=False)
-        self.layout.addWidget(self.canvas.native)
-        self.view = self.canvas.central_widget.add_view()
-        self.view.camera = scene.cameras.ArcballCamera(fov=0)
-        self.scatter = scene.visuals.Markers()
-        self.view.add(self.scatter)
 
     def clear(self):
         """Remove the current scatter plot from the view."""
@@ -82,10 +108,6 @@ class Plotter3D(QWidget):
     def plot(self, positions, tid, fid):
         """Plot localizations in a 3D scatter plot."""
 
-        # Initialize scene if needed
-        if self.scatter is None:
-            self.init_scene()
-
         # Make sure to have the correct datatype
         positions = positions.to_numpy().astype(np.float32)
 
@@ -110,6 +132,9 @@ class Plotter3D(QWidget):
 
         # Update the scatter_is_empty flag
         self.scatter_is_empty = False
+
+        # Show the canvas
+        self.canvas.show()
 
     def contextMenuEvent(self, event):
         """Create and display a context menu."""

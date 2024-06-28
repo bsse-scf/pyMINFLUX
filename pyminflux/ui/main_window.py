@@ -66,6 +66,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     Main application window.
     """
 
+    main_window_ready = Signal()
     request_sync_external_tools = Signal()
 
     def __init__(self, parent=None):
@@ -182,6 +183,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Check for updates
         self.auto_check_remote_for_updates()
+
+        # Initialize Plotter3D scene and view only when the main window
+        # has finished initializing
+        self.main_window_ready.connect(self.plotter3d.on_show)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.main_window_ready.emit()
 
     def load_and_apply_settings(self):
         """Read the application settings and update the State."""
