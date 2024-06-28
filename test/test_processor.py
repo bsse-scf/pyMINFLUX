@@ -22,7 +22,6 @@ import pytest
 
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
-from pyminflux.state import State
 
 
 class MockMinFluxReader:

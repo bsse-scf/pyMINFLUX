@@ -169,7 +169,7 @@ class MinFluxProcessor:
         """Set current fluorophore ID (0 for all)."""
 
         if fluorophore_id not in [0, 1, 2]:
-            raise ValueError(f"Only 1 or 2 are valid fluorophore IDs.")
+            raise ValueError("Only 1 or 2 are valid fluorophore IDs.")
 
         # Set the new fluorophore_id
         self._current_fluorophore_id = fluorophore_id

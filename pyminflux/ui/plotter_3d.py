@@ -20,7 +20,7 @@ from vispy.visuals import transforms
 
 from ..processor import MinFluxProcessor
 from ..state import State
-from .colors import ColorsToRGB, reset_all_colors
+from .colors import ColorsToRGB
 
 
 class Plotter3D(QWidget):

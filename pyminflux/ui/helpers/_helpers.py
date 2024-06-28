@@ -14,13 +14,13 @@
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Union
 
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import AxisItem, ViewBox
 from PySide6.QtCore import QPointF, QRect, QRectF
-from PySide6.QtGui import QBrush, QImage, QPainter, Qt
+from PySide6.QtGui import QImage, QPainter, Qt
 from PySide6.QtWidgets import QApplication, QFileDialog
 
 from pyminflux.analysis import get_robust_threshold

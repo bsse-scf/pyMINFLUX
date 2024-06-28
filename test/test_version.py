@@ -13,8 +13,6 @@
 #   limitations under the License.
 #
 
-import pytest
-
 import pyminflux
 from pyminflux.utils._utils import check_for_updates
 

@@ -16,3 +16,5 @@ __pycache__/
 /doc/
 .ipynb_checkpoints/
 /htmlcov/
+/coverage.xml
+/.ruff_cache/

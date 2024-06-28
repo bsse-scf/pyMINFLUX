@@ -17,7 +17,6 @@ from pathlib import Path
 from pickle import UnpicklingError
 from typing import Union
 
-import h5py
 import numpy as np
 import pandas as pd
 
@@ -503,22 +502,6 @@ class MinFluxReader:
 
         # Return success
         return True
-
-    def _read_from_pmx(self) -> Union[np.ndarray, None]:
-        """Load the PMX file."""
-
-        # Open the file and read the data
-        with h5py.File(self._filename, "r") as f:
-            # Read the file_version attribute
-            file_version = f.attrs["file_version"]
-
-            if file_version != "1.0":
-                return False
-
-            # We only read the raw NumPy array
-            data_array = f["raw/npy"][:]
-
-        return data_array
 
     def _process(self) -> Union[None, pd.DataFrame]:
         """Returns processed dataframe for valid (or invalid) entries.

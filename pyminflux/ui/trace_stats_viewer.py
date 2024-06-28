@@ -13,16 +13,11 @@
 #   limitations under the License.
 #
 
-import numpy as np
-import pyqtgraph as pg
-from pyqtgraph import PlotWidget
-from PySide6.QtCore import QPoint, Signal, Slot
-from PySide6.QtGui import QAction, QColor, QFont, Qt
-from PySide6.QtWidgets import QDialog, QMenu
+from PySide6.QtCore import Signal, Slot
+from PySide6.QtWidgets import QDialog
 
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.state import State
-from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.trace_dataviewer import TraceDataViewer
 from pyminflux.ui.ui_trace_stats_viewer import Ui_TraceStatsViewer
 

@@ -43,7 +43,7 @@ from pyminflux.state import State
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
-from pyminflux.ui.colors import Colors, reset_all_colors
+from pyminflux.ui.colors import reset_all_colors
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.histogram_plotter import HistogramPlotter

@@ -13,7 +13,7 @@
 #   limitations under the License.
 #
 
-from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QWidget
 
 from ..reader import MinFluxReader

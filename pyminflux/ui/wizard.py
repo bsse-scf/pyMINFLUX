@@ -13,8 +13,6 @@
 #   limitations under the License.
 #
 
-from pathlib import Path
-
 import numpy as np
 from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
 from PySide6.QtGui import QDoubleValidator

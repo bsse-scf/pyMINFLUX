@@ -19,8 +19,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pyminflux.reader import MinFluxReader
-
 
 @pytest.fixture(autouse=False)
 def extract_aggregates_archives(tmpdir):
