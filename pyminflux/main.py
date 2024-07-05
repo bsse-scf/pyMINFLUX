@@ -13,6 +13,10 @@
 #   limitations under the License.
 #
 
+# Ensure PySide6 is recognized as the Qt backend by VisPy
+from vispy import app
+app.use_app('pyside6')
+
 import sys
 
 from PySide6.QtGui import QIcon
@@ -23,16 +27,15 @@ from pyminflux.ui.main_window import PyMinFluxMainWindow
 
 
 def main():
-    app = QApplication(sys.argv)
-    if sys.platform.startswith("linux"):
-        app.setStyle("fusion")
+    qt_app = QApplication(sys.argv)
+    vp_app = app.use_app('pyside6')
     main = PyMinFluxMainWindow()
 
     icon = QIcon(":/icons/icon.png")
-    app.setWindowIcon(icon)
+    qt_app.setWindowIcon(icon)
     main.show()
 
-    sys.exit(app.exec())
+    sys.exit(qt_app.exec())
 
 
 if __name__ == "__main__":
