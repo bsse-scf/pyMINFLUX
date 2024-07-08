@@ -29,6 +29,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
     color_code_locs_changed = Signal(int)
     plot_average_positions_state_changed = Signal()
     plotter_changed = Signal()
+    plotter_projection_changed = Signal()
 
     def __init__(self):
         """Constructor."""
@@ -68,8 +69,12 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
         # Set the state of the 3D checkbox
         self.ui.cbPlot3D.setChecked(self.state.plot_3d)
+        self.ui.cbProjection.setCurrentIndex(0 if self.state.plot_3d_orthogonal else 1)
         self.update_ui()
         self.ui.cbPlot3D.stateChanged.connect(self.persist_plot_3d_and_broadcast)
+        self.ui.cbProjection.currentIndexChanged.connect(
+            self.persist_plot_3d_projection_and_broadcast
+        )
 
         # Set the state of the average checkbox
         self.ui.cbPlotAveragePos.setChecked(self.state.plot_average_localisations)
@@ -96,8 +101,16 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         self.update_ui()
         self.plotter_changed.emit()
 
+    @Slot(int)
+    def persist_plot_3d_projection_and_broadcast(self, index):
+        """Persist the selection for 2D vs. 3D plotting projection and update the UI."""
+        self.state.plot_3d_orthogonal = index == 0
+        self.update_ui()
+        self.plotter_projection_changed.emit()
+
     def update_ui(self):
         """Update UI elements as a function of the plotter type."""
+        self.ui.cbProjection.setVisible(self.state.plot_3d)
         self.ui.line.setVisible(not self.state.plot_3d)
         self.ui.cbFirstParam.setVisible(not self.state.plot_3d)
         self.ui.cbSecondParam.setVisible(not self.state.plot_3d)

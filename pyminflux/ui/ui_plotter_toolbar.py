@@ -80,6 +80,22 @@ class Ui_PlotterToolbar(object):
 
         self.horizontalLayout.addWidget(self.cbPlot3D)
 
+        self.cbProjection = QComboBox(PlotterToolbar)
+        self.cbProjection.addItem("")
+        self.cbProjection.addItem("")
+        self.cbProjection.setObjectName("cbProjection")
+        sizePolicy1 = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(
+            self.cbProjection.sizePolicy().hasHeightForWidth()
+        )
+        self.cbProjection.setSizePolicy(sizePolicy1)
+
+        self.horizontalLayout.addWidget(self.cbProjection)
+
         self.lbOptions = QLabel(PlotterToolbar)
         self.lbOptions.setObjectName("lbOptions")
 
@@ -145,6 +161,16 @@ class Ui_PlotterToolbar(object):
             QCoreApplication.translate("PlotterToolbar", "Form", None)
         )
         self.cbPlot3D.setText(QCoreApplication.translate("PlotterToolbar", "3D", None))
+        self.cbProjection.setItemText(
+            0, QCoreApplication.translate("PlotterToolbar", "Orthogonal", None)
+        )
+        self.cbProjection.setItemText(
+            1,
+            QCoreApplication.translate(
+                "PlotterToolbar", "Perspective (45\u00b0)", None
+            ),
+        )
+
         self.lbOptions.setText(
             QCoreApplication.translate("PlotterToolbar", "Options:", None)
         )

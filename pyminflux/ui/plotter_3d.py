@@ -13,9 +13,8 @@
 #   limitations under the License.
 #
 
-from PySide6.QtCore import Slot
-
 import numpy as np
+from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 from vispy import scene
 from vispy.visuals import transforms
@@ -47,6 +46,9 @@ class Plotter3D(QWidget):
         # Keep a reference to the singleton State class
         self.state = State()
 
+        # Keep track of original distance
+        self.original_distance = 1.0
+
     @Slot()
     def on_show(self):
         # Initialize the canvas only when the main window is shown
@@ -67,7 +69,9 @@ class Plotter3D(QWidget):
             self.view = self.canvas.central_widget.add_view()
 
             # Create the camera
-            self.view.camera = scene.cameras.ArcballCamera(fov=0)
+            self.view.camera = scene.cameras.ArcballCamera(
+                fov=0 if self.state.plot_3d_orthogonal else 45
+            )
 
             # Create and add the scatter plot
             self.scatter = scene.visuals.Markers()
@@ -127,7 +131,8 @@ class Plotter3D(QWidget):
         self.scatter.set_data(positions, face_color=rgb, size=sz)
 
         # Reset scene
-        if self.scatter_is_empty:
+        requested_fov = 0 if self.state.plot_3d_orthogonal else 45
+        if self.scatter_is_empty or self.view.camera.fov != requested_fov:
             self._reset_camera_and_axes(positions)
 
         # Update the scatter_is_empty flag
@@ -153,6 +158,50 @@ class Plotter3D(QWidget):
         if self.scatter is None:
             return
 
+        # Position camera to look at the data center from a fixed distance
+        self._position_camera(positions=positions)
+
+        # Adjust the camera distance as a function of the fov
+        self._adjust_camera_distance(new_fov=0 if self.state.plot_3d_orthogonal else 45)
+
+        # Force the canvas to update
+        self.canvas.update()
+
+    @Slot()
+    def toggle_projection(self):
+        if self.view.camera.fov == 0:
+            # Switch to perspective projection
+            new_fov = 45.0
+        else:
+            # Switch to orthographic projection
+            new_fov = 0
+
+        # Adjust the camera distance for the new fov
+        self._adjust_camera_distance(new_fov)
+
+    def _adjust_camera_distance(self, new_fov):
+        """Adjust the camera distance based on the new field of view."""
+        if new_fov == 0:
+            # Switch to orthographic projection
+            # Calculate the new distance to maintain the same view
+            if self.view.camera.fov == 45:
+                scale_factor = np.tan(np.radians(self.view.camera.fov) / 2)
+            else:
+                scale_factor = 1.0
+            self.view.camera.distance = self.original_distance / scale_factor
+        else:
+            # Switch to perspective projection
+            if self.view.camera.fov == 0:
+                # Multiply by an additional factor 1.4 to compensate for perspective change (heuristic)
+                scale_factor = np.tan(np.radians(new_fov) / 2) * 1.4
+            else:
+                scale_factor = 1.0
+            self.view.camera.distance = self.original_distance * scale_factor
+        self.view.camera.fov = new_fov
+
+    def _position_camera(self, positions):
+        """Position camera and coordinate system."""
+
         # Get data range and center
         x_range = [positions[:, 0].min(), positions[:, 0].max()]
         y_range = [positions[:, 1].min(), positions[:, 1].max()]
@@ -166,21 +215,20 @@ class Plotter3D(QWidget):
         self.view.camera.scale_factor = max(
             x_range[1] - x_range[0], y_range[1] - y_range[0], z_range[1] - z_range[0]
         )
-        self.view.camera.distance = 2 * self.view.camera.scale_factor
-        self.view.camera.fov = 0
-        self.view.camera.elevation = 30
-        self.view.camera.azimuth = 30
-        self.view.camera.up = "+z"
+        # Multiply by a factor 2.1 to keep all data points in the view (heuristic)
+        self.view.camera.distance = 2.1 * self.view.camera.scale_factor
+        self.original_distance = self.view.camera.distance
 
         # Apply a transformation to adjust the coordinate system around the data center
         transform = transforms.MatrixTransform()
         transform.reset()
-        transform.translate((-x_center, -y_center, -z_center))  # Translate to origin
-        transform.rotate(90, (1, 0, 0))  # Rotate 90 degrees around the x-axis
-        transform.translate(
-            (x_center, y_center, z_center)
-        )  # Translate back to original position
-        self.scatter.transform = transform
 
-        # Force the canvas to update
-        self.canvas.update()
+        # First translate to origin
+        transform.translate((-x_center, -y_center, -z_center))
+
+        # Then rotate 90 degrees around the x-axis
+        transform.rotate(90, (1, 0, 0))
+
+        # Finally translate back to original position
+        transform.translate((x_center, y_center, z_center))
+        self.scatter.transform = transform

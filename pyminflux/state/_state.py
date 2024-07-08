@@ -58,6 +58,7 @@ class State(metaclass=Singleton):
         "num_fluorophores",
         "open_console_at_start",
         "plot_3d",
+        "plot_3d_orthogonal",
         "plot_average_localisations",
         "plot_export_dpi",
         "scale_bar_size",
@@ -161,8 +162,9 @@ class State(metaclass=Singleton):
         # Last selected path
         self.last_selected_path: Union[None, Path] = None
 
-        # Toggle 3D plotter
+        # Toggle 3D plotter and its projection
         self.plot_3d: bool = False
+        self.plot_3d_orthogonal: bool = True
 
     def asdict(self) -> dict:
         """Return class as dictionary."""
@@ -196,6 +198,7 @@ class State(metaclass=Singleton):
             "num_fluorophores": self.num_fluorophores,
             "open_console_at_start": self.open_console_at_start,
             "plot_3d": self.plot_3d,
+            "plot_3d_orthogonal": self.plot_3d_orthogonal,
             "plot_average_localisations": self.plot_average_localisations,
             "plot_export_dpi": self.plot_export_dpi,
             "scale_bar_size": self.scale_bar_size,
@@ -254,6 +257,7 @@ class State(metaclass=Singleton):
         self.open_console_at_start = False
         self.plot_average_localisations = False
         self.plot_3d = False
+        self.plot_3d_orthogonal = True
         self.plot_export_dpi = 300
         self.scale_bar_size = 500.0
         self.time_thresholds = None

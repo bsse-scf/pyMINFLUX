@@ -246,6 +246,9 @@ class Mediator:
         self.dialogs["plotter_toolbar"].plotter_changed.connect(
             self.dialogs["main_window"].plot_selected_parameters
         )
+        self.dialogs["plotter_toolbar"].plotter_projection_changed.connect(
+            self.dialogs["plotter3d"].toggle_projection
+        )
 
     def _setup_plotter_toolbar_connections(self):
         """Set up the Plotter Toolbar connections."""
