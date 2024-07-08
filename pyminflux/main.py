@@ -13,9 +13,10 @@
 #   limitations under the License.
 #
 
-# Ensure PySide6 is recognized as the Qt backend by VisPy
 from vispy import app
-app.use_app('pyside6')
+
+# Ensure PySide6 is recognized as the Qt backend by VisPy
+app.use_app("pyside6")
 
 import sys
 
