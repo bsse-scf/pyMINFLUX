@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.7.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -110,6 +110,8 @@ class Ui_MainWindow(object):
         self.actionSave.setObjectName("actionSave")
         self.actionHistogram_Plotter = QAction(MainWindow)
         self.actionHistogram_Plotter.setObjectName("actionHistogram_Plotter")
+        self.action_VisPy_sysinfo = QAction(MainWindow)
+        self.action_VisPy_sysinfo.setObjectName("action_VisPy_sysinfo")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -117,7 +119,7 @@ class Ui_MainWindow(object):
         self.splitter_layout = QSplitter(self.centralwidget)
         self.splitter_layout.setObjectName("splitter_layout")
         self.splitter_layout.setMaximumSize(QSize(16777215, 16777215))
-        self.splitter_layout.setOrientation(Qt.Vertical)
+        self.splitter_layout.setOrientation(Qt.Orientation.Vertical)
 
         self.gridLayout.addWidget(self.splitter_layout, 0, 0, 1, 1)
 
@@ -155,6 +157,7 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionConsole)
         self.menuView.addSeparator()
         self.menuView.addAction(self.actionState)
+        self.menuView.addAction(self.action_VisPy_sysinfo)
         self.menuHelp.addAction(self.actionManual)
         self.menuHelp.addAction(self.actionWebsite)
         self.menuHelp.addAction(self.actionCode_repository)
@@ -262,6 +265,9 @@ class Ui_MainWindow(object):
         # endif // QT_CONFIG(shortcut)
         self.actionHistogram_Plotter.setText(
             QCoreApplication.translate("MainWindow", "Histogram Plotter", None)
+        )
+        self.action_VisPy_sysinfo.setText(
+            QCoreApplication.translate("MainWindow", "[DEBUG] Show VisPy info", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))

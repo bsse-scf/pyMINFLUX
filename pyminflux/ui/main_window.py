@@ -306,6 +306,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.actionState.triggered.connect(self.print_current_state)
+        self.ui.action_VisPy_sysinfo.triggered.connect(self.print_vispy_sysinfo)
         self.ui.actionHistogram_Plotter.triggered.connect(self.open_histogram_plotter)
         self.ui.actionUnmixer.triggered.connect(self.open_color_unmixer)
         self.ui.actionTime_Inspector.triggered.connect(self.open_time_inspector)
@@ -934,6 +935,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             print(f'  ∟ "{s}": {state_dict[s]}')
 
     @Slot()
+    def print_vispy_sysinfo(self):
+        """Print VisPy system information (DEBUG)."""
+        from vispy import sys_info
+
+        if self.txt_console.isHidden():
+            self.txt_console.show()
+            self.ui.actionConsole.setChecked(True)
+        print(sys_info())
+
+    @Slot()
     def about(self):
         """Show simple About dialog."""
         from h5py import __version__ as h5py_version
@@ -943,6 +954,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         from pyqtgraph import __version__ as pg_version
         from PySide6 import __version__ as pyside6_version
         from scipy import __version__ as scipy_version
+        from vispy import __version__ as vispy_version
 
         QMessageBox.about(
             self,
@@ -962,7 +974,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             f"SciPy {scipy_version}\n"
             f"Pandas {pandas_version}\n"
             f"PyArrow {pyarrow_version}\n"
-            f"h5py {h5py_version}\n",
+            f"h5py {h5py_version}\n"
+            f"VisPy {vispy_version}\n",
         )
 
     @Slot()

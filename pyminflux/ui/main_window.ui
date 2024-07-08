@@ -30,7 +30,7 @@
        </size>
       </property>
       <property name="orientation">
-       <enum>Qt::Vertical</enum>
+       <enum>Qt::Orientation::Vertical</enum>
       </property>
      </widget>
     </item>
@@ -67,6 +67,7 @@
     <addaction name="actionConsole"/>
     <addaction name="separator"/>
     <addaction name="actionState"/>
+    <addaction name="action_VisPy_sysinfo"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -237,6 +238,11 @@
   <action name="actionHistogram_Plotter">
    <property name="text">
     <string>Histogram Plotter</string>
+   </property>
+  </action>
+  <action name="action_VisPy_sysinfo">
+   <property name="text">
+    <string>[DEBUG] Show VisPy info</string>
    </property>
   </action>
  </widget>
