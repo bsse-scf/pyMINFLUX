@@ -128,7 +128,7 @@ class Plotter3D(QWidget):
             sz = 5
 
         # Plot the data
-        self.scatter.set_data(positions, face_color=rgb, size=sz)
+        self.scatter.set_data(positions, edge_color=None, face_color=rgb, size=sz)
 
         # Reset scene
         requested_fov = 0 if self.state.plot_3d_orthogonal else 45
