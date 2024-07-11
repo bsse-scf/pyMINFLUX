@@ -204,8 +204,6 @@ class Plotter3D(QWidget):
             size=self.current_point_sizes,
         )
 
-        print(self.current_point_sizes)
-
     def contextMenuEvent(self, event):
         """Create and display a context menu."""
         event.ignore()
