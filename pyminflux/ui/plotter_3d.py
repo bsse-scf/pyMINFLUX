@@ -49,6 +49,21 @@ class Plotter3D(QWidget):
         # Keep track of original distance
         self.original_distance = 1.0
 
+        # Store the previous camera distance
+        self.previous_camera_distance = 1.0
+
+        # Keep track of current point size
+        self.current_point_sizes = None
+
+        # Un-weighted point size
+        self.fixed_point_size = 5.0
+
+        # Keep track of current point colors
+        self.current_colors = None
+
+        # Keep track of surrent sizes
+        self.current_sizes = None
+
     @Slot()
     def on_show(self):
         # Initialize the canvas only when the main window is shown
@@ -76,6 +91,9 @@ class Plotter3D(QWidget):
             # Create and add the scatter plot
             self.scatter = scene.visuals.Markers()
             self.view.add(self.scatter)
+
+            # Connect the update function to the view_changed event
+            self.canvas.events.draw.connect(self.update_point_size)
 
             # Show the canvas
             self.canvas.show()
@@ -113,10 +131,10 @@ class Plotter3D(QWidget):
         """Plot localizations in a 3D scatter plot."""
 
         # Make sure to have the correct datatype
-        positions = positions.to_numpy().astype(np.float32)
+        self.positions = positions.to_numpy().astype(np.float32)
 
         # Get the colors singleton
-        rgb = ColorsToRGB().get_rgb(self.state.color_code, tid, fid)
+        self.current_colors = ColorsToRGB().get_rgb(self.state.color_code, tid, fid)
 
         # If the average locations are plotted, set the diameter to fit the worst localization precision
         if self.state.plot_average_localisations:
@@ -124,22 +142,69 @@ class Plotter3D(QWidget):
                 self.processor.filtered_dataframe_stats[["sx", "sy", "sz"]].to_numpy(),
                 axis=1,
             )
+
+            # Keep track of current sizes
+            self.current_point_sizes = sz
         else:
-            sz = 5
+            sz = self.fixed_point_size
 
         # Plot the data
-        self.scatter.set_data(positions, edge_color=None, face_color=rgb, size=sz)
+        self.scatter.set_data(
+            self.positions,
+            edge_color=self.current_colors,
+            face_color=self.current_colors,
+            size=sz,
+        )
 
         # Reset scene
         requested_fov = 0 if self.state.plot_3d_orthogonal else 45
         if self.scatter_is_empty or self.view.camera.fov != requested_fov:
-            self._reset_camera_and_axes(positions)
+            self._reset_camera_and_axes(self.positions)
 
         # Update the scatter_is_empty flag
         self.scatter_is_empty = False
 
         # Show the canvas
         self.canvas.show()
+
+    def update_point_size(self, event):
+        """Update point sizes based on camera distance."""
+
+        # This only applies when plotting the localization precision
+        if not self.state.plot_average_localisations:
+            return
+
+        # Get new camera distance
+        camera_distance = self.view.camera.distance
+
+        # Check if the camera distance has changed
+        if (
+            self.previous_camera_distance is None
+            or self.previous_camera_distance == camera_distance
+        ):
+            return
+
+        # Resize points
+        if camera_distance != 0:
+            scale_factor = self.previous_camera_distance / camera_distance
+        else:
+            scale_factor = 1.0
+
+        # Update last camera position
+        self.previous_camera_distance = camera_distance
+
+        # Update current point size
+        self.current_point_sizes *= scale_factor
+
+        # Update the spot sizes
+        self.scatter.set_data(
+            self.positions,
+            edge_color=self.current_colors,
+            face_color=self.current_colors,
+            size=self.current_point_sizes,
+        )
+
+        print(self.current_point_sizes)
 
     def contextMenuEvent(self, event):
         """Create and display a context menu."""
@@ -188,7 +253,7 @@ class Plotter3D(QWidget):
                 scale_factor = np.tan(np.radians(self.view.camera.fov) / 2)
             else:
                 scale_factor = 1.0
-            self.view.camera.distance = self.original_distance / scale_factor
+            self.view.camera.distance = self.previous_camera_distance / scale_factor
         else:
             # Switch to perspective projection
             if self.view.camera.fov == 0:
@@ -196,7 +261,7 @@ class Plotter3D(QWidget):
                 scale_factor = np.tan(np.radians(new_fov) / 2) * 1.4
             else:
                 scale_factor = 1.0
-            self.view.camera.distance = self.original_distance * scale_factor
+            self.view.camera.distance = self.previous_camera_distance * scale_factor
         self.view.camera.fov = new_fov
 
     def _position_camera(self, positions):
@@ -217,7 +282,7 @@ class Plotter3D(QWidget):
         )
         # Multiply by a factor 2.1 to keep all data points in the view (heuristic)
         self.view.camera.distance = 2.1 * self.view.camera.scale_factor
-        self.original_distance = self.view.camera.distance
+        self.previous_camera_distance = self.view.camera.distance
 
         # Apply a transformation to adjust the coordinate system around the data center
         transform = transforms.MatrixTransform()
