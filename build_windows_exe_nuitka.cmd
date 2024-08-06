@@ -11,8 +11,7 @@ REM Unless required by applicable law or agreed to in writing, software
 REM distributed under the License is distributed on an "AS IS" BASIS,
 REM WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 REM See the License for the specific language governing permissions and
-REM  limitations under the License.
-REM
+REM limitations under the License.
 
 REM To use the C compiler from Visual Studio 2022, run this script from the
 REM "Developer Command Prompt for VS2022" and remove the `--mingw64` from the

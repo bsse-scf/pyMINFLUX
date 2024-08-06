@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -10,11 +11,10 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-#  limitations under the License.
-#
+# limitations under the License.
 
 VERSION=0.5.0
-PYTHON_VERSION=3.11
+PYTHON_VERSION=3.12
 
 if [[ -z "$ANACONDA_HOME" ]]; then
     echo "Please set environment variable ANACONDA_HOME." 1>&2
