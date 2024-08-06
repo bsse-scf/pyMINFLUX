@@ -135,6 +135,8 @@ class Ui_MainWindow(object):
         self.menuHelp.setObjectName("menuHelp")
         self.menuAnalysis = QMenu(self.menubar)
         self.menuAnalysis.setObjectName("menuAnalysis")
+        self.menuPlugins = QMenu(self.menubar)
+        self.menuPlugins.setObjectName("menuPlugins")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -143,6 +145,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuView.menuAction())
         self.menubar.addAction(self.menuAnalysis.menuAction())
+        self.menubar.addAction(self.menuPlugins.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
         self.menuFile.addAction(self.actionLoad)
         self.menuFile.addAction(self.actionSave)
@@ -274,6 +277,9 @@ class Ui_MainWindow(object):
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", "Help", None))
         self.menuAnalysis.setTitle(
             QCoreApplication.translate("MainWindow", "Analysis", None)
+        )
+        self.menuPlugins.setTitle(
+            QCoreApplication.translate("MainWindow", "Plugins", None)
         )
 
     # retranslateUi

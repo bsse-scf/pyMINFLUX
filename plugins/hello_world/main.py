@@ -11,6 +11,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
+# Use plugins.<plugin>.<module> to import from other .py files
+from plugins.hello_world.other import print_hello_world
+from pyminflux.plugin import Plugin, plugin_entry
+from pyminflux.processor import MinFluxProcessor
 
 
-from ._base import Singleton
+class HelloWorld(Plugin):
+    """The Plugin class must inherit from pyminflux.plugin.Plugin."""
+
+    @plugin_entry
+    def main(self, processor: MinFluxProcessor):
+        """The plugin entry method will be passed a reference to the MinFluxProcessor instance."""
+        print_hello_world(processor)

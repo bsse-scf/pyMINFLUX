@@ -29,7 +29,6 @@ from pyminflux.ui.main_window import PyMinFluxMainWindow
 
 def main():
     qt_app = QApplication(sys.argv)
-    vp_app = app.use_app('pyside6')
     main = PyMinFluxMainWindow()
 
     icon = QIcon(":/icons/icon.png")

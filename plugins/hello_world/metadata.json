@@ -1,0 +1,9 @@
+{
+    "name": "Hello World!",
+    "description": "pyMINFLUX demo plug-in.",
+    "version": "0.0.1",
+    "author": "Aaron Ponti",
+    "email": "aaron.ponti@bsse.ethz.ch",
+    "license": "Apache 2.0",
+    "url": "https://pyminflux.ethz.ch"
+}

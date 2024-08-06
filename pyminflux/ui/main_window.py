@@ -20,7 +20,7 @@ from typing import Optional
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QDesktopServices, QIcon
+from PySide6.QtGui import QAction, QDesktopServices, QIcon
 from PySide6.QtWidgets import (
     QDialog,
     QDockWidget,
@@ -36,6 +36,7 @@ from PySide6.QtWidgets import (
 
 import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
+from pyminflux.plugin import PluginManager
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader, NativeMetadataReader
 from pyminflux.settings import Settings, UpdateSettings
@@ -187,6 +188,27 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Initialize Plotter3D scene and view only when the main window
         # has finished initializing
         self.main_window_ready.connect(self.plotter3d.on_show)
+
+        # Initialize and add plug-ins
+        self.plugin_manager = None
+        self.init_plugins()
+
+    def init_plugins(self):
+        """Scans the plugins folder and adds the plug-ins to the Plugins menu."""
+        self.plugin_manager = PluginManager(
+            Path(__file__).parent.parent.parent / "plugins"
+        )
+        self.plugin_manager.load_plugins()
+        self.ui.menuPlugins.clear()
+        for index, info in enumerate(self.plugin_manager.get_plugin_info()):
+            action = QAction(f"{info['name']} ({info['version']})", self)
+            action.setStatusTip(info["description"])
+            action.triggered.connect(lambda checked, i=index: self.execute_plugin(i))
+            self.ui.menuPlugins.addAction(action)
+
+    def execute_plugin(self, index):
+        result = self.plugin_manager.execute_plugin(index, self.processor)
+        print(f"Plugin result: {result}")
 
     def showEvent(self, event):
         super().showEvent(event)

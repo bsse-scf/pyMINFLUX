@@ -55,7 +55,7 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX \
 --assume-yes-for-downloads \
 --noinclude-default-mode=error \
 --standalone \
---onefile \
+--include-module=pydoc \
 --include-module=scipy.special._special_ufuncs \
 --include-module=vispy.app.backends._pyside6 \
 --include-data-dir="$VISPY_GLSL_DIR=vispy/glsl" \
@@ -70,10 +70,15 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX \
 --static-libpython=yes \
 --output-dir=./dist
 
-# Move into "pyMINFLUX" directory
-mkdir -p dist/target
-mv dist/pyMINFLUX dist/target/
-mv dist/target dist/pyMINFLUX
+# Rename output folder
+mv dist/main.dist dist/pyMINFLUX
+
+# Create plugins sub-folder
+mkdir dist/pyMINFLUX/plugins
+
+# Copy Hello, World! plugin
+cp -R plugins/hello_world dist/pyMINFLUX/plugins
+rm -fR dist/pyMINFLUX/plugins/hello_world/__pycache__
 
 # Copy the icon
 cp pyminflux/ui/assets/Logo_v3.png dist/pyMINFLUX/icon.png
