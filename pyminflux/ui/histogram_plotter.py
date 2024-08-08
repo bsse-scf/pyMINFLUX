@@ -50,8 +50,13 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
         # Keep track of whether there is a plot to export
         self.plot_ready_to_export = False
 
-        # We only allow plotting of two parameters: "eco" and "dwell"
-        self.plotting_parameters = ["eco", "dwell"]
+        # We only allow plotting of three parameters: "eco", "dwell" and "tim_tot"
+        self.plotting_parameters = ["eco", "dwell", "tim_tot"]
+        self.plotting_parameters_source = {
+            "eco": "df",
+            "dwell": "df",
+            "tim_tot": "df_stats",
+        }
 
         # Add the values to the plot properties combo boxes (without time)
         self.ui.cbParam.addItems(self.plotting_parameters)
@@ -105,7 +110,14 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
         self.plot_ready_to_export = False
 
         # Get the data for the histogram
-        data = self.processor.filtered_dataframe[self.selected_parameter].to_numpy()
+        if self.plotting_parameters_source[self.selected_parameter] == "df":
+            data = self.processor.filtered_dataframe[self.selected_parameter].to_numpy()
+        elif self.plotting_parameters_source[self.selected_parameter] == "df_stats":
+            data = self.processor.filtered_dataframe_stats[
+                self.selected_parameter
+            ].to_numpy()
+        else:
+            raise ValueError("Unexpected value for selected parameter.")
 
         # Is there data?
         if len(data) == 0:
