@@ -331,6 +331,7 @@ class MinFluxProcessor:
         return [
             "tid",
             "n",
+            "fluo",
             "mx",
             "my",
             "mz",
@@ -341,14 +342,13 @@ class MinFluxProcessor:
             "rms_xy",
             "sz",
             "ez",
-            "fluo",
+            "tim_tot",
         ]
 
     @classmethod
     def trace_stats_with_tracking_properties(cls):
         """Return the columns of the filtered_dataframe_stats with tracking columns."""
         return MinFluxProcessor.trace_stats_properties() + [
-            "tim_tot",
             "avg_speed",
             "total_dist",
         ]
@@ -939,10 +939,10 @@ class MinFluxProcessor:
         exy = sxy / np.sqrt(n)
         ez = sz / np.sqrt(n)
         fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).to_numpy()
+        tot_tim, _, _ = calculate_trace_time(df)
 
         # Optional tracking statistics
         if is_tracking:
-            tot_tim, _, _ = calculate_trace_time(df)
             total_distance, _, _ = calculate_total_distance_traveled(df)
             speeds = (
                 total_distance["displacement"].to_numpy()
@@ -963,8 +963,8 @@ class MinFluxProcessor:
         df_tid["sz"] = sz  # z localization precision
         df_tid["ez"] = ez  # Standard error of ez
         df_tid["fluo"] = fluo  # Assigned fluorophore ID
+        df_tid["tim_tot"] = tot_tim["tim_tot"].to_numpy()  # Total time per trace
         if is_tracking:
-            df_tid["tim_tot"] = tot_tim["tim_tot"].to_numpy()  # Total time per trace
             df_tid["avg_speed"] = speeds  # Average speed per trace
             df_tid["total_dist"] = total_distance[
                 "displacement"
