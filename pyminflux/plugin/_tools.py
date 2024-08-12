@@ -12,6 +12,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from ._plugin import Plugin, plugin_entry
-from ._plugin_manager import PluginManager
-from ._tools import install_package
+import subprocess
+import sys
+
+
+def install_package(package: str):
+    """Install the required package using pip.
+
+    Parameters
+    ----------
+    package: str
+        Name of package to install.
+    """
+    try:
+        __import__(package)
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
