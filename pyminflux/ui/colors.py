@@ -19,6 +19,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6.QtGui import QBrush
 
+from pyminflux.analysis import prepare_histogram
 from pyminflux.base import Singleton
 
 
@@ -35,6 +36,174 @@ class ColorCode(IntEnum):
     NONE = 0
     BY_TID = 1
     BY_FLUO = 2
+    BY_DEPTH = 3
+    BY_TIME = 4
+
+
+class ColorMap:
+
+    @staticmethod
+    def generate_jet_colormap(n_colors: int = 256) -> tuple[np.ndarray, np.ndarray]:
+        """Create jet colormap with the requested number of colors.
+
+        Parameters
+        ----------
+
+        n_colors: int
+            Number of colors.
+
+        Returns
+        -------
+
+        jet_colors_float: np.ndarray
+            Colormap as an (n_colors, 3) array with floating-point values between 0.0 and 1.0.
+
+        jet_colors: np.ndarray
+            Colormap as an (n_colors, 3) array with integer values between 0 and 255.
+        """
+
+        # Define the transition points and corresponding color intensities for the jet colormap
+        def interpolate(v, y0, x0, y1, x1):
+            return (v - x0) * (y1 - y0) / (x1 - x0) + y0
+
+        def base(v):
+            if v <= -0.75:
+                return 0
+            elif v <= -0.25:
+                return interpolate(v, 0.0, -0.75, 1.0, -0.25)
+            elif v <= 0.25:
+                return 1.0
+            elif v <= 0.75:
+                return interpolate(v, 1.0, 0.25, 0.0, 0.75)
+            else:
+                return 0.0
+
+        # Define the red function
+        def red(v):
+            return base(v - 0.5)
+
+        # Define the green function
+        def green(v):
+            return base(v)
+
+        # Define the blue function
+        def blue(v):
+            return base(v + 0.5)
+
+        # Generate the RGB colors
+        colors_float = np.zeros((n_colors, 3))
+        for i in range(n_colors):
+            val = i / (n_colors - 1) * 2 - 1  # Normalize to range [-1, 1]
+            colors_float[i, 0] = red(val)
+            colors_float[i, 1] = green(val)
+            colors_float[i, 2] = blue(val)
+
+        # And now create a copy cast as integer
+        colors = (255.0 * colors_float).astype(int)
+
+        return colors_float, colors
+
+    @staticmethod
+    def generate_cividis_colormap(n_colors: int = 256) -> tuple[np.ndarray, np.ndarray]:
+        """Create cividis colormap with the requested number of colors.
+
+        Parameters
+        ----------
+
+        n_colors: int
+            Number of colors.
+
+        Returns
+        -------
+
+        cividis_colors_float: np.ndarray
+            Colormap as an (n_colors, 3) array with floating-point values between 0.0 and 1.0.
+
+        cividis_colors: np.ndarray
+            Colormap as an (n_colors, 3) array with integer values between 0 and 255.
+        """
+
+        # The RGB values defining the Cividis colormap
+        cividis_data = np.array(
+            [
+                [0.0, 0.135112, 0.304751],
+                [0.03211, 0.201199, 0.440785],
+                [0.208926, 0.272546, 0.424809],
+                [0.309601, 0.340399, 0.42479],
+                [0.401418, 0.41179, 0.440708],
+                [0.488697, 0.485318, 0.471008],
+                [0.582087, 0.55867, 0.468118],
+                [0.68395, 0.638793, 0.444251],
+                [0.785965, 0.720438, 0.399613],
+                [0.896818, 0.81103, 0.320982],
+                [0.995737, 0.909344, 0.217772],
+            ]
+        )
+
+        # Interpolate the cividis colormap to n_steps
+        indices = np.linspace(0, len(cividis_data) - 1, n_colors)
+        colors_float = np.zeros((n_colors, 3))
+
+        for i in range(3):  # For each color channel (R, G, B)
+            colors_float[:, i] = np.interp(
+                indices, np.arange(len(cividis_data)), cividis_data[:, i]
+            )
+
+        # And now create a copy cast as integer
+        colors = (255.0 * colors_float).astype(int)
+
+        return colors_float, colors
+
+    @staticmethod
+    def generate_plasma_colormap(n_colors: int = 256) -> tuple[np.ndarray, np.ndarray]:
+        """Create plasma colormap with the requested number of colors.
+
+        Parameters
+        ----------
+
+        n_colors: int
+            Number of colors.
+
+        Returns
+        -------
+
+        colors_float: np.ndarray
+            Colormap as an (n_colors, 3) array with floating-point values between 0.0 and 1.0.
+
+        colors: np.ndarray
+            Colormap as an (n_colors, 3) array with integer values between 0 and 255.
+        """
+
+        # The RGB values defining the Plasma colormap
+        plasma_data = np.array(
+            [
+                [5.03830e-02, 2.98030e-02, 5.27975e-01],
+                [2.54627e-01, 1.38820e-02, 6.15419e-01],
+                [4.17642e-01, 5.64000e-04, 6.58390e-01],
+                [5.62738e-01, 5.15450e-02, 6.41509e-01],
+                [6.92840e-01, 1.65141e-01, 5.64522e-01],
+                [7.98216e-01, 2.80197e-01, 4.69538e-01],
+                [8.81443e-01, 3.92529e-01, 3.83229e-01],
+                [9.49217e-01, 5.17763e-01, 2.95662e-01],
+                [9.88260e-01, 6.52325e-01, 2.11364e-01],
+                [9.88648e-01, 8.09579e-01, 1.45357e-01],
+                [9.40015e-01, 9.75158e-01, 1.31326e-01],
+            ]
+        )
+
+        # Interpolate the cividis colormap to n_steps
+        indices = np.linspace(0, len(plasma_data) - 1, n_colors)
+        colors_float = np.zeros((n_colors, 3))
+
+        for i in range(3):  # For each color channel (R, G, B)
+            colors_float[:, i] = np.interp(
+                indices, np.arange(len(plasma_data)), plasma_data[:, i]
+            )
+
+        # And now create a copy cast as integer
+        colors = (255.0 * colors_float).astype(int)
+
+        return colors_float, colors
 
 
 class Colors(metaclass=Singleton):
@@ -43,12 +212,18 @@ class Colors(metaclass=Singleton):
     def __init__(self, fid_color_scheme: str = "green-magenta", seed: int = 42):
         """Constructor."""
         self._seed = seed
-        self._fid_color_scheme = fid_color_scheme
+
+        # None
         self._white = np.array([255, 255, 255, 127], dtype=int)
         self._white_float = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)
+
+        # TID
         self._unique_tid = None
         self._unique_tid_colors = None
         self._unique_tid_colors_float = None
+
+        # FID
+        self._fid_color_scheme = fid_color_scheme
         if self._fid_color_scheme == "blue-red":
             self._unique_fid_colors = np.array([[0, 0, 255], [255, 0, 0]], dtype=int)
         elif self._fid_color_scheme == "green-magenta":
@@ -57,28 +232,52 @@ class Colors(metaclass=Singleton):
             raise ValueError(f"Unknown color scheme '{self._fid_color_scheme}'.")
         self._unique_fid_colors_float = self._unique_fid_colors / 255.0
 
+        # DEPTH
+        self._unique_depth_colors = None
+        self._unique_depth_colors_float = None
+
+        # TIME
+        self._unique_time_colors = None
+        self._unique_time_colors_float = None
+
         # Initialize the random number generator
         self._rng = np.random.default_rng(self._seed)
 
     @property
-    def unique_tid(self) -> np.ndarray:
+    def unique_tid(self) -> Union[None, np.ndarray]:
         return self._unique_tid
 
     @property
-    def unique_tid_colors(self):
+    def unique_tid_colors(self) -> Union[None, np.ndarray]:
         return self._unique_tid_colors
 
     @property
-    def unique_tid_colors_float(self):
+    def unique_tid_colors_float(self) -> Union[None, np.ndarray]:
         return self._unique_tid_colors_float
 
     @property
-    def unique_fid_colors(self):
+    def unique_fid_colors(self) -> Union[None, np.ndarray]:
         return self._unique_fid_colors
 
     @property
-    def unique_fid_colors_float(self):
+    def unique_fid_colors_float(self) -> Union[None, np.ndarray]:
         return self._unique_fid_colors_float
+
+    @property
+    def unique_depth_colors(self) -> Union[None, np.ndarray]:
+        return self._unique_depth_colors
+
+    @property
+    def unique_depth_colors_float(self) -> Union[None, np.ndarray]:
+        return self._unique_depth_colors_float
+
+    @property
+    def unique_time_colors(self) -> Union[None, np.ndarray]:
+        return self._unique_time_colors
+
+    @property
+    def unique_time_colors_float(self) -> Union[None, np.ndarray]:
+        return self._unique_time_colors_float
 
     @property
     def white(self) -> np.ndarray:
@@ -89,11 +288,11 @@ class Colors(metaclass=Singleton):
         return self._white_float
 
     @property
-    def tid_colors(self) -> np.ndarray:
+    def tid_colors(self) -> Union[None, np.ndarray]:
         return self._unique_tid_colors
 
     @property
-    def tid_colors_float(self) -> np.ndarray:
+    def tid_colors_float(self) -> Union[None, np.ndarray]:
         return self._unique_tid_colors_float
 
     @property
@@ -105,10 +304,14 @@ class Colors(metaclass=Singleton):
         return self._unique_fid_colors_float
 
     def reset(self):
-        """Reset the color caches: only the TID caches need to be reset."""
+        """Reset the color caches"""
         self._unique_tid = None
         self._unique_tid_colors = None
         self._unique_tid_colors_float = None
+        self._unique_depth_colors = None
+        self._unique_depth_colors_float = None
+        self._unique_time_colors = None
+        self._unique_time_colors_float = None
 
     def generate_tid_colors(self, tid: np.ndarray):
         """Generate and cache TID colors."""
@@ -123,6 +326,22 @@ class Colors(metaclass=Singleton):
         )
         self._unique_tid_colors_float = self._unique_tid_colors / 255.0
 
+    def generate_depth_colors(self, num_colors: int = 256):
+        """Generate and cache depth colors."""
+
+        # Generate the colormap
+        self._unique_depth_colors_float, self._unique_depth_colors = (
+            ColorMap().generate_jet_colormap(num_colors)
+        )
+
+    def generate_time_colors(self, num_colors: int = 256):
+        """Generate and cache depth colors."""
+
+        # Generate the colormap
+        self._unique_time_colors_float, self._unique_time_colors = (
+            ColorMap().generate_plasma_colormap(num_colors)
+        )
+
 
 class ColorsToBrushes(metaclass=Singleton):
     """Color manager (singleton class)."""
@@ -130,10 +349,19 @@ class ColorsToBrushes(metaclass=Singleton):
     def __init__(self):
         self._tid_brushes = None
         self._fid_brushes = None
+        self._depth_brushes = None
         self._tid_to_brush_map = None
         self._fid_to_brush_map = None
+        self._depth_to_brush_map = None
+        self._depth_to_color_map = None
+        self._depth_bin_edges = None
+        self._time_to_brush_map = None
+        self._time_to_color_map = None
+        self._time_bin_edges = None
         self._last_tid = None
         self._last_fid = None
+        self._last_depth = None
+        self._last_time = None
         self._white_brush = pg.mkBrush(Colors().white)
 
         # Map each unique fid identifier to a unique QBrush
@@ -147,6 +375,8 @@ class ColorsToBrushes(metaclass=Singleton):
         mode: ColorCode,
         tid: Optional[np.ndarray] = None,
         fid: Optional[np.ndarray] = None,
+        depth: Optional[np.ndarray] = None,
+        time: Optional[np.ndarray] = None,
     ) -> Union[QBrush, list[QBrush]]:
         """Get brushes for passed tid or fid arrays.
 
@@ -157,10 +387,16 @@ class ColorsToBrushes(metaclass=Singleton):
             One of `ColorCode.NONE`, `ColorCode.BY_TID`, or `ColorCode.BY_FLUO`.
 
         tid: Optional[np.ndarray] = None
-            Array of trace IDs. If tid is not None, fid must be.
+            Array of trace IDs. If tid is not None, fid must be; depth and time must be None.
 
         fid: Optional[np.ndarray] = None
-            Array of fluorophore IDs.  If fid is not None, tid must be.
+            Array of fluorophore IDs.  If fid is not None, tid must be; depth and time must be None.
+
+        depth: Optional[np.ndarray] = None
+            Array of depths (z values). fid, tid and time must be None.
+
+        time: Optional[np.ndarray] = None
+            Array of time stamps. fid, tid and depth must be None.
 
         Returns
         -------
@@ -173,27 +409,45 @@ class ColorsToBrushes(metaclass=Singleton):
         if mode == ColorCode.NONE:
             return self._white_brush
 
-        # Only one of tid and fid can be passed
-        if tid is None and fid is None:
-            raise ValueError("Please specify one of `tid` or `fid`.")
-
-        if (tid is None and fid is not None) or (tid is not None and fid is None):
-            raise ValueError("Please specify only one of `tid` or `fid`.")
-
-        if mode == ColorCode.BY_TID and tid is not None:
+        elif mode == ColorCode.BY_TID:
+            if tid is None:
+                raise ValueError("If mode is ColorCode.BY_TID, `tid` cannot be None.")
             return self._get_or_create_brush_by_tid(tid)
 
-        if mode == ColorCode.BY_FLUO and fid is not None:
+        elif mode == ColorCode.BY_FLUO:
+            if fid is None:
+                raise ValueError("If mode is ColorCode.BY_FLUO, `fid` cannot be None.")
             return self._get_or_create_brush_by_fid(fid)
 
-        raise ValueError(f"Unknown color mode: {mode}")
+        elif mode == ColorCode.BY_DEPTH:
+            if depth is None:
+                raise ValueError(
+                    "If mode is ColorCode.BY_DEPTH, `depth` cannot be None."
+                )
+            return self._get_or_create_brush_by_depth(depth)
+
+        elif mode == ColorCode.BY_TIME:
+            if time is None:
+                raise ValueError("If mode is ColorCode.BY_TIME, `time` cannot be None.")
+            return self._get_or_create_brush_by_time(time)
+
+        else:
+            raise ValueError(f"Unknown color mode: {mode}")
 
     def reset(self):
         """Reset the color caches."""
         self._tid_brushes = None
+        self._fid_brushes = None
+        self._depth_brushes = None
         self._tid_to_brush_map = None
+        self._depth_to_brush_map = None
+        self._depth_bin_edges = None
+        self._time_to_brush_map = None
+        self._time_bin_edges = None
         self._last_tid = None
         self._last_fid = None
+        self._last_depth = None
+        self._last_time = None
 
         # Map each unique fid identifier to a unique QBrush
         self._fid_to_brush_map = {
@@ -297,6 +551,144 @@ class ColorsToBrushes(metaclass=Singleton):
         # Return the list of brushes (and references) and the mapping between id and brush
         return self._fid_brushes
 
+    def _get_or_create_brush_by_depth(self, depth: np.ndarray) -> list:
+        """Create QBrush instances to be used in a ScatterPlotItem to prevent
+        cache misses in SymbolAtlas.
+        As an illustration, this speeds up the plotting of 200,000 dots with
+        600 unique colors by ca. 20x.
+
+        See explanation at PyQtGraph.graphicsItems.ScatterPlotItem._mkBrush()
+
+        Parameters
+        ----------
+
+        depth: np.ndarray
+            Depths (z values) to be used to assign colors.
+
+        Returns
+        -------
+
+        brushes: list[QBrush]
+            List of brushes corresponding to the list of depth (z values) bins. Each identifier references
+            a unique QBrush instance.
+        """
+
+        # Calculate current histogram bins
+        _, current_depth_bin_edges, bin_centers, _ = prepare_histogram(
+            depth,
+            auto_bins=True,
+        )
+
+        # Update what needs to be updated
+        if (
+            self._depth_bin_edges is None
+            or self._depth_to_brush_map is None
+            or not np.isin(current_depth_bin_edges, self._depth_bin_edges).all()
+        ):
+            # Generate unique colors for each brush (and identifier)
+            Colors().generate_depth_colors(current_depth_bin_edges.shape[0])
+
+            # Map each unique identifier to a unique QBrush, thus reducing
+            # the number of QBrush object creations to the minimum
+            unique_depth_colors = Colors().unique_depth_colors
+            self._depth_to_brush_map = {
+                i: pg.mkBrush(*unique_depth_colors[i])
+                for i in range(len(current_depth_bin_edges))
+            }
+
+        # Map each identifier in the full array to its corresponding QBrush for fast lookup
+        if (
+            self._last_depth is None
+            or len(self._last_depth) != len(depth)
+            or np.any(self._last_depth != depth)
+        ):
+            # Assign the depths to the corresponding bins
+            depth_indices = np.digitize(depth, current_depth_bin_edges, right=True) - 1
+
+            assert np.min(depth_indices) >= 0, "Minimum bin index is smaller than zero!"
+            assert (
+                np.max(depth_indices) <= len(current_depth_bin_edges) - 1
+            ), "Maximum bin index is out of range!"
+
+            self._depth_brushes = [
+                self._depth_to_brush_map[index] for index in depth_indices
+            ]
+
+        # Keep track of the passed tid
+        self._last_depth = depth
+
+        # Return the list of brushes (and references) and the mapping between id and brush
+        return self._depth_brushes
+
+    def _get_or_create_brush_by_time(self, time: np.ndarray) -> list:
+        """Create QBrush instances to be used in a ScatterPlotItem to prevent
+        cache misses in SymbolAtlas.
+        As an illustration, this speeds up the plotting of 200,000 dots with
+        600 unique colors by ca. 20x.
+
+        See explanation at PyQtGraph.graphicsItems.ScatterPlotItem._mkBrush()
+
+        Parameters
+        ----------
+
+        time: np.ndarray
+            Delta times to be used to assign colors.
+
+        Returns
+        -------
+
+        brushes: list[QBrush]
+            List of brushes corresponding to the list of time bins. Each identifier references
+            a unique QBrush instance.
+        """
+
+        # Calculate current histogram bins
+        _, current_time_bin_edges, _, _ = prepare_histogram(
+            time,
+            auto_bins=True,
+        )
+
+        # Update what needs to be updated
+        if (
+            self._time_bin_edges is None
+            or self._time_to_brush_map is None
+            or not np.isin(current_time_bin_edges, self._time_bin_edges).all()
+        ):
+            # Generate unique colors for each brush (and identifier)
+            Colors().generate_time_colors(current_time_bin_edges.shape[0])
+
+            # Map each unique identifier to a unique QBrush, thus reducing
+            # the number of QBrush object creations to the minimum
+            unique_time_colors = Colors().unique_time_colors
+            self._time_to_brush_map = {
+                i: pg.mkBrush(*unique_time_colors[i])
+                for i in range(len(current_time_bin_edges))
+            }
+
+        # Map each identifier in the full array to its corresponding QBrush for fast lookup
+        if (
+            self._last_time is None
+            or len(self._last_time) != len(time)
+            or np.any(self._last_time != time)
+        ):
+            # Assign the depths to the corresponding bins
+            time_indices = np.digitize(time, current_time_bin_edges, right=True) - 1
+
+            assert np.min(time_indices) >= 0, "Minimum bin index is smaller than zero!"
+            assert (
+                np.max(time_indices) <= len(current_time_bin_edges) - 1
+            ), "Maximum bin index is out of range!"
+
+            self._time_brushes = [
+                self._time_to_brush_map[index] for index in time_indices
+            ]
+
+        # Keep track of the passed time vector
+        self._last_time = time
+
+        # Return the list of brushes (and references)
+        return self._time_brushes
+
 
 class ColorsToRGB(metaclass=Singleton):
     """Color manager (singleton class)."""
@@ -306,8 +698,14 @@ class ColorsToRGB(metaclass=Singleton):
         self._fid_colors = None
         self._tid_to_color_map = None
         self._fid_to_color_map = None
+        self._depth_to_color_map = None
+        self._depth_bin_edges = None
         self._last_tid = None
         self._last_fid = None
+        self._last_depth = None
+        self._last_time = None
+        self._time_bin_edges = None
+        self._time_to_color_map = None
         self._white_color = Colors().white_float
 
         # Map each unique identifier to a unique RGB color
@@ -321,6 +719,8 @@ class ColorsToRGB(metaclass=Singleton):
         mode: ColorCode,
         tid: Optional[np.ndarray] = None,
         fid: Optional[np.ndarray] = None,
+        depth: Optional[np.ndarray] = None,
+        time: Optional[np.ndarray] = None,
     ):
         """Get RGB colors for passed tid or fid.
 
@@ -336,6 +736,12 @@ class ColorsToRGB(metaclass=Singleton):
         fid: Optional[np.ndarray] = None
             Array of fluorophore IDs.  If fid is not None, tid must be.
 
+        depth: Optional[np.ndarray] = None
+            Array of depths (z values). fid, tid and time must be None.
+
+        time: Optional[np.ndarray] = None
+            Array of time stamps. fid, tid and depth must be None.
+
         Returns
         -------
 
@@ -344,30 +750,47 @@ class ColorsToRGB(metaclass=Singleton):
         """
 
         # If mode is ColorCode.NONE, we just return the default white color
+
         if mode == ColorCode.NONE:
             return Colors().white_float
 
-        # Only one of tid and fid can be passed
-        if tid is None and fid is None:
-            raise ValueError("Please specify one of `tid` or `fid`.")
-
-        if (tid is None and fid is not None) or (tid is not None and fid is None):
-            raise ValueError("Please specify only one of `tid` or `fid`.")
-
-        if mode == ColorCode.BY_TID and tid is not None:
+        elif mode == ColorCode.BY_TID:
+            if tid is None:
+                raise ValueError("If mode is ColorCode.BY_TID, `tid` cannot be None.")
             return self._get_or_create_rgb_by_tid(tid)
 
-        if mode == ColorCode.BY_FLUO and fid is not None:
+        elif mode == ColorCode.BY_FLUO:
+            if fid is None:
+                raise ValueError("If mode is ColorCode.BY_FLUO, `fid` cannot be None.")
             return self._get_or_create_rgb_by_fid(fid)
 
-        raise ValueError(f"Unknown color mode: {mode}")
+        elif mode == ColorCode.BY_DEPTH:
+            if depth is None:
+                raise ValueError(
+                    "If mode is ColorCode.BY_DEPTH, `depth` cannot be None."
+                )
+            return self._get_or_create_rgb_by_depth(depth)
+
+        elif mode == ColorCode.BY_TIME:
+            if time is None:
+                raise ValueError("If mode is ColorCode.BY_TIME, `time` cannot be None.")
+            return self._get_or_create_rgb_by_time(time)
+
+        else:
+            raise ValueError(f"Unknown color mode: {mode}")
 
     def reset(self):
         """Reset the color caches."""
         self._tid_colors = None
         self._tid_to_color_map = None
+        self._depth_to_color_map = None
+        self._depth_bin_edges = None
         self._last_tid = None
         self._last_fid = None
+        self._last_depth = None
+        self._last_time = None
+        self._time_bin_edges = None
+        self._time_to_color_map = None
 
     def _get_or_create_rgb_by_tid(self, tid) -> np.ndarray:
         """Create an Nx3 NumPy array of colors in the range [0.0 to 1.0].
@@ -450,3 +873,115 @@ class ColorsToRGB(metaclass=Singleton):
 
         # Return the list of brushes (and references) and the mapping between id and brush
         return np.array(self._fid_colors)
+
+    def _get_or_create_rgb_by_depth(self, depth) -> np.ndarray:
+        """Create an Nx3 NumPy array of colors in the range [0.0 to 1.0].
+
+        Parameters
+        ----------
+
+        depth: np.ndarray
+            Depths (z values) to be used to assign colors.
+
+        Returns
+        -------
+
+        rgb: np.ndarray
+            Nx3 NumPy array of colors in the range [0.0 to 1.0] corresponding to the list of identifiers.
+        """
+
+        # Calculate current histogram bins
+        _, current_depth_bin_edges, _, _ = prepare_histogram(
+            depth,
+            auto_bins=True,
+        )
+
+        # Update what needs to be updated
+        if (
+            self._depth_bin_edges is None
+            or self._depth_to_color_map is None
+            or not np.isin(current_depth_bin_edges, self._depth_bin_edges).all()
+        ):
+            # Generate unique colors for each brush (and identifier)
+            Colors().generate_depth_colors(current_depth_bin_edges.shape[0])
+
+            # Assign the depths to the corresponding bins
+            depth_indices = np.digitize(depth, current_depth_bin_edges, right=True) - 1
+
+            assert np.min(depth_indices) >= 0, "Minimum bin index is smaller than zero!"
+            assert (
+                np.max(depth_indices) <= len(current_depth_bin_edges) - 1
+            ), "Maximum bin index is out of range!"
+
+            self._depth_to_color_map = depth_indices
+
+        if (
+            self._last_depth is None
+            or len(self._last_depth) != len(depth)
+            or np.any(self._last_depth != depth)
+        ):
+            colors = Colors().unique_depth_colors_float
+            depth_colors = [colors[index] for index in self._depth_to_color_map]
+            self._depth_colors = np.array(depth_colors, dtype=np.float32)
+
+        # Keep track of the passed depth
+        self._last_depth = depth
+
+        # Return the list of colors (and references)
+        return self._depth_colors
+
+    def _get_or_create_rgb_by_time(self, time) -> np.ndarray:
+        """Create an Nx3 NumPy array of colors in the range [0.0 to 1.0].
+
+        Parameters
+        ----------
+
+        time: np.ndarray
+            Delta times to be used to assign colors.
+
+        Returns
+        -------
+
+        rgb: np.ndarray
+            Nx3 NumPy array of colors in the range [0.0 to 1.0] corresponding to the list of identifiers.
+        """
+
+        # Calculate current histogram bins
+        _, current_time_bin_edges, _, _ = prepare_histogram(
+            time,
+            auto_bins=True,
+        )
+
+        # Update what needs to be updated
+        if (
+            self._time_bin_edges is None
+            or self._time_to_color_map is None
+            or not np.isin(current_time_bin_edges, self._time_bin_edges).all()
+        ):
+            # Generate unique colors for each brush (and identifier)
+            Colors().generate_time_colors(current_time_bin_edges.shape[0])
+
+            # Assign the depths to the corresponding bins
+            time_indices = np.digitize(time, current_time_bin_edges, right=True) - 1
+
+            assert np.min(time_indices) >= 0, "Minimum bin index is smaller than zero!"
+            assert (
+                np.max(time_indices) <= len(current_time_bin_edges) - 1
+            ), "Maximum bin index is out of range!"
+
+            self._time_to_color_map = time_indices
+
+        if (
+            self._last_time is None
+            or len(self._last_time) != len(time)
+            or np.any(self._last_time != time)
+        ):
+            colors = Colors().unique_time_colors_float
+            time_colors = [colors[index] for index in self._time_to_color_map]
+            self._time_colors = np.array(time_colors, dtype=np.float32)
+
+        # Keep track of the passed time vector
+        self._last_time = time
+
+        # Return the list of colors (and references)
+        return self._time_colors

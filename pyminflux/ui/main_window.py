@@ -44,7 +44,7 @@ from pyminflux.state import State
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
-from pyminflux.ui.colors import reset_all_colors
+from pyminflux.ui.colors import ColorCode, reset_all_colors
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.histogram_plotter import HistogramPlotter
@@ -1311,10 +1311,27 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Extract identifiers
             tid = dataframe["tid"].to_numpy()
-            fid = dataframe["fluo"].to_numpy()
+            fid = None
+            depth = dataframe["z"].to_numpy()
+            time = None
+
+            # Extract necessary values for color-coding
+            if (
+                self.state.color_code == ColorCode.NONE
+                or self.state.color_code == ColorCode.BY_TID
+            ):
+                pass
+            elif self.state.color_code == ColorCode.BY_FLUO:
+                fid = dataframe["fluo"].to_numpy()
+            elif self.state.color_code == ColorCode.BY_DEPTH:
+                pass
+            elif self.state.color_code == ColorCode.BY_TIME:
+                time = dataframe["tim"].to_numpy()
+            else:
+                raise ValueError("Unknown color code")
 
             # Plot localizations in 3D
-            self.plotter3d.plot(dataframe[["x", "y", "z"]], tid, fid)
+            self.plotter3d.plot(dataframe[["x", "y", "z"]], tid, fid, depth, time)
 
         else:
 
@@ -1341,20 +1358,39 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if dataframe is None:
                 return
 
+            # Pre-define values
+            tid = dataframe["tid"].to_numpy()
+            fid = None
+            depth = None
+            time = None
+
             # Extract values
             x = dataframe[self.state.x_param].to_numpy()
             y = dataframe[self.state.y_param].to_numpy()
-            tid = dataframe["tid"].to_numpy()
-            fid = dataframe["fluo"].to_numpy()
+            if (
+                self.state.color_code == ColorCode.NONE
+                or self.state.color_code == ColorCode.BY_TID
+            ):
+                pass
+            elif self.state.color_code == ColorCode.BY_FLUO:
+                fid = dataframe["fluo"].to_numpy()
+            elif self.state.color_code == ColorCode.BY_DEPTH:
+                depth = dataframe["z"].to_numpy()
+            elif self.state.color_code == ColorCode.BY_TIME:
+                time = dataframe["tim"].to_numpy()
+            else:
+                raise ValueError("Unknown color code")
 
             # Always plot the (x, y) coordinates in the 2D plotter
             self.plotter.plot_parameters(
-                tid=tid,
-                fid=fid,
                 x=x,
                 y=y,
                 x_param=self.state.x_param,
                 y_param=self.state.y_param,
+                tid=tid,
+                fid=fid,
+                depth=depth,
+                time=time,
             )
 
         # Bring the active plot forward

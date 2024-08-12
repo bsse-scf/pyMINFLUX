@@ -69,7 +69,7 @@
    <item>
     <widget class="QLabel" name="lbOptions">
      <property name="text">
-      <string>Options:</string>
+      <string>Color-code by:</string>
      </property>
     </widget>
    </item>
@@ -77,17 +77,27 @@
     <widget class="QComboBox" name="cbColorCodeSelector">
      <item>
       <property name="text">
-       <string>No color code</string>
+       <string>nothing</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Color-code by TID</string>
+       <string>tid</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Color-code by fluorophore</string>
+       <string>fluorophore</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>depth</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>time</string>
       </property>
      </item>
     </widget>

@@ -105,6 +105,8 @@ class Ui_PlotterToolbar(object):
         self.cbColorCodeSelector.addItem("")
         self.cbColorCodeSelector.addItem("")
         self.cbColorCodeSelector.addItem("")
+        self.cbColorCodeSelector.addItem("")
+        self.cbColorCodeSelector.addItem("")
         self.cbColorCodeSelector.setObjectName("cbColorCodeSelector")
 
         self.horizontalLayout.addWidget(self.cbColorCodeSelector)
@@ -172,19 +174,22 @@ class Ui_PlotterToolbar(object):
         )
 
         self.lbOptions.setText(
-            QCoreApplication.translate("PlotterToolbar", "Options:", None)
+            QCoreApplication.translate("PlotterToolbar", "Color-code by:", None)
         )
         self.cbColorCodeSelector.setItemText(
-            0, QCoreApplication.translate("PlotterToolbar", "No color code", None)
+            0, QCoreApplication.translate("PlotterToolbar", "nothing", None)
         )
         self.cbColorCodeSelector.setItemText(
-            1, QCoreApplication.translate("PlotterToolbar", "Color-code by TID", None)
+            1, QCoreApplication.translate("PlotterToolbar", "tid", None)
         )
         self.cbColorCodeSelector.setItemText(
-            2,
-            QCoreApplication.translate(
-                "PlotterToolbar", "Color-code by fluorophore", None
-            ),
+            2, QCoreApplication.translate("PlotterToolbar", "fluorophore", None)
+        )
+        self.cbColorCodeSelector.setItemText(
+            3, QCoreApplication.translate("PlotterToolbar", "depth", None)
+        )
+        self.cbColorCodeSelector.setItemText(
+            4, QCoreApplication.translate("PlotterToolbar", "time", None)
         )
 
         self.cbPlotAveragePos.setText(

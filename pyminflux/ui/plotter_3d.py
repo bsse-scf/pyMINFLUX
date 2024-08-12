@@ -126,14 +126,16 @@ class Plotter3D(QWidget):
         if not self.scatter_is_empty:
             self.clear()
 
-    def plot(self, positions, tid, fid):
+    def plot(self, positions, tid, fid, depth, time):
         """Plot localizations in a 3D scatter plot."""
 
         # Make sure to have the correct datatype
         self.positions = positions.to_numpy().astype(np.float32)
 
         # Get the colors singleton
-        self.current_colors = ColorsToRGB().get_rgb(self.state.color_code, tid, fid)
+        self.current_colors = ColorsToRGB().get_rgb(
+            self.state.color_code, tid, fid, depth, time
+        )
 
         # If the average locations are plotted, set the diameter to fit the worst localization precision
         if self.state.plot_average_localisations:

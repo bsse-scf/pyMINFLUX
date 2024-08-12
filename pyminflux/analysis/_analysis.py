@@ -287,8 +287,12 @@ def ideal_hist_bins(values: np.ndarray, scott: bool = False):
 
     # Pathological case, all values are the same
     if np.all(np.diff(values[np.logical_not(np.isnan(values))]) == 0):
-        bin_edges = (values[0] - 5e-7, values[0] + 5e-7)
-        bin_centers = (values[0],)
+        bin_edges = np.array([values[0] - 5e-7, values[0] + 5e-7])
+        bin_centers = np.array(
+            [
+                values[0],
+            ]
+        )
         bin_size = 1e-6
         return bin_edges, bin_centers, bin_size
 

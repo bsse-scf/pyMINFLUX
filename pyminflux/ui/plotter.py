@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from typing import Optional
 
 import numpy as np
 import pyqtgraph as pg
@@ -325,11 +326,23 @@ class Plotter(PlotWidget):
         self.setBackground("k")
         self.clear()
 
-    def plot_parameters(self, x, y, x_param, y_param, tid, fid):
+    def plot_parameters(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        x_param: str,
+        y_param: str,
+        tid: np.ndarray,
+        fid: Optional[np.ndarray] = None,
+        depth: Optional[np.ndarray] = None,
+        time: Optional[np.ndarray] = None,
+    ):
         """Plot localizations and other parameters in a 2D scatter plot."""
 
         # Get the colors singleton
-        brushes = ColorsToBrushes().get_brushes(self.state.color_code, tid, fid)
+        brushes = ColorsToBrushes().get_brushes(
+            self.state.color_code, tid=tid, fid=fid, depth=depth, time=time
+        )
 
         # Create the scatter plot
         self.scatter_plot = pg.ScatterPlotItem(
