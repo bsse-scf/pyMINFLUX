@@ -1300,10 +1300,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     def update_and_show_colorbar_widget_if_needed(
         self,
-        colormap: Optional[np.ndarray] = None,
+        colormap: str,
         data_range: Optional[tuple[float, float]] = None,
     ):
         """Update the colorbar widget for the color-coding modes that require it."""
+
+        # Make sure we have a valid colormap
+        if colormap not in [None, "jet", "plasma"]:
+            raise ValueError(f"Unsupported colormap `{colormap}`.")
 
         # Make sure we have a valid data range
         if data_range is None:
@@ -1317,28 +1321,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.colorbar.hide()
             return
 
-        to_update = self.state.plot_3d or (
-            not self.state.plot_3d
-            and self.state.x_param in ["x", "y", "z"]
-            and self.state.y_param in ["x", "y", "z"]
+        # Update the colorbar widget
+        label = (
+            "Depth [nm]" if self.state.color_code == ColorCode.BY_DEPTH else "Time [ms]"
         )
-
-        if to_update:
-            # Update the colorbar widget
-            label = (
-                "Depth [nm]"
-                if self.state.color_code == ColorCode.BY_DEPTH
-                else "Time [ms]"
-            )
-            self.colorbar.update_colorbar(
-                colormap=None, data_range=data_range, label=label
-            )
-            self.colorbar.show()
-        else:
-            self.colorbar.hide()
+        self.colorbar.reset(colormap=colormap, data_range=data_range, label=label)
+        self.colorbar.show()
 
     def plot_selected_parameters(self):
         """Plot the localizations."""
+
+        colormap = None
 
         if self.plotter is None:
             raise Exception("Plotter object not ready!")
@@ -1395,12 +1388,25 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Range for colorbar
             if self.state.color_code == ColorCode.BY_DEPTH:
-                range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
-            elif self.state.color_code == ColorCode.BY_TIME:
-                range_for_colorbar = (dataframe["tim"].min(), dataframe["tim"].max())
-            else:
-                range_for_colorbar = None
 
+                # Set colormap
+                colormap = "jet"
+
+                # Set data range
+                data_range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
+
+            elif self.state.color_code == ColorCode.BY_TIME:
+
+                # Set colormap
+                colormap = "plasma"
+
+                # Set data range
+                data_range_for_colorbar = (
+                    dataframe["tim"].min(),
+                    dataframe["tim"].max(),
+                )
+            else:
+                data_range_for_colorbar = None
         else:
 
             # Remove the previous plots
@@ -1419,6 +1425,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                     dataframe = self.processor.filtered_dataframe
 
             else:
+                colormap = None
+
                 # Get the (potentially filtered) full dataframe
                 dataframe = self.processor.filtered_dataframe
 
@@ -1463,17 +1471,34 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Range for colorbar
             if self.state.color_code == ColorCode.BY_DEPTH:
-                range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
+
+                # Set colormap
+                colormap = "jet"
+
+                # Set data range
+                data_range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
+
             elif self.state.color_code == ColorCode.BY_TIME:
-                range_for_colorbar = (dataframe["tim"].min(), dataframe["tim"].max())
+
+                # Set colormap
+                colormap = "plasma"
+
+                # Set data range
+                data_range_for_colorbar = (
+                    dataframe["tim"].min(),
+                    dataframe["tim"].max(),
+                )
             else:
-                range_for_colorbar = None
+                colormap = None
+                data_range_for_colorbar = None
 
         # Bring the active plot forward
         self.toggle_plotter()
 
         # Update and show the colorbar for the color-coding mode that need it
-        self.update_and_show_colorbar_widget_if_needed(data_range=range_for_colorbar)
+        self.update_and_show_colorbar_widget_if_needed(
+            colormap=colormap, data_range=data_range_for_colorbar
+        )
 
     def show_processed_dataframe(self, dataframe=None):
         """

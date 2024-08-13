@@ -18,6 +18,8 @@ import pyqtgraph as pg
 from PySide6.QtCore import QMargins, QRectF, Qt, QTimer
 from PySide6.QtWidgets import QApplication, QSizePolicy, QVBoxLayout, QWidget
 
+from pyminflux.ui.colors import ColorMap
+
 
 class ColorBarWidget(QWidget):
     def __init__(self, parent=None):
@@ -56,23 +58,32 @@ class ColorBarWidget(QWidget):
         # Now hide it
         self.hide()
 
-    def update_colorbar(
-        self, colormap: np.ndarray, data_range: tuple[float, float], label: str = ""
-    ):
+    def reset(self, colormap: str, data_range: tuple[float, float], label: str = ""):
         """Update the color bar."""
+
+        if colormap is None:
+            return
+
+        if colormap not in ["jet", "plasma"]:
+            raise ValueError(f"Unsupported colormap `{colormap}`.")
 
         # Remove the previous colorbar item
         if self.colorbar is not None:
             self.graphWidget.removeItem(self.colorbar)
 
-        # Update the colormap (temporarily keep "viridis")
-        if colormap is None:
-            colorMap = "viridis"
+        # Create the colormap
+        if colormap == "jet":
+            _, colors = ColorMap().generate_jet_colormap(n_colors=256)
+        elif colormap == "plasma":
+            _, colors = ColorMap().generate_plasma_colormap(n_colors=256)
+        else:
+            raise ValueError(f"Unsupported colormap `{colormap}`.")
+        pg_colormap = pg.ColorMap(np.linspace(0.0, 1.0, colors.shape[0]), colors)
 
         # Create a ColorBarItem
         self.colorbar = pg.ColorBarItem(
             values=data_range,
-            colorMap=colormap,
+            colorMap=pg_colormap,
             label=label,
             interactive=False,
             colorMapMenu=False,
