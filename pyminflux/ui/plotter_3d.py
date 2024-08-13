@@ -20,7 +20,7 @@ from vispy.visuals import transforms
 
 from ..processor import MinFluxProcessor
 from ..state import State
-from .colors import ColorsToRGB
+from .colors import ColorCode, ColorsToRGB
 
 
 class Plotter3D(QWidget):
@@ -37,6 +37,8 @@ class Plotter3D(QWidget):
 
         # Create the layout
         self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
         self.setLayout(self.layout)
 
         # Keep track of whether we have already plotted something

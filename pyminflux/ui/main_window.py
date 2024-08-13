@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, Signal, Slot
@@ -25,6 +26,8 @@ from PySide6.QtWidgets import (
     QDialog,
     QDockWidget,
     QFileDialog,
+    QHBoxLayout,
+    QLabel,
     QMainWindow,
     QMessageBox,
     QPushButton,
@@ -32,6 +35,7 @@ from PySide6.QtWidgets import (
     QTextBrowser,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
 import pyminflux.resources
@@ -44,6 +48,7 @@ from pyminflux.state import State
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
+from pyminflux.ui.colorbar import ColorBarWidget
 from pyminflux.ui.colors import ColorCode, reset_all_colors
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.frc_tool import FRCTool
@@ -147,6 +152,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.plotter3d = Plotter3D()
         self.mediator.register_dialog("plotter3d", self.plotter3d)
 
+        # Initialize the ColorBarWidget
+        self.colorbar = ColorBarWidget()
+
+        # Initialize a Plotters QWidget with a layout for Plotter, Plotter3D and PlotterColorBar
+        self.plotters_layout = QHBoxLayout()
+        left_layout = QVBoxLayout()
+        left_layout.addWidget(self.plotter)
+        left_layout.addWidget(self.plotter3d)
+        self.plotters_layout.addLayout(left_layout)
+        self.plotters_layout.addWidget(QLabel("Lomm!"))
+
         # Create the output console
         self.txt_console = QTextEdit()
         self.txt_console.setReadOnly(True)
@@ -158,9 +174,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Add them to the splitter
         self.stacked_widget = QStackedWidget()
-        self.ui.splitter_layout.addWidget(self.stacked_widget)
         self.stacked_widget.addWidget(self.plotter)
         self.stacked_widget.addWidget(self.plotter3d)
+        self.plotters_layout = QHBoxLayout()
+        self.plotters_layout.addWidget(self.stacked_widget)
+        self.plotters_layout.addWidget(self.colorbar, alignment=Qt.AlignRight)
+        self.plotters_widget = QWidget()
+        self.plotters_widget.setLayout(self.plotters_layout)
+        self.ui.splitter_layout.addWidget(self.plotters_widget)
         self.ui.splitter_layout.addWidget(self.plotter_toolbar)
         self.ui.splitter_layout.addWidget(self.data_viewer)
         self.ui.splitter_layout.addWidget(self.txt_console)
@@ -1277,6 +1298,45 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
         self.plot_selected_parameters()
 
+    def update_and_show_colorbar_widget_if_needed(
+        self,
+        colormap: Optional[np.ndarray] = None,
+        data_range: Optional[tuple[float, float]] = None,
+    ):
+        """Update the colorbar widget for the color-coding modes that require it."""
+
+        # Make sure we have a valid data range
+        if data_range is None:
+            data_range = (0.0, 1.0)
+
+        # Only show and update the colorbar for supported parameters and color coding option
+        if not (
+            self.state.color_code == ColorCode.BY_DEPTH
+            or self.state.color_code == ColorCode.BY_TIME
+        ):
+            self.colorbar.hide()
+            return
+
+        to_update = self.state.plot_3d or (
+            not self.state.plot_3d
+            and self.state.x_param in ["x", "y", "z"]
+            and self.state.y_param in ["x", "y", "z"]
+        )
+
+        if to_update:
+            # Update the colorbar widget
+            label = (
+                "Depth [nm]"
+                if self.state.color_code == ColorCode.BY_DEPTH
+                else "Time [ms]"
+            )
+            self.colorbar.update_colorbar(
+                colormap=None, data_range=data_range, label=label
+            )
+            self.colorbar.show()
+        else:
+            self.colorbar.hide()
+
     def plot_selected_parameters(self):
         """Plot the localizations."""
 
@@ -1332,6 +1392,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Plot localizations in 3D
             self.plotter3d.plot(dataframe[["x", "y", "z"]], tid, fid, depth, time)
+
+            # Range for colorbar
+            if self.state.color_code == ColorCode.BY_DEPTH:
+                range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
+            elif self.state.color_code == ColorCode.BY_TIME:
+                range_for_colorbar = (dataframe["tim"].min(), dataframe["tim"].max())
+            else:
+                range_for_colorbar = None
 
         else:
 
@@ -1393,8 +1461,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 time=time,
             )
 
+            # Range for colorbar
+            if self.state.color_code == ColorCode.BY_DEPTH:
+                range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
+            elif self.state.color_code == ColorCode.BY_TIME:
+                range_for_colorbar = (dataframe["tim"].min(), dataframe["tim"].max())
+            else:
+                range_for_colorbar = None
+
         # Bring the active plot forward
         self.toggle_plotter()
+
+        # Update and show the colorbar for the color-coding mode that need it
+        self.update_and_show_colorbar_widget_if_needed(data_range=range_for_colorbar)
 
     def show_processed_dataframe(self, dataframe=None):
         """
