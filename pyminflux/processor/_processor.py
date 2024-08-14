@@ -342,6 +342,7 @@ class MinFluxProcessor:
             "rms_xy",
             "sz",
             "ez",
+            "mtim",
             "tim_tot",
         ]
 
@@ -939,6 +940,7 @@ class MinFluxProcessor:
         exy = sxy / np.sqrt(n)
         ez = sz / np.sqrt(n)
         fluo = df_grouped["fluo"].agg(lambda x: mode(x, keepdims=True)[0][0]).to_numpy()
+        mtim = df_grouped["tim"].mean().to_numpy()
         tot_tim, _, _ = calculate_trace_time(df)
 
         # Optional tracking statistics
@@ -963,6 +965,7 @@ class MinFluxProcessor:
         df_tid["sz"] = sz  # z localization precision
         df_tid["ez"] = ez  # Standard error of ez
         df_tid["fluo"] = fluo  # Assigned fluorophore ID
+        df_tid["mtim"] = mtim  # Average time per trace
         df_tid["tim_tot"] = tot_tim["tim_tot"].to_numpy()  # Total time per trace
         if is_tracking:
             df_tid["avg_speed"] = speeds  # Average speed per trace
