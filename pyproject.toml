@@ -68,6 +68,7 @@ requests = "^2.31.0"
 h5py = "^3.11.0"
 vispy = "^0.14.3"
 nuitka = "^2.4.5"
+pillow = "^10.4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
