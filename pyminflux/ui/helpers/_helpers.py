@@ -170,6 +170,84 @@ def export_to_image(item: pg.ViewBox, out_file_name: Union[Path, str], dpi: int 
     print(f"Plot exported to {out_file_name}.")
 
 
+def export_colorbar(colorbar_widget):
+    """Save the colorbar to file."""
+
+    # Get the State
+    state = State()
+
+    # Default to the input data path
+    if state.last_selected_path is not None:
+        save_path = str(state.last_selected_path)
+    else:
+        save_path = str(Path(".").absolute())
+
+    # Ask the user to pick a file name
+    filename, ext = QFileDialog.getSaveFileName(
+        None,
+        "Export colorbar",
+        save_path,
+        "PNG images (*.png)",
+    )
+
+    # Did the user cancel?
+    if filename == "":
+        return
+
+    # Make sure to add the extension
+    if not filename.lower().endswith(".png"):
+        filename += ".png"
+
+    # Save the colorbar to file
+    export_colorbar_to_image(
+        colorbar_widget, out_file_name=filename, dpi=state.plot_export_dpi
+    )
+
+
+def export_colorbar_to_image(
+    colorbar_widget, out_file_name: Union[Path, str], dpi: int = 600
+):
+    """Export the ColorBarWidget to an image file with the specified DPI."""
+
+    # Local import to avoid circular import issues
+    from pyminflux.ui.colorbar import ColorBarWidget
+
+    # Ensure the widget is a ColorBarWidget
+    if not isinstance(colorbar_widget, ColorBarWidget):
+        return
+
+    # Get the primary screen resolution
+    app = QApplication.instance()
+    screen = app.primaryScreen()
+    logical_dpi = screen.logicalDotsPerInch()
+
+    # Final image size at the given DPI
+    dpi_scaling = dpi / logical_dpi
+    img_size = colorbar_widget.size() * dpi_scaling
+
+    # Create the image and painter
+    image = QImage(img_size, QImage.Format_ARGB32)
+    painter = QPainter()
+
+    # Begin the QPainter operation
+    painter.begin(image)
+
+    # Set the viewport and window of the QPainter
+    painter.setViewport(QRect(0, 0, img_size.width(), img_size.height()))
+
+    # Paint the GraphicsLayoutWidget onto the image
+    colorbar_widget.graphWidget.render(painter)
+
+    # End the QPainter operation
+    painter.end()
+
+    # Save the image to a file
+    image.save(out_file_name)
+
+    # Inform the user
+    print(f"ColorBar exported to {out_file_name}.")
+
+
 def add_median_line(
     plot: pg.PlotWidget,
     values: np.ndarray,

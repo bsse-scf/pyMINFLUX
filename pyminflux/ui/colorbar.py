@@ -11,14 +11,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import Optional, Union
+from pathlib import Path
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import QMargins, QRectF, Qt, QTimer
-from PySide6.QtWidgets import QApplication, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtCore import QMargins, QRectF, QTimer
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QMenu, QSizePolicy, QVBoxLayout, QWidget
 
 from pyminflux.ui.colors import ColorMap
+from pyminflux.ui.helpers import export_colorbar
 
 
 class ColorBarWidget(QWidget):
@@ -129,3 +131,11 @@ class ColorBarWidget(QWidget):
                 self.height() - self.margins.top() - self.margins.bottom(),
             )
             self.colorbar.setGeometry(rect)
+
+    def contextMenuEvent(self, ev):
+        """Create a context menu on the plot."""
+        menu = QMenu()
+        export_action = QAction("Save as image")
+        export_action.triggered.connect(lambda checked: export_colorbar(self))
+        menu.addAction(export_action)
+        menu.exec(ev.globalPos())

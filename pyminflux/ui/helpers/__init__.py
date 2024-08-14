@@ -16,6 +16,8 @@ from ._helpers import (
     BottomLeftAnchoredScaleBar,
     add_median_line,
     export_all_plots_interactive,
+    export_colorbar,
+    export_colorbar_to_image,
     export_plot_interactive,
     export_to_image,
 )
