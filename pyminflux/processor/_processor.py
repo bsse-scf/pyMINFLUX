@@ -993,7 +993,9 @@ class MinFluxProcessor:
             return
 
         # Work with a copy of a subset of current filtered dataframe
-        df = self.filtered_dataframe[["tid", "eco", "x", "y", "z", "fluo"]].copy()
+        df = self.filtered_dataframe[
+            ["tid", "tim", "eco", "x", "y", "z", "fluo"]
+        ].copy()
 
         if self._use_weighted_localizations:
             # Calculate weights for each coordinate based on 'eco'
@@ -1030,10 +1032,14 @@ class MinFluxProcessor:
                 lambda x: x.mode()[0] if not x.empty else np.nan
             )
 
+        # We calculate also the mean timestamp (not weighted)
+        tim = df_grouped["tim"].mean()
+
         # Prepare a dataframe with the weighted localizations
         df_loc = pd.DataFrame(
             {
                 "tid": x_w.index,
+                "tim": tim.to_numpy(),
                 "x": x_w.to_numpy(),
                 "y": y_w.to_numpy(),
                 "z": z_w.to_numpy(),
