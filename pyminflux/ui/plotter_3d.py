@@ -14,13 +14,15 @@
 
 import numpy as np
 from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QVBoxLayout, QWidget
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QMenu, QVBoxLayout, QWidget
 from vispy import scene
 from vispy.visuals import transforms
 
 from ..processor import MinFluxProcessor
 from ..state import State
-from .colors import ColorCode, ColorsToRGB
+from .colors import ColorsToRGB
+from .helpers._helpers import export_vispy_plot
 
 
 class Plotter3D(QWidget):
@@ -76,6 +78,7 @@ class Plotter3D(QWidget):
                 app="pyside6",
                 create_native=True,
                 decorate=False,
+                dpi=self.state.plot_export_dpi,
             )
 
             # Add the native widget
@@ -208,8 +211,20 @@ class Plotter3D(QWidget):
         )
 
     def contextMenuEvent(self, event):
-        """Create and display a context menu."""
-        event.ignore()
+        # Create the context menu
+        context_menu = QMenu(self)
+
+        # Add actions to the menu
+        save_action = QAction("Export plot", self)
+        context_menu.addAction(save_action)
+
+        # Connect actions to methods
+        save_action.triggered.connect(
+            lambda checked: export_vispy_plot(self.canvas, self.view)
+        )
+
+        # Display the context menu at the position of the event
+        context_menu.exec(event.globalPos())
 
     def _reset_camera_and_axes(self, positions: np.ndarray):
         """Initializes or resets camera position and orientation based on data.
