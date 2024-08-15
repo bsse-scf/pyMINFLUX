@@ -39,6 +39,9 @@ When you're ready to contribute, follow these steps:
 ## Review Process
 After you submit a PR, the project maintainers will review your changes. We may suggest changes or ask for further details. This is a collaborative process, so please be patient and receptive to feedback. Once your PR is approved, a maintainer will merge it.
 
+## Collaborations
+If you are interested in a (scientific) collaboration with us that goes beyond the scope of standard open source contributions, feel free to get in touch with us at pyminflux *at* ethz *dot* ch!
+
 ## Questions?
 If you have any questions or need further clarification on the contribution process, please open an issue, and we'll be happy to help.
 Thank you for contributing to pyMINFLUX! Your efforts help make this project better for everyone.
