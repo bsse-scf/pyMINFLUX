@@ -219,9 +219,7 @@ class Plotter3D(QWidget):
         context_menu.addAction(save_action)
 
         # Connect actions to methods
-        save_action.triggered.connect(
-            lambda checked: export_vispy_plot(self.canvas, self.view)
-        )
+        save_action.triggered.connect(lambda checked: export_vispy_plot(self.canvas))
 
         # Display the context menu at the position of the event
         context_menu.exec(event.globalPos())

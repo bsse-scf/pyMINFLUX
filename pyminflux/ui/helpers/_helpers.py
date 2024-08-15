@@ -250,7 +250,7 @@ def export_colorbar_to_image(
     print(f"ColorBar exported to {out_file_name}.")
 
 
-def export_vispy_plot(canvas, view):
+def export_vispy_plot(canvas):
     """Save the VisPy plot to file."""
 
     # Get the State
@@ -280,47 +280,26 @@ def export_vispy_plot(canvas, view):
 
     # Save the colorbar to file
     export_vispy_plot_to_image(
-        canvas, view, out_file_name=filename, dpi=state.plot_export_dpi
+        canvas, out_file_name=filename, dpi=state.plot_export_dpi
     )
 
 
 def export_vispy_plot_to_image(
-    canvas: SceneCanvas, view, out_file_name: Union[Path, str], dpi: int = 300
+    canvas: SceneCanvas, out_file_name: Union[Path, str], dpi: int = 300
 ):
     """Export a VisPy canvas to an image file with the specified DPI."""
 
     if not isinstance(canvas, SceneCanvas):
         return
 
-    # Get the primary screen resolution
-    app = QApplication.instance()
-    screen = app.primaryScreen()
-    logical_dpi = screen.logicalDotsPerInch()
-
-    # Final image size at the given DPI
-    dpi_scaling = dpi / logical_dpi
-
-    # Get current viewport
-    viewport = canvas.context.get_viewport()
-    _, _, width, height = viewport
-
-    # Calculate the desired full canvas render size
-    target_width = width
-    target_height = height
-    # target_width = int(width * dpi_scaling)
-    # target_height = int(height * dpi_scaling)
-
-    # Set the requested resolution
-    canvas.dpi = dpi
-
-    # Render
-    image = canvas.render(size=(target_width, target_height))
+    # Grab the scene from the native wigdet
+    image = canvas.native.grabFramebuffer()
 
     # Save the image with the specified filename
-    Image.fromarray(image, mode="RGBA").save(out_file_name)
+    image.save(out_file_name)
 
     # Inform
-    print(f"Plot exported to {out_file_name}.")
+    print(f"3D plot exported to {out_file_name}.")
 
 
 def add_median_line(
