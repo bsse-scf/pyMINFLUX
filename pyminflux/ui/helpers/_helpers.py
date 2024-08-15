@@ -19,9 +19,8 @@ from typing import Union
 
 import numpy as np
 import pyqtgraph as pg
-from PIL import Image
 from pyqtgraph import AxisItem, ViewBox
-from PySide6.QtCore import QPointF, QRect, QRectF, QSize
+from PySide6.QtCore import QPointF, QRect, QRectF
 from PySide6.QtGui import QImage, QPainter, Qt
 from PySide6.QtWidgets import QApplication, QFileDialog
 from vispy.scene import SceneCanvas
@@ -292,8 +291,30 @@ def export_vispy_plot_to_image(
     if not isinstance(canvas, SceneCanvas):
         return
 
-    # Grab the scene from the native wigdet
+    # Get the primary screen resolution
+    app = QApplication.instance()
+    screen = app.primaryScreen()
+    logical_dpi = screen.logicalDotsPerInch()
+
+    # Final image size at the given DPI
+    dpi_scaling = dpi / logical_dpi
+
+    # Get current canvas size
+    original_canvas_size = canvas.size
+
+    # Final image size at given dpi
+    render_width = int(original_canvas_size[0] * dpi_scaling)
+    render_height = int(original_canvas_size[1] * dpi_scaling)
+
+    # Resize the canvas viewport to match the desired size: importantly, we let
+    # the canvas resize manage the viewport update on its own.
+    canvas.size = (render_width, render_height)
+
+    # Grab the scene rendered at the desired final size
     image = canvas.native.grabFramebuffer()
+
+    # Reset the canvas to the original size
+    canvas.size = original_canvas_size
 
     # Save the image with the specified filename
     image.save(out_file_name)

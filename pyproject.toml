@@ -50,7 +50,7 @@ force_grid_wrap = 0
 use_parentheses = true
 line_length = 88
 combine_as_imports = true
-known_third_party = ["PIL", "PySide6", "h5py", "numpy", "pandas", "paraview", "pyqtgraph", "pytest", "requests", "scipy", "sklearn", "vispy", "vtkmodules"]
+known_third_party = ["PySide6", "h5py", "numpy", "pandas", "paraview", "pyqtgraph", "pytest", "requests", "scipy", "sklearn", "vispy", "vtkmodules"]
 
 [tool.ruff.lint]
 select = ["NPY201"]
@@ -68,7 +68,6 @@ requests = "^2.31.0"
 h5py = "^3.11.0"
 vispy = "^0.14.3"
 nuitka = "^2.4.5"
-pillow = "^10.4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
