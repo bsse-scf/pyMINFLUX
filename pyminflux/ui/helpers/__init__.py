@@ -20,4 +20,6 @@ from ._helpers import (
     export_colorbar_to_image,
     export_plot_interactive,
     export_to_image,
+    export_vispy_plot,
+    export_vispy_plot_to_image,
 )

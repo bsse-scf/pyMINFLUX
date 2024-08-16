@@ -13,16 +13,41 @@
 #  limitations under the License.
 
 import numpy as np
-from PySide6.QtCore import Slot
-from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMenu, QVBoxLayout, QWidget
+from PySide6.QtCore import QEvent, QObject, QPoint, QTimer, Slot
+from PySide6.QtGui import QAction, Qt
+from PySide6.QtWidgets import QApplication, QMenu, QVBoxLayout, QWidget
 from vispy import scene
 from vispy.visuals import transforms
 
 from ..processor import MinFluxProcessor
 from ..state import State
 from .colors import ColorsToRGB
-from .helpers._helpers import export_vispy_plot
+from .helpers import export_vispy_plot
+
+
+def invoke_original_handler(handler, event):
+    """Invoke an original handler by resolving the method name from the SceneCanvas object."""
+
+    # The weak reference to the object owning the method to call
+    canvas_ref = handler[0]
+
+    # The method name as a string
+    method_name = handler[1]
+
+    # Dereference the weak reference to get the actual object
+    canvas = canvas_ref()
+
+    if canvas is not None and isinstance(method_name, str):
+        # Get the actual method from the object
+        method = getattr(canvas, method_name, None)
+        if callable(method):
+            # Call the method with the event
+            method(event)
+        else:
+            # If the method was not found, silently ignore
+            pass
+    else:
+        print("Canvas object or method name is invalid.")
 
 
 class Plotter3D(QWidget):
@@ -67,6 +92,15 @@ class Plotter3D(QWidget):
         # Keep track of surrent sizes
         self.current_sizes = None
 
+        # Keep track of last plotted positions
+        self.positions = None
+
+        # Keep references to the SceneCanvas mouse event handlers
+        self.original_mouse_press_handlers = []
+        self.original_mouse_move_handlers = []
+        self.original_mouse_release_handlers = []
+        self.original_mouse_wheel_handlers = []
+
     @Slot()
     def on_show(self):
         # Initialize the canvas only when the main window is shown
@@ -99,8 +133,58 @@ class Plotter3D(QWidget):
             # Connect the update function to the view_changed event
             self.canvas.events.draw.connect(self.update_point_size)
 
+            #
+            # Swap mouse press handlers
+            #
+            self.disconnect_canvas_mouse_event_handlers()
+            self.connect_custom_mouse_event_handlers()
+
             # Show the canvas
             self.canvas.show()
+
+    def disconnect_canvas_mouse_event_handlers(self):
+        """Disconnect (and store) the original SceneCanvas mouse event handlers."""
+
+        # Store the original mouse event handlers if we haven't done it yet
+        if len(self.original_mouse_press_handlers) == 0:
+            self.original_mouse_press_handlers = list(
+                self.canvas.events.mouse_press.callbacks
+            )
+
+        if len(self.original_mouse_move_handlers) == 0:
+            self.original_mouse_move_handlers = list(
+                self.canvas.events.mouse_move.callbacks
+            )
+
+        if len(self.original_mouse_release_handlers) == 0:
+            self.original_mouse_release_handlers = list(
+                self.canvas.events.mouse_release.callbacks
+            )
+
+        if len(self.original_mouse_wheel_handlers) == 0:
+            self.original_mouse_wheel_handlers = list(
+                self.canvas.events.mouse_wheel.callbacks
+            )
+
+        # Disconnect the custom mouse release handlers
+        for handler in self.original_mouse_press_handlers:
+            self.canvas.events.mouse_press.disconnect(handler)
+
+        for handler in self.original_mouse_move_handlers:
+            self.canvas.events.mouse_move.disconnect(handler)
+
+        for handler in self.original_mouse_release_handlers:
+            self.canvas.events.mouse_release.disconnect(handler)
+
+        for handler in self.original_mouse_wheel_handlers:
+            self.canvas.events.mouse_wheel.disconnect(handler)
+
+    def connect_custom_mouse_event_handlers(self):
+        """Connect the custom mouse event handlers."""
+        self.canvas.events.mouse_press.connect(self.custom_mouse_press_handler)
+        self.canvas.events.mouse_move.connect(self.custom_mouse_move_handler)
+        self.canvas.events.mouse_release.connect(self.custom_mouse_release_handler)
+        self.canvas.events.mouse_wheel.connect(self.custom_mouse_wheel_event_handler)
 
     def set_processor(self, processor: MinFluxProcessor):
         """Set the processor."""
@@ -210,7 +294,66 @@ class Plotter3D(QWidget):
             size=self.current_point_sizes,
         )
 
-    def contextMenuEvent(self, event):
+    def custom_mouse_press_handler(self, event):
+        """Custom mouse press handler to show a context menu on the canvas."""
+
+        # We do not pass the event on if the button is 2 (right-click)
+        if event.button == 2 and not event.is_dragging:
+
+            # Get the position of the cursor
+            pos = event.pos
+            qt_pos = QPoint(int(pos[0]), int(pos[1]))
+
+            # Convert to global screen coordinates
+            global_pos = self.canvas.native.mapToGlobal(qt_pos)
+
+            # Use a timer to delay the opening of the context menu
+            QTimer.singleShot(150, lambda: self.open_context_menu(global_pos))
+
+        # If the event should be passed on, iterate over the original handlers
+        if not event.handled:
+            for handler in self.original_mouse_press_handlers:
+                invoke_original_handler(handler, event)
+
+        # Mark the event as handled
+        event.handled = True
+
+    def custom_mouse_move_handler(self, event):
+        """Custom mouse move handler to allow for adding a context menu to the SceneCanvas."""
+
+        # If the event should be passed on, iterate over the original handlers
+        if not event.handled:
+            for handler in self.original_mouse_move_handlers:
+                invoke_original_handler(handler, event)
+
+        # Mark the event as handled
+        event.handled = True
+
+    def custom_mouse_release_handler(self, event):
+        """Custom mouse release handler to allow for adding a context menu to the SceneCanvas."""
+
+        # If the event should be passed on, iterate over the original handlers
+        if not event.handled:
+            for handler in self.original_mouse_release_handlers:
+                invoke_original_handler(handler, event)
+
+        # Mark the event as handled
+        event.handled = True
+
+    def custom_mouse_wheel_event_handler(self, event):
+        """Custom mouse wheel handler to allow for adding a context menu to the SceneCanvas.."""
+
+        # If the event should be passed on, iterate over the original handlers
+        if not event.handled:
+            for handler in self.original_mouse_wheel_handlers:
+                invoke_original_handler(handler, event)
+
+        # Mark the event as handled
+        event.handled = True
+
+    def open_context_menu(self, global_pos):
+        """Open context menu."""
+
         # Create the context menu
         context_menu = QMenu(self)
 
@@ -218,11 +361,11 @@ class Plotter3D(QWidget):
         save_action = QAction("Export plot", self)
         context_menu.addAction(save_action)
 
-        # Connect actions to methods
-        save_action.triggered.connect(lambda checked: export_vispy_plot(self.canvas))
-
         # Display the context menu at the position of the event
-        context_menu.exec(event.globalPos())
+        save_action.triggered.connect(lambda _: export_vispy_plot(self.canvas))
+
+        # Open the context menu
+        context_menu.exec(global_pos)
 
     def _reset_camera_and_axes(self, positions: np.ndarray):
         """Initializes or resets camera position and orientation based on data.
