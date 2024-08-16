@@ -269,6 +269,11 @@ class Plotter3D(QWidget):
         if self.scatter is None:
             return
 
+        if positions is None:
+            if self.positions is None:
+                return
+            positions = self.positions
+
         # Position camera to look at the data center from a fixed distance
         self._position_camera(positions=positions)
 
