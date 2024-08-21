@@ -75,8 +75,8 @@ class OFBStackMetadata:
         0  # Length of data on disk; version 6: offset from the end of the header + description to the stack footer
     )
     next_stack_pos: uint64 = (0,)
-    name: str = ""
-    description: str = ""
+    stack_name: str = ""
+    stack_description: str = ""
     data_position: uint64 = 0
 
     #
@@ -390,7 +390,7 @@ class MSRReader:
         # Next stack position in the file
         obf_stack_metadata.next_stack_pos = struct.unpack("<Q", f.read(8))[0]
 
-        # Scan also stack name and description
+        # Scan also stack name and description (right after the end of the header)
         obf_stack_metadata.stack_name = (
             ""
             if obf_stack_metadata.length_stack_name == 0
