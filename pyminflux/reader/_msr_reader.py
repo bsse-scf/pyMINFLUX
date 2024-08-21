@@ -12,7 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import struct
-from dataclasses import dataclass, field
+import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 from pprint import pprint
 from typing import BinaryIO, NewType, Union
@@ -25,29 +26,49 @@ uint64 = NewType("uint64", int)
 
 
 @dataclass
-class SIFraction:
+class BaseDataclass:
+    """Do not instantiate this class directly."""
+
+    def __setattr__(self, key, value):
+        # Check if the attribute already exists
+        if key in {f.name for f in fields(self)}:
+            super().__setattr__(key, value)
+        else:
+            raise AttributeError(
+                f"Cannot add new attribute '{key}' to {self.__class__.__name__}"
+            )
+
+
+@dataclass
+class SIFraction(BaseDataclass):
     numerator: int32
     denominator: int32
 
 
 @dataclass
-class SIUnit:
+class SIUnit(BaseDataclass):
     exponents: list[SIFraction]
     scale_factor: float
 
 
 @dataclass
-class OBSFileHeader:
+class OBSFileHeader(BaseDataclass):
     magic_header: bytes = (b"",)  # It should be: b"OMAS_BF\n\xff\xff"
     format_version: uint32 = 0  # Format version >= 2 supported
     first_stack_pos: uint64 = 0
-    descr_len: uint32 = -1
+    descr_len: uint32 = 0
     description: str = ""
     meta_data_position: uint32 = 0
 
 
 @dataclass
-class OFBStackMetadata:
+class OBSFileMetadata(BaseDataclass):
+    tree: ET = None
+    unknown_strings: list[str] = field(default_factory=list)
+
+
+@dataclass
+class OFBStackMetadata(BaseDataclass):
     #
     # Header
     #
@@ -85,15 +106,16 @@ class OFBStackMetadata:
 
     # Custom
     start_position: uint64 = 0
+    variable_metadata_start_position: uint64 = 0
+    footer_start_pos: uint64 = 0
 
     # Version 1
     footer_size: uint32 = 0
     has_col_positions: list[uint32] = field(default_factory=list)
-    has_col_labels: list[uint32] = field(default_factory=list)
-    has_row_labels: list[uint32] = field(default_factory=list)
+    has_col_labels: list[bool] = field(default_factory=list)
 
     # Version 1A
-    metadata_length: uint32 = 0
+    obsolete_metadata_length: uint32 = 0
 
     # Version 2
     si_value: SIUnit = None
@@ -117,6 +139,16 @@ class OFBStackMetadata:
 
     # Version 7: nothing
 
+    #
+    # After footer
+    #
+    labels: list[str] = field(default_factory=list)
+    steps: list[float] = field(default_factory=list)
+    flush_points: list[uint64] = field(default_factory=list)
+    chunk_logical_positions: list[uint64] = field(default_factory=list)
+    chunk_file_positions: list[uint64] = field(default_factory=list)
+    tag_dictionary: dict = field(default_factory=dict)
+
 
 @dataclass(frozen=True)
 class Constants:
@@ -125,20 +157,14 @@ class Constants:
     OBF_SI_FRACTION_NUM_ELEMENTS: int = 9
     OBF_SI_UNIT_SIZE: int = OBF_SI_FRACTION_NUM_ELEMENTS * OBF_SI_FRACTION_SIZE + 8
 
-    VERSION_1_FOOTER_LENGTH: int = (
-        4 + 4 * BF_MAX_DIMENSIONS + 4 * BF_MAX_DIMENSIONS
-    )  # 124
-    VERSION_1A_FOOTER_LENGTH: int = VERSION_1_FOOTER_LENGTH + 4  # 128
-    VERSION_2_FOOTER_LENGTH: int = (
-        VERSION_1A_FOOTER_LENGTH
-        + OBF_SI_UNIT_SIZE
-        + OBF_SI_UNIT_SIZE * BF_MAX_DIMENSIONS
-    )  # 1408
-    VERSION_3_FOOTER_LENGTH: int = VERSION_2_FOOTER_LENGTH + 8 + 8  # 1424
-    VERSION_4_FOOTER_LENGTH: int = VERSION_3_FOOTER_LENGTH + 8  # 1432
-    VERSION_5_FOOTER_LENGTH: int = VERSION_4_FOOTER_LENGTH + 8 + 4  # 1444
-    VERSION_5A_FOOTER_LENGTH: int = VERSION_5_FOOTER_LENGTH + 8  # 1452
-    VERSION_6_FOOTER_LENGTH: int = VERSION_5A_FOOTER_LENGTH + 8 + 8  # 1468
+    VERSION_1_FOOTER_LENGTH: int = 124
+    VERSION_1A_FOOTER_LENGTH: int = 128
+    VERSION_2_FOOTER_LENGTH: int = 1408
+    VERSION_3_FOOTER_LENGTH: int = 1424
+    VERSION_4_FOOTER_LENGTH: int = 1432
+    VERSION_5_FOOTER_LENGTH: int = 1444
+    VERSION_5A_FOOTER_LENGTH: int = 1452
+    VERSION_6_FOOTER_LENGTH: int = 1468
     VERSION_7_FOOTER_LENGTH: int = 1528  # No documentation on what is new
 
 
@@ -187,6 +213,9 @@ class MSRReader:
         # OBF_FILE_HEADER structure
         self.obf_file_header = OBSFileHeader()
 
+        # Metadata
+        self.metadata = OBSFileMetadata()
+
         # Stack metadata (OBF_STACK_HEADERS + OBF_STACK_FOOTERS + plus additional info)
         self.obf_stacks_list: list[OFBStackMetadata] = []
 
@@ -198,6 +227,9 @@ class MSRReader:
 
             if not self._read_obf_header(f):
                 return False
+
+            # Scan metadata
+            self.metadata = self._scan_metadata(f, self.obf_file_header)
 
             # Get the first stack position
             next_stack_pos = self.obf_file_header.first_stack_pos
@@ -305,16 +337,6 @@ class MSRReader:
             Updated OFBStackMetadata object
         """
 
-        # # Initialize the metadata
-        # obf_stack_metadata = OFBStackMetadata()
-
-        #
-        # Parse the header
-        #
-
-        # # Move to position pos
-        # f.seek(next_stack_pos)
-
         # Read the magic header
         obf_stack_metadata.magic_header = f.read(16)
 
@@ -401,9 +423,7 @@ class MSRReader:
         obf_stack_metadata.stack_description = (
             ""
             if obf_stack_metadata.length_stack_description == 0
-            else f.read(obf_stack_metadata.length_stack_description).decode(
-                "utf-8", errors="replace"
-            )
+            else f.read(obf_stack_metadata.length_stack_description).decode("utf-8")
         )
 
         # Now we are at the beginning of the data
@@ -419,17 +439,15 @@ class MSRReader:
 
         return True, obf_stack_metadata
 
-    def print_stack_headers(self):
-        """Print extracted stack headers."""
-        for i, header in enumerate(self.obf_stacks_list):
-            print(f"Stack {i:3}:"), pprint(header)
-
     def _read_obf_stack_footer(self, f: BinaryIO, obf_stack_metadata: OFBStackMetadata):
         """Process footer."""
 
         #
         # Version 0
         #
+
+        # Current position (beginning of the footer)
+        obf_stack_metadata.footer_start_pos = f.tell()
 
         # If stack version is 0, there is no footer
         if obf_stack_metadata.format_version == 0:
@@ -450,24 +468,31 @@ class MSRReader:
         obf_stack_metadata.footer_size = struct.unpack("<I", f.read(4))[0]
         current_size += 4
 
+        # Position of the beginning of the variable metadata
+        obf_stack_metadata.variable_metadata_start_position = (
+            obf_stack_metadata.footer_start_pos + obf_stack_metadata.footer_size
+        )
+
         # Entries are != 0 for all axes that have a pixel position array (after the footer)
-        col_positions = []
+        col_positions_present = []
         for i in range(Constants.BF_MAX_DIMENSIONS):
             p = struct.unpack("<I", f.read(4))[0]
-            col_positions.append(p)
+            if i < obf_stack_metadata.rank:
+                col_positions_present.append(p != 0)
             current_size += 4
-        obf_stack_metadata.has_col_positions = col_positions
+        obf_stack_metadata.has_col_positions = col_positions_present
 
         # Entries are != 0 for all axes that have a label (after the footer)
-        col_labels = []
+        col_labels_present = []
         for i in range(Constants.BF_MAX_DIMENSIONS):
             b = struct.unpack("<I", f.read(4))[0]
-            col_labels.append(b)
+            if i < obf_stack_metadata.rank:
+                col_labels_present.append(b != 0)
             current_size += 4
-        obf_stack_metadata.has_col_labels = col_labels
+        obf_stack_metadata.has_col_labels = col_labels_present
 
         # Metadata length (superseded by tag dictionary in version > 4)
-        obf_stack_metadata.metadata_length = struct.unpack("<I", f.read(4))[0]
+        obf_stack_metadata.obsolete_metadata_length = struct.unpack("<I", f.read(4))[0]
         current_size += 4
 
         # Internal check
@@ -568,7 +593,7 @@ class MSRReader:
         obf_stack_metadata.stack_end_disk = struct.unpack("<Q", f.read(8))[0]
         current_size += 8
 
-        # Min supported format version: should always be 1
+        # Min supported format version
         obf_stack_metadata.min_format_version = struct.unpack("<I", f.read(4))[0]
         current_size += 4
 
@@ -614,5 +639,142 @@ class MSRReader:
 
         # There is no new documented footer metadata for version 7.
 
+        #
+        # Read data after the end of footer
+        #
+
+        f.seek(obf_stack_metadata.variable_metadata_start_position)
+
+        # Read labels
+        labels = []
+        for i in range(obf_stack_metadata.rank):
+            n = struct.unpack("<I", f.read(4))[0]
+            label = f.read(n).decode("utf-8")
+            labels.append(label)
+        obf_stack_metadata.labels = labels
+
+        # Read steps (where presents)
+        steps = []
+        for dimension in range(obf_stack_metadata.rank):
+            lst = []
+            if obf_stack_metadata.has_col_positions[dimension]:
+                for position in range(obf_stack_metadata.num_pixels[dimension]):
+                    step = struct.unpack("<d", f.read(8))[0]
+                    lst.append(step)
+            steps.append(lst)
+
+        # Skip the obsolete metadata
+        f.seek(f.tell() + obf_stack_metadata.obsolete_metadata_length)
+
+        # Flush points
+        if obf_stack_metadata.num_flush_points > 0:
+            flush_points = []
+            for i in range(obf_stack_metadata.num_flush_points):
+                flush_points.append(struct.unpack("<Q", f.read(8))[0])
+            obf_stack_metadata.flush_points = flush_points
+
+        # Tag dictionary
+        tag_dictionary = {}
+        length_key = 1
+        while length_key > 0:
+            new_key = self._read_string(f)
+            length_key = len(new_key)
+            if length_key > 0:
+                new_value = self._read_string(f)
+                # if new_key in ["imspector", "minflux"]:
+                #     try:
+                #         new_value = ET.fromstring(new_value)
+                #     except ET.ParseError:
+                #         pass
+                tag_dictionary[new_key] = new_value
+        obf_stack_metadata.tag_dictionary = tag_dictionary
+
+        # Chunk positions
+        if obf_stack_metadata.num_chunk_positions > 0:
+            logical_positions = []
+            file_positions = []
+
+            # Start with 0
+            logical_positions.append(0)
+            file_positions.append(0)
+
+            for i in range(obf_stack_metadata.num_chunk_positions):
+                logical_positions.append(struct.unpack("<Q", f.read(8))[0])
+                file_positions.append(struct.unpack("<Q", f.read(8))[0])
+
+            obf_stack_metadata.chunk_logical_positions = logical_positions
+            obf_stack_metadata.chunk_file_positions = file_positions
+
         # Return
         return obf_stack_metadata
+
+    def _scan_metadata(self, f: BinaryIO, obf_file_header: OBSFileHeader):
+        """Scan the metadata at the location stored in the header.
+
+        The expected values are a key matching: "ome_xml" followed by
+        valid OME XML metadata that we parse and return as an ElementTree.
+        """
+
+        if obf_file_header.meta_data_position == 0:
+            return None
+
+        # Remember current position
+        current_pos = f.tell()
+
+        # Move to the beginning of the metadata
+        f.seek(obf_file_header.meta_data_position)
+
+        # Initialize OBSFileMetadata object
+        metadata = OBSFileMetadata()
+
+        # Keep reading strings until done
+        strings = []
+        length_str = 1
+        while length_str > 0:
+            new_str = self._read_string(f)
+            length_str = len(new_str)
+            if length_str > 0:
+                strings.append(new_str)
+
+        # Now parse
+        success = False
+        tree = None
+        if len(strings) == 2 and strings[0] == "ome_xml":
+            try:
+                tree = ET.fromstring(strings[1])
+                success = True
+            except ET.ParseError as e:
+                success = False
+
+        if not success:
+            metadata.tree = None
+            metadata.unknown_strings = strings
+        else:
+            metadata.tree = tree
+            metadata.unknown_strings = []
+
+        # Return to previous file position
+        f.seek(current_pos)
+
+        return metadata
+
+    @staticmethod
+    def _read_string(f: BinaryIO, as_str: bool = True) -> Union[str, bytes]:
+        """Read a string at current position."""
+
+        # Read the length of the following string
+        length = struct.unpack("<I", f.read(4))[0]
+        if length == 0:
+            return ""
+
+        # Read `length` bytes and convert them to utf-8 if requested
+        value = f.read(length)
+        if as_str:
+            value = value.decode("utf-8")
+
+        return value
+
+    def print_stack_headers(self):
+        """Print extracted stack headers."""
+        for i, header in enumerate(self.obf_stacks_list):
+            print(f"Stack {i:3}:"), pprint(header)
