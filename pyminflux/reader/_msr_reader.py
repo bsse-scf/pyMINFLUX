@@ -681,11 +681,12 @@ class MSRReader:
             length_key = len(new_key)
             if length_key > 0:
                 new_value = self._read_string(f)
-                # if new_key in ["imspector", "minflux"]:
-                #     try:
-                #         new_value = ET.fromstring(new_value)
-                #     except ET.ParseError:
-                #         pass
+                if new_key in ["imspector", "minflux"]:
+                    try:
+                        new_value = new_value.replace("'", "")
+                        new_value = ET.fromstring(new_value)
+                    except ET.ParseError:
+                        pass
                 tag_dictionary[new_key] = new_value
         obf_stack_metadata.tag_dictionary = tag_dictionary
 
