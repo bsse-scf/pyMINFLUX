@@ -13,10 +13,13 @@
 #  limitations under the License.
 import struct
 import xml.etree.ElementTree as ET
+import zlib
 from dataclasses import dataclass, field, fields
 from pathlib import Path
-from pprint import pprint
 from typing import BinaryIO, NewType, Union
+from xml.dom import minidom
+
+import numpy as np
 
 # Some type aliases to make the code easier to understand
 int32 = NewType("int32", int)
@@ -41,18 +44,37 @@ class BaseDataclass:
 
 @dataclass
 class SIFraction(BaseDataclass):
+    """A fraction, composed of a numerator and a denominator."""
+
     numerator: int32
     denominator: int32
 
 
 @dataclass
 class SIUnit(BaseDataclass):
+    """The dimensions and scaling factor of an SI unit. For each of the
+     base and supplemental units the exponent is saved as a fraction.
+
+    Ordering for the exponents array is as follows:
+    exponents[0]: Meters (M)
+    exponents[1]: Kilograms (KG)
+    exponents[2]: Seconds (S)
+    exponents[3]: Amperes (A)
+    exponents[4]: Kelvin (K)
+    exponents[5]: Moles (MOL)
+    exponents[6]: Candela (CD)
+    exponents[7]: Radian (R)
+    exponents[8]: Steradian (SR)
+    """
+
     exponents: list[SIFraction]
     scale_factor: float
 
 
 @dataclass
-class OBSFileHeader(BaseDataclass):
+class OBFFileHeader(BaseDataclass):
+    """File binary header."""
+
     magic_header: bytes = (b"",)  # It should be: b"OMAS_BF\n\xff\xff"
     format_version: uint32 = 0  # Format version >= 2 supported
     first_stack_pos: uint64 = 0
@@ -62,13 +84,17 @@ class OBSFileHeader(BaseDataclass):
 
 
 @dataclass
-class OBSFileMetadata(BaseDataclass):
+class OBFFileMetadata(BaseDataclass):
+    """File OME-XML metadata."""
+
     tree: ET = None
     unknown_strings: list[str] = field(default_factory=list)
 
 
 @dataclass
-class OFBStackMetadata(BaseDataclass):
+class OBFStackMetadata(BaseDataclass):
+    """OBF Stack metadata."""
+
     #
     # Header
     #
@@ -98,7 +124,7 @@ class OFBStackMetadata(BaseDataclass):
     next_stack_pos: uint64 = (0,)
     stack_name: str = ""
     stack_description: str = ""
-    data_position: uint64 = 0
+    data_start_position: uint64 = 0
 
     #
     # Footer
@@ -148,10 +174,13 @@ class OFBStackMetadata(BaseDataclass):
     chunk_logical_positions: list[uint64] = field(default_factory=list)
     chunk_file_positions: list[uint64] = field(default_factory=list)
     tag_dictionary: dict = field(default_factory=dict)
+    bytes_per_sample: int = 0
 
 
 @dataclass(frozen=True)
 class Constants:
+    """Constants."""
+
     BF_MAX_DIMENSIONS: int = 15
     OBF_SI_FRACTION_SIZE: int = 8
     OBF_SI_FRACTION_NUM_ELEMENTS: int = 9
@@ -166,27 +195,6 @@ class Constants:
     VERSION_5A_FOOTER_LENGTH: int = 1452
     VERSION_6_FOOTER_LENGTH: int = 1468
     VERSION_7_FOOTER_LENGTH: int = 1528  # No documentation on what is new
-
-
-def get_footer_struct_size(version) -> int:
-    if version == 0:
-        return 0
-    elif version == 1:
-        return Constants.VERSION_1A_FOOTER_LENGTH  # We return version "1A"
-    elif version == 2:
-        return Constants.VERSION_2_FOOTER_LENGTH
-    elif version == 3:
-        return Constants.VERSION_3_FOOTER_LENGTH
-    elif version == 4:
-        return Constants.VERSION_4_FOOTER_LENGTH
-    elif version == 5:
-        return Constants.VERSION_5A_FOOTER_LENGTH  # We return version "5A"
-    elif version == 6:
-        return Constants.VERSION_6_FOOTER_LENGTH
-    elif version == 7:
-        return Constants.VERSION_7_FOOTER_LENGTH
-    else:
-        raise ValueError(f"Unexpected stack version {version}.")
 
 
 class MSRReader:
@@ -210,17 +218,24 @@ class MSRReader:
         # Store the filename
         self.filename = Path(filename)
 
-        # OBF_FILE_HEADER structure
-        self.obf_file_header = OBSFileHeader()
+        # File header
+        self.obf_file_header = OBFFileHeader()
 
         # Metadata
-        self.metadata = OBSFileMetadata()
+        self.obf_file_metadata = OBFFileMetadata()
 
-        # Stack metadata (OBF_STACK_HEADERS + OBF_STACK_FOOTERS + plus additional info)
-        self.obf_stacks_list: list[OFBStackMetadata] = []
+        # List of stack metadata objects
+        self.obf_stacks_list: list[OBFStackMetadata] = []
 
     def scan(self) -> bool:
-        """Scan the metadata of the file."""
+        """Scan the metadata of the file.
+
+        Returns
+        -------
+
+        success: bool
+            True if the file was scanned successfully, False otherwise.
+        """
 
         # Open the file
         with open(self.filename, mode="rb") as f:
@@ -229,7 +244,7 @@ class MSRReader:
                 return False
 
             # Scan metadata
-            self.metadata = self._scan_metadata(f, self.obf_file_header)
+            self.obf_file_metadata = self._scan_metadata(f, self.obf_file_header)
 
             # Get the first stack position
             next_stack_pos = self.obf_file_header.first_stack_pos
@@ -250,8 +265,275 @@ class MSRReader:
 
         return True
 
-    def _read_obf_header(self, f) -> bool:
-        """Read the OBF header."""
+    def read_stack_data(self, stack_index: int) -> Union[np.ndarray, None]:
+        """Read the data for requested stack.
+
+        Parameters
+        ----------
+
+        stack_index: int
+            Index of the stack for which to read the data.
+
+        Returns
+        -------
+
+        frame: np.ndarray
+            Data as a 2D NumPy array. None if it could not be read or if it was not a 2D image.
+        """
+
+        if stack_index < 0 or stack_index > len(self.obf_stacks_list):
+            raise ValueError(f"stack_index={stack_index} is out of bounds.")
+
+        # Get the metadata for the requested stack
+        obf_stack_metadata = self.obf_stacks_list[stack_index]
+
+        # Currently, we only support format 6 and newer
+        if obf_stack_metadata.format_version < 6:
+            print("Reading data is supported only for stack format 6 and newer.")
+            return None
+
+        # If there are chunks, we currently do not read
+        if obf_stack_metadata.num_chunk_positions > 0:
+            print("Reading chunked data is currently not supported.")
+            return None
+
+        # We currently only read 2D images
+        if self._get_num_dims(obf_stack_metadata.num_pixels) != 2:
+            print("Only 2D images are currently supported.")
+            return None
+
+        # Get NumPy data type
+        np_data_type, _ = self._get_numpy_data_type(
+            obf_stack_metadata.data_type_on_disk
+        )
+        if np_data_type is None:
+            print("Unsupported data type.")
+            return None
+
+        # Extract some info
+        height = obf_stack_metadata.num_pixels[1]
+        width = obf_stack_metadata.num_pixels[0]
+        bytes_per_sample = obf_stack_metadata.bytes_per_sample
+
+        # Expected number of (decompressed) bytes
+        expected_num_bytes = width * height * bytes_per_sample
+
+        # Number of written bytes
+        written_bytes = obf_stack_metadata.samples_written
+
+        # Open the file
+        with open(self.filename, mode="rb") as f:
+
+            # Seek to the beginning of the data
+            f.seek(obf_stack_metadata.data_start_position)
+
+            # Is there compression?
+            if obf_stack_metadata.compression_type != 0:
+
+                # Read the bytes
+                compressed_data = f.read(written_bytes)
+
+                # Decompress them
+                decompressed_data = zlib.decompress(compressed_data)
+
+                # Cast to a "byte" NumPy array
+                raw_frame = np.frombuffer(decompressed_data, dtype=np.uint8)
+
+            else:
+
+                # Read the bytes
+                raw_data = f.read(written_bytes)
+
+                # Cast to a "byte" NumPy array
+                raw_frame = np.array(raw_data, dtype=np.uint8)
+
+        # Make sure the final frame size matches the expected size
+        if len(raw_frame) != expected_num_bytes:
+            print("Unexpected length of data retrieved!")
+            return None
+
+        # Reinterpret as final data type format (little Endian)
+        frame = raw_frame.view(np.dtype(np_data_type))
+
+        # Reshape
+        frame = frame.reshape((height, width))
+
+        return frame
+
+    def export_ome_xml_metadata(
+        self, file_name: Union[str, Path], pretty: bool = False
+    ):
+        """Export the OME-XML metadata to file.
+
+        Parameters
+        ----------
+
+        file_name: Union[str, Path]
+            Output file name.
+
+        pretty: bool=False
+            Whether to prettify the XML output.
+        """
+
+        # Get the ome-xml tree
+        root = self.obf_file_metadata.tree
+        if root is None:
+            print("Nothing to export.")
+            return
+
+        # Parse the string with minidom for pretty-printing
+        if pretty:
+            # Convert the ElementTree to a string and prettify it
+            xml_str = ET.tostring(root, encoding="utf-8")
+            xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
+
+            # Save to file
+            with open(file_name, "w", encoding="utf-8") as f:
+                f.write(xml_str)
+        else:
+            tree = ET.ElementTree(root)
+            tree.write(file_name, encoding="utf-8", xml_declaration=False)
+
+    def export_tag_dictionary(self, stack_index: int, file_name: Union[str, Path]):
+        """Export the tag dictionary to file.
+
+        Parameters
+        ----------
+
+        stack_index: int
+            Index of the stack for which to export the tag dictionary.
+
+        file_name: Union[str, Path]
+            Output file name.
+        """
+
+        if stack_index < 0 or stack_index > len(self.obf_stacks_list):
+            raise ValueError(f"Stack number {stack_index} is out of range.")
+
+        # Get stack metadata
+        obf_stack_metadata = self.obf_stacks_list[stack_index]
+
+        # Make sure file_name is of type Path
+        file_name = Path(file_name)
+
+        # Export the dictionaries
+        for key, value in obf_stack_metadata.tag_dictionary.items():
+            mod_file_name = file_name.parent / f"{file_name.stem}_{key}.xml"
+            with open(mod_file_name, "w", encoding="utf-8") as f:
+                f.write(str(value))
+
+    @staticmethod
+    def _get_footer_struct_size(version: int) -> int:
+        """Returns the size in pixel of the footer structure for given version.
+
+        Parameters
+        ----------
+
+        version: int
+            Version number.
+
+        Returns
+        -------
+
+        size: int
+            Size in bytes of the footer structure for specified version.
+        """
+        if version == 0:
+            return 0
+        elif version == 1:
+            return Constants.VERSION_1A_FOOTER_LENGTH  # We return version "1A"
+        elif version == 2:
+            return Constants.VERSION_2_FOOTER_LENGTH
+        elif version == 3:
+            return Constants.VERSION_3_FOOTER_LENGTH
+        elif version == 4:
+            return Constants.VERSION_4_FOOTER_LENGTH
+        elif version == 5:
+            return Constants.VERSION_5A_FOOTER_LENGTH  # We return version "5A"
+        elif version == 6:
+            return Constants.VERSION_6_FOOTER_LENGTH
+        elif version == 7:
+            return Constants.VERSION_7_FOOTER_LENGTH
+        else:
+            raise ValueError(f"Unexpected stack version {version}.")
+
+    @staticmethod
+    def _get_num_dims(num_pixels: list[uint32]):
+        """Return the number of dimensions of the data.
+
+        Parameters
+        ----------
+
+        num_pixels: list[uint32]
+            List of number of pixels per dimension.
+
+        Returns
+        -------
+
+        n_dims: int
+            Number of dimensions for which the number of pixels is larger than 1.
+        """
+        n_dims = int(np.sum(np.array(num_pixels) > 1))
+        return n_dims
+
+    @staticmethod
+    def _get_numpy_data_type(
+        data_type_on_disk: uint32,
+    ) -> tuple[Union[np.dtype, None], Union[str, None]]:
+        """Get the NumPy data type corresponding to the stored datatype.
+
+        Parameters
+        ----------
+
+        data_type_on_disk: uint32
+            UInt32 value from the stack metadata indicating the type of the data.
+
+        Returns
+        -------
+
+        numpy_type: np.dtype
+            Numpy dtype class. If the data type is not supported, returns None instead.
+
+        str_type: str
+            Type string (little endian). If the data type is not supported, returns None instead.
+        """
+        if data_type_on_disk == 0x00000001:
+            return np.uint8, "<u1"
+        elif data_type_on_disk == 0x00000002:
+            return np.int8, "<i1"
+        elif data_type_on_disk == 0x00000004:
+            return np.uint16, "<u2"
+        elif data_type_on_disk == 0x00000008:
+            return np.int16, "<i2"
+        elif data_type_on_disk == 0x00000010:
+            return np.uint32, "<u4"
+        elif data_type_on_disk == 0x00000020:
+            return np.int32, "<i4"
+        elif data_type_on_disk == 0x00000040:
+            return np.float32, "<f4"
+        elif data_type_on_disk == 0x00000080:
+            return np.float64, "<f8"
+        elif data_type_on_disk == 0x00001000:
+            return np.uint64, "<u8"
+        elif data_type_on_disk == 0x00002000:
+            return np.int64, "<i8"
+        else:
+            return None, None
+
+    def _read_obf_header(self, f: BinaryIO) -> bool:
+        """Read the OBF header.
+
+        Parameters
+        ----------
+
+        f: BinaryIO
+            Open file handle.
+
+        Returns
+        -------
+        success: bool
+            True if reading the file header was successful, False otherwise.
+        """
 
         # Read the magic header
         magic_header = f.read(10)
@@ -291,11 +573,30 @@ class MSRReader:
 
     def _read_obf_stack(
         self, f: BinaryIO, next_stack_pos: int
-    ) -> tuple[bool, OFBStackMetadata]:
-        """Read current OBF stack metadata (header + footer)."""
+    ) -> tuple[bool, OBFStackMetadata]:
+        """Read current OBF stack metadata (header + footer).
+
+        Parameters
+        ----------
+
+        f: BinaryIO
+            Open file handle.
+
+        next_stack_pos: int
+            Position in file where the next stack starts.
+
+        Returns
+        -------
+
+        success: bool
+            Whether parsing was successful.
+
+        obf_stack_metadata: OBFStackMetadata
+            OFBStackMetadata object.
+        """
 
         # Initialize the metadata
-        obf_stack_metadata = OFBStackMetadata()
+        obf_stack_metadata = OBFStackMetadata()
 
         # Move at the beginning of the stack
         f.seek(next_stack_pos)
@@ -312,8 +613,8 @@ class MSRReader:
         return True, obf_stack_metadata
 
     def _read_obf_stack_header(
-        self, f: BinaryIO, obf_stack_metadata: OFBStackMetadata
-    ) -> tuple[bool, OFBStackMetadata]:
+        self, f: BinaryIO, obf_stack_metadata: OBFStackMetadata
+    ) -> tuple[bool, OBFStackMetadata]:
         """Read the OBF stack header and update metadata.
 
         The file should already be positioned at the right location.
@@ -324,7 +625,7 @@ class MSRReader:
         f: BinaryIO
             File handle to open.
 
-        obf_stack_metadata: OFBStackMetadata
+        obf_stack_metadata: OBFStackMetadata
             Current OFBStackMetadata object
 
         Returns
@@ -333,7 +634,7 @@ class MSRReader:
         success: bool
             Whether parsing was successful.
 
-        obf_stack_metadata: OFBStackMetadata
+        obf_stack_metadata: OBFStackMetadata
             Updated OFBStackMetadata object
         """
 
@@ -390,6 +691,9 @@ class MSRReader:
         # Note: all numeric formats have a complex-number variant with
         # format: data_type | 0x40000000
         obf_stack_metadata.data_type_on_disk = struct.unpack("<I", f.read(4))[0]
+        obf_stack_metadata.bytes_per_sample = self._get_bytes_per_sample_from_data_type(
+            obf_stack_metadata.data_type_on_disk
+        )
 
         # Compression type (0 for none, 1 for zip)
         obf_stack_metadata.compression_type = struct.unpack("<I", f.read(4))[0]
@@ -426,12 +730,12 @@ class MSRReader:
             else f.read(obf_stack_metadata.length_stack_description).decode("utf-8")
         )
 
-        # Now we are at the beginning of the data
-        obf_stack_metadata.data_position = f.tell()
+        # Now we are at the beginning of the stack (image or other)
+        obf_stack_metadata.data_start_position = f.tell()
 
         # Start position of the footer
         footer_start_position = (
-            obf_stack_metadata.data_position + obf_stack_metadata.data_len_disk
+            obf_stack_metadata.data_start_position + obf_stack_metadata.data_len_disk
         )
 
         # Move to the beginning of the footer
@@ -439,8 +743,23 @@ class MSRReader:
 
         return True, obf_stack_metadata
 
-    def _read_obf_stack_footer(self, f: BinaryIO, obf_stack_metadata: OFBStackMetadata):
-        """Process footer."""
+    def _read_obf_stack_footer(self, f: BinaryIO, obf_stack_metadata: OBFStackMetadata):
+        """Process footer.
+
+        Parameters
+        ----------
+        f: BinaryIO
+            Open file handle.
+
+        obf_stack_metadata: OBFStackMetadata
+            Metadata object for current stack.
+
+        Returns
+        -------
+
+        obf_stack_metadata: OBFFileMetadata
+            Updated metadata object for current stack.
+        """
 
         #
         # Version 0
@@ -459,7 +778,9 @@ class MSRReader:
         #
 
         # What is the expected size of the footer for this header version?
-        size_for_version = get_footer_struct_size(obf_stack_metadata.format_version)
+        size_for_version = self._get_footer_struct_size(
+            obf_stack_metadata.format_version
+        )
 
         # Keep track ot the side while we proceed
         current_size = 0
@@ -680,14 +1001,12 @@ class MSRReader:
             new_key = self._read_string(f)
             length_key = len(new_key)
             if length_key > 0:
-                new_value = self._read_string(f)
-                if new_key in ["imspector", "minflux"]:
-                    try:
-                        new_value = new_value.replace("'", "")
-                        new_value = ET.fromstring(new_value)
-                    except ET.ParseError:
-                        pass
+                # Get value
+                new_value = self._read_string(f, as_str=True, as_utf8=True)
+
+                # Store it without further processing
                 tag_dictionary[new_key] = new_value
+
         obf_stack_metadata.tag_dictionary = tag_dictionary
 
         # Chunk positions
@@ -709,11 +1028,28 @@ class MSRReader:
         # Return
         return obf_stack_metadata
 
-    def _scan_metadata(self, f: BinaryIO, obf_file_header: OBSFileHeader):
+    def _scan_metadata(
+        self, f: BinaryIO, obf_file_header: OBFFileHeader
+    ) -> Union[OBFFileMetadata, None]:
         """Scan the metadata at the location stored in the header.
 
         The expected values are a key matching: "ome_xml" followed by
         valid OME XML metadata that we parse and return as an ElementTree.
+
+        Parameters
+        ----------
+
+        f: BinaryIO
+            Open file handle.
+
+        obf_file_header: OBFFileHeader
+            File header structure.
+
+        Returns
+        -------
+
+        metadata: OBFFileMetadata
+            OME-XML file metadata.
         """
 
         if obf_file_header.meta_data_position == 0:
@@ -725,8 +1061,8 @@ class MSRReader:
         # Move to the beginning of the metadata
         f.seek(obf_file_header.meta_data_position)
 
-        # Initialize OBSFileMetadata object
-        metadata = OBSFileMetadata()
+        # Initialize OBFFileMetadata object
+        metadata = OBFFileMetadata()
 
         # Keep reading strings until done
         strings = []
@@ -760,8 +1096,29 @@ class MSRReader:
         return metadata
 
     @staticmethod
-    def _read_string(f: BinaryIO, as_str: bool = True) -> Union[str, bytes]:
-        """Read a string at current position."""
+    def _read_string(
+        f: BinaryIO, as_str: bool = True, as_utf8: bool = True
+    ) -> Union[str, bytes]:
+        """Read a string at current position.
+
+        Parameters
+        ----------
+
+        f: BinaryIO
+            Open file handles.
+
+        as_str: bool = True
+            If True parse the raw byte array to string.
+
+        as_utf8: bool = True
+            If True decode the string to utf-8. Ignored if as_str is False.
+
+        Returns
+        -------
+
+        string: Union[bytes, str]
+            Either raw bytes or a str, optionally utf-8 encoded.
+        """
 
         # Read the length of the following string
         length = struct.unpack("<I", f.read(4))[0]
@@ -771,11 +1128,31 @@ class MSRReader:
         # Read `length` bytes and convert them to utf-8 if requested
         value = f.read(length)
         if as_str:
-            value = value.decode("utf-8")
+            if as_utf8:
+                value = value.decode("utf-8")
 
         return value
 
-    def print_stack_headers(self):
-        """Print extracted stack headers."""
-        for i, header in enumerate(self.obf_stacks_list):
-            print(f"Stack {i:3}:"), pprint(header)
+    @staticmethod
+    def _get_bytes_per_sample_from_data_type(data_type: uint32) -> int:
+        """Return the number of bytes per sample for given data type."""
+        supported_types = {
+            0x00000001: 1,  # 8-bit unsigned byte
+            0x00000002: 1,  # 8-bit signed char
+            0x00000004: 2,  # 16-bit word value
+            0x00000008: 2,  # 16-bit signed integer
+            0x00000010: 4,  # 32-bit unsigned integer
+            0x00000020: 4,  # 32-bit signed integer
+            0x00000040: 4,  # 32-bit floating point value
+            0x00000080: 8,  # 64-bit floating point value
+        }
+
+        # Get the number of bytes
+        num_bytes_per_sample = supported_types.get(data_type, -1)
+
+        # Check that it is supported
+        if num_bytes_per_sample == -1:
+            raise ValueError(f"Unsupported data type 0x{data_type:08x}.")
+
+        # Return it
+        return num_bytes_per_sample
