@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import json
 import struct
 import xml.etree.ElementTree as ET
 import zlib
@@ -381,6 +382,9 @@ class MSRReader:
             print("Nothing to export.")
             return
 
+        # Make sure the parent path to the file exists
+        Path(file_name).parent.mkdir(parents=True, exist_ok=True)
+
         # Parse the string with minidom for pretty-printing
         if pretty:
             # Convert the ElementTree to a string and prettify it
@@ -416,11 +420,14 @@ class MSRReader:
         # Make sure file_name is of type Path
         file_name = Path(file_name)
 
+        # Make sure the parent path to the file exists
+        file_name.parent.mkdir(parents=True, exist_ok=True)
+
         # Export the dictionaries
         for key, value in obf_stack_metadata.tag_dictionary.items():
             mod_file_name = file_name.parent / f"{file_name.stem}_{key}.xml"
-            with open(mod_file_name, "w", encoding="utf-8") as f:
-                f.write(str(value))
+            tree = ET.ElementTree(value)
+            tree.write(mod_file_name, encoding="utf-8", xml_declaration=False)
 
     @staticmethod
     def _get_footer_struct_size(version: int) -> int:
@@ -1004,8 +1011,21 @@ class MSRReader:
                 # Get value
                 new_value = self._read_string(f, as_str=True, as_utf8=True)
 
+                # Try to process it
+                try:
+                    tree = ET.fromstring(new_value)
+                except ET.ParseError:
+                    # Some keys are not XML, but stringified dictionaries
+                    try:
+                        tree = json.loads(new_value)
+                    except json.JSONDecodeError as e:
+                        print(
+                            f"Failed processing value for key '{new_key}' ({e}): storing as raw string."
+                        )
+                        tree = new_value
+
                 # Store it without further processing
-                tag_dictionary[new_key] = new_value
+                tag_dictionary[new_key] = tree
 
         obf_stack_metadata.tag_dictionary = tag_dictionary
 
