@@ -425,9 +425,18 @@ class MSRReader:
 
         # Export the dictionaries
         for key, value in obf_stack_metadata.tag_dictionary.items():
-            mod_file_name = file_name.parent / f"{file_name.stem}_{key}.xml"
-            tree = ET.ElementTree(value)
-            tree.write(mod_file_name, encoding="utf-8", xml_declaration=False)
+            if type(value) is ET.Element:
+                mod_file_name = file_name.parent / f"{file_name.stem}_{key}.xml"
+                tree = ET.ElementTree(value)
+                tree.write(mod_file_name, encoding="utf-8", xml_declaration=False)
+            elif type(value) is dict:
+                mod_file_name = file_name.parent / f"{file_name.stem}_{key}.json"
+                with open(mod_file_name, "w") as file:
+                    json.dump(value, file, indent=4)
+            else:
+                mod_file_name = file_name.parent / f"{file_name.stem}_{key}.txt"
+                with open(mod_file_name, "w") as file:
+                    file.write(value)
 
     @staticmethod
     def _get_footer_struct_size(version: int) -> int:
