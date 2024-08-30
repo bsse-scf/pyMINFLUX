@@ -12,13 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import json
+import re
 import struct
 import xml.etree.ElementTree as ET
 import zlib
 from dataclasses import dataclass, field, fields
 from pathlib import Path
+from pprint import pprint
 from typing import BinaryIO, NewType, Union
-from xml.dom import minidom
 
 import numpy as np
 
@@ -30,7 +31,7 @@ uint64 = NewType("uint64", int)
 
 
 @dataclass
-class BaseDataclass:
+class _BaseDataclass:
     """Do not instantiate this class directly."""
 
     def __setattr__(self, key, value):
@@ -44,7 +45,7 @@ class BaseDataclass:
 
 
 @dataclass
-class SIFraction(BaseDataclass):
+class SIFraction(_BaseDataclass):
     """A fraction, composed of a numerator and a denominator."""
 
     numerator: int32
@@ -52,7 +53,7 @@ class SIFraction(BaseDataclass):
 
 
 @dataclass
-class SIUnit(BaseDataclass):
+class SIUnit(_BaseDataclass):
     """The dimensions and scaling factor of an SI unit. For each of the
      base and supplemental units the exponent is saved as a fraction.
 
@@ -73,7 +74,7 @@ class SIUnit(BaseDataclass):
 
 
 @dataclass
-class OBFFileHeader(BaseDataclass):
+class OBFFileHeader(_BaseDataclass):
     """File binary header."""
 
     magic_header: bytes = (b"",)  # It should be: b"OMAS_BF\n\xff\xff"
@@ -85,7 +86,7 @@ class OBFFileHeader(BaseDataclass):
 
 
 @dataclass
-class OBFFileMetadata(BaseDataclass):
+class OBFFileMetadata(_BaseDataclass):
     """File OME-XML metadata."""
 
     tree: ET = None
@@ -93,7 +94,7 @@ class OBFFileMetadata(BaseDataclass):
 
 
 @dataclass
-class OBFStackMetadata(BaseDataclass):
+class OBFStackMetadata(_BaseDataclass):
     """OBF Stack metadata."""
 
     #
@@ -179,23 +180,23 @@ class OBFStackMetadata(BaseDataclass):
 
 
 @dataclass(frozen=True)
-class Constants:
-    """Constants."""
+class _Constants:
+    """_Constants."""
 
     BF_MAX_DIMENSIONS: int = 15
     OBF_SI_FRACTION_SIZE: int = 8
     OBF_SI_FRACTION_NUM_ELEMENTS: int = 9
     OBF_SI_UNIT_SIZE: int = OBF_SI_FRACTION_NUM_ELEMENTS * OBF_SI_FRACTION_SIZE + 8
 
-    VERSION_1_FOOTER_LENGTH: int = 124
-    VERSION_1A_FOOTER_LENGTH: int = 128
-    VERSION_2_FOOTER_LENGTH: int = 1408
-    VERSION_3_FOOTER_LENGTH: int = 1424
-    VERSION_4_FOOTER_LENGTH: int = 1432
-    VERSION_5_FOOTER_LENGTH: int = 1444
-    VERSION_5A_FOOTER_LENGTH: int = 1452
-    VERSION_6_FOOTER_LENGTH: int = 1468
-    VERSION_7_FOOTER_LENGTH: int = 1528  # No documentation on what is new
+    V1_FOOTER_LENGTH: int = 124
+    V1A_FOOTER_LENGTH: int = 128
+    V2_FOOTER_LENGTH: int = 1408
+    V3_FOOTER_LENGTH: int = 1424
+    V4_FOOTER_LENGTH: int = 1432
+    V5_FOOTER_LENGTH: int = 1444
+    V5A_FOOTER_LENGTH: int = 1452
+    V6_FOOTER_LENGTH: int = 1468
+    V7_FOOTER_LENGTH: int = 1528  # No documentation on what is new
 
 
 class MSRReader:
@@ -226,7 +227,7 @@ class MSRReader:
         self.obf_file_metadata = OBFFileMetadata()
 
         # List of stack metadata objects
-        self.obf_stacks_list: list[OBFStackMetadata] = []
+        self._obf_stacks_list: list[OBFStackMetadata] = []
 
     def scan(self) -> bool:
         """Scan the metadata of the file.
@@ -259,15 +260,66 @@ class MSRReader:
                     return False
 
                 # Append current stack header
-                self.obf_stacks_list.append(obs_stack_metadata)
+                self._obf_stacks_list.append(obs_stack_metadata)
 
                 # Do we have a next header to parse?
                 next_stack_pos = obs_stack_metadata.next_stack_pos
 
         return True
 
-    def read_stack_data(self, stack_index: int) -> Union[np.ndarray, None]:
-        """Read the data for requested stack.
+    def __getitem__(self, stack_index: int) -> Union[OBFStackMetadata, None]:
+        """Allows accessing the reader with the `[]` notation to get the next stack metadata.
+
+        Parameters
+        ----------
+
+        stack_index: int
+            Index of the stack to be retrieved.
+
+        Returns
+        -------
+
+        metadata: Union[OBFStackMetadata, None]
+            Metadata for the requested stack, or None if no file was loaded.
+        """
+
+        # Is anything loaded?
+        if len(self._obf_stacks_list) == 0:
+            return None
+
+        if stack_index < 0 or stack_index > (len(self._obf_stacks_list) - 1):
+            raise ValueError(f"Index value {stack_index} is out of bounds.")
+
+        # Get and return the metadata
+        metadata = self._obf_stacks_list[stack_index]
+        return metadata
+
+    def __iter__(self):
+        """Return the iterator.
+
+        Returns
+        -------
+
+            iterator
+        """
+        self._current_index = 0
+        return self
+
+    def __next__(self):
+        if self._current_index < len(self._obf_stacks_list):
+            metadata = self.__getitem__(self._current_index)
+            self._current_index += 1
+            return metadata
+        else:
+            raise StopIteration
+
+    @property
+    def num_stacks(self):
+        """Return the number of stacks contained in the file."""
+        return len(self._obf_stacks_list)
+
+    def get_data(self, stack_index: int) -> Union[np.ndarray, None]:
+        """Read the data for requested stack: only images are returned.
 
         Parameters
         ----------
@@ -278,15 +330,15 @@ class MSRReader:
         Returns
         -------
 
-        frame: np.ndarray
+        frame: Union[np.ndarray, None]
             Data as a 2D NumPy array. None if it could not be read or if it was not a 2D image.
         """
 
-        if stack_index < 0 or stack_index > len(self.obf_stacks_list):
+        if stack_index < 0 or stack_index > len(self._obf_stacks_list):
             raise ValueError(f"stack_index={stack_index} is out of bounds.")
 
         # Get the metadata for the requested stack
-        obf_stack_metadata = self.obf_stacks_list[stack_index]
+        obf_stack_metadata = self._obf_stacks_list[stack_index]
 
         # Currently, we only support format 6 and newer
         if obf_stack_metadata.format_version < 6:
@@ -361,9 +413,25 @@ class MSRReader:
 
         return frame
 
-    def export_ome_xml_metadata(
-        self, file_name: Union[str, Path], pretty: bool = False
-    ):
+    def get_ome_xml_metadata(self) -> Union[str, None]:
+        """Return the OME XML metadata.
+
+        Returns
+        -------
+
+        ome_xml_metadata: Union[str, None]
+            OME XML metadata as formatted string. If no file was loaded, returns None.
+        """
+
+        # Get the ome-xml tree
+        root = self.obf_file_metadata.tree
+        if root is None:
+            return None
+
+        # Return metadata as sormatted XML string
+        return self._tree_to_formatted_xml(root)
+
+    def export_ome_xml_metadata(self, file_name: Union[str, Path]):
         """Export the OME-XML metadata to file.
 
         Parameters
@@ -371,32 +439,20 @@ class MSRReader:
 
         file_name: Union[str, Path]
             Output file name.
-
-        pretty: bool=False
-            Whether to prettify the XML output.
         """
 
-        # Get the ome-xml tree
-        root = self.obf_file_metadata.tree
-        if root is None:
+        # Get the ome-xml tree, optionally as formatted string
+        metadata = self.get_ome_xml_metadata()
+        if metadata is None:
             print("Nothing to export.")
             return
 
         # Make sure the parent path to the file exists
         Path(file_name).parent.mkdir(parents=True, exist_ok=True)
 
-        # Parse the string with minidom for pretty-printing
-        if pretty:
-            # Convert the ElementTree to a string and prettify it
-            xml_str = ET.tostring(root, encoding="utf-8")
-            xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
-
-            # Save to file
-            with open(file_name, "w", encoding="utf-8") as f:
-                f.write(xml_str)
-        else:
-            tree = ET.ElementTree(root)
-            tree.write(file_name, encoding="utf-8", xml_declaration=False)
+        # Save to file
+        with open(file_name, "w", encoding="utf-8") as f:
+            f.write(metadata)
 
     def export_tag_dictionary(self, stack_index: int, file_name: Union[str, Path]):
         """Export the tag dictionary to file.
@@ -411,11 +467,11 @@ class MSRReader:
             Output file name.
         """
 
-        if stack_index < 0 or stack_index > len(self.obf_stacks_list):
+        if stack_index < 0 or stack_index > len(self._obf_stacks_list):
             raise ValueError(f"Stack number {stack_index} is out of range.")
 
         # Get stack metadata
-        obf_stack_metadata = self.obf_stacks_list[stack_index]
+        obf_stack_metadata = self._obf_stacks_list[stack_index]
 
         # Make sure file_name is of type Path
         file_name = Path(file_name)
@@ -427,8 +483,9 @@ class MSRReader:
         for key, value in obf_stack_metadata.tag_dictionary.items():
             if type(value) is ET.Element:
                 mod_file_name = file_name.parent / f"{file_name.stem}_{key}.xml"
-                tree = ET.ElementTree(value)
-                tree.write(mod_file_name, encoding="utf-8", xml_declaration=False)
+                xml_str = self._tree_to_formatted_xml(value)
+                with open(mod_file_name, "w") as file:
+                    file.write(xml_str)
             elif type(value) is dict:
                 mod_file_name = file_name.parent / f"{file_name.stem}_{key}.json"
                 with open(mod_file_name, "w") as file:
@@ -437,6 +494,39 @@ class MSRReader:
                 mod_file_name = file_name.parent / f"{file_name.stem}_{key}.txt"
                 with open(mod_file_name, "w") as file:
                     file.write(value)
+
+    @staticmethod
+    def _tree_to_formatted_xml(root: ET, xml_declaration: bool = True) -> str:
+        """Converts an xml. tree to formatted xml.
+
+        Parameters
+        ----------
+
+        root: xml.etree.ElementTree
+            Root element of the xml tree.
+
+        xml_declaration: bool
+            Whether to prepend the xml declaration to the converted xml.
+
+        Returns
+        -------
+
+        xml_str: str
+            Formatted xml.
+        """
+
+        # Format tree (optionally add xml declaration)
+        xml_str = ET.tostring(
+            root, encoding="utf-8", xml_declaration=xml_declaration, method="xml"
+        ).decode("utf-8")
+
+        # Remove tabs and new lines
+        xml_str = re.sub(r"[\n\t]", "", xml_str)
+
+        # Remove stretches of blank spaces between nodes
+        xml_str = re.sub(r">\s+<", "><", xml_str)
+
+        return xml_str
 
     @staticmethod
     def _get_footer_struct_size(version: int) -> int:
@@ -457,19 +547,19 @@ class MSRReader:
         if version == 0:
             return 0
         elif version == 1:
-            return Constants.VERSION_1A_FOOTER_LENGTH  # We return version "1A"
+            return _Constants.V1A_FOOTER_LENGTH  # We return version "1A"
         elif version == 2:
-            return Constants.VERSION_2_FOOTER_LENGTH
+            return _Constants.V2_FOOTER_LENGTH
         elif version == 3:
-            return Constants.VERSION_3_FOOTER_LENGTH
+            return _Constants.V3_FOOTER_LENGTH
         elif version == 4:
-            return Constants.VERSION_4_FOOTER_LENGTH
+            return _Constants.V4_FOOTER_LENGTH
         elif version == 5:
-            return Constants.VERSION_5A_FOOTER_LENGTH  # We return version "5A"
+            return _Constants.V5A_FOOTER_LENGTH  # We return version "5A"
         elif version == 6:
-            return Constants.VERSION_6_FOOTER_LENGTH
+            return _Constants.V6_FOOTER_LENGTH
         elif version == 7:
-            return Constants.VERSION_7_FOOTER_LENGTH
+            return _Constants.V7_FOOTER_LENGTH
         else:
             raise ValueError(f"Unexpected stack version {version}.")
 
@@ -669,21 +759,21 @@ class MSRReader:
 
         # Get the number of pixels along each dimension
         obf_stack_metadata.num_pixels = []
-        for i in range(Constants.BF_MAX_DIMENSIONS):
+        for i in range(_Constants.BF_MAX_DIMENSIONS):
             n = struct.unpack("<I", f.read(4))[0]
             if i < obf_stack_metadata.rank:
                 obf_stack_metadata.num_pixels.append(n)
 
         # Get the physical lengths along each dimension
         obf_stack_metadata.physical_lengths = []
-        for i in range(Constants.BF_MAX_DIMENSIONS):
+        for i in range(_Constants.BF_MAX_DIMENSIONS):
             p = struct.unpack("<d", f.read(8))[0]
             if i < obf_stack_metadata.rank:
                 obf_stack_metadata.physical_lengths.append(p)
 
         # Get the physical lengths along each dimension
         obf_stack_metadata.physical_offsets = []
-        for i in range(Constants.BF_MAX_DIMENSIONS):
+        for i in range(_Constants.BF_MAX_DIMENSIONS):
             o = struct.unpack("<d", f.read(8))[0]
             if i < obf_stack_metadata.rank:
                 obf_stack_metadata.physical_offsets.append(o)
@@ -812,7 +902,7 @@ class MSRReader:
 
         # Entries are != 0 for all axes that have a pixel position array (after the footer)
         col_positions_present = []
-        for i in range(Constants.BF_MAX_DIMENSIONS):
+        for i in range(_Constants.BF_MAX_DIMENSIONS):
             p = struct.unpack("<I", f.read(4))[0]
             if i < obf_stack_metadata.rank:
                 col_positions_present.append(p != 0)
@@ -821,7 +911,7 @@ class MSRReader:
 
         # Entries are != 0 for all axes that have a label (after the footer)
         col_labels_present = []
-        for i in range(Constants.BF_MAX_DIMENSIONS):
+        for i in range(_Constants.BF_MAX_DIMENSIONS):
             b = struct.unpack("<I", f.read(4))[0]
             if i < obf_stack_metadata.rank:
                 col_labels_present.append(b != 0)
@@ -834,7 +924,7 @@ class MSRReader:
 
         # Internal check
         assert (
-            current_size == Constants.VERSION_1A_FOOTER_LENGTH
+            current_size == _Constants.V1A_FOOTER_LENGTH
         ), "Unexpected length of version 1/1A data."
 
         # Have we read enough for this version?
@@ -847,7 +937,7 @@ class MSRReader:
 
         # SI units of the value carried
         fractions = []
-        for i in range(Constants.OBF_SI_FRACTION_NUM_ELEMENTS):
+        for i in range(_Constants.OBF_SI_FRACTION_NUM_ELEMENTS):
             numerator = struct.unpack("<i", f.read(4))[0]
             denominator = struct.unpack("<i", f.read(4))[0]
             fractions.append(SIFraction(numerator=numerator, denominator=denominator))
@@ -859,9 +949,9 @@ class MSRReader:
 
         # SI units of the axes
         dimensions = []
-        for i in range(Constants.BF_MAX_DIMENSIONS):
+        for i in range(_Constants.BF_MAX_DIMENSIONS):
             fractions = []
-            for j in range(Constants.OBF_SI_FRACTION_NUM_ELEMENTS):
+            for j in range(_Constants.OBF_SI_FRACTION_NUM_ELEMENTS):
                 numerator = struct.unpack("<i", f.read(4))[0]
                 denominator = struct.unpack("<i", f.read(4))[0]
                 fractions.append(
@@ -877,7 +967,7 @@ class MSRReader:
 
         # Internal check
         assert (
-            current_size == Constants.VERSION_2_FOOTER_LENGTH
+            current_size == _Constants.V2_FOOTER_LENGTH
         ), "Unexpected length of version 2 data."
 
         # Have we read enough for this version?
@@ -900,7 +990,7 @@ class MSRReader:
 
         # Internal check
         assert (
-            current_size == Constants.VERSION_3_FOOTER_LENGTH
+            current_size == _Constants.V3_FOOTER_LENGTH
         ), "Unexpected length of version 3 data."
 
         # Have we read enough for this version?
@@ -915,7 +1005,7 @@ class MSRReader:
 
         # Internal check
         assert (
-            current_size == Constants.VERSION_4_FOOTER_LENGTH
+            current_size == _Constants.V4_FOOTER_LENGTH
         ), "Unexpected length of version 4 data."
 
         # Have we read enough for this version?
@@ -940,7 +1030,7 @@ class MSRReader:
 
         # Internal check
         assert (
-            current_size == Constants.VERSION_5A_FOOTER_LENGTH
+            current_size == _Constants.V5A_FOOTER_LENGTH
         ), "Unexpected length of version 5/5A data."
 
         # Have we read enough for this version?
@@ -963,7 +1053,7 @@ class MSRReader:
 
         # Internal check
         assert (
-            current_size == Constants.VERSION_6_FOOTER_LENGTH
+            current_size == _Constants.V6_FOOTER_LENGTH
         ), "Unexpected length of version 6 data."
 
         # Have we read enough for this version?
