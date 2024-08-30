@@ -18,7 +18,6 @@ import xml.etree.ElementTree as ET
 import zlib
 from dataclasses import dataclass, field, fields
 from pathlib import Path
-from pprint import pprint
 from typing import BinaryIO, NewType, Union
 
 import numpy as np
@@ -318,6 +317,214 @@ class MSRReader:
         """Return the number of stacks contained in the file."""
         return len(self._obf_stacks_list)
 
+    def get_data_physical_sizes(
+        self, stack_index: int, scaled: bool = True
+    ) -> Union[list, None]:
+        """Returns the (scaled) data physical size for the requested stack.
+
+        Parameters
+        ----------
+
+        stack_index: int
+            Index of the stack for which to read the data.
+
+        scaled: bool
+            If scaled is True, the physical sizes will be scaled by the corresponding scale factors
+            as reported by MSRReader.get_data_units().
+
+        Returns
+        -------
+
+        offsets: Union[list, None]
+            Physical sizes for 2D images, None otherwise.
+        """
+
+        if stack_index < 0 or stack_index > len(self._obf_stacks_list):
+            raise ValueError(f"stack_index={stack_index} is out of bounds.")
+
+        # Get the metadata for the requested stack
+        obf_stack_metadata = self._obf_stacks_list[stack_index]
+
+        if obf_stack_metadata is None:
+            return None
+
+        # Get the physical lengths
+        phys_lengths = obf_stack_metadata.physical_lengths[: obf_stack_metadata.rank]
+
+        # Do we need to scale?
+        if scaled:
+            _, factors = self.get_data_units(stack_index=stack_index)
+            for i, factor in enumerate(factors):
+                if factor != 1.0:
+                    phys_lengths[i] *= factor
+
+        # Return the physical lengths as list
+        return phys_lengths
+
+    def get_data_offsets(
+        self, stack_index: int, scaled: bool = True
+    ) -> Union[list, None]:
+        """Returns the (scaled) data offsets for the requested stack.
+
+        Parameters
+        ----------
+
+        stack_index: int
+            Index of the stack for which to read the data.
+
+        scaled: bool
+            If scaled is True, the offsets will be scaled by the corresponding scale factors
+            as reported by MSRReader.get_data_units().
+
+        Returns
+        -------
+
+        offsets: Union[list, None]
+            Offsets for 2D images, None otherwise.
+        """
+
+        if stack_index < 0 or stack_index > len(self._obf_stacks_list):
+            raise ValueError(f"stack_index={stack_index} is out of bounds.")
+
+        # Get the metadata for the requested stack
+        obf_stack_metadata = self._obf_stacks_list[stack_index]
+
+        if obf_stack_metadata is None:
+            return None
+
+        # Get the offsets
+        offsets = obf_stack_metadata.physical_offsets[: obf_stack_metadata.rank]
+
+        # Do we need to scale?
+        if scaled:
+            _, factors = self.get_data_units(stack_index=stack_index)
+            for i, factor in enumerate(factors):
+                if factor != 1.0:
+                    offsets[i] *= factor
+
+        return offsets
+
+    def get_data_pixel_sizes(
+        self, stack_index: int, scaled: bool = True
+    ) -> Union[list, None]:
+        """Returns the (scaled) data pixel size for the requested stack.
+
+        Parameters
+        ----------
+
+        stack_index: int
+            Index of the stack for which to read the data.
+
+        scaled: bool
+            If scaled is True, the pixel sizes will be scaled by the corresponding scale factors
+            as reported by MSRReader.get_data_units().
+
+        Returns
+        -------
+
+        offsets: Union[list, None]
+            Pixel sizes for 2D images, None otherwise.
+        """
+
+        if stack_index < 0 or stack_index > len(self._obf_stacks_list):
+            raise ValueError(f"stack_index={stack_index} is out of bounds.")
+
+        # Get the metadata for the requested stack
+        obf_stack_metadata = self._obf_stacks_list[stack_index]
+
+        if obf_stack_metadata is None:
+            return None
+
+        # Get the physical sizes
+        phys_lengths = self.get_data_physical_sizes(
+            stack_index=stack_index, scaled=scaled
+        )
+
+        # Get the number of pixels along each dimension
+        num_pixels = obf_stack_metadata.num_pixels[: obf_stack_metadata.rank]
+
+        # Now divide by the image size
+        pixel_sizes = np.array(phys_lengths) / np.array(num_pixels)
+
+        # Return the pixel size as list
+        return pixel_sizes.tolist()
+
+    def get_data_units(self, stack_index: int) -> Union[tuple[list, list], None]:
+        """Returns the data units and scale factors per dimension for requested stack.
+
+        Units are one of:
+            "m": meters
+            "kg": kilograms
+            "s": s
+            "A": Amperes
+            "K": Kelvin
+            "mol": moles
+            "cd": candela
+            "r": radian
+            "sr": sr
+
+        Parameters
+        ----------
+
+        stack_index: int
+            Index of the stack for which to read the data.
+
+        Returns
+        -------
+
+        unit: Union[tuple[list, list], None]
+            List of units and list of scale factors, or None if no file was opened.
+        """
+
+        if stack_index < 0 or stack_index > len(self._obf_stacks_list):
+            raise ValueError(f"stack_index={stack_index} is out of bounds.")
+
+        # Get the metadata for the requested stack
+        obf_stack_metadata = self._obf_stacks_list[stack_index]
+
+        if obf_stack_metadata is None:
+            return None
+
+        units = []
+        scale_factors = []
+        for dim in range(obf_stack_metadata.rank):
+            dimensions = obf_stack_metadata.si_dimensions[dim]
+            scale_factors.append(dimensions.scale_factor)
+            for i, exponent in enumerate(dimensions.exponents):
+                if i == 0 and exponent.numerator > 0:
+                    units.append("m")
+                    break
+                elif i == 1 and exponent.numerator > 0:
+                    units.append("kg")
+                    break
+                elif i == 2 and exponent.numerator > 0:
+                    units.append("s")
+                    break
+                elif i == 3 and exponent.numerator > 0:
+                    units.append("A")
+                    break
+                elif i == 4 and exponent.numerator > 0:
+                    units.append("K")
+                    break
+                elif i == 5 and exponent.numerator > 0:
+                    units.append("mol")
+                    break
+                elif i == 6 and exponent.numerator > 0:
+                    units.append("cd")
+                    break
+                elif i == 7 and exponent.numerator > 0:
+                    units.append("r")
+                    break
+                elif i == 8 and exponent.numerator > 0:
+                    units.append("sr")
+                    break
+                else:
+                    units.append("")
+                    break
+
+        # Return the extracted units and scale factors
+        return units, scale_factors
+
     def get_data(self, stack_index: int) -> Union[np.ndarray, None]:
         """Read the data for requested stack: only images are returned.
 
@@ -454,6 +661,36 @@ class MSRReader:
         with open(file_name, "w", encoding="utf-8") as f:
             f.write(metadata)
 
+    def get_tag_dictionary(self, stack_index: int) -> Union[dict, None]:
+        """Return the tag dictionary for the requested stack.
+
+        Parameters
+        ----------
+
+        stack_index: int
+            Index of the stack for which to return the tag dictionary.
+
+        Returns
+        -------
+
+        tag_dictionary: Union[dict, None]
+            Dictionary. If no file was loaded, returns None.
+        """
+
+        if stack_index < 0 or stack_index > len(self._obf_stacks_list):
+            raise ValueError(f"Stack number {stack_index} is out of range.")
+
+        # Get stack metadata
+        obf_stack_metadata = self._obf_stacks_list[stack_index]
+        if obf_stack_metadata is None:
+            return None
+
+        # Get the tag dictionary
+        tag = obf_stack_metadata.tag_dictionary
+
+        # Return the tag dictionary
+        return tag
+
     def export_tag_dictionary(self, stack_index: int, file_name: Union[str, Path]):
         """Export the tag dictionary to file.
 
@@ -470,8 +707,10 @@ class MSRReader:
         if stack_index < 0 or stack_index > len(self._obf_stacks_list):
             raise ValueError(f"Stack number {stack_index} is out of range.")
 
-        # Get stack metadata
-        obf_stack_metadata = self._obf_stacks_list[stack_index]
+        # Get tag dictionary
+        tag_dictionary = self.get_tag_dictionary(stack_index)
+        if tag_dictionary is None:
+            return None
 
         # Make sure file_name is of type Path
         file_name = Path(file_name)
@@ -480,7 +719,7 @@ class MSRReader:
         file_name.parent.mkdir(parents=True, exist_ok=True)
 
         # Export the dictionaries
-        for key, value in obf_stack_metadata.tag_dictionary.items():
+        for key, value in tag_dictionary.items():
             if type(value) is ET.Element:
                 mod_file_name = file_name.parent / f"{file_name.stem}_{key}.xml"
                 xml_str = self._tree_to_formatted_xml(value)
