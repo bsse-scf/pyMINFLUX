@@ -231,6 +231,9 @@ class Mediator:
         self.dialogs["plotter"].crop_region_selected.connect(
             self.dialogs["main_window"].crop_data_by_range
         )
+        self.dialogs["plotter"].redraw_required.connect(
+            self.dialogs["main_window"].plot_selected_parameters
+        )
 
     def _setup_plotter3d_connections(self):
         """Set up the Plotter3D connections."""

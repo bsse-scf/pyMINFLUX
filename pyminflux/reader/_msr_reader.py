@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import BinaryIO, NewType, Union
 
 import numpy as np
+from natsort import natsorted
 
 # Some type aliases to make the code easier to understand
 int32 = NewType("int32", int)
@@ -1514,3 +1515,96 @@ class MSRReader:
 
         # Return it
         return num_bytes_per_sample
+
+    def get_image_info_list(self):
+        """Return a list of images from all stacks."""
+
+        # Initialize the list
+        images = []
+
+        # Do we have images?
+        if self.num_stacks == 0:
+            return images
+
+        for i, stack in enumerate(self._obf_stacks_list):
+
+            # Only return images
+            if (np.array(stack.num_pixels) > 1).sum() == 2:
+
+                # Get pixel size
+                pixel_sizes = np.round(
+                    np.array(self.get_data_pixel_sizes(stack_index=i)) * 1e9, 2
+                )[:2]
+
+                # Get detector
+                detector = self._get_detector(
+                    imspector_dictionary_root=stack.tag_dictionary["imspector"],
+                    img_name=stack.stack_name,
+                )
+
+                # Build a (univocal) summary string
+                as_string = (
+                    f"{detector}: {stack.stack_name}: "
+                    f"size = (h={stack.num_pixels[1]} x w={stack.num_pixels[0]}); "
+                    f"pixel size = {pixel_sizes[0]}nm "
+                    f"(index = {i})"
+                )
+                images.append(
+                    {
+                        "index": i,
+                        "name": stack.stack_name,
+                        "detector": detector,
+                        "description": stack.stack_description,
+                        "num_pixels": stack.num_pixels,
+                        "physical_lengths": stack.physical_lengths,
+                        "physical_offsets": stack.physical_offsets,
+                        "pixel_sizes": pixel_sizes,
+                        "as_string": as_string,
+                    }
+                )
+
+        # Sort the list using natural sorting by the 'as_string' key
+        images = natsorted(images, key=lambda x: x["as_string"])
+
+        # Return the extracted metadata
+        return images
+
+    @staticmethod
+    def _get_detector(imspector_dictionary_root: ET, img_name: str) -> Union[str, None]:
+        """Extract the detector names from the tag dictionary of current stack.
+
+        Parameters
+        ----------
+
+        imspector_dictionary_root: xml.etree.ElementTree
+            Root of the "imspector" tree (i.e., tag_dictionary["imspector"]).
+
+        Returns
+        -------
+
+        name: Union[str, None]
+            Name of the detector, or None if the detector could not be found.
+        """
+
+        # Get the channels node
+        channels_node = imspector_dictionary_root.find(
+            "./doc/ExpControl/measurement/channels"
+        )
+        if channels_node is None:
+            return None
+
+        # Find all items
+        items = channels_node.findall("item")
+        if items is None:
+            return None
+
+        # Process items
+        detector = None
+        for item in items:
+            detector = item.find("./detsel/detector")
+            name = item.find("./name")
+            if detector is not None and name is not None:
+                if name.text in img_name:
+                    return detector.text
+
+        return detector

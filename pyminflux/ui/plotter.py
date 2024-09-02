@@ -11,18 +11,29 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph import ROI, PlotCurveItem, PlotWidget, TextItem, ViewBox, mkPen
+from pyqtgraph import (
+    ROI,
+    ImageItem,
+    PlotCurveItem,
+    PlotWidget,
+    TextItem,
+    ViewBox,
+    mkPen,
+)
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QInputDialog, QMenu
+from PySide6.QtWidgets import QDialog, QFileDialog, QInputDialog, QMenu
 
+from ..reader import MSRReader
 from ..state import State
 from .colors import ColorCode, ColorsToBrushes
+from .custom_dialogs import ListDialog
 from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
 
 
@@ -31,6 +42,7 @@ class Plotter(PlotWidget):
     locations_selected = Signal(list)
     locations_selected_by_range = Signal(str, str, tuple, tuple)
     crop_region_selected = Signal(str, str, tuple, tuple)
+    redraw_required = Signal()
 
     def __init__(self):
         super().__init__()
@@ -71,6 +83,9 @@ class Plotter(PlotWidget):
         # Keep track of last plot
         self._last_x_param = None
         self._last_y_param = None
+
+        # Keep track of the background (confocal) image
+        self.image_item = None
 
         # Keep track of the ScaleBar
         self.scale_bar = None
@@ -168,6 +183,9 @@ class Plotter(PlotWidget):
                 set_scalebar_size_action = QAction("Set scale bar size")
                 set_scalebar_size_action.triggered.connect(self.set_scalebar_size)
                 menu.addAction(set_scalebar_size_action)
+                add_confocal_image_action = QAction("Set confocal image")
+                add_confocal_image_action.triggered.connect(self.add_confocal_image)
+                menu.addAction(add_confocal_image_action)
                 export_action = QAction("Export plot")
                 export_action.triggered.connect(
                     lambda checked: export_plot_interactive(self.getPlotItem())
@@ -344,6 +362,11 @@ class Plotter(PlotWidget):
             self.state.color_code, tid=tid, fid=fid, depth=depth, time=time
         )
 
+        # If we have an image, make sure to draw it first (but only if
+        # x_param is "x" and y_param is "y"
+        if self.image_item is not None and x_param == "x" and y_param == "y":
+            self.addItem(self.image_item)
+
         # Create the scatter plot
         self.scatter_plot = pg.ScatterPlotItem(
             x=x,
@@ -510,3 +533,86 @@ class Plotter(PlotWidget):
 
             # Update the bar
             self.scale_bar.setSize(self.state.scale_bar_size)
+
+    def add_confocal_image(self):
+        """Ask the user to pick an MSR file and choose the confocal image to add to the plot."""
+
+        # Default path
+        if self.state.last_selected_path is not None:
+            load_path = str(self.state.last_selected_path)
+        else:
+            load_path = str(Path(".").absolute())
+
+        # Ask the user to pick an MSR file
+        res = QFileDialog.getOpenFileName(
+            self,
+            "Load MSR file",
+            load_path,
+            "All Supported Files (*.msr);;" "MSR file (*.pmx);;",
+        )
+        filename = res[0]
+        if filename == "":
+            return
+
+        # Open the file
+        msr_reader = MSRReader(filename)
+
+        # Scan it
+        msr_reader.scan()
+
+        # Get the image info
+        image_info = msr_reader.get_image_info_list()
+
+        # Build the options list
+        options = []
+        for i in range(len(image_info)):
+            info = image_info[i]
+            options.append(info["as_string"])
+        if len(options) == 0:
+            print("No images found.")
+            return
+
+        # Show the options
+        dialog = ListDialog(options=options, title="Select image")
+        if dialog.exec_() == QDialog.Accepted:
+            selected_option = dialog.get_selected_index()
+        else:
+            return
+
+        # Do we have a valid index
+        if selected_option == -1:
+            return
+
+        # Get the selected image info
+        info = image_info[selected_option]
+
+        # Load the image
+        image = msr_reader.get_data(info["index"])
+
+        # Display it
+        if self.image_item is None:
+            self.image_item = pg.ImageItem(image)
+
+        # Calculate the offsets in nm
+        offsets_nm = np.array(info["physical_offsets"]) * 1e9
+
+        # Extract the image physical size in nm
+        physical_size = np.array(info["physical_lengths"]) * 1e9
+
+        # If a previous image exists, remove it and delete it
+        self.removeItem(self.image_item)
+        self.image_item.deleteLater()
+        self.image_item = ImageItem(image)
+
+        # Shift the image by the specified offsets
+        self.image_item.setRect(
+            QtCore.QRectF(
+                float(offsets_nm[0]),
+                float(offsets_nm[1]),
+                float(physical_size[1]),
+                float(physical_size[0]),
+            )
+        )
+
+        # Emit a request for redraw
+        self.redraw_required.emit()
