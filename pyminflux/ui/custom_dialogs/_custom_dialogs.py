@@ -65,13 +65,9 @@ class ListDialog(QDialog):
             self.list_widget.sizeHintForColumn(0) + 2 * self.list_widget.frameWidth()
         )
 
-        # Set the maximum height and width to ensure the dialog doesn't become too large
-        max_height = (
-            400  # You can set this to a value that makes sense for your application
-        )
-        max_width = (
-            300  # You can set this to a value that makes sense for your application
-        )
+        # Make sure the dialog does not become too large
+        max_height = 1280
+        max_width = 1024
 
         # Adjust the list widget and dialog size
         self.list_widget.setMinimumHeight(min(total_height, max_height))
