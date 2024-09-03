@@ -231,7 +231,10 @@ class Mediator:
         self.dialogs["plotter"].crop_region_selected.connect(
             self.dialogs["main_window"].crop_data_by_range
         )
-        self.dialogs["plotter"].redraw_required.connect(
+        self.dialogs["plotter"].added_confocal_image.connect(
+            self.dialogs["main_window"].plot_selected_parameters
+        )
+        self.dialogs["plotter"].removed_confocal_image.connect(
             self.dialogs["main_window"].plot_selected_parameters
         )
 
@@ -276,6 +279,12 @@ class Mediator:
 
         self.dialogs["plotter_toolbar"].color_code_locs_changed.connect(
             self.dialogs["main_window"].plot_selected_parameters
+        )
+        self.dialogs["plotter"].added_confocal_image.connect(
+            self.dialogs["plotter_toolbar"].enable_minflux_confocal_controls
+        )
+        self.dialogs["plotter"].removed_confocal_image.connect(
+            self.dialogs["plotter_toolbar"].disable_minflux_confocal_controls
         )
 
     def _setup_time_inspector_connections(self):

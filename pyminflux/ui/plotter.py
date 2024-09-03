@@ -42,7 +42,8 @@ class Plotter(PlotWidget):
     locations_selected = Signal(list)
     locations_selected_by_range = Signal(str, str, tuple, tuple)
     crop_region_selected = Signal(str, str, tuple, tuple)
-    redraw_required = Signal()
+    added_confocal_image = Signal()
+    removed_confocal_image = Signal()
 
     def __init__(self):
         super().__init__()
@@ -354,6 +355,7 @@ class Plotter(PlotWidget):
 
         # Remove images
         self.remove_confocal_image(redraw=False)
+        self.state.has_confocal = False
 
     def remove_points(self):
         self.setBackground("k")
@@ -372,102 +374,105 @@ class Plotter(PlotWidget):
     ):
         """Plot localizations and other parameters in a 2D scatter plot."""
 
-        # Get the colors singleton
-        brushes = ColorsToBrushes().get_brushes(
-            self.state.color_code, tid=tid, fid=fid, depth=depth, time=time
-        )
-
         # If we have an image, make sure to draw it first (but only if
         # x_param is "x" and y_param is "y"
-        if self.image_item is not None and x_param == "x" and y_param == "y":
-            self.addItem(self.image_item)
+        if self.state.show_confocal:
+            if self.image_item is not None and x_param == "x" and y_param == "y":
+                self.addItem(self.image_item)
 
-        # Create the scatter plot
-        self.scatter_plot = pg.ScatterPlotItem(
-            x=x,
-            y=y,
-            data=tid,
-            size=5,
-            pen=None,
-            brush=brushes,
-            hoverable=True,
-            hoverSymbol="s",
-            hoverSize=5,
-            hoverPen=pg.mkPen("w", width=2),
-            hoverBrush=None,
-        )
-        self.scatter_plot.sigClicked.connect(self.clicked)
-        self.addItem(self.scatter_plot)
-
-        # For a tracking dataset, we also add the connecting line_plot (for spatial parameters only)
-        if self.state.is_tracking and (
-            x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]
-        ):
-
-            # Add the line_plot within TIDs
-            line_indices = np.concatenate((np.diff(tid) == 0, [1])).astype(np.int32)
-            self.line_plot = pg.PlotDataItem(
-                x,
-                y,
-                connect=line_indices,
-                pen=mkPen(cosmetic=True, width=0.5, color="w"),
-                symbol=None,
-                brush=None,
+        if self.state.show_localizations:
+            # Get the colors singleton
+            brushes = ColorsToBrushes().get_brushes(
+                self.state.color_code, tid=tid, fid=fid, depth=depth, time=time
             )
-            self.addItem(self.line_plot)
 
-        self.setLabel("bottom", text=x_param)
-        self.setLabel("left", text=y_param)
-        self.showAxis("bottom")
-        self.showAxis("left")
-        self.setBackground("k")
+            # Create the scatter plot
+            self.scatter_plot = pg.ScatterPlotItem(
+                x=x,
+                y=y,
+                data=tid,
+                size=5,
+                pen=None,
+                brush=brushes,
+                hoverable=True,
+                hoverSymbol="s",
+                hoverSize=5,
+                hoverPen=pg.mkPen("w", width=2),
+                hoverBrush=None,
+            )
+            self.scatter_plot.sigClicked.connect(self.clicked)
+            self.addItem(self.scatter_plot)
 
-        # Fix aspect ratio (if needed)
-        if (self._last_x_param is None or self._last_x_param != x_param) or (
-            self._last_y_param is None or self._last_y_param != y_param
-        ):
-            # Update range
-            self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
+            # For a tracking dataset, we also add the connecting line_plot (for spatial parameters only)
+            if self.state.is_tracking and (
+                x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]
+            ):
 
-            if x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]:
-                # Set fixed aspect ratio
-                aspect_ratio = 1.0
+                # Add the line_plot within TIDs
+                line_indices = np.concatenate((np.diff(tid) == 0, [1])).astype(np.int32)
+                self.line_plot = pg.PlotDataItem(
+                    x,
+                    y,
+                    connect=line_indices,
+                    pen=mkPen(cosmetic=True, width=0.5, color="w"),
+                    symbol=None,
+                    brush=None,
+                )
+                self.addItem(self.line_plot)
 
-                # Add scale bar
-                if self.scale_bar is None:
-                    self.scale_bar = BottomLeftAnchoredScaleBar(
-                        size=self.state.scale_bar_size,
-                        auto_resize=False,
-                        viewBox=self.getViewBox(),
-                        brush="w",
-                        pen=None,
-                        suffix="nm",
-                        offset=(50, -15),
-                    )
-                self.scale_bar.setEnabled(True)
-                self.scale_bar.setVisible(True)
+            self.setLabel("bottom", text=x_param)
+            self.setLabel("left", text=y_param)
+            self.showAxis("bottom")
+            self.showAxis("left")
+            self.setBackground("k")
 
-            else:
-                # Calculate aspect ratio
-                x_min, x_max = np.nanpercentile(x, (1, 99))
-                x_scale = x_max - x_min
-                y_min, y_max = np.nanpercentile(y, (1, 99))
-                y_scale = y_max - y_min
-                aspect_ratio = y_scale / x_scale
-                if np.isnan(aspect_ratio):
+            # Fix aspect ratio (if needed)
+            if (self._last_x_param is None or self._last_x_param != x_param) or (
+                self._last_y_param is None or self._last_y_param != y_param
+            ):
+                # Update range
+                self.getViewBox().enableAutoRange(axis=ViewBox.XYAxes, enable=True)
+
+                if x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]:
+                    # Set fixed aspect ratio
                     aspect_ratio = 1.0
 
-                if self.scale_bar is not None:
-                    self.scale_bar.setEnabled(False)
-                    self.scale_bar.setVisible(False)
+                    # Add scale bar
+                    if self.scale_bar is None:
+                        self.scale_bar = BottomLeftAnchoredScaleBar(
+                            size=self.state.scale_bar_size,
+                            auto_resize=False,
+                            viewBox=self.getViewBox(),
+                            brush="w",
+                            pen=None,
+                            suffix="nm",
+                            offset=(50, -15),
+                        )
+                    self.scale_bar.setEnabled(True)
+                    self.scale_bar.setVisible(True)
 
-            self.getPlotItem().getViewBox().setAspectLocked(
-                lock=True, ratio=aspect_ratio
-            )
+                else:
+                    # Calculate aspect ratio
+                    x_min, x_max = np.nanpercentile(x, (1, 99))
+                    x_scale = x_max - x_min
+                    y_min, y_max = np.nanpercentile(y, (1, 99))
+                    y_scale = y_max - y_min
+                    aspect_ratio = y_scale / x_scale
+                    if np.isnan(aspect_ratio):
+                        aspect_ratio = 1.0
+
+                    if self.scale_bar is not None:
+                        self.scale_bar.setEnabled(False)
+                        self.scale_bar.setVisible(False)
+
+                self.getPlotItem().getViewBox().setAspectLocked(
+                    lock=True, ratio=aspect_ratio
+                )
 
         # Update last plotted parameters
-        self._last_x_param = x_param
-        self._last_y_param = y_param
+        if not self.state.show_confocal and not self.state.show_localizations:
+            self._last_x_param = x_param
+            self._last_y_param = y_param
 
     def crop_data_by_roi_selection(self, item):
         """Open dialog to manually set the filter ranges"""
@@ -630,8 +635,14 @@ class Plotter(PlotWidget):
             )
         )
 
-        # Emit a request for redraw
-        self.redraw_required.emit()
+        # Enable the has_confocal state
+        self.state.has_confocal = True
+
+        # Enable showing the confocal image
+        self.state.show_confocal = True
+
+        # Inform that the confocal image was added
+        self.added_confocal_image.emit()
 
     def replace_confocal_image(self):
         """Replace confocal image."""
@@ -648,5 +659,9 @@ class Plotter(PlotWidget):
             self.image_item.deleteLater()
             self.image_item = None
 
+        # Flag that the confocal image is not set
+        self.state.has_confocal = False
+
         if redraw:
-            self.redraw_required.emit()
+            # Inform that the confocal image was removed
+            self.removed_confocal_image.emit()

@@ -45,11 +45,13 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -58,7 +60,7 @@ class Ui_PlotterToolbar(object):
     def setupUi(self, PlotterToolbar):
         if not PlotterToolbar.objectName():
             PlotterToolbar.setObjectName("PlotterToolbar")
-        PlotterToolbar.resize(1077, 34)
+        PlotterToolbar.resize(1077, 102)
         sizePolicy = QSizePolicy(
             QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed
         )
@@ -66,19 +68,22 @@ class Ui_PlotterToolbar(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(PlotterToolbar.sizePolicy().hasHeightForWidth())
         PlotterToolbar.setSizePolicy(sizePolicy)
-        self.horizontalLayout = QHBoxLayout(PlotterToolbar)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.horizontalLayout.setContentsMargins(-1, 3, -1, 3)
+        self.gridLayout = QGridLayout(PlotterToolbar)
+        self.gridLayout.setObjectName("gridLayout")
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setObjectName("main_layout")
+        self.first_row_layout = QHBoxLayout()
+        self.first_row_layout.setObjectName("first_row_layout")
         self.horizontalSpacer_2 = QSpacerItem(
             10, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
         )
 
-        self.horizontalLayout.addItem(self.horizontalSpacer_2)
+        self.first_row_layout.addItem(self.horizontalSpacer_2)
 
         self.cbPlot3D = QCheckBox(PlotterToolbar)
         self.cbPlot3D.setObjectName("cbPlot3D")
 
-        self.horizontalLayout.addWidget(self.cbPlot3D)
+        self.first_row_layout.addWidget(self.cbPlot3D)
 
         self.cbProjection = QComboBox(PlotterToolbar)
         self.cbProjection.addItem("")
@@ -94,12 +99,12 @@ class Ui_PlotterToolbar(object):
         )
         self.cbProjection.setSizePolicy(sizePolicy1)
 
-        self.horizontalLayout.addWidget(self.cbProjection)
+        self.first_row_layout.addWidget(self.cbProjection)
 
         self.lbOptions = QLabel(PlotterToolbar)
         self.lbOptions.setObjectName("lbOptions")
 
-        self.horizontalLayout.addWidget(self.lbOptions)
+        self.first_row_layout.addWidget(self.lbOptions)
 
         self.cbColorCodeSelector = QComboBox(PlotterToolbar)
         self.cbColorCodeSelector.addItem("")
@@ -109,48 +114,82 @@ class Ui_PlotterToolbar(object):
         self.cbColorCodeSelector.addItem("")
         self.cbColorCodeSelector.setObjectName("cbColorCodeSelector")
 
-        self.horizontalLayout.addWidget(self.cbColorCodeSelector)
+        self.first_row_layout.addWidget(self.cbColorCodeSelector)
 
         self.cbPlotAveragePos = QCheckBox(PlotterToolbar)
         self.cbPlotAveragePos.setObjectName("cbPlotAveragePos")
 
-        self.horizontalLayout.addWidget(self.cbPlotAveragePos)
+        self.first_row_layout.addWidget(self.cbPlotAveragePos)
 
         self.line = QFrame(PlotterToolbar)
         self.line.setObjectName("line")
         self.line.setFrameShape(QFrame.Shape.VLine)
         self.line.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.horizontalLayout.addWidget(self.line)
+        self.first_row_layout.addWidget(self.line)
 
         self.cbFirstParam = QComboBox(PlotterToolbar)
         self.cbFirstParam.setObjectName("cbFirstParam")
-        sizePolicy.setHeightForWidth(self.cbFirstParam.sizePolicy().hasHeightForWidth())
-        self.cbFirstParam.setSizePolicy(sizePolicy)
+        sizePolicy1.setHeightForWidth(
+            self.cbFirstParam.sizePolicy().hasHeightForWidth()
+        )
+        self.cbFirstParam.setSizePolicy(sizePolicy1)
 
-        self.horizontalLayout.addWidget(self.cbFirstParam)
+        self.first_row_layout.addWidget(self.cbFirstParam)
 
         self.cbSecondParam = QComboBox(PlotterToolbar)
         self.cbSecondParam.setObjectName("cbSecondParam")
-        sizePolicy.setHeightForWidth(
+        sizePolicy1.setHeightForWidth(
             self.cbSecondParam.sizePolicy().hasHeightForWidth()
         )
-        self.cbSecondParam.setSizePolicy(sizePolicy)
+        self.cbSecondParam.setSizePolicy(sizePolicy1)
 
-        self.horizontalLayout.addWidget(self.cbSecondParam)
+        self.first_row_layout.addWidget(self.cbSecondParam)
 
         self.pbPlot = QPushButton(PlotterToolbar)
         self.pbPlot.setObjectName("pbPlot")
-        sizePolicy.setHeightForWidth(self.pbPlot.sizePolicy().hasHeightForWidth())
-        self.pbPlot.setSizePolicy(sizePolicy)
+        sizePolicy1.setHeightForWidth(self.pbPlot.sizePolicy().hasHeightForWidth())
+        self.pbPlot.setSizePolicy(sizePolicy1)
 
-        self.horizontalLayout.addWidget(self.pbPlot)
+        self.first_row_layout.addWidget(self.pbPlot)
 
         self.horizontalSpacer_4 = QSpacerItem(
             10, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
         )
 
-        self.horizontalLayout.addItem(self.horizontalSpacer_4)
+        self.first_row_layout.addItem(self.horizontalSpacer_4)
+
+        self.main_layout.addLayout(self.first_row_layout)
+
+        self.second_row_layout = QHBoxLayout()
+        self.second_row_layout.setObjectName("second_row_layout")
+        self.horizontalSpacer = QSpacerItem(
+            40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
+        )
+
+        self.second_row_layout.addItem(self.horizontalSpacer)
+
+        self.cbShowMinflux = QCheckBox(PlotterToolbar)
+        self.cbShowMinflux.setObjectName("cbShowMinflux")
+        self.cbShowMinflux.setEnabled(True)
+
+        self.second_row_layout.addWidget(self.cbShowMinflux)
+
+        self.cbShowConfocal = QCheckBox(PlotterToolbar)
+        self.cbShowConfocal.setObjectName("cbShowConfocal")
+        self.cbShowConfocal.setEnabled(True)
+
+        self.second_row_layout.addWidget(self.cbShowConfocal)
+
+        self.horizontalSpacer_3 = QSpacerItem(
+            40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
+        )
+
+        self.second_row_layout.addItem(self.horizontalSpacer_3)
+
+        self.main_layout.addLayout(self.second_row_layout)
+
+        self.gridLayout.addLayout(self.main_layout, 0, 0, 1, 1)
 
         self.retranslateUi(PlotterToolbar)
 
@@ -196,5 +235,11 @@ class Ui_PlotterToolbar(object):
             QCoreApplication.translate("PlotterToolbar", "Avg Loc (TID)", None)
         )
         self.pbPlot.setText(QCoreApplication.translate("PlotterToolbar", "Plot", None))
+        self.cbShowMinflux.setText(
+            QCoreApplication.translate("PlotterToolbar", "MINFLUX", None)
+        )
+        self.cbShowConfocal.setText(
+            QCoreApplication.translate("PlotterToolbar", "Confocal", None)
+        )
 
     # retranslateUi

@@ -50,6 +50,7 @@ class State(metaclass=Singleton):
         "frc_lateral_resolution",
         "frc_num_repeats",
         "frc_temporal_resolution",
+        "has_confocal",
         "is_tracking",
         "last_selected_path",
         "loc_precision_range",
@@ -61,6 +62,8 @@ class State(metaclass=Singleton):
         "plot_average_localisations",
         "plot_export_dpi",
         "scale_bar_size",
+        "show_confocal",
+        "show_localizations",
         "time_thresholds",
         "tr_len_range",
         "tr_len_thresholds",
@@ -165,6 +168,13 @@ class State(metaclass=Singleton):
         self.plot_3d: bool = False
         self.plot_3d_orthogonal: bool = True
 
+        # Has a confocal image loaded and assigned
+        self.has_confocal: bool = False
+
+        # What to show in the plotter (when a confocal image is assigned)
+        self.show_confocal: bool = False
+        self.show_localizations: bool = True
+
     def asdict(self) -> dict:
         """Return class as dictionary."""
         return {
@@ -190,6 +200,7 @@ class State(metaclass=Singleton):
             "frc_lateral_resolution": self.frc_lateral_resolution,
             "frc_num_repeats": self.frc_num_repeats,
             "frc_temporal_resolution": self.frc_temporal_resolution,
+            "has_confocal": self.has_confocal,
             "is_tracking": self.is_tracking,
             "last_selected_path": self.last_selected_path,
             "loc_precision_range": self.loc_precision_range,
@@ -201,6 +212,8 @@ class State(metaclass=Singleton):
             "plot_average_localisations": self.plot_average_localisations,
             "plot_export_dpi": self.plot_export_dpi,
             "scale_bar_size": self.scale_bar_size,
+            "show_confocal": self.show_confocal,
+            "show_localizations": self.show_localizations,
             "time_thresholds": self.time_thresholds,
             "tr_len_range": self.tr_len_range,
             "tr_len_thresholds": self.tr_len_thresholds,
@@ -248,6 +261,7 @@ class State(metaclass=Singleton):
         self.frc_lateral_resolution = 4.0
         self.frc_num_repeats = 5
         self.frc_temporal_resolution = 1800.0
+        self.has_confocal = False
         self.is_tracking = False
         self.last_selected_path = None
         self.loc_precision_range = None
@@ -259,6 +273,8 @@ class State(metaclass=Singleton):
         self.plot_3d_orthogonal = True
         self.plot_export_dpi = 300
         self.scale_bar_size = 500.0
+        self.show_confocal = False
+        self.show_localizations = True
         self.time_thresholds = None
         self.tr_len_range = None
         self.tr_len_thresholds = None

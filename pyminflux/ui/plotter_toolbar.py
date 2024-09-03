@@ -81,6 +81,17 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
             self.persist_plot_average_localisations_and_broadcast
         )
 
+        # Hide the MINFLUX and Confocal checkboxes
+        self.ui.cbShowMinflux.setChecked(self.state.show_localizations)
+        self.ui.cbShowConfocal.setChecked(self.state.show_confocal)
+        self.ui.cbShowConfocal.stateChanged.connect(
+            self.persist_show_confocal_and_broadcast
+        )
+        self.ui.cbShowMinflux.stateChanged.connect(
+            self.persist_show_minflux_and_broadcast
+        )
+        self.disable_minflux_confocal_controls()
+
     @Slot(int)
     def persist_plot_average_localisations_and_broadcast(self, value):
         """Persist the selection for plotting average positions and broadcast the change."""
@@ -89,6 +100,26 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         else:
             self.state.plot_average_localisations = False
         self.plot_average_positions_state_changed.emit()
+
+    @Slot(int)
+    def persist_show_confocal_and_broadcast(self, value):
+        """Persist the state of the show confocal selection and broadcast the change."""
+        if value == Qt.CheckState.Checked.value:
+            self.state.show_confocal = True
+        else:
+            self.state.show_confocal = False
+        self.update_ui()
+        self.plot_requested_parameters.emit()
+
+    @Slot(int)
+    def persist_show_minflux_and_broadcast(self, value):
+        """Persist the state of the show confocal selection and broadcast the change."""
+        if value == Qt.CheckState.Checked.value:
+            self.state.show_localizations = True
+        else:
+            self.state.show_localizations = False
+        self.update_ui()
+        self.plot_requested_parameters.emit()
 
     @Slot(int)
     def persist_plot_3d_and_broadcast(self, value):
@@ -114,6 +145,8 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         self.ui.cbFirstParam.setVisible(not self.state.plot_3d)
         self.ui.cbSecondParam.setVisible(not self.state.plot_3d)
         self.ui.pbPlot.setVisible(not self.state.plot_3d)
+        self.ui.cbShowMinflux.setVisible(not self.state.plot_3d)
+        self.ui.cbShowConfocal.setVisible(not self.state.plot_3d)
 
     @Slot(int)
     def toggle_average_state(self, index):
@@ -158,6 +191,28 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         # Emit signal
         self.plot_requested_parameters.emit()
 
+    @Slot()
+    def disable_minflux_confocal_controls(self):
+        """Hide the controls to toggle the minflux and confocal plots."""
+        self.ui.cbShowMinflux.setChecked(self.state.show_localizations)
+        self.ui.cbShowConfocal.setChecked(self.state.show_confocal)
+        enabled = self.state.show_confocal
+        self.ui.cbShowMinflux.setEnabled(enabled)
+        self.ui.cbShowConfocal.setEnabled(enabled)
+        self.ui.cbShowMinflux.setVisible(False)
+        self.ui.cbShowConfocal.setVisible(False)
+
+    @Slot()
+    def enable_minflux_confocal_controls(self):
+        """Show the controls to toggle the minflux and confocal plots."""
+        self.ui.cbShowMinflux.setChecked(self.state.show_localizations)
+        self.ui.cbShowConfocal.setChecked(self.state.show_confocal)
+        enabled = self.state.show_confocal
+        self.ui.cbShowMinflux.setEnabled(enabled)
+        self.ui.cbShowConfocal.setEnabled(enabled)
+        self.ui.cbShowMinflux.setVisible(True)
+        self.ui.cbShowConfocal.setVisible(True)
+
     def reset(self):
         """Reset the toolbar."""
         if self.state.is_tracking and self.state.plot_average_localisations:
@@ -166,3 +221,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
             )
             self.state.plot_average_localisations = False
         self.toggle_average_state(None)
+
+        # Disable minflux/confocal plotting controls
+        if not self.state.has_confocal:
+            self.disable_minflux_confocal_controls()
