@@ -12,6 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+__ENABLE_PLUGINS__ = False
+
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -212,7 +214,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Initialize and add plug-ins
         self.plugin_manager = None
-        self.init_plugins()
+        if __ENABLE_PLUGINS__:
+            self.init_plugins()
 
     def init_plugins(self):
         """Scans the plugins folder and adds the plug-ins to the Plugins menu."""
