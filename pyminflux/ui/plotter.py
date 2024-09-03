@@ -183,9 +183,21 @@ class Plotter(PlotWidget):
                 set_scalebar_size_action = QAction("Set scale bar size")
                 set_scalebar_size_action.triggered.connect(self.set_scalebar_size)
                 menu.addAction(set_scalebar_size_action)
-                add_confocal_image_action = QAction("Set confocal image")
-                add_confocal_image_action.triggered.connect(self.add_confocal_image)
-                menu.addAction(add_confocal_image_action)
+                if self.image_item is None:
+                    add_confocal_image_action = QAction("Add confocal image")
+                    add_confocal_image_action.triggered.connect(self.add_confocal_image)
+                    menu.addAction(add_confocal_image_action)
+                else:
+                    replace_confocal_image_action = QAction("Replace confocal image")
+                    replace_confocal_image_action.triggered.connect(
+                        self.replace_confocal_image
+                    )
+                    menu.addAction(replace_confocal_image_action)
+                    remove_confocal_image_action = QAction("Remove confocal image")
+                    remove_confocal_image_action.triggered.connect(
+                        lambda _: self.remove_confocal_image(redraw=True)
+                    )
+                    menu.addAction(remove_confocal_image_action)
                 export_action = QAction("Export plot")
                 export_action.triggered.connect(
                     lambda checked: export_plot_interactive(self.getPlotItem())
@@ -589,7 +601,7 @@ class Plotter(PlotWidget):
         # Load the image
         image = msr_reader.get_data(info["index"])
 
-        # Display it
+        # Create an ImageItem to add to the plot
         if self.image_item is None:
             self.image_item = pg.ImageItem(image)
 
@@ -600,8 +612,9 @@ class Plotter(PlotWidget):
         physical_size = np.array(info["physical_lengths"]) * 1e9
 
         # If a previous image exists, remove it and delete it
-        self.removeItem(self.image_item)
-        self.image_item.deleteLater()
+        self.remove_confocal_image(redraw=False)
+
+        # Add the new image
         self.image_item = ImageItem(image)
 
         # Shift the image by the specified offsets
@@ -609,10 +622,31 @@ class Plotter(PlotWidget):
             QtCore.QRectF(
                 float(offsets_nm[0]),
                 float(offsets_nm[1]),
-                float(physical_size[1]),
                 float(physical_size[0]),
+                float(physical_size[1]),
             )
         )
 
         # Emit a request for redraw
         self.redraw_required.emit()
+
+    def replace_confocal_image(self):
+        """Replace confocal image."""
+
+        # Remove existing image
+        self.remove_confocal_image(redraw=False)
+
+        # Set a new one
+        self.add_confocal_image()
+
+    def remove_confocal_image(self, redraw: bool = False):
+        """Remove confocal image."""
+
+        # If a previous image exists, remove it and delete it
+        if self.image_item is not None:
+            self.removeItem(self.image_item)
+            self.image_item.deleteLater()
+            self.image_item = None
+
+        if redraw:
+            self.redraw_required.emit()
