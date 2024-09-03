@@ -352,6 +352,9 @@ class Plotter(PlotWidget):
         self._id_to_brush = None
         self._fid_to_brush = None
 
+        # Remove images
+        self.remove_confocal_image(redraw=False)
+
     def remove_points(self):
         self.setBackground("k")
         self.clear()
@@ -633,10 +636,7 @@ class Plotter(PlotWidget):
     def replace_confocal_image(self):
         """Replace confocal image."""
 
-        # Remove existing image
-        self.remove_confocal_image(redraw=False)
-
-        # Set a new one
+        # Set a new one (the previous one will be automatically removed)
         self.add_confocal_image()
 
     def remove_confocal_image(self, redraw: bool = False):
