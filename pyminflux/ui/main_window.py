@@ -163,7 +163,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         left_layout.addWidget(self.plotter)
         left_layout.addWidget(self.plotter3d)
         self.plotters_layout.addLayout(left_layout)
-        self.plotters_layout.addWidget(QLabel("Lomm!"))
+        self.plotters_layout.addWidget(QLabel(""))
 
         # Create the output console
         self.txt_console = QTextEdit()
@@ -1326,7 +1326,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Update the colorbar widget
         label = (
-            "Depth [nm]" if self.state.color_code == ColorCode.BY_DEPTH else "Time [ms]"
+            "Depth [nm]" if self.state.color_code == ColorCode.BY_DEPTH else "Time [s]"
         )
         self.colorbar.reset(colormap=colormap, data_range=data_range, label=label)
         self.colorbar.show()
