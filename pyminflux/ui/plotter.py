@@ -68,9 +68,10 @@ class Plotter(PlotWidget):
         self._id_to_brush = None
         self._fid_to_brush = None
 
-        # Keep a reference to the scatter plot/line plot objects
+        # Keep a reference to the scatter plot/line plot and image item objects
         self.scatter_plot = None
         self.line_plot = None
+        self.image_item = None
 
         # ROI for localizations selection
         self.ROI = None
@@ -85,11 +86,18 @@ class Plotter(PlotWidget):
         self._last_x_param = None
         self._last_y_param = None
 
-        # Keep track of the background (confocal) image
-        self.image_item = None
-
         # Keep track of the ScaleBar
         self.scale_bar = None
+
+        # Remember previous parameters to avoid redrawing when not needed
+        self.last_plot_parameters = {
+            "color_code": None,
+            "tid": None,
+            "fid": None,
+            "depth": None,
+            "time": None,
+            "brushes": None,
+        }
 
     def enableAutoRange(self, enable: bool):
         """Enable/disable axes auto-range."""
@@ -357,6 +365,16 @@ class Plotter(PlotWidget):
         self.remove_confocal_image(redraw=False)
         self.state.has_confocal = False
 
+        # Forget last plot parameters
+        self.last_plot_parameters = {
+            "color_code": None,
+            "tid": None,
+            "fid": None,
+            "depth": None,
+            "time": None,
+            "brushes": None,
+        }
+
     def remove_points(self):
         self.setBackground("k")
         self.clear()
@@ -381,10 +399,18 @@ class Plotter(PlotWidget):
                 self.addItem(self.image_item)
 
         if self.state.show_localizations:
-            # Get the colors singleton
-            brushes = ColorsToBrushes().get_brushes(
+
+            # Do we need to recreate the colors?
+            if self._need_to_recreate_colors(
                 self.state.color_code, tid=tid, fid=fid, depth=depth, time=time
-            )
+            ):
+                # Recreate colors
+                brushes = ColorsToBrushes().get_brushes(
+                    self.state.color_code, tid=tid, fid=fid, depth=depth, time=time
+                )
+                self.last_plot_parameters["brushes"] = brushes
+            else:
+                brushes = self.last_plot_parameters["brushes"]
 
             # Create the scatter plot
             self.scatter_plot = pg.ScatterPlotItem(
@@ -470,9 +496,83 @@ class Plotter(PlotWidget):
                 )
 
         # Update last plotted parameters
-        if not self.state.show_confocal and not self.state.show_localizations:
-            self._last_x_param = x_param
-            self._last_y_param = y_param
+        self._last_x_param = x_param
+        self._last_y_param = y_param
+
+    def _need_to_recreate_colors(self, color_code, tid, fid, depth, time):
+        """Check if the colors need to be recreated (and store state)."""
+
+        recreate_brushes = False
+        if self.last_plot_parameters["color_code"] is None:
+
+            # Fist time
+            recreate_brushes = True
+        else:
+
+            # There where plots already
+            if self.last_plot_parameters["color_code"] != self.state.color_code:
+
+                # If the color code changed, be need to recreate the colors
+                recreate_brushes = True
+
+            else:
+
+                # The color code is the same, we need to check if we can re-use the
+                # same colors
+                if self.state.color_code == ColorCode.NONE:
+
+                    # We can count the number of tids
+                    if (
+                        self.last_plot_parameters["tid"] is None
+                        or len(tid) != len(self.last_plot_parameters["tid"])
+                        or np.any(tid != self.last_plot_parameters["tid"])
+                    ):
+                        recreate_brushes = True
+
+                elif self.state.color_code == ColorCode.BY_TID:
+                    if (
+                        self.last_plot_parameters["tid"] is None
+                        or len(tid) != len(self.last_plot_parameters["tid"])
+                        or np.any(tid != self.last_plot_parameters["tid"])
+                    ):
+                        recreate_brushes = True
+
+                elif self.state.color_code == ColorCode.BY_FLUO:
+                    if (
+                        self.last_plot_parameters["fid"] is None
+                        or len(fid) != len(self.last_plot_parameters["fid"])
+                        or np.any(fid != self.last_plot_parameters["fid"])
+                    ):
+                        recreate_brushes = True
+
+                elif self.state.color_code == ColorCode.BY_DEPTH:
+                    if (
+                        self.last_plot_parameters["depth"] is None
+                        or len(depth) != len(self.last_plot_parameters["depth"])
+                        or np.any(depth != self.last_plot_parameters["depth"])
+                    ):
+                        recreate_brushes = True
+
+                elif self.state.color_code == ColorCode.BY_TIME:
+                    if (
+                        self.last_plot_parameters["time"] is None
+                        or len(time) != len(self.last_plot_parameters["time"])
+                        or np.any(time != self.last_plot_parameters["time"])
+                    ):
+                        recreate_brushes = True
+                else:
+                    # Unsupported case!
+                    raise ValueError("Unknown color code!")
+
+        # Remember the new parameters
+        self.last_plot_parameters["color_code"] = color_code
+        self.last_plot_parameters["tid"] = tid
+        self.last_plot_parameters["fid"] = fid
+        self.last_plot_parameters["depth"] = depth
+        self.last_plot_parameters["time"] = time
+
+        # Return
+        return recreate_brushes
 
     def crop_data_by_roi_selection(self, item):
         """Open dialog to manually set the filter ranges"""
