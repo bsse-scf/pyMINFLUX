@@ -152,17 +152,19 @@ class TreeDialog(QDialog):
         ----------
 
         options: dict
-            Hierarchical dictionary of options as strings. Any number of levels is possible,
-            but only the leaf values will be selectable.
+            Fixed dictionary structure of options:
+
             Example:
 
-                options = {
-                    "Child 0": ["Grandchild 0-0", "Grandchild 0-1"],
-                    "Child 1": ["Grandchild 1-0"],
-                    "Child 2": ["Grandchild 2-0", "Grandchild 2-1", "Grandchild 2-2"],
-                    "Child 3": ["Grandchild 3-0", "Grandchild 3-1"],
-                    "Child 4": ["Grandchild 4-0"],
-                    "Child 5": ["Grandchild 5-0", "Grandchild 5-1"],
+                data = {
+                    'Non-Selectable Node 1': [
+                        {'Selectable Leaf 1': data1},
+                        {'Selectable Leaf 2': data2},
+                    ],
+                    'Non-Selectable Node 2': [
+                        {'Selectable Leaf 3': data3},
+                        {'Selectable Leaf 4': data4},
+                    ],
                 }
 
         title: str
@@ -213,8 +215,8 @@ class TreeDialog(QDialog):
         # Connect the tree widget's selection change signal
         self.tree_widget.itemSelectionChanged.connect(self.on_selection_changed)
 
-        self.selected_item = None  # Initialize selected_item
-        self.selected_index = None  # Initialize selected_index
+        # Initialize selected item data
+        self.selected_item_data = None
 
         # Add scrollbars as needed
         self.tree_widget.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -246,46 +248,33 @@ class TreeDialog(QDialog):
             self.build_tree_items(None, data)
 
     def build_tree_items(self, parent_item, data):
-        """Add items to the widget maintaining the whole hierarchy.
-        Importantly, only the leaf children will be selectable."""
-        for key, value in data.items():
-            # Create the child item
-            child_item = QTreeWidgetItem([key])
+        """
+        Builds the tree from the provided data structure.
 
-            # Make non-selectable if it has children
-            if isinstance(value, (dict, list)):
-                child_item.setFlags(child_item.flags() & ~Qt.ItemIsSelectable)
-            else:
-                child_item.setFlags(child_item.flags() | Qt.ItemIsSelectable)
-                child_item.setData(0, Qt.UserRole, self.index_counter)
-                self.index_counter += 1
+        Parameters:
+        - parent_item: The parent QTreeWidgetItem or None if adding to the top level.
+        - data: The data structure as described.
+        """
+        for node_text, leaves in data.items():
+            # Create a non-selectable node
+            node_item = QTreeWidgetItem([node_text])
+            node_item.setFlags(node_item.flags() & ~Qt.ItemIsSelectable)
 
-            # Add the item to the parent or as a top-level item
             if parent_item:
-                parent_item.addChild(child_item)
+                parent_item.addChild(node_item)
             else:
-                self.tree_widget.addTopLevelItem(child_item)
+                self.tree_widget.addTopLevelItem(node_item)
 
-            if isinstance(value, dict):
-                # Recursively build the tree for nested dictionaries
-                self.build_tree_items(child_item, value)
-            elif isinstance(value, list):
-                # Add child items
-                for grandchild in value:
-                    grandchild_item = QTreeWidgetItem([grandchild])
-
-                    # Assign index to grandchild_item
-                    grandchild_item.setData(0, Qt.UserRole, self.index_counter)
-                    self.index_counter += 1
-
-                    # Make grandchild selectable
-                    grandchild_item.setFlags(
-                        grandchild_item.flags() | Qt.ItemIsSelectable
-                    )
-                    child_item.addChild(grandchild_item)
-            else:
-                # Leaf node, already handled
-                pass
+            # Iterate over the list of leaf dictionaries
+            for leaf_dict in leaves:
+                for leaf_text, leaf_data in leaf_dict.items():
+                    # Create a selectable leaf node
+                    leaf_item = QTreeWidgetItem([leaf_text])
+                    # Assign the leaf data to the item
+                    leaf_item.setData(0, Qt.UserRole, leaf_data)
+                    # Make the leaf selectable
+                    leaf_item.setFlags(leaf_item.flags() | Qt.ItemIsSelectable)
+                    node_item.addChild(leaf_item)
 
     def on_selection_changed(self):
         """
@@ -306,10 +295,8 @@ class TreeDialog(QDialog):
         # Get the selected item
         selected_items = self.tree_widget.selectedItems()
         if selected_items:
-            # Get the selected item
-            self.selected_item = selected_items[0]
             # Get the index from the item's data
-            self.selected_index = self.selected_item.data(0, Qt.UserRole)
+            self.selected_item_data = selected_items[0].data(0, Qt.UserRole)
             super().accept()  # Close the dialog
         else:
             # Should not reach here as OK button is disabled when no item is selected
@@ -396,12 +383,14 @@ if __name__ == "__main__":
 
         # Define your options here
         options = {
-            "Child 0": ["Grandchild 0-0", "Grandchild 0-1"],
-            "Child 1": ["Grandchild 1-0"],
-            "Child 2": ["Grandchild 2-0", "Grandchild 2-1", "Grandchild 2-2"],
-            "Child 3": ["Grandchild 3-0", "Grandchild 3-1"],
-            "Child 4": ["Grandchild 4-0"],
-            "Child 5": ["Grandchild 5-0", "Grandchild 5-1"],
+            "Non-Selectable Node 1": [
+                {"Selectable Leaf 1": 4},
+                {"Selectable Leaf 2": 3},
+            ],
+            "Non-Selectable Node 2": [
+                {"Selectable Leaf 3": 2},
+                {"Selectable Leaf 4": 1},
+            ],
         }
 
         # Create and show the dialog
@@ -409,11 +398,9 @@ if __name__ == "__main__":
 
         if dialog.exec() == QDialog.Accepted:
             # The dialog was accepted
-            if dialog.selected_item:
-                selected_text = dialog.selected_item.text(0)
-                selected_index = dialog.selected_index
-                print("User selected:", selected_text)
-                print("Linear index:", selected_index)
+            if dialog.selected_item_data:
+                selected_item_data = dialog.selected_item_data
+                print("Selected item data:", selected_item_data)
                 # Use selected_index as needed
             else:
                 print("No item was selected.")

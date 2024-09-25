@@ -724,16 +724,16 @@ class MSRReader:
             if type(value) is ET.Element:
                 mod_file_name = file_name.parent / f"{file_name.stem}_{key}.xml"
                 xml_str = self._tree_to_formatted_xml(value)
-                with open(mod_file_name, "w") as file:
-                    file.write(xml_str)
+                with open(mod_file_name, "w") as f:
+                    f.write(xml_str)
             elif type(value) is dict:
                 mod_file_name = file_name.parent / f"{file_name.stem}_{key}.json"
-                with open(mod_file_name, "w") as file:
-                    json.dump(value, file, indent=4)
+                with open(mod_file_name, "w") as f:
+                    json.dump(value, f, indent=4)
             else:
                 mod_file_name = file_name.parent / f"{file_name.stem}_{key}.txt"
-                with open(mod_file_name, "w") as file:
-                    file.write(value)
+                with open(mod_file_name, "w") as f:
+                    f.write(value)
 
     @staticmethod
     def _tree_to_formatted_xml(root: ET, xml_declaration: bool = True) -> str:
@@ -1565,6 +1565,91 @@ class MSRReader:
 
         # Sort the list using natural sorting by the 'as_string' key
         images = natsorted(images, key=lambda x: x["as_string"])
+
+        # Return the extracted metadata
+        return images
+
+    def get_image_info_dict(self):
+        """Return a hierarchical dictionary of images from all stacks."""
+
+        # Initialize the dictionary
+        images = {}
+
+        # Do we have images?
+        if self.num_stacks == 0:
+            return images
+
+        for i, stack in enumerate(self._obf_stacks_list):
+
+            # Only return images
+            if (np.array(stack.num_pixels) > 1).sum() == 2:
+
+                # Get pixel size
+                pixel_sizes = np.round(
+                    np.array(self.get_data_pixel_sizes(stack_index=i)) * 1e9, 2
+                )[:2]
+
+                # Get detector
+                detector = self._get_detector(
+                    imspector_dictionary_root=stack.tag_dictionary["imspector"],
+                    img_name=stack.stack_name,
+                )
+
+                # Get acquisition number
+                match = re.match(
+                    r"^.+{(?P<index>\d+)}(?P<extra>.*)$",
+                    stack.stack_name,
+                    re.IGNORECASE,
+                )
+                if match:
+                    if match["extra"] == "":
+                        key = f"Image {match['index']}"
+                    else:
+                        key = f"Image {match['index']} ({match['extra']})"
+                else:
+                    key = stack.stack_name
+
+                if key in images:
+                    image = images[key]
+                else:
+                    image = {
+                        "metadata": "",
+                        "detectors": [],
+                    }
+
+                # Metadata
+                frame_size = (
+                    stack.num_pixels[0] * pixel_sizes[0] / 1000,
+                    stack.num_pixels[1] * pixel_sizes[1] / 1000,
+                )
+
+                # Build metadata string
+                metadata = f"Frame: {frame_size[0]:.1f}x{frame_size[1]:.1f}µm - Pixel: {pixel_sizes[0]}nm"
+                if image["metadata"] == "":
+                    image["metadata"] = metadata
+                else:
+                    if image["metadata"] != metadata:
+                        raise ValueError(f"Unexpected metadata for '{key}'")
+
+                # Append current detectir
+                image["detectors"].append(
+                    {
+                        "index": i,
+                        "name": stack.stack_name,
+                        "detector": detector,
+                        "description": stack.stack_description,
+                        "num_pixels": stack.num_pixels,
+                        "physical_lengths": stack.physical_lengths,
+                        "physical_offsets": stack.physical_offsets,
+                        "pixel_sizes": pixel_sizes,
+                    }
+                )
+
+                # Store the (updated) image in the dictionary
+                images[key] = image
+
+        # Sort the dictionary using natural sorting of its keys
+        images = dict(natsorted(images.items()))
 
         # Return the extracted metadata
         return images

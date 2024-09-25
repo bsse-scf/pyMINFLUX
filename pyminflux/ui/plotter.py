@@ -33,7 +33,7 @@ from PySide6.QtWidgets import QDialog, QFileDialog, QInputDialog, QMenu
 from ..reader import MSRReader
 from ..state import State
 from .colors import ColorCode, ColorsToBrushes
-from .custom_dialogs import ListDialog
+from .custom_dialogs import ListDialog, TreeDialog
 from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
 
 
@@ -681,43 +681,51 @@ class Plotter(PlotWidget):
         msr_reader.scan()
 
         # Get the image info
-        image_info = msr_reader.get_image_info_list()
+        image_info = msr_reader.get_image_info_dict()
 
         # Build the options list
-        options = []
-        for i in range(len(image_info)):
-            info = image_info[i]
-            options.append(info["as_string"])
+        options = {}
+
+        for key in image_info:
+
+            # Build the header
+            header = f"{key} - {image_info[key]['metadata']}"
+
+            # Add the detectors
+            detectors = []
+            for detector in image_info[key]["detectors"]:
+                detectors.append(
+                    {
+                        f"{detector['detector']} - {detector['name']}": detector,
+                    }
+                )
+
+            # Add current image and detectors
+            options[header] = detectors
+
         if len(options) == 0:
             print("No images found.")
             return
 
-        # Show the options
-        dialog = ListDialog(options=options, title="Select image")
+        # Create and show the dialog
+        dialog = TreeDialog(options=options, title="Select image")
         if dialog.exec_() == QDialog.Accepted:
-            selected_option = dialog.get_selected_index()
+            selected_option = dialog.selected_item_data
         else:
             return
 
-        # Do we have a valid index
-        if selected_option == -1:
-            return
-
-        # Get the selected image info
-        info = image_info[selected_option]
-
         # Load the image
-        image = msr_reader.get_data(info["index"])
+        image = msr_reader.get_data(selected_option["index"])
 
         # Create an ImageItem to add to the plot
         if self.image_item is None:
             self.image_item = pg.ImageItem(image)
 
         # Calculate the offsets in nm
-        offsets_nm = np.array(info["physical_offsets"]) * 1e9
+        offsets_nm = np.array(selected_option["physical_offsets"]) * 1e9
 
         # Extract the image physical size in nm
-        physical_size = np.array(info["physical_lengths"]) * 1e9
+        physical_size = np.array(selected_option["physical_lengths"]) * 1e9
 
         # If a previous image exists, remove it and delete it
         self.remove_confocal_image(redraw=False)
