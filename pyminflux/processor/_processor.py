@@ -488,17 +488,18 @@ class MinFluxProcessor:
         self._init_selected_rows_dict()
         self._apply_global_filters()
 
-    def select_by_indices(
-        self, indices, from_weighted_locs: bool = False
+    def select_by_rows(
+        self, indices: np.ndarray, from_weighted_locs: bool = False
     ) -> Union[None, pd.DataFrame]:
-        """Return view on a subset of the filtered dataset or the weighted localisations defined by the passed indices.
+        """Return view on a subset of the filtered dataset or the weighted localisations defined by the passed
+        DataFrame row indices.
 
         The underlying dataframe is not modified.
 
         Parameters
         ----------
 
-        indices: array
+        indices: np.ndarray
             Logical array for selecting the elements to be returned.
 
         from_weighted_locs: bool
@@ -518,6 +519,38 @@ class MinFluxProcessor:
             if self.filtered_dataframe is None:
                 return None
             return self.filtered_dataframe.iloc[indices]
+
+    def select_by_series_iloc(
+        self, iloc: np.ndarray, from_weighted_locs: bool = False
+    ) -> Union[None, pd.DataFrame]:
+        """Return view on a subset of the filtered dataset or the weighted localisations defined by the passed
+        DataFrame index locations.
+
+        The underlying dataframe is not modified.
+
+        Parameters
+        ----------
+
+        iloc: np.ndarray
+            Array of Series index locations for selecting rows.
+
+        from_weighted_locs: bool
+            If True, select from the weighted_localizations dataframe; otherwise, from the filtered_dataframe.
+
+        Returns
+        -------
+
+        subset: Union[None, pd.DataFrame]
+            A view on a subset of the dataframe defined by the passed indices, or None if no file was loaded.
+        """
+        if from_weighted_locs:
+            if self._weighted_localizations is None:
+                return None
+            return self._weighted_localizations.loc[iloc]
+        else:
+            if self.filtered_dataframe is None:
+                return None
+            return self.filtered_dataframe.loc[iloc]
 
     def select_by_1d_range(
         self, x_prop, x_range, from_weighted_locs: bool = False

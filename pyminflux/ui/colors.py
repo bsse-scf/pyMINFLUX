@@ -16,6 +16,7 @@ from enum import IntEnum
 from typing import Optional, Union
 
 import numpy as np
+import pandas as pd
 import pyqtgraph as pg
 from PySide6.QtGui import QBrush
 
@@ -513,7 +514,7 @@ class ColorsToBrushes(metaclass=Singleton):
         # Return the list of brushes (and references) and the mapping between id and brush
         return self._tid_brushes
 
-    def _get_or_create_brush_by_fid(self, fid: np.ndarray) -> list:
+    def _get_or_create_brush_by_fid(self, fid: pd.Series) -> list:
         """Create QBrush instances to be used in a ScatterPlotItem to prevent
         cache misses in SymbolAtlas.
         As an illustration, this speeds up the plotting of 200,000 dots with
@@ -524,7 +525,7 @@ class ColorsToBrushes(metaclass=Singleton):
         Parameters
         ----------
 
-        fid: np.ndarray
+        fid: pd.Series
             Identifiers to be used to assign colors.
 
         Returns
@@ -535,11 +536,14 @@ class ColorsToBrushes(metaclass=Singleton):
             a unique QBrush instance.
         """
 
+        assert type(fid) == pd.Series, "`fid` must be a pd.Series."
+
         # Map each identifier in the full array to its corresponding QBrush for fast lookup
         if (
             self._last_fid is None
             or len(self._last_fid) != len(fid)
-            or np.any(self._last_fid != fid)
+            or np.any(self._last_fid.index != fid.index)
+            or np.any(self._last_fid.values != fid.values)
         ):
             self._fid_brushes = [
                 self._fid_to_brush_map[identifier] for identifier in fid
@@ -551,7 +555,7 @@ class ColorsToBrushes(metaclass=Singleton):
         # Return the list of brushes (and references) and the mapping between id and brush
         return self._fid_brushes
 
-    def _get_or_create_brush_by_depth(self, depth: np.ndarray) -> list:
+    def _get_or_create_brush_by_depth(self, depth: pd.Series) -> list:
         """Create QBrush instances to be used in a ScatterPlotItem to prevent
         cache misses in SymbolAtlas.
         As an illustration, this speeds up the plotting of 200,000 dots with
@@ -562,7 +566,7 @@ class ColorsToBrushes(metaclass=Singleton):
         Parameters
         ----------
 
-        depth: np.ndarray
+        depth: pd.Series
             Depths (z values) to be used to assign colors.
 
         Returns
@@ -573,9 +577,11 @@ class ColorsToBrushes(metaclass=Singleton):
             a unique QBrush instance.
         """
 
+        assert type(depth) == pd.Series, "`depth` must be a pd.Series."
+
         # Calculate current histogram bins
         _, current_depth_bin_edges, bin_centers, _ = prepare_histogram(
-            depth,
+            depth.to_numpy(),
             auto_bins=True,
         )
 
@@ -600,7 +606,8 @@ class ColorsToBrushes(metaclass=Singleton):
         if (
             self._last_depth is None
             or len(self._last_depth) != len(depth)
-            or np.any(self._last_depth != depth)
+            or np.any(self._last_depth.index != depth.index)
+            or np.any(self._last_depth.values != depth.values)
         ):
             # Assign the depths to the corresponding bins
             depth_indices = np.digitize(depth, current_depth_bin_edges, right=True) - 1
@@ -620,7 +627,7 @@ class ColorsToBrushes(metaclass=Singleton):
         # Return the list of brushes (and references) and the mapping between id and brush
         return self._depth_brushes
 
-    def _get_or_create_brush_by_time(self, time: np.ndarray) -> list:
+    def _get_or_create_brush_by_time(self, time: pd.Series) -> list:
         """Create QBrush instances to be used in a ScatterPlotItem to prevent
         cache misses in SymbolAtlas.
         As an illustration, this speeds up the plotting of 200,000 dots with
@@ -631,7 +638,7 @@ class ColorsToBrushes(metaclass=Singleton):
         Parameters
         ----------
 
-        time: np.ndarray
+        time: pd.Series
             Delta times to be used to assign colors.
 
         Returns
@@ -642,9 +649,11 @@ class ColorsToBrushes(metaclass=Singleton):
             a unique QBrush instance.
         """
 
+        assert type(time) == pd.Series, "`time` must be a pd.Series."
+
         # Calculate current histogram bins
         _, current_time_bin_edges, _, _ = prepare_histogram(
-            time,
+            time.to_numpy(),
             auto_bins=True,
         )
 
@@ -669,7 +678,8 @@ class ColorsToBrushes(metaclass=Singleton):
         if (
             self._last_time is None
             or len(self._last_time) != len(time)
-            or np.any(self._last_time != time)
+            or np.any(self._last_time.index != time.index)
+            or np.any(self._last_time.values != time.values)
         ):
             # Assign the depths to the corresponding bins
             time_indices = np.digitize(time, current_time_bin_edges, right=True) - 1

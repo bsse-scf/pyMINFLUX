@@ -1206,17 +1206,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.processor is None:
             return
 
-        # Extract indices of the rows corresponding to the selected points
+        # Extract the Pandas Series index loc of the rows corresponding to the selected points
         indices = []
         for p in points:
-            indices.append(p.index())
+            indices.append(p.data())
 
         # Sort the indices
         indices = sorted(indices)
 
-        # Get the filtered dataframe subset corresponding to selected indices
-        df = self.processor.select_by_indices(
-            indices=indices, from_weighted_locs=self.state.plot_average_localisations
+        # Get the filtered dataframe subset corresponding to selected series ilocs
+        df = self.processor.select_by_series_iloc(
+            iloc=indices, from_weighted_locs=self.state.plot_average_localisations
         )
 
         # Update the dataviewer
@@ -1438,25 +1438,29 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 return
 
             # Pre-define values
-            tid = dataframe["tid"].to_numpy()
+            tid = dataframe["tid"]
             fid = None
             depth = None
             time = None
 
             # Extract values
-            x = dataframe[self.state.x_param].to_numpy()
-            y = dataframe[self.state.y_param].to_numpy()
+            x = dataframe[self.state.x_param]
+            y = dataframe[self.state.y_param]
+            z = None
+            if self.state.x_param in ["x", "y"] and self.state.y_param in ["x", "y"]:
+                z = dataframe["z"]
+
             if (
                 self.state.color_code == ColorCode.NONE
                 or self.state.color_code == ColorCode.BY_TID
             ):
                 pass
             elif self.state.color_code == ColorCode.BY_FLUO:
-                fid = dataframe["fluo"].to_numpy()
+                fid = dataframe["fluo"]
             elif self.state.color_code == ColorCode.BY_DEPTH:
-                depth = dataframe["z"].to_numpy()
+                depth = dataframe["z"]
             elif self.state.color_code == ColorCode.BY_TIME:
-                time = dataframe["tim"].to_numpy()
+                time = dataframe["tim"]
             else:
                 raise ValueError("Unknown color code")
 
@@ -1467,6 +1471,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 x_param=self.state.x_param,
                 y_param=self.state.y_param,
                 tid=tid,
+                z=z,
                 fid=fid,
                 depth=depth,
                 time=time,

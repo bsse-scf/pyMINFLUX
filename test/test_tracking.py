@@ -224,7 +224,7 @@ def test_tracking_from_reader_and_processor(extract_tracking_archives):
     ), "Unexpected mad time resolution."
 
     #
-    # precision_immobilized_seqTrk3D
+    # precision_immobilized_seqTrk
     #
     reader = MinFluxReader(
         Path(__file__).parent / "data" / "precision_immobilized_seqTrk.npy",

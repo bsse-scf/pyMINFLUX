@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 import pyqtgraph as pg
 from pyqtgraph import (
     ROI,
@@ -381,16 +382,91 @@ class Plotter(PlotWidget):
 
     def plot_parameters(
         self,
-        x: np.ndarray,
-        y: np.ndarray,
+        x: pd.Series,
+        y: pd.Series,
         x_param: str,
         y_param: str,
-        tid: np.ndarray,
-        fid: Optional[np.ndarray] = None,
-        depth: Optional[np.ndarray] = None,
-        time: Optional[np.ndarray] = None,
+        tid: pd.Series,
+        z: Optional[pd.Series] = None,
+        fid: Optional[pd.Series] = None,
+        depth: Optional[pd.Series] = None,
+        time: Optional[pd.Series] = None,
     ):
-        """Plot localizations and other parameters in a 2D scatter plot."""
+        """Plot localizations and other parameters in a 2D scatter plot.
+
+        Parameters
+        ----------
+
+        x: pd.Series
+            x coordinates to plot. x must be a Pandas Series.
+        y: pd.Series
+            y coordinates to plot. y must be a Pandas Series.
+        x_param: str
+            Name of the x parameter.
+        y_param: str
+            Name of the y parameter.
+        tid: pd.Series
+            Traces IDs for each of the (x, y) pairs. tid must be a Pandas Series.
+        z: Optional[pd.Series] = None
+            z value (depth) for each of the (x, y) pairs. z can be omitted if `x_param` and `y_param`
+            are not one of ["x", "y"] or if no color-coding is specified. The z coordinates will be
+            used to sort the (x, y) coordinates to make sure that the sequence of plotting matches the
+            sequence in the 3D plot.
+        fid: Optional[pd.Series] = None
+            Fluorophore IDs for each of the (x, y) pairs. fid can be omitted, otherwise it must
+            be a Pandas Series. If not None, it will be used to color-code the scatter plot points.
+        depth: Optional[pd.Series] = None
+            z value (depth) for each of the (x, y) pairs. depth can be omitted, otherwise it must
+            be a Pandas Series. If not None, it will be used to color-code the scatter plot points.
+        time: Optional[pd.Series]
+            time for each of the (x, y) pairs. time can be omitted, otherwise it must
+            be a Pandas Series. If not None, it will be used to color-code the scatter plot points.
+        """
+
+        # Make sure our inputs are Pandas Series
+        assert type(x) == pd.Series, "`x` must be a Pandas Series."
+        assert type(y) == pd.Series, "`y` must be a Pandas Series."
+        if z is not None:
+            assert type(z) == pd.Series, "`z` must be a Pandas Series."
+        assert type(tid) == pd.Series, "`tid` must be a Pandas Series."
+        if fid is not None:
+            assert type(fid) == pd.Series, "`fid` must be a Pandas Series."
+        if depth is not None:
+            assert type(depth) == pd.Series, "`depth` must be a Pandas Series."
+        if time is not None:
+            assert type(time) == pd.Series, "`time` must be a Pandas Series."
+
+        # Do we need to sort the (x, y) coordinates by their z value?
+        if x_param in ["x", "y"] and y_param in ["x", "y"]:
+
+            # Do we need to color-code?
+            num_flags = sum([v is not None for v in [fid, depth, time]])
+            if num_flags > 1:
+                raise ValueError(
+                    "At most one of `fid`, `depth` and `time` can be not None."
+                )
+            color_coding_requested = num_flags == 1
+
+            # Check that 'z' is passed if necessary
+            if z is None and color_coding_requested:
+                raise ValueError(
+                    "If color-coding of spatial coordinates is needed, `z` cannot be None."
+                )
+
+            if color_coding_requested:
+                # The following sorts copies of all series
+                sort_order = z.argsort()
+                z = z.iloc[sort_order]
+                assert np.all(np.diff(z.values) >= 0), "Sorting did not work!"
+                x = x.iloc[sort_order]
+                y = y.iloc[sort_order]
+                tid = tid.iloc[sort_order]
+                if depth is not None:
+                    depth = depth.iloc[sort_order]
+                if fid is not None:
+                    fid = fid.iloc[sort_order]
+                if time is not None:
+                    time = time.iloc[sort_order]
 
         # If we have an image, make sure to draw it first (but only if
         # x_param is "x" and y_param is "y"
@@ -416,7 +492,7 @@ class Plotter(PlotWidget):
             self.scatter_plot = pg.ScatterPlotItem(
                 x=x,
                 y=y,
-                data=tid,
+                data=x.index,
                 size=5,
                 pen=None,
                 brush=brushes,
@@ -502,6 +578,14 @@ class Plotter(PlotWidget):
     def _need_to_recreate_colors(self, color_code, tid, fid, depth, time):
         """Check if the colors need to be recreated (and store state)."""
 
+        assert type(tid) == pd.Series, "`tid` must be a Pandas Series."
+        if fid is not None:
+            assert type(fid) == pd.Series, "`fid` must be a Pandas Series."
+        if depth is not None:
+            assert type(depth) == pd.Series, "`depth` must be a Pandas Series."
+        if time is not None:
+            assert type(time) == pd.Series, "`time` must be a Pandas Series."
+
         recreate_brushes = False
         if self.last_plot_parameters["color_code"] is None:
 
@@ -509,8 +593,8 @@ class Plotter(PlotWidget):
             recreate_brushes = True
         else:
 
-            # There where plots already
-            if self.last_plot_parameters["color_code"] != self.state.color_code:
+            # There were plots already
+            if self.last_plot_parameters["color_code"] != color_code:
 
                 # If the color code changed, be need to recreate the colors
                 recreate_brushes = True
@@ -519,45 +603,56 @@ class Plotter(PlotWidget):
 
                 # The color code is the same, we need to check if we can re-use the
                 # same colors
-                if self.state.color_code == ColorCode.NONE:
+                if color_code == ColorCode.NONE:
 
                     # We can count the number of tids
                     if (
                         self.last_plot_parameters["tid"] is None
                         or len(tid) != len(self.last_plot_parameters["tid"])
-                        or np.any(tid != self.last_plot_parameters["tid"])
+                        or np.any(tid.index != self.last_plot_parameters["tid"].index)
+                        or np.any(tid.values != self.last_plot_parameters["tid"].values)
                     ):
                         recreate_brushes = True
 
-                elif self.state.color_code == ColorCode.BY_TID:
+                elif color_code == ColorCode.BY_TID:
                     if (
                         self.last_plot_parameters["tid"] is None
                         or len(tid) != len(self.last_plot_parameters["tid"])
-                        or np.any(tid != self.last_plot_parameters["tid"])
+                        or np.any(tid.index != self.last_plot_parameters["tid"].index)
+                        or np.any(tid.values != self.last_plot_parameters["tid"].values)
                     ):
                         recreate_brushes = True
 
-                elif self.state.color_code == ColorCode.BY_FLUO:
+                elif color_code == ColorCode.BY_FLUO:
                     if (
                         self.last_plot_parameters["fid"] is None
                         or len(fid) != len(self.last_plot_parameters["fid"])
-                        or np.any(fid != self.last_plot_parameters["fid"])
+                        or np.any(fid.index != self.last_plot_parameters["fid"].index)
+                        or np.any(fid.values != self.last_plot_parameters["fid"].values)
                     ):
                         recreate_brushes = True
 
-                elif self.state.color_code == ColorCode.BY_DEPTH:
+                elif color_code == ColorCode.BY_DEPTH:
                     if (
                         self.last_plot_parameters["depth"] is None
                         or len(depth) != len(self.last_plot_parameters["depth"])
-                        or np.any(depth != self.last_plot_parameters["depth"])
+                        or np.any(
+                            depth.index != self.last_plot_parameters["depth"].index
+                        )
+                        or np.any(
+                            depth.values != self.last_plot_parameters["depth"].values
+                        )
                     ):
                         recreate_brushes = True
 
-                elif self.state.color_code == ColorCode.BY_TIME:
+                elif color_code == ColorCode.BY_TIME:
                     if (
                         self.last_plot_parameters["time"] is None
                         or len(time) != len(self.last_plot_parameters["time"])
-                        or np.any(time != self.last_plot_parameters["time"])
+                        or np.any(time.index != self.last_plot_parameters["time"].index)
+                        or np.any(
+                            time.values != self.last_plot_parameters["time"].values
+                        )
                     ):
                         recreate_brushes = True
                 else:
