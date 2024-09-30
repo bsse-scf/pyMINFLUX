@@ -73,13 +73,25 @@ class ColorBarWidget(QWidget):
         if self.colorbar is not None:
             self.graphWidget.removeItem(self.colorbar)
 
-        # Create the colormap
+        # If the data range is 0 (e.g. for the depth of a 2D dataset),
+        # we only create 2 colors; otherwise 256
+        if data_range[1] == data_range[0]:
+            n_colors = 2
+        else:
+            n_colors = 256
+
         if colormap == "jet":
-            _, colors = ColorMap().generate_jet_colormap(n_colors=256)
+            _, colors = ColorMap().generate_jet_colormap(n_colors=n_colors)
         elif colormap == "plasma":
-            _, colors = ColorMap().generate_plasma_colormap(n_colors=256)
+            _, colors = ColorMap().generate_plasma_colormap(n_colors=n_colors)
         else:
             raise ValueError(f"Unsupported colormap `{colormap}`.")
+
+        # If the data range is 0, we use just the first color
+        if data_range[1] == data_range[0]:
+            colors[1, :] = colors[0, :]
+
+        # Create a pg.ColorMap
         pg_colormap = pg.ColorMap(np.linspace(0.0, 1.0, colors.shape[0]), colors)
 
         # Create a ColorBarItem
@@ -91,6 +103,11 @@ class ColorBarWidget(QWidget):
             colorMapMenu=False,
             orientation="vertical",
         )
+
+        # If all values are the same, overwrite the ticks to look more elegant
+        if data_range[1] == data_range[0]:
+            self.colorbar.setLevels((data_range[0] - 0.1, data_range[1] + 0.1))
+            self.colorbar.axis.setTicks([[(data_range[0], str(data_range[0]))]])
 
         # Add the new ColorBarItem to the GraphicsLayoutWidget
         self.graphWidget.addItem(self.colorbar)

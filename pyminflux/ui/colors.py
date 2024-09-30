@@ -63,6 +63,9 @@ class ColorMap:
             Colormap as an (n_colors, 3) array with integer values between 0 and 255.
         """
 
+        if n_colors < 2:
+            raise ValueError("The number of colors must be greater than or equal to 2.")
+
         # Define the transition points and corresponding color intensities for the jet colormap
         def interpolate(v, y0, x0, y1, x1):
             return (v - x0) * (y1 - y0) / (x1 - x0) + y0
@@ -124,6 +127,9 @@ class ColorMap:
             Colormap as an (n_colors, 3) array with integer values between 0 and 255.
         """
 
+        if n_colors < 2:
+            raise ValueError("The number of colors must be greater than or equal to 2.")
+
         # The RGB values defining the Cividis colormap
         cividis_data = np.array(
             [
@@ -174,6 +180,9 @@ class ColorMap:
         colors: np.ndarray
             Colormap as an (n_colors, 3) array with integer values between 0 and 255.
         """
+
+        if n_colors < 2:
+            raise ValueError("The number of colors must be greater than or equal to 2.")
 
         # The RGB values defining the Plasma colormap
         plasma_data = np.array(
