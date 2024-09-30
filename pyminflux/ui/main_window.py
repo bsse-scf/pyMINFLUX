@@ -1446,9 +1446,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Extract values
             x = dataframe[self.state.x_param]
             y = dataframe[self.state.y_param]
-            z = None
-            if self.state.x_param in ["x", "y"] and self.state.y_param in ["x", "y"]:
-                z = dataframe["z"]
 
             if (
                 self.state.color_code == ColorCode.NONE
@@ -1471,7 +1468,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 x_param=self.state.x_param,
                 y_param=self.state.y_param,
                 tid=tid,
-                z=z,
                 fid=fid,
                 depth=depth,
                 time=time,

@@ -387,7 +387,6 @@ class Plotter(PlotWidget):
         x_param: str,
         y_param: str,
         tid: pd.Series,
-        z: Optional[pd.Series] = None,
         fid: Optional[pd.Series] = None,
         depth: Optional[pd.Series] = None,
         time: Optional[pd.Series] = None,
@@ -407,11 +406,6 @@ class Plotter(PlotWidget):
             Name of the y parameter.
         tid: pd.Series
             Traces IDs for each of the (x, y) pairs. tid must be a Pandas Series.
-        z: Optional[pd.Series] = None
-            z value (depth) for each of the (x, y) pairs. z can be omitted if `x_param` and `y_param`
-            are not one of ["x", "y"] or if no color-coding is specified. The z coordinates will be
-            used to sort the (x, y) coordinates to make sure that the sequence of plotting matches the
-            sequence in the 3D plot.
         fid: Optional[pd.Series] = None
             Fluorophore IDs for each of the (x, y) pairs. fid can be omitted, otherwise it must
             be a Pandas Series. If not None, it will be used to color-code the scatter plot points.
@@ -426,8 +420,6 @@ class Plotter(PlotWidget):
         # Make sure our inputs are Pandas Series
         assert type(x) == pd.Series, "`x` must be a Pandas Series."
         assert type(y) == pd.Series, "`y` must be a Pandas Series."
-        if z is not None:
-            assert type(z) == pd.Series, "`z` must be a Pandas Series."
         assert type(tid) == pd.Series, "`tid` must be a Pandas Series."
         if fid is not None:
             assert type(fid) == pd.Series, "`fid` must be a Pandas Series."
@@ -436,28 +428,29 @@ class Plotter(PlotWidget):
         if time is not None:
             assert type(time) == pd.Series, "`time` must be a Pandas Series."
 
-        # Do we need to sort the (x, y) coordinates by their z value?
-        if x_param in ["x", "y"] and y_param in ["x", "y"]:
+        # Do we need to color-code?
+        num_flags = sum([v is not None for v in [fid, depth, time]])
+        if num_flags > 1:
+            raise ValueError(
+                "At most one of `fid`, `depth` and `time` can be not None."
+            )
+        color_coding_requested = num_flags == 1
 
-            # Do we need to color-code?
-            num_flags = sum([v is not None for v in [fid, depth, time]])
-            if num_flags > 1:
-                raise ValueError(
-                    "At most one of `fid`, `depth` and `time` can be not None."
-                )
-            color_coding_requested = num_flags == 1
+        if color_coding_requested:
 
-            # Check that 'z' is passed if necessary
-            if z is None and color_coding_requested:
-                raise ValueError(
-                    "If color-coding of spatial coordinates is needed, `z` cannot be None."
-                )
+            # Sort depending on the requested property
+            if depth is not None:
+                sort_order = depth.argsort()
+            elif time is not None:
+                sort_order = time.argsort()[::-1]
+            elif fid is not None:
+                # Nothing to do
+                sort_order = None
+            else:
+                raise ValueError("Bad property requested for sorting!")
 
-            if color_coding_requested:
-                # The following sorts copies of all series
-                sort_order = z.argsort()
-                z = z.iloc[sort_order]
-                assert np.all(np.diff(z.values) >= 0), "Sorting did not work!"
+            # Sort
+            if sort_order is not None:
                 x = x.iloc[sort_order]
                 y = y.iloc[sort_order]
                 tid = tid.iloc[sort_order]
