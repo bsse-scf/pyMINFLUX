@@ -636,7 +636,7 @@ class MSRReader:
         if root is None:
             return None
 
-        # Return metadata as sormatted XML string
+        # Return metadata as formatted XML string
         return self._tree_to_formatted_xml(root)
 
     def export_ome_xml_metadata(self, file_name: Union[str, Path]):
