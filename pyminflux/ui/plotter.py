@@ -384,6 +384,8 @@ class Plotter(PlotWidget):
         self,
         x: pd.Series,
         y: pd.Series,
+        z: pd.Series,
+        color_code: ColorCode,
         x_param: str,
         y_param: str,
         tid: pd.Series,
@@ -400,6 +402,11 @@ class Plotter(PlotWidget):
             x coordinates to plot. x must be a Pandas Series.
         y: pd.Series
             y coordinates to plot. y must be a Pandas Series.
+        z: z coordinates. They will be used to sort the coordinates to make sure that
+            the plot order is the same as for the 3D plotter (behavior will depend on
+            color_code).
+        color_code: ColorCode
+            Requested color coding.
         x_param: str
             Name of the x parameter.
         y_param: str
@@ -421,45 +428,33 @@ class Plotter(PlotWidget):
         assert type(x) == pd.Series, "`x` must be a Pandas Series."
         assert type(y) == pd.Series, "`y` must be a Pandas Series."
         assert type(tid) == pd.Series, "`tid` must be a Pandas Series."
-        if fid is not None:
-            assert type(fid) == pd.Series, "`fid` must be a Pandas Series."
-        if depth is not None:
-            assert type(depth) == pd.Series, "`depth` must be a Pandas Series."
-        if time is not None:
-            assert type(time) == pd.Series, "`time` must be a Pandas Series."
+        assert type(z) == pd.Series, "`z` must be a Pandas Series."
 
-        # Do we need to color-code?
+        # Check consistency of arguments
         num_flags = sum([v is not None for v in [fid, depth, time]])
         if num_flags > 1:
             raise ValueError(
                 "At most one of `fid`, `depth` and `time` can be not None."
             )
-        color_coding_requested = num_flags == 1
 
-        if color_coding_requested:
-
-            # Sort depending on the requested property
-            if depth is not None:
-                sort_order = depth.argsort()
-            elif time is not None:
-                sort_order = time.argsort()[::-1]
-            elif fid is not None:
-                # Nothing to do
-                sort_order = None
+        # In 2D, the coordinates are plotted in reversed order; in 3D, ordered by z coordinate.
+        sort_order = None
+        if color_code != ColorCode.NONE:
+            if np.any(z != 0):
+                sort_order = z.argsort()
             else:
-                raise ValueError("Bad property requested for sorting!")
+                sort_order = np.arange(len(z))[::-1]
 
-            # Sort
-            if sort_order is not None:
-                x = x.iloc[sort_order]
-                y = y.iloc[sort_order]
-                tid = tid.iloc[sort_order]
-                if depth is not None:
-                    depth = depth.iloc[sort_order]
-                if fid is not None:
-                    fid = fid.iloc[sort_order]
-                if time is not None:
-                    time = time.iloc[sort_order]
+        if sort_order is not None:
+            x = x.iloc[sort_order]
+            y = y.iloc[sort_order]
+            tid = tid.iloc[sort_order]
+            if depth is not None:
+                depth = depth.iloc[sort_order]
+            if fid is not None:
+                fid = fid.iloc[sort_order]
+            if time is not None:
+                time = time.iloc[sort_order]
 
         # If we have an image, make sure to draw it first (but only if
         # x_param is "x" and y_param is "y"

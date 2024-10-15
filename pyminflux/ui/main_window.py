@@ -1446,7 +1446,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Extract values
             x = dataframe[self.state.x_param]
             y = dataframe[self.state.y_param]
-
+            z = dataframe["z"]
             if (
                 self.state.color_code == ColorCode.NONE
                 or self.state.color_code == ColorCode.BY_TID
@@ -1465,6 +1465,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plotter.plot_parameters(
                 x=x,
                 y=y,
+                z=z,
+                color_code=self.state.color_code,
                 x_param=self.state.x_param,
                 y_param=self.state.y_param,
                 tid=tid,
