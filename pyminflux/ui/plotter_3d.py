@@ -13,9 +13,9 @@
 #  limitations under the License.
 
 import numpy as np
-from PySide6.QtCore import QEvent, QObject, QPoint, QTimer, Slot
-from PySide6.QtGui import QAction, Qt
-from PySide6.QtWidgets import QApplication, QMenu, QVBoxLayout, QWidget
+from PySide6.QtCore import QPoint, Slot
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QMenu, QVBoxLayout, QWidget
 from vispy import scene
 from vispy.visuals import transforms
 
@@ -23,56 +23,6 @@ from ..processor import MinFluxProcessor
 from ..state import State
 from .colors import ColorsToRGB
 from .helpers import export_vispy_plot
-
-
-class CustomSceneCanvas(scene.SceneCanvas):
-    """Customize VisPy SceneCanvas."""
-
-    def __init__(self):
-        state = State()
-        super().__init__(
-            keys=None,
-            show=False,
-            app="pyside6",
-            create_native=True,
-            decorate=False,
-            dpi=state.plot_export_dpi,
-        )
-
-        # Connect the mouse release event to a custom handler
-        self.events.mouse_release.connect(self.on_mouse_release)
-
-    def on_mouse_release(self, event):
-        """Mouse release handler."""
-
-        # If the button is 2 (right-click), we open a context menu
-        if event.button == 2:
-
-            # Get the position of the cursor
-            pos = event.pos
-            qt_pos = QPoint(int(pos[0]), int(pos[1]))
-
-            # Convert to global screen coordinates
-            global_pos = self.native.mapToGlobal(qt_pos)
-
-            # Open of the context menu
-            self.open_context_menu(global_pos)
-
-    def open_context_menu(self, global_pos):
-        """Open context menu."""
-
-        # Create the context menu
-        context_menu = QMenu(None)
-
-        # Add actions to the menu
-        save_action = QAction("Export plot", None)
-        context_menu.addAction(save_action)
-
-        # Display the context menu at the position of the event
-        save_action.triggered.connect(lambda _: export_vispy_plot(self))
-
-        # Open the context menu
-        context_menu.exec(global_pos)
 
 
 class Plotter3D(QWidget):
@@ -105,6 +55,9 @@ class Plotter3D(QWidget):
         # Store the previous camera distance
         self.previous_camera_distance = 1.0
 
+        # Keep track of the initial camera rotation
+        self.original_rotation = None
+
         # Keep track of current point size
         self.current_point_sizes = None
 
@@ -125,7 +78,7 @@ class Plotter3D(QWidget):
         # Initialize the canvas only when the main window is shown
         if self.canvas is None:
             # Initialize the canvas
-            self.canvas = CustomSceneCanvas()
+            self.canvas = CustomSceneCanvas(plotter_3d=self)
 
             # Add the native widget
             self.layout.addWidget(self.canvas.native)
@@ -137,6 +90,9 @@ class Plotter3D(QWidget):
             self.view.camera = scene.cameras.ArcballCamera(
                 fov=0 if self.state.plot_3d_orthogonal else 45
             )
+
+            # Store the original camera rotation
+            self.original_rotation = self.view.camera._quaternion.copy()
 
             # Create and add the scatter plot
             self.scatter = scene.visuals.Markers()
@@ -176,6 +132,20 @@ class Plotter3D(QWidget):
         # Remove the dots from the scatter plot
         if not self.scatter_is_empty:
             self.clear()
+
+    def reset_camera(self):
+        """Reset the camera."""
+        if self.positions is None:
+            return
+        self._reset_camera_and_axes(self.positions)
+
+        # Reset the camera rotation to the original rotation
+        if self.original_rotation is not None:
+            self.view.camera._quaternion = self.original_rotation.copy()
+
+        # Update the view
+        self.view.camera.view_changed()
+        self.canvas.update()
 
     def plot(self, positions, tid, fid, depth, time):
         """Plot localizations in a 3D scatter plot."""
@@ -348,3 +318,61 @@ class Plotter3D(QWidget):
         # Finally translate back to original position
         transform.translate((x_center, y_center, z_center))
         self.scatter.transform = transform
+
+
+class CustomSceneCanvas(scene.SceneCanvas):
+    """Customize VisPy SceneCanvas."""
+
+    def __init__(self, plotter_3d: Plotter3D):
+        # Initialize State
+        state = State()
+
+        # Store reference to the Plotter3D object
+        self.plotter_3d = plotter_3d
+
+        super().__init__(
+            keys=None,
+            show=False,
+            app="pyside6",
+            create_native=True,
+            decorate=False,
+            dpi=state.plot_export_dpi,
+        )
+
+        # Connect the mouse release event to a custom handler
+        self.events.mouse_release.connect(self.on_mouse_release)
+
+    def on_mouse_release(self, event):
+        """Mouse release handler."""
+
+        # If the button is 2 (right-click), we open a context menu
+        if event.button == 2:
+
+            # Get the position of the cursor
+            pos = event.pos
+            qt_pos = QPoint(int(pos[0]), int(pos[1]))
+
+            # Convert to global screen coordinates
+            global_pos = self.native.mapToGlobal(qt_pos)
+
+            # Open of the context menu
+            self.open_context_menu(global_pos)
+
+    def open_context_menu(self, global_pos):
+        """Open context menu."""
+
+        # Create the context menu
+        context_menu = QMenu(None)
+
+        # Add actions to the menu
+        save_action = QAction("Export plot", None)
+        context_menu.addAction(save_action)
+        reset_action = QAction("Reset camera", None)
+        context_menu.addAction(reset_action)
+
+        # Connect triggered signals to slots
+        save_action.triggered.connect(lambda _: export_vispy_plot(self))
+        reset_action.triggered.connect(self.plotter_3d.reset_camera)
+
+        # Open the context menu
+        context_menu.exec(global_pos)
