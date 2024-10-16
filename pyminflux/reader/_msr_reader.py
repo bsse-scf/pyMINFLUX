@@ -576,11 +576,11 @@ class MSRReader:
         width = obf_stack_metadata.num_pixels[0]
         bytes_per_sample = obf_stack_metadata.bytes_per_sample
 
-        # Expected number of (decompressed) bytes
-        expected_num_bytes = width * height * bytes_per_sample
+        # Expected number of (decompressed) samples
+        expected_num_samples = width * height
 
         # Number of written bytes
-        written_bytes = obf_stack_metadata.samples_written
+        written_bytes = obf_stack_metadata.samples_written * bytes_per_sample
 
         # Open the file
         with open(self.filename, mode="rb") as f:
@@ -606,15 +606,15 @@ class MSRReader:
                 raw_data = f.read(written_bytes)
 
                 # Cast to a "byte" NumPy array
-                raw_frame = np.array(raw_data, dtype=np.uint8)
-
-        # Make sure the final frame size matches the expected size
-        if len(raw_frame) != expected_num_bytes:
-            print("Unexpected length of data retrieved!")
-            return None
+                raw_frame = np.frombuffer(raw_data, dtype=np.uint8)
 
         # Reinterpret as final data type format (little Endian)
         frame = raw_frame.view(np.dtype(np_data_type))
+
+        # Make sure the final frame size matches the expected size
+        if len(frame) != expected_num_samples:
+            print("Unexpected length of data retrieved!")
+            return None
 
         # Reshape
         frame = frame.reshape((height, width))
