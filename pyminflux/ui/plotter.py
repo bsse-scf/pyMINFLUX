@@ -799,6 +799,9 @@ class Plotter(PlotWidget):
 
         # Load the image
         image = msr_reader.get_data(selected_option["index"])
+        if image is None:
+            print("Could not open confocal image.")
+            return
 
         # Create an ImageItem to add to the plot
         if self.image_item is None:
