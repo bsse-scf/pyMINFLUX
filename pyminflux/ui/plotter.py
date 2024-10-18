@@ -437,24 +437,24 @@ class Plotter(PlotWidget):
                 "At most one of `fid`, `depth` and `time` can be not None."
             )
 
-        # In 2D, the coordinates are plotted in reversed order; in 3D, ordered by z coordinate.
-        sort_order = None
-        if color_code != ColorCode.NONE:
-            if np.any(z != 0):
-                sort_order = z.argsort()
-            else:
-                sort_order = np.arange(len(z))[::-1]
-
-        if sort_order is not None:
-            x = x.iloc[sort_order]
-            y = y.iloc[sort_order]
-            tid = tid.iloc[sort_order]
-            if depth is not None:
-                depth = depth.iloc[sort_order]
-            if fid is not None:
-                fid = fid.iloc[sort_order]
-            if time is not None:
-                time = time.iloc[sort_order]
+        # # In 2D, the coordinates are plotted in reversed order; in 3D, ordered by z coordinate.
+        # sort_order = None
+        # if color_code != ColorCode.NONE:
+        #     if np.any(z != 0):
+        #         sort_order = z.argsort()
+        #     else:
+        #         sort_order = np.arange(len(z))[::-1]
+        #
+        # if sort_order is not None:
+        #     x = x.iloc[sort_order]
+        #     y = y.iloc[sort_order]
+        #     tid = tid.iloc[sort_order]
+        #     if depth is not None:
+        #         depth = depth.iloc[sort_order]
+        #     if fid is not None:
+        #         fid = fid.iloc[sort_order]
+        #     if time is not None:
+        #         time = time.iloc[sort_order]
 
         # If we have an image, make sure to draw it first (but only if
         # x_param is "x" and y_param is "y"
