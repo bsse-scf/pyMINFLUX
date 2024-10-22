@@ -384,7 +384,6 @@ class Plotter(PlotWidget):
         self,
         x: pd.Series,
         y: pd.Series,
-        z: pd.Series,
         color_code: ColorCode,
         x_param: str,
         y_param: str,
@@ -425,36 +424,27 @@ class Plotter(PlotWidget):
         """
 
         # Make sure our inputs are Pandas Series
-        assert type(x) == pd.Series, "`x` must be a Pandas Series."
-        assert type(y) == pd.Series, "`y` must be a Pandas Series."
-        assert type(tid) == pd.Series, "`tid` must be a Pandas Series."
-        assert type(z) == pd.Series, "`z` must be a Pandas Series."
+        assert x is not None and type(x) == pd.Series, "`x` must be a Pandas Series."
+        assert y is not None and type(y) == pd.Series, "`y` must be a Pandas Series."
+        assert (
+            tid is not None and type(tid) == pd.Series
+        ), "`tid` must be a Pandas Series."
 
         # Check consistency of arguments
+        if color_code == ColorCode.BY_DEPTH and depth is None:
+            raise ValueError("If color coding by depth, `depth` cannot be None!")
+
+        if color_code == ColorCode.BY_TIME and time is None:
+            raise ValueError("If color coding by time, `time` cannot be None!")
+
+        if color_code == ColorCode.BY_FLUO and fid is None:
+            raise ValueError("If color coding by fluorophore ID, `fid` cannot be None!")
+
         num_flags = sum([v is not None for v in [fid, depth, time]])
         if num_flags > 1:
             raise ValueError(
                 "At most one of `fid`, `depth` and `time` can be not None."
             )
-
-        # # In 2D, the coordinates are plotted in reversed order; in 3D, ordered by z coordinate.
-        # sort_order = None
-        # if color_code != ColorCode.NONE:
-        #     if np.any(z != 0):
-        #         sort_order = z.argsort()
-        #     else:
-        #         sort_order = np.arange(len(z))[::-1]
-        #
-        # if sort_order is not None:
-        #     x = x.iloc[sort_order]
-        #     y = y.iloc[sort_order]
-        #     tid = tid.iloc[sort_order]
-        #     if depth is not None:
-        #         depth = depth.iloc[sort_order]
-        #     if fid is not None:
-        #         fid = fid.iloc[sort_order]
-        #     if time is not None:
-        #         time = time.iloc[sort_order]
 
         # If we have an image, make sure to draw it first (but only if
         # x_param is "x" and y_param is "y"
@@ -466,11 +456,11 @@ class Plotter(PlotWidget):
 
             # Do we need to recreate the colors?
             if self._need_to_recreate_colors(
-                self.state.color_code, tid=tid, fid=fid, depth=depth, time=time
+                color_code, tid=tid, fid=fid, depth=depth, time=time
             ):
                 # Recreate colors
                 brushes = ColorsToBrushes().get_brushes(
-                    self.state.color_code, tid=tid, fid=fid, depth=depth, time=time
+                    color_code, tid=tid, fid=fid, depth=depth, time=time
                 )
                 self.last_plot_parameters["brushes"] = brushes
             else:
@@ -563,7 +553,14 @@ class Plotter(PlotWidget):
         self._last_x_param = x_param
         self._last_y_param = y_param
 
-    def _need_to_recreate_colors(self, color_code, tid, fid, depth, time):
+    def _need_to_recreate_colors(
+        self,
+        color_code,
+        tid: pd.Series,
+        fid: Optional[pd.Series] = None,
+        depth: Optional[pd.Series] = None,
+        time: Optional[pd.Series] = None,
+    ):
         """Check if the colors need to be recreated (and store state)."""
 
         assert type(tid) == pd.Series, "`tid` must be a Pandas Series."
