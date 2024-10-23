@@ -45,6 +45,9 @@ class ColorBarWidget(QWidget):
             orientation="vertical",
         )
 
+        # Initialize property
+        self.colorbar_width = self.colorbar.width()
+
         # Add the ColorBarItem to the GraphicsLayoutWidget
         self.graphWidget.addItem(self.colorbar)
 

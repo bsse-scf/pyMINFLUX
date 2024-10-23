@@ -1326,7 +1326,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Update the colorbar widget
         label = (
-            "Depth [nm]" if self.state.color_code == ColorCode.BY_DEPTH else "Time [s]"
+            "Depth [nm]" if self.state.color_code == ColorCode.BY_DEPTH else "Time [min]"
         )
         self.colorbar.reset(colormap=colormap, data_range=data_range, label=label)
         self.colorbar.show()
@@ -1382,7 +1382,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             elif self.state.color_code == ColorCode.BY_DEPTH:
                 pass
             elif self.state.color_code == ColorCode.BY_TIME:
-                time = dataframe["tim"].to_numpy()
+                time = dataframe["tim"].to_numpy() / 60.0  # Color-code by time in minutes
             else:
                 raise ValueError("Unknown color code")
 
@@ -1405,8 +1405,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
                 # Set data range
                 data_range_for_colorbar = (
-                    dataframe["tim"].min(),
-                    dataframe["tim"].max(),
+                    dataframe["tim"].min() / 60.0,  # Data range for color-coding in minutes
+                    dataframe["tim"].max() / 60.0,
                 )
             else:
                 data_range_for_colorbar = None
@@ -1456,7 +1456,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             elif self.state.color_code == ColorCode.BY_DEPTH:
                 depth = dataframe["z"]
             elif self.state.color_code == ColorCode.BY_TIME:
-                time = dataframe["tim"]
+                time = dataframe["tim"] / 60.0  # Color-code by time in minutes
             else:
                 raise ValueError("Unknown color code")
 
@@ -1487,10 +1487,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 # Set colormap
                 colormap = "plasma"
 
-                # Set data range
+                # Set data range for colorbar (in minutes)
                 data_range_for_colorbar = (
-                    dataframe["tim"].min(),
-                    dataframe["tim"].max(),
+                    dataframe["tim"].min() / 60.0,  # Data range for color-coding in minutes
+                    dataframe["tim"].max() / 60.0,
                 )
             else:
                 colormap = None
