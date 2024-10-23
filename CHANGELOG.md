@@ -2,18 +2,25 @@
 
 All notable changes to this project will be documented in this file. Detailed information can be found in the [git log](https://github.com/bsse-scf/pyMINFLUX/commits/master/).
 
-## [0.5.0] - TBD
+## [0.5.0] - 2024-10-24
 
 ### New features
 
-* Add 3D scatter plot for localizations.
-* When trace mean localizations are plotted, make the plot size proportional to the localization precision.
+* Add high-performance 3D viewer for localization plotting.
+* Allow loading confocal images from MSR files to display along with the MINFLUX localizations.
+* Add `pyminflux.reader.MSRReader` class to API to load both data and metadata from MSR files.
+* Expand list of options (`nothing`, `tid`, `fluorophore`, `depth`, `time`) for color-coding.
+* All parameters can not be color-coded. 
+* Add colorbar to the 2D and 3D plots when color-coding by depth and time.
 * Allow color unmixing on filtered dataset.
+* Always calculate the total trace duration, not only for tracking datasets.
+* Add "Export all plots" option to the context menu of the results histograms in the Analyzer.
+* Add parameter "tim_tot" to the list of options in the Histogram Plotter.
+* Allow exporting 3D plots and colorbars as high-resolution PNG images.
 
 ### Bug fixes
 
 * Run global filters after updating the min trace length in the MinFluxProcessor.
-* Add "Export all plots" option to the context menu of the results histograms in the Analyzer.
 * Fix the x-axis limits in the Color Unmixer for the DCR histogram to (0.0, 1.0).
 
 ## [0.4.1] - 2024-05-10
