@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file. Detailed in
 * Allow loading confocal images from MSR files to display along with the MINFLUX localizations.
 * Add `pyminflux.reader.MSRReader` class to API to load both data and metadata from MSR files.
 * Expand list of options (`nothing`, `tid`, `fluorophore`, `depth`, `time`) for color-coding.
-* All parameters can not be color-coded. 
+* All parameters can now be color-coded. 
 * Add colorbar to the 2D and 3D plots when color-coding by depth and time.
 * Allow color unmixing on filtered dataset.
 * Always calculate the total trace duration, not only for tracking datasets.
