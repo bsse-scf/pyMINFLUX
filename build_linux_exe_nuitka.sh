@@ -59,6 +59,7 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX \
 --include-module=pydoc \
 --include-module=scipy.special._special_ufuncs \
 --include-module=vispy.app.backends._pyside6 \
+--include-module=pydoc \
 --include-data-dir="$VISPY_GLSL_DIR=vispy/glsl" \
 --linux-icon=pyminflux/ui/assets/Logo_v3.ico \
 --enable-plugin=pylint-warnings \
