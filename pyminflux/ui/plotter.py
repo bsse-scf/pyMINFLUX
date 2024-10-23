@@ -489,10 +489,12 @@ class Plotter(PlotWidget):
             ):
 
                 # Add the line_plot within TIDs
-                line_indices = np.concatenate((np.diff(tid) == 0, [1])).astype(np.int32)
+                line_indices = np.concatenate(
+                    (np.diff(tid.to_numpy()) == 0, [1])
+                ).astype(np.int32)
                 self.line_plot = pg.PlotDataItem(
-                    x,
-                    y,
+                    x.to_numpy(),
+                    y.to_numpy(),
                     connect=line_indices,
                     pen=mkPen(cosmetic=True, width=0.5, color="w"),
                     symbol=None,

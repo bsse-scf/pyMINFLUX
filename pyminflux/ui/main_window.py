@@ -1326,7 +1326,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Update the colorbar widget
         label = (
-            "Depth [nm]" if self.state.color_code == ColorCode.BY_DEPTH else "Time [min]"
+            "Depth [nm]"
+            if self.state.color_code == ColorCode.BY_DEPTH
+            else "Time [min]"
         )
         self.colorbar.reset(colormap=colormap, data_range=data_range, label=label)
         self.colorbar.show()
@@ -1382,7 +1384,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             elif self.state.color_code == ColorCode.BY_DEPTH:
                 pass
             elif self.state.color_code == ColorCode.BY_TIME:
-                time = dataframe["tim"].to_numpy() / 60.0  # Color-code by time in minutes
+                time = (
+                    dataframe["tim"].to_numpy() / 60.0
+                )  # Color-code by time in minutes
             else:
                 raise ValueError("Unknown color code")
 
@@ -1405,7 +1409,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
                 # Set data range
                 data_range_for_colorbar = (
-                    dataframe["tim"].min() / 60.0,  # Data range for color-coding in minutes
+                    dataframe["tim"].min()
+                    / 60.0,  # Data range for color-coding in minutes
                     dataframe["tim"].max() / 60.0,
                 )
             else:
@@ -1428,8 +1433,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                     dataframe = self.processor.filtered_dataframe
 
             else:
-                colormap = None
-
                 # Get the (potentially filtered) full dataframe
                 dataframe = self.processor.filtered_dataframe
 
@@ -1489,7 +1492,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
                 # Set data range for colorbar (in minutes)
                 data_range_for_colorbar = (
-                    dataframe["tim"].min() / 60.0,  # Data range for color-coding in minutes
+                    dataframe["tim"].min()
+                    / 60.0,  # Data range for color-coding in minutes
                     dataframe["tim"].max() / 60.0,
                 )
             else:
