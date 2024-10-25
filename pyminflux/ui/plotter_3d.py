@@ -160,13 +160,15 @@ class Plotter3D(QWidget):
 
         # If the average locations are plotted, set the diameter to fit the worst localization precision
         if self.state.plot_average_localisations:
-            sz = np.max(
-                self.processor.filtered_dataframe_stats[["sx", "sy", "sz"]].to_numpy(),
-                axis=1,
-            )
-
-            # Keep track of current sizes
-            self.current_point_sizes = sz
+            # @TODO Temporarily disable until a better solution is in place
+            # sz = np.max(
+            #     self.processor.filtered_dataframe_stats[["sx", "sy", "sz"]].to_numpy(),
+            #     axis=1,
+            # )
+            #
+            # # Keep track of current sizes
+            # self.current_point_sizes = sz
+            sz = self.fixed_point_size
         else:
             sz = self.fixed_point_size
 
