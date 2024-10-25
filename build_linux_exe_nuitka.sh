@@ -85,11 +85,6 @@ rm -fR dist/pyMINFLUX/plugins/hello_world/__pycache__
 # Copy the icon
 cp pyminflux/ui/assets/Logo_v3.png dist/pyMINFLUX/icon.png
 
-# Zip the archive
-cd dist
-zip -r pyMINFLUX_${VERSION}_linux.zip pyMINFLUX
-cd ..
-
 # Remove the conda environment
 conda deactivate
 conda env remove -n pyminflux-build -y

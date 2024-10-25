@@ -53,7 +53,6 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX ^
 --windows-console-mode=disable ^
 --noinclude-default-mode=error ^
 --standalone ^
---onefile ^
 --include-module=scipy.special._special_ufuncs ^
 --include-module=vispy.app.backends._pyside6 ^
 --include-module=pydoc ^
@@ -65,13 +64,8 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX ^
 --remove-output ^
 --output-dir=./dist
 
-REM Zip the app
-set TMP_FOLDER=%~dp0dist\tmp
-IF NOT EXIST "%TMP_FOLDER%" MKDIR "%TMP_FOLDER%"
-IF NOT EXIST "%TMP_FOLDER%\pyMINFLUX" MKDIR "%TMP_FOLDER%\pyMINFLUX"
-XCOPY /I "%~dp0dist\pyMINFLUX.exe" "%TMP_FOLDER%\pyMINFLUX\"
-set OUTPUT_FILE=%~dp0dist\pyMINFLUX_%VERSION%_win.zip
-powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('%TMP_FOLDER%', '%OUTPUT_FILE%'); }"
+REM Rename che created folder
+move dist\main.dist dist\pyMINFLUX
 
 REM Remove the conda environment
 call conda deactivate
