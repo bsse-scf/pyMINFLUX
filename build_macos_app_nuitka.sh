@@ -69,6 +69,11 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX \
 # Rename the bundle
 mv ./dist/main.app ./dist/pyMINFLUX.app
 
+# Zip the archive (this most be done here!)
+cd dist
+zip -r pyMINFLUX_${VERSION}_macos.zip pyMINFLUX.app
+cd ..
+
 # Remove the conda environment
 conda deactivate
 conda env remove -n pyminflux-build -y
