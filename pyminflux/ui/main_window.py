@@ -19,7 +19,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, Signal, Slot
@@ -1368,9 +1367,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 return
 
             # Extract identifiers
-            tid = dataframe["tid"].to_numpy()
+            tid = dataframe["tid"]
             fid = None
-            depth = dataframe["z"].to_numpy()
+            depth = dataframe["z"]
             time = None
 
             # Extract necessary values for color-coding
@@ -1380,13 +1379,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             ):
                 pass
             elif self.state.color_code == ColorCode.BY_FLUO:
-                fid = dataframe["fluo"].to_numpy()
+                fid = dataframe["fluo"]
             elif self.state.color_code == ColorCode.BY_DEPTH:
                 pass
             elif self.state.color_code == ColorCode.BY_TIME:
-                time = (
-                    dataframe["tim"].to_numpy() / 60.0
-                )  # Color-code by time in minutes
+                time = dataframe["tim"] / 60.0  # Color-code by time in minutes
             else:
                 raise ValueError("Unknown color code")
 

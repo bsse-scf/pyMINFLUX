@@ -401,9 +401,6 @@ class Plotter(PlotWidget):
             x coordinates to plot. x must be a Pandas Series.
         y: pd.Series
             y coordinates to plot. y must be a Pandas Series.
-        z: z coordinates. They will be used to sort the coordinates to make sure that
-            the plot order is the same as for the 3D plotter (behavior will depend on
-            color_code).
         color_code: ColorCode
             Requested color coding.
         x_param: str

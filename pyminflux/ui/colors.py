@@ -323,8 +323,12 @@ class Colors(metaclass=Singleton):
         self._unique_time_colors = None
         self._unique_time_colors_float = None
 
-    def generate_tid_colors(self, tid: np.ndarray):
-        """Generate and cache TID colors."""
+    def generate_tid_colors(self, tid: pd.Series):
+        """Generate and cache TID colors.
+
+        tid: pd.Series
+            Identifiers to be used to assign colors.
+        """
 
         # Reset the random number generator
         self._rng = np.random.default_rng(self._seed)
@@ -337,7 +341,14 @@ class Colors(metaclass=Singleton):
         self._unique_tid_colors_float = self._unique_tid_colors / 255.0
 
     def generate_depth_colors(self, num_colors: int = 256):
-        """Generate and cache depth colors."""
+        """Generate and cache depth colors.
+
+        Parameters
+        ----------
+
+        num_colors: int = 256
+            Number of colors to be generated for the colormap.
+        """
 
         # Generate the colormap
         self._unique_depth_colors_float, self._unique_depth_colors = (
@@ -345,7 +356,14 @@ class Colors(metaclass=Singleton):
         )
 
     def generate_time_colors(self, num_colors: int = 256):
-        """Generate and cache depth colors."""
+        """Generate and cache depth colors.
+
+        Parameters
+        ----------
+
+        num_colors: int = 256
+            Number of colors to be generated for the colormap.
+        """
 
         # Generate the colormap
         self._unique_time_colors_float, self._unique_time_colors = (
@@ -383,10 +401,10 @@ class ColorsToBrushes(metaclass=Singleton):
     def get_brushes(
         self,
         mode: ColorCode,
-        tid: Optional[np.ndarray] = None,
-        fid: Optional[np.ndarray] = None,
-        depth: Optional[np.ndarray] = None,
-        time: Optional[np.ndarray] = None,
+        tid: Optional[pd.Series] = None,
+        fid: Optional[pd.Series] = None,
+        depth: Optional[pd.Series] = None,
+        time: Optional[pd.Series] = None,
     ) -> Union[QBrush, list[QBrush]]:
         """Get brushes for passed tid or fid arrays.
 
@@ -396,16 +414,16 @@ class ColorsToBrushes(metaclass=Singleton):
         mode: ColorCode
             One of `ColorCode.NONE`, `ColorCode.BY_TID`, or `ColorCode.BY_FLUO`.
 
-        tid: Optional[np.ndarray] = None
+        tid: Optional[pd.Series] = None
             Array of trace IDs. If tid is not None, fid must be; depth and time must be None.
 
-        fid: Optional[np.ndarray] = None
+        fid: Optional[pd.Series] = None
             Array of fluorophore IDs.  If fid is not None, tid must be; depth and time must be None.
 
-        depth: Optional[np.ndarray] = None
+        depth: Optional[pd.Series] = None
             Array of depths (z values). fid, tid and time must be None.
 
-        time: Optional[np.ndarray] = None
+        time: Optional[pd.Series] = None
             Array of time stamps. fid, tid and depth must be None.
 
         Returns
@@ -465,7 +483,7 @@ class ColorsToBrushes(metaclass=Singleton):
             2: pg.mkBrush(Colors().unique_fid_colors[1]),
         }
 
-    def _get_or_create_brush_by_tid(self, tid: np.ndarray) -> list:
+    def _get_or_create_brush_by_tid(self, tid: pd.Series) -> list:
         """Create QBrush instances to be used in a ScatterPlotItem to prevent
         cache misses in SymbolAtlas.
         As an illustration, this speeds up the plotting of 200,000 dots with
@@ -476,7 +494,7 @@ class ColorsToBrushes(metaclass=Singleton):
         Parameters
         ----------
 
-        tid: np.ndarray
+        tid: pd.Series
             Identifiers to be used to assign colors.
 
         Returns
@@ -486,6 +504,8 @@ class ColorsToBrushes(metaclass=Singleton):
             List of brushes corresponding to the list of identifiers. Each identifier references
             a unique QBrush instance.
         """
+
+        assert type(tid) == pd.Series, "`tid` must be a pd.Series."
 
         # Get the list of unique tid
         current_unique_tid = np.unique(tid)
@@ -811,13 +831,13 @@ class ColorsToRGB(metaclass=Singleton):
         self._time_bin_edges = None
         self._time_to_color_map = None
 
-    def _get_or_create_rgb_by_tid(self, tid) -> np.ndarray:
+    def _get_or_create_rgb_by_tid(self, tid: pd.Series) -> np.ndarray:
         """Create an Nx3 NumPy array of colors in the range [0.0 to 1.0].
 
         Parameters
         ----------
 
-        tid: np.ndarray
+        tid: pd.Series
             Identifiers to be used to assign colors.
 
         Returns
@@ -826,6 +846,8 @@ class ColorsToRGB(metaclass=Singleton):
         rgb: np.ndarray
             Nx3 NumPy array of colors in the range [0.0 to 1.0] corresponding to the list of identifiers.
         """
+
+        assert type(tid) == pd.Series, "`tid` must be a pd.Series."
 
         # Get the list of unique tid
         current_unique_tid = np.unique(tid)
@@ -861,13 +883,13 @@ class ColorsToRGB(metaclass=Singleton):
         # Return the list of brushes (and references) and the mapping between id and brush
         return self._tid_colors
 
-    def _get_or_create_rgb_by_fid(self, fid) -> np.ndarray:
+    def _get_or_create_rgb_by_fid(self, fid: pd.Series) -> np.ndarray:
         """Create an 2x3 NumPy array of colors in the range [0.0 to 1.0].
 
         Parameters
         ----------
 
-        fid: np.ndarray
+        fid: pd.Series
             Identifiers to be used to assign colors.
 
         Returns
@@ -876,6 +898,8 @@ class ColorsToRGB(metaclass=Singleton):
         rgb: np.ndarray
             2x3 NumPy array of colors in the range [0.0 to 1.0] corresponding to the list of identifiers.
         """
+
+        assert type(fid) == pd.Series, "`fid` must be a pd.Series."
 
         # Map each identifier in the full array to its corresponding QBrush for fast lookup
         if (
@@ -893,13 +917,13 @@ class ColorsToRGB(metaclass=Singleton):
         # Return the list of brushes (and references) and the mapping between id and brush
         return np.array(self._fid_colors)
 
-    def _get_or_create_rgb_by_depth(self, depth) -> np.ndarray:
+    def _get_or_create_rgb_by_depth(self, depth: pd.Series) -> np.ndarray:
         """Create an Nx3 NumPy array of colors in the range [0.0 to 1.0].
 
         Parameters
         ----------
 
-        depth: np.ndarray
+        depth: pd.Series
             Depths (z values) to be used to assign colors.
 
         Returns
@@ -908,6 +932,8 @@ class ColorsToRGB(metaclass=Singleton):
         rgb: np.ndarray
             Nx3 NumPy array of colors in the range [0.0 to 1.0] corresponding to the list of identifiers.
         """
+
+        assert type(depth) == pd.Series, "`depth` must be a pd.Series."
 
         # Calculate current histogram bins
         _, current_depth_bin_edges, _, _ = prepare_histogram(
@@ -949,13 +975,13 @@ class ColorsToRGB(metaclass=Singleton):
         # Return the list of colors (and references)
         return self._depth_colors
 
-    def _get_or_create_rgb_by_time(self, time) -> np.ndarray:
+    def _get_or_create_rgb_by_time(self, time: pd.Series) -> np.ndarray:
         """Create an Nx3 NumPy array of colors in the range [0.0 to 1.0].
 
         Parameters
         ----------
 
-        time: np.ndarray
+        time: pd.Series
             Delta times to be used to assign colors.
 
         Returns
@@ -964,6 +990,8 @@ class ColorsToRGB(metaclass=Singleton):
         rgb: np.ndarray
             Nx3 NumPy array of colors in the range [0.0 to 1.0] corresponding to the list of identifiers.
         """
+
+        assert type(time) == pd.Series, "`time` must be a pd.Series."
 
         # Calculate current histogram bins
         _, current_time_bin_edges, _, _ = prepare_histogram(
