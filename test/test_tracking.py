@@ -19,11 +19,11 @@ import numpy as np
 import pytest
 
 from pyminflux.analysis import (
+    calculate_displacements,
     calculate_time_steps,
     calculate_total_distance_traveled,
     get_robust_threshold,
 )
-from pyminflux.analysis._analysis import calculate_displacements
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader
 
