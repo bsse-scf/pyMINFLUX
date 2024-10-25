@@ -76,6 +76,9 @@ class ColorBarWidget(QWidget):
         if self.colorbar is not None:
             self.graphWidget.removeItem(self.colorbar)
 
+        # Make sure not to have more than one digit after the comma
+        data_range = (round(data_range[0], 1), round(data_range[1], 1))
+
         # If the data range is 0 (e.g. for the depth of a 2D dataset),
         # we only create 2 colors; otherwise 256
         if data_range[1] == data_range[0]:
