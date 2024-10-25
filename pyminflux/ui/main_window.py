@@ -351,7 +351,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.actionState.triggered.connect(self.print_current_state)
-        self.ui.action_VisPy_sysinfo.triggered.connect(self.print_vispy_sysinfo)
         self.ui.actionHistogram_Plotter.triggered.connect(self.open_histogram_plotter)
         self.ui.actionUnmixer.triggered.connect(self.open_color_unmixer)
         self.ui.actionTime_Inspector.triggered.connect(self.open_time_inspector)
@@ -978,16 +977,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print("[DEBUG] Internal state:")
         for s in state_dict:
             print(f'  ∟ "{s}": {state_dict[s]}')
-
-    @Slot()
-    def print_vispy_sysinfo(self):
-        """Print VisPy system information (DEBUG)."""
-        from vispy import sys_info
-
-        if self.txt_console.isHidden():
-            self.txt_console.show()
-            self.ui.actionConsole.setChecked(True)
-        print(sys_info())
 
     @Slot()
     def about(self):
