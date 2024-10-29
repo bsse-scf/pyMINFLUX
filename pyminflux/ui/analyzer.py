@@ -22,6 +22,8 @@ from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
+from pyminflux.ui.state import State
+
 from ..analysis import (
     calculate_time_steps,
     find_cutoff_near_value,
@@ -29,7 +31,6 @@ from ..analysis import (
     prepare_histogram,
 )
 from ..processor import MinFluxProcessor
-from ..state import State
 from ..utils import intersect_2d_ranges
 from .helpers import (
     add_median_line,

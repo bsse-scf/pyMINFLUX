@@ -15,9 +15,9 @@
 from pathlib import Path
 from typing import Union
 
-from ..base import Singleton
-from ..reader.metadata import NativeMetadata
-from ..ui.colors import ColorCode
+from pyminflux.base import Singleton
+from pyminflux.reader.metadata import NativeMetadata
+from pyminflux.ui.colors import ColorCode
 
 
 class State(metaclass=Singleton):

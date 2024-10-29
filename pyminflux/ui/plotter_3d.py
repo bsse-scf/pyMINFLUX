@@ -19,8 +19,9 @@ from PySide6.QtWidgets import QMenu, QVBoxLayout, QWidget
 from vispy import scene
 from vispy.visuals import transforms
 
+from pyminflux.ui.state import State
+
 from ..processor import MinFluxProcessor
-from ..state import State
 from .colors import ColorsToRGB
 from .helpers import export_vispy_plot
 

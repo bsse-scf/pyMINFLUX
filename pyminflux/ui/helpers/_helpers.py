@@ -26,7 +26,7 @@ from PySide6.QtWidgets import QApplication, QFileDialog
 from vispy.scene import SceneCanvas
 
 from pyminflux.analysis import get_robust_threshold
-from pyminflux.state import State
+from pyminflux.ui.state import State
 
 
 def export_plot_interactive(item, parent=None):

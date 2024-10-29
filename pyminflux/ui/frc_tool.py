@@ -20,8 +20,9 @@ from PySide6.QtCore import QPoint, Slot
 from PySide6.QtGui import QAction, QDoubleValidator, QIntValidator, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 
+from pyminflux.ui.state import State
+
 from ..processor import MinFluxProcessor
-from ..state import State
 from ..threads.frc import FRCProcessorThread
 from .helpers import export_plot_interactive
 from .ui_frc_tool import Ui_FRCTool

@@ -45,7 +45,6 @@ from pyminflux.plugin import PluginManager
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReader, NativeMetadataReader
 from pyminflux.settings import Settings, UpdateSettings
-from pyminflux.state import State
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.color_unmixer import ColorUnmixer
@@ -60,6 +59,7 @@ from pyminflux.ui.options import Options
 from pyminflux.ui.plotter import Plotter
 from pyminflux.ui.plotter_3d import Plotter3D
 from pyminflux.ui.plotter_toolbar import PlotterToolbar
+from pyminflux.ui.state import State
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow

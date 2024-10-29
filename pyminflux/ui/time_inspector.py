@@ -19,9 +19,9 @@ from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QAction, QColor, QFont, Qt
 from PySide6.QtWidgets import QDialog, QMenu
 
-from pyminflux.state import State
 from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.roi_ranges import ROIRanges
+from pyminflux.ui.state import State
 from pyminflux.ui.ui_time_inspector import Ui_TimeInspector
 
 

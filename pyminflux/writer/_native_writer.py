@@ -19,7 +19,7 @@ import h5py
 import numpy as np
 
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.state import State
+from pyminflux.ui.state import State
 
 
 class PyMinFluxNativeWriter:

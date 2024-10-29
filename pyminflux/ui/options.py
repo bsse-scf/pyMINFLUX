@@ -16,7 +16,7 @@ from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 from PySide6.QtWidgets import QDialog, QMessageBox
 
-from pyminflux.state import State
+from pyminflux.ui.state import State
 
 from ..settings import Settings
 from .ui_options import Ui_Options

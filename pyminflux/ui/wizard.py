@@ -17,7 +17,7 @@ from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
 from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import QDialog, QMessageBox
 
-from pyminflux.state import State
+from pyminflux.ui.state import State
 
 from ..analysis import prepare_histogram
 from ..utils import intersect_2d_ranges

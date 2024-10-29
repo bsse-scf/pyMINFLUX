@@ -16,7 +16,8 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import QDialog
 
-from ..state import State
+from pyminflux.ui.state import State
+
 from .ui_roi_ranges import Ui_ROIRanges
 
 

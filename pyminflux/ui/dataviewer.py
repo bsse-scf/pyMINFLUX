@@ -16,8 +16,9 @@ import pandas as pd
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QSizePolicy, QTableView
 
+from pyminflux.ui.state import State
+
 from ..processor import MinFluxProcessor
-from ..state import State
 from .pandas_datamodel import PandasDataModel
 
 

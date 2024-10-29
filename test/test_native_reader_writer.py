@@ -28,7 +28,6 @@ from pyminflux.reader import (
     NativeDataFrameReader,
     NativeMetadataReader,
 )
-from pyminflux.state import State
 from pyminflux.writer import PyMinFluxNativeWriter
 
 
@@ -122,21 +121,18 @@ def dataframes_equal(df1, df2):
 
 def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
-    # Initialize State
-    state = State()
-
     #
     # 2D_All.npy
     #
     # min_trace_length = 1 (do not filter anything)
     #
-    state.min_trace_length = 1
+    MIN_TRACE_LENGTH = 1
 
     # 2D_All.npy
     reader = MinFluxReader(
         Path(__file__).parent / "data" / "2D_All.npy", z_scaling_factor=0.7
     )
-    processor = MinFluxProcessor(reader, min_trace_length=state.min_trace_length)
+    processor = MinFluxProcessor(reader, min_trace_length=MIN_TRACE_LENGTH)
 
     # Assign fluorophores
     np.random.seed(42)
@@ -223,7 +219,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             ), "Unexpected value for z_scaling_factor!"
             min_trace_length = f["parameters/min_trace_length"][()]
             assert (
-                min_trace_length == state.min_trace_length
+                min_trace_length == MIN_TRACE_LENGTH
             ), "Unexpected value for min_trace_length!"
             num_fluorophores = f["parameters/num_fluorophores"][()]
             assert (
@@ -251,7 +247,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             metadata.z_scaling_factor == processor.z_scaling_factor
         ), "Unexpected value for z_scaling_factor!"
         assert (
-            metadata.min_trace_length == state.min_trace_length
+            metadata.min_trace_length == MIN_TRACE_LENGTH
         ), "Unexpected value for min_trace_length!"
         assert (
             metadata.num_fluorophores == processor.num_fluorophores
@@ -261,14 +257,16 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
         # Now test the MinFluxReader
         reader = MinFluxReader(file_name, z_scaling_factor=0.7)
-        processor_new = MinFluxProcessor(
-            reader, min_trace_length=state.min_trace_length
-        )
+        processor_new = MinFluxProcessor(reader, min_trace_length=MIN_TRACE_LENGTH)
 
         # Compare the data from the original and the new file after processing with the MinFluxProcessor
         #
         # @HINT
-        # If the following tests fail, use dataframes_equal(processor.filtered_dataframe, processor_new.filtered_dataframe) to find the differences
+        # If the following tests fail, use:
+        #
+        #     dataframes_equal(processor.filtered_dataframe, processor_new.filtered_dataframe)
+        #
+        # to find the differences
         assert np.all(
             processor.filtered_dataframe.columns
             == processor_new.filtered_dataframe.columns
@@ -286,13 +284,13 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
     #
     # min_trace_length = 4 (filter short-lived traces)
     #
-    state.min_trace_length = 4
+    MIN_TRACE_LENGTH = 4
 
     # 2D_ValidOnly.npy
     reader = MinFluxReader(
         Path(__file__).parent / "data" / "2D_All.npy", z_scaling_factor=0.7
     )
-    processor = MinFluxProcessor(reader, min_trace_length=state.min_trace_length)
+    processor = MinFluxProcessor(reader, min_trace_length=MIN_TRACE_LENGTH)
 
     # Assign fluorophores
     np.random.seed(42)
@@ -383,7 +381,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             ), "Unexpected value for z_scaling_factor!"
             min_trace_length = f["parameters/min_trace_length"][()]
             assert (
-                min_trace_length == state.min_trace_length
+                min_trace_length == MIN_TRACE_LENGTH
             ), "Unexpected value for min_trace_length!"
             num_fluorophores = f["parameters/num_fluorophores"][()]
             assert (
@@ -411,7 +409,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             metadata.z_scaling_factor == processor.z_scaling_factor
         ), "Unexpected value for z_scaling_factor!"
         assert (
-            metadata.min_trace_length == state.min_trace_length
+            metadata.min_trace_length == MIN_TRACE_LENGTH
         ), "Unexpected value for min_trace_length!"
         assert (
             metadata.num_fluorophores == processor.num_fluorophores
@@ -421,9 +419,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
         # Now test the MinFluxReader
         reader = MinFluxReader(file_name, z_scaling_factor=0.7)
-        processor_new = MinFluxProcessor(
-            reader, min_trace_length=state.min_trace_length
-        )
+        processor_new = MinFluxProcessor(reader, min_trace_length=MIN_TRACE_LENGTH)
 
         # Compare the data from the original and the new file after processing with the MinFluxProcessor
         #

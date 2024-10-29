@@ -31,10 +31,11 @@ from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QDialog, QFileDialog, QInputDialog, QMenu
 
+from pyminflux.ui.state import State
+
 from ..reader import MSRReader
-from ..state import State
 from .colors import ColorCode, ColorsToBrushes
-from .custom_dialogs import ListDialog, TreeDialog
+from .custom_dialogs import TreeDialog
 from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
 
 

@@ -17,6 +17,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from scipy.stats import mode
 
 from pyminflux.analysis import calculate_total_distance_traveled, calculate_trace_time
@@ -454,7 +455,7 @@ class MinFluxProcessor:
         self._stats_to_be_recomputed = True
         self._weighted_localizations_to_be_recomputed = True
 
-    def set_fluorophore_ids(self, fluorophore_ids: np.ndarray[np.uint8]):
+    def set_fluorophore_ids(self, fluorophore_ids: NDArray[np.uint8]):
         """Assign the fluorophore IDs to current filtered dataset."""
         if self.filtered_dataframe is None:
             return
@@ -474,7 +475,7 @@ class MinFluxProcessor:
         self._init_selected_rows_dict()
         self._apply_global_filters()
 
-    def set_full_fluorophore_ids(self, fluorophore_ids: np.ndarray[int]):
+    def set_full_fluorophore_ids(self, fluorophore_ids: NDArray[np.uint8]):
         """Assign the fluorophore IDs to the original, full dataframe ignoring current filters."""
         if self.full_dataframe is None:
             return

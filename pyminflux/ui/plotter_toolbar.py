@@ -15,8 +15,9 @@
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QWidget
 
+from pyminflux.ui.state import State
+
 from ..reader import MinFluxReader
-from ..state import State
 from .colors import ColorCode
 from .ui_plotter_toolbar import Ui_PlotterToolbar
 

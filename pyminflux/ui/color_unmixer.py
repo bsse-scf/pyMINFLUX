@@ -25,8 +25,8 @@ from pyminflux.analysis import (
     reassign_fluo_ids_by_majority_vote,
 )
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.state import State
 from pyminflux.ui.helpers import export_plot_interactive
+from pyminflux.ui.state import State
 from pyminflux.ui.ui_color_unmixer import Ui_ColorUnmixer
 
 

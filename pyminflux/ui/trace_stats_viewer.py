@@ -16,7 +16,7 @@ from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QDialog
 
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.state import State
+from pyminflux.ui.state import State
 from pyminflux.ui.trace_dataviewer import TraceDataViewer
 from pyminflux.ui.ui_trace_stats_viewer import Ui_TraceStatsViewer
 
