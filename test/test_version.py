@@ -17,7 +17,7 @@ from pyminflux.utils._utils import check_for_updates
 
 
 def test_version():
-    assert pyminflux.__version__ != "", "pyMinFlux version not set."
+    assert pyminflux.__version__ != "", "pyMINFLUX version not set."
     assert len(pyminflux.__version__.split(".")) == 3, (
         "The version number should be " "in the format " "x.y.z."
     )

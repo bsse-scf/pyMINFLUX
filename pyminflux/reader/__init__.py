@@ -18,6 +18,7 @@ __all__ = [
     "NativeArrayReader",
     "NativeDataFrameReader",
     "MinFluxReader",
+    "MinFluxReaderV2",
     "MSRReader",
 ]
 
@@ -28,3 +29,4 @@ from ._native_reader import (
     NativeMetadataReader,
 )
 from ._reader import MinFluxReader
+from ._reader_v2 import MinFluxReaderV2

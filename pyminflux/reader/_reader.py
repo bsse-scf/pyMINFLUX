@@ -160,6 +160,10 @@ class MinFluxReader:
             raise IOError(f"The file {self._filename} is not a valid MINFLUX file.")
 
     @property
+    def version(self) -> int:
+        return 1
+
+    @property
     def is_last_valid(self) -> Union[bool, None]:
         """Return True if the selected iteration is the "last valid", False otherwise.
         If the dataframe has not been processed yet, `is_last_valid` will be None."""
@@ -200,16 +204,21 @@ class MinFluxReader:
     @property
     def num_valid_entries(self) -> int:
         """Number of valid entries."""
-        if self._data_array is None:
+        if self._valid_entries is None:
             return 0
-        return self._valid_entries.sum()
+        return int(self._valid_entries.sum())
 
     @property
     def num_invalid_entries(self) -> int:
         """Number of valid entries."""
-        if self._data_array is None:
+        if self._valid_entries is None:
             return 0
-        return np.logical_not(self._valid_entries).sum()
+        return int(np.logical_not(self._valid_entries).sum())
+
+    @property
+    def tot_num_entries(self) -> int:
+        """Total number of entries."""
+        return self.num_valid_entries + self.num_invalid_entries
 
     @property
     def valid_cfr(self) -> list:
@@ -449,7 +458,7 @@ class MinFluxReader:
         # Call the specialized _load_*() function
         if self._filename.name.lower().endswith(".npy"):
             try:
-                data_array = np.load(str(self._filename))
+                data_array = np.load(str(self._filename), allow_pickle=False)
                 if "fluo" in data_array.dtype.names:
                     self._data_array = data_array
                 else:
@@ -723,12 +732,12 @@ class MinFluxReader:
 
     def __repr__(self) -> str:
         """String representation of the object."""
-        if self._data_array is None:
+        if self.num_valid_entries == 0:
             return "No file loaded."
 
         str_valid = (
             "all valid"
-            if len(self._data_array) == self.num_valid_entries
+            if self.num_invalid_entries == 0
             else f"{self.num_valid_entries} valid and {self.num_invalid_entries} non valid"
         )
 
@@ -737,7 +746,7 @@ class MinFluxReader:
 
         return (
             f"File: {self._filename.name}: "
-            f"{str_acq} {aggr_str} acquisition with {len(self._data_array)} entries ({str_valid})."
+            f"{str_acq} {aggr_str} acquisition with {self.tot_num_entries} entries ({str_valid})."
         )
 
     def __str__(self) -> str:

@@ -12,9 +12,10 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
+import pandas as pd
 from scipy.io import loadmat
 
 
@@ -126,11 +127,11 @@ def convert_from_mat(filename: Union[Path, str]) -> Union[np.ndarray, None]:
         )
 
     except KeyError as k:
-        print(f"Error processing file {filename}: could not find key {k}.")
+        print(f"Error processing file array: could not find key {k}.")
         data_array = None
 
     except Exception as e:
-        print(f"Error processing file {filename}: unexpected structure.")
+        print(f"Error processing file array: unexpected structure.")
         data_array = None
 
     # Return success
@@ -278,6 +279,106 @@ def find_last_valid_iteration(data_array: np.ndarray):
         last_valid["reloc"] = np.logical_not(
             np.isnan(data_array["itr"]["loc"][reloc_index, :, 0])
         )
+
+    # Set dcr index
+    last_valid["dcr_index"] = num_iterations - 1
+
+    # Set eco index
+    last_valid["eco_index"] = num_iterations - 1
+
+    # Set loc index
+    last_valid["loc_index"] = num_iterations - 1
+
+    return last_valid
+
+
+def find_last_valid_iteration_v2(
+    data_full_df: pd.DataFrame, num_iterations: Optional[int] = None
+):
+    """Find last valid iteration across all relevant parameters.
+
+    Parameters
+    ----------
+
+    data_full_df: pd.DataFrame
+        Full processed DataFrame.
+
+    num_iterations: int
+        Maximum number of iterations per localization. Omit to scan it from the data.
+    """
+
+    # Initialize output
+    last_valid = {
+        "efo_index": -1,
+        "cfr_index": -1,
+        "dcr_index": -1,
+        "eco_index": -1,
+        "loc_index": -1,
+        "valid_cfr": [],
+    }
+
+    # Number of iterations
+    if num_iterations is None:
+        num_iterations = int(np.max(data_full_df["itr"]) + 1)
+    num_iterations = int(num_iterations)
+
+    # Do we have aggregated measurements?
+    if num_iterations == 1:
+        # For clarity, let's set the indices to 0
+        last_valid = {
+            "efo_index": 0,
+            "cfr_index": 0,
+            "dcr_index": 0,
+            "eco_index": 0,
+            "loc_index": 0,
+            "valid_cfr": [True],
+            "reloc": [False],
+        }
+        return last_valid
+
+    # Set efo index
+    last_valid["efo_index"] = num_iterations - 1
+
+    # Set cfr index
+    # @TODO Fix me!
+    last_valid["cfr_index"] = num_iterations - 1
+    last_valid["valid_cfr"] = np.arange(num_iterations).tolist()
+
+    # Set relocalized iterations: every new TID starts with "itr" = 0 and grows until
+    # num_iterations - 1, after that it falls to the first relocalized localization
+    # and repeats this many times until the new TIF starts.
+
+    # Find the locations when itr is 0
+    started = False
+    candidates = [num_iterations - 1]  # This will not be added by the algorithm below
+    last_value = -1
+    for i in range(len(data_full_df["itr"])):
+        if data_full_df["itr"][i] != 0 and not started:
+            # Make sure to start from the beginning of a trace
+            continue
+        if data_full_df["itr"][i] == 0:
+            # Beginning of a trace found
+            last_value = 0
+            started = True
+            continue
+        if i == 0:
+            # Redundant check
+            last_value = 0
+            continue
+        if data_full_df["itr"][i] - last_value == 1:
+            # If we are moving up in the iterations, just
+            # update last_value and move on
+            last_value = data_full_df["itr"][i]
+            continue
+
+        # We found a relocation
+        candidates.append(data_full_df["itr"][i])
+
+        # Update last value
+        last_value = data_full_df["itr"][i]
+
+    # Extract relocation indices
+    last_valid["reloc"] = np.unique(candidates).tolist()
 
     # Set dcr index
     last_valid["dcr_index"] = num_iterations - 1

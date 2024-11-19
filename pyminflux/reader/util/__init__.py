@@ -16,5 +16,6 @@ from ._util import (
     convert_from_mat,
     create_empty_data_array,
     find_last_valid_iteration,
+    find_last_valid_iteration_v2,
     migrate_npy_array,
 )
