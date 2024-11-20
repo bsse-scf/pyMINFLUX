@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pyminflux.reader import MinFluxReader, MinFluxReaderV2
+from pyminflux.reader import MinFluxReaderFactory, MinFluxReaderV2
 
 
 @pytest.fixture(autouse=False)
@@ -125,6 +125,50 @@ def test_read_npy_v2(extract_multi_format_geometry_data_files):
         json_reader._data_full_df
     ), "NumPy and json dataframe are different."
 
+
+def test_reader_factory(extract_multi_format_geometry_data_files):
+    # Working directory
+    data_dir = Path(__file__).parent / "data"
+    target_dir = data_dir / "reader_v2"
+
     #
-    # Test processor
+    # .npy
     #
+
+    # Get the reader for the NumPy array
+    npy_file_name = target_dir / "241107-115322_minflux.npy"
+    reader, status = MinFluxReaderFactory.get_reader(npy_file_name)
+
+    assert reader is not None, "A reader must be returned for this file."
+    assert status == "", "No error message expected."
+    assert (
+        reader.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    #
+    # .mat
+    #
+
+    # Get the reader for the MAT array
+    mat_file_name = target_dir / "241107-115322_minflux.mat"
+    reader, status = MinFluxReaderFactory.get_reader(mat_file_name)
+
+    assert reader is not None, "A reader must be returned for this file."
+    assert status == "", "No error message expected."
+    assert (
+        reader.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    #
+    # .json
+    #
+
+    # Get the reader for the MAT array
+    json_file_name = target_dir / "241107-115322_minflux.json"
+    reader, status = MinFluxReaderFactory.get_reader(json_file_name)
+
+    assert reader is not None, "A reader must be returned for this file."
+    assert status == "", "No error message expected."
+    assert (
+        reader.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."

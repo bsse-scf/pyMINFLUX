@@ -137,7 +137,7 @@ class NativeMetadataReader:
 
 
 class NativeArrayReader:
-    """Reads the native NumPy array from `.pmx` files."""
+    """Reads the native NumPy array from `.pmx` files version 1.0 and 2.0."""
 
     @staticmethod
     def read(filename: Union[Path, str]):
@@ -165,8 +165,8 @@ class NativeArrayReader:
         return data_array
 
 
-class NativeDataFrameReader:
-    """Reads the Pandas DataFrame from `.pmx` files."""
+class NativeFullDataFrameReader:
+    """Reads the full Pandas DataFrame from `.pmx` files version 3.0."""
 
     @staticmethod
     def read(filename: Union[Path, str]):
@@ -184,7 +184,54 @@ class NativeDataFrameReader:
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
-            if file_version != "1.0" and file_version != "2.0":
+            if file_version != "3.0":
+                return None
+
+            # Read dataset
+            dataset = f["/paraview/full_dataframe"]
+
+            # Read the NumPy data
+            data_array = dataset[:]
+
+            # Read column names
+            column_names = dataset.attrs["column_names"]
+
+            # Read column data types
+            column_types = dataset.attrs["column_types"]
+
+            # Read the index
+            index_data = f["/paraview/full_dataframe_index"][:]
+
+            # Create DataFrame with specified columns
+            df = pd.DataFrame(data_array, index=index_data, columns=column_names)
+
+            # Apply column data types
+            for col, dtype in zip(column_names, column_types):
+                df[col] = df[col].astype(dtype)
+
+        return df
+
+
+class NativeDataFrameReader:
+    """Reads the Pandas DataFrame from `.pmx` files versions 1.0, 2.0, and 3.0."""
+
+    @staticmethod
+    def read(filename: Union[Path, str]):
+        """Constructor.
+
+        Parameters
+        ----------
+
+        filename: Union[Path, str]
+            Full path to the `.pmx` file to scan.
+        """
+
+        with h5py.File(filename, "r") as f:
+
+            # Read the file_version attribute
+            file_version = f.attrs["file_version"]
+
+            if file_version not in ["1.0", "2.0", "3.0"]:
                 return None
 
             # Read dataset

@@ -17,5 +17,7 @@ from ._util import (
     create_empty_data_array,
     find_last_valid_iteration,
     find_last_valid_iteration_v2,
+    get_reader_version_for_mat_file,
+    get_reader_version_for_npy_file,
     migrate_npy_array,
 )

@@ -26,7 +26,7 @@ from pyminflux.reader.util import find_last_valid_iteration_v2
 
 
 class MinFluxReaderV2(MinFluxReader):
-    __docs__ = "Reader of MINFLUX data in `.pmx`, `.npy` (version 2) or `.mat` (version 2) formats."
+    __docs__ = "Reader of MINFLUX data in `.npy`, `.mat` and `.json` Imspector 2410 files, and `.pmx` version 0.6.0 and newer."
 
     def __init__(
         self,

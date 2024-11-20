@@ -11,12 +11,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
+import ast
 from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
-from scipy.io import loadmat
+from scipy.io import loadmat, whosmat
 
 
 def convert_from_mat(filename: Union[Path, str]) -> Union[np.ndarray, None]:
@@ -429,3 +430,92 @@ def migrate_npy_array(data_array) -> Union[np.ndarray, None]:
 
     # Return the migrated array
     return new_array
+
+
+def get_reader_version_for_npy_file(file_path):
+    """Return version of MinFluxReader required to open this Imspector .npy file without loading it.
+
+
+    filename: Union[Path, str]
+        Full path to the `.npy` file to scan.
+
+    Returns
+    -------
+
+    reader_version: int
+        Return the version for the MinFluxReader version needed to open this Imspector *.npy file.
+    """
+    with open(file_path, "rb") as f:
+        # Read the magic string
+        magic_string = f.read(6)
+
+        if not magic_string == b"\x93NUMPY":
+            raise ValueError(f"{file_path} is not a valid .npy file.")
+
+        # Set file pointer at the beginning of the header
+        f.seek(8)
+
+        # Manual header parsing, since `np.lib.format.read_array_header_{1|2}_0` seems to find
+        # issues with the header structure (at least in some files)
+        header_length = int.from_bytes(f.read(2), byteorder="little")
+        header_bytes = f.read(header_length)
+
+        try:
+            # Try decoding header manually
+            header_str = header_bytes.decode("ascii")
+
+            # Basic validation of header string
+            header_str = header_str.replace("\n", "").replace(" ", "")
+
+            # Use ast.literal_eval to safely parse
+            header_dict = ast.literal_eval(header_str)
+
+        except Exception as parse_error:
+            print(f"Manual parsing failed: {parse_error}")
+            raise
+
+    # Process header dictionary
+    reader_version = 1
+    for dtype in header_dict["descr"]:
+        if (
+            dtype[0] == "fnl"
+            or dtype[0] == "bot"
+            or dtype[0] == "eot"
+            or (dtype[0] == "itr" and dtype[1] == "<i4")
+        ):
+            reader_version = 2
+            break
+
+    return reader_version
+
+
+def get_reader_version_for_mat_file(file_path):
+    """Return version of MinFluxReader required to open this Imspector .mat file without loading it.
+
+
+    filename: Union[Path, str]
+        Full path to the `.mat` file to scan.
+
+    Returns
+    -------
+
+    reader_version: int
+        Return the version for the MinFluxReader version needed to open this Imspector *.mat file.
+    """
+
+    # Returns a list of tuples: (variable name, shape, dtype)
+    mat_metadata = whosmat(file_path)
+
+    # Process the list
+    reader_version = 1
+    for variables in mat_metadata:
+        if (
+            variables[0] == "fnl"
+            or variables[0] == "bot"
+            or variables[0] == "eot"
+            or (variables[0] == "itr" and variables[1] == "int32")
+        ):
+            reader_version = 2
+            break
+
+    return reader_version
