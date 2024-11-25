@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
-from pyminflux.reader import MinFluxReader, NativeArrayReader
+from pyminflux.reader._reader import MinFluxReader
 from pyminflux.reader.util import find_last_valid_iteration_v2
 
 
@@ -356,6 +356,20 @@ class MinFluxReaderV2(MinFluxReader):
         self._last_valid = len(self._valid_cfr) - 1
         self._last_valid_cfr = last_valid["cfr_index"]
 
+        # Inform
+        # @TODO Remove after testing
+        print(
+            f"efo: {self._efo_index},"
+            f"cfr: {self._cfr_index}, "
+            f"dcr: {self._dcr_index}, "
+            f"eco: {self._eco_index}, "
+            f"loc: {self._loc_index}, "
+            f"valid_cfr: {self._valid_cfr}, "
+            f"reloc: {self._relocalizations}, "
+            f"last_valid: {self._last_valid}, "
+            f"last_valid_cfr: {self._last_valid_cfr}"
+        )
+
     def _extend_array_with_prepend(self, arr: np.array, n: int):
         """
         Extends the input sorted NumPy array by prepending `n` consecutive values before each element.
@@ -465,20 +479,22 @@ class MinFluxReaderV2(MinFluxReader):
         # acquisition is normal or aggregated
         if self.is_aggregated:
             # Extract the locations
-            loc = itr["loc"].squeeze() * self._unit_scaling_factor
-            loc[:, 2] = loc[:, 2] * self._z_scaling_factor
+            x = data_valid_df["x"].to_numpy()
+            y = data_valid_df["y"].to_numpy()
+            z = data_valid_df["z"].to_numpy()
+            z *= self._z_scaling_factor
 
             # Extract EFO
-            efo = itr["efo"]
+            efo = data_valid_df["efo"].to_numpy()
 
             # Extract CFR
-            cfr = itr["cfr"]
+            cfr = data_valid_df["cfr"].to_numpy()
 
             # Extract ECO
-            eco = itr["eco"]
+            eco = data_valid_df["eco"].to_numpy()
 
             # Extract DCR
-            dcr = itr["dcr"]
+            dcr = data_valid_df["dcr"].to_numpy()
 
             # Dwell
             dwell = np.around((eco / (efo / 1000)) / self._dwell_time, decimals=0)
@@ -487,14 +503,11 @@ class MinFluxReaderV2(MinFluxReader):
             # In contrast to version 1 of the reader and of the Imspector file formats, we now extract
             # by value and not by index!
 
-            # Remove potential non-final relocalizations
-            # valid_reloc_df = valid_reloc_df[valid_reloc_df["fnl"] == True]
-
             # Trace IDs
-            tid = tid[itr == self._cfr_index]
+            tid = tid[itr == self._loc_index]
 
             # Extract the valid time points
-            tim = tim[itr == self._cfr_index]
+            tim = tim[itr == self._loc_index]
 
             # Extract the locations
             loc = (
@@ -516,7 +529,7 @@ class MinFluxReaderV2(MinFluxReader):
             eco = data_valid_df["eco"][itr == self._eco_index].to_numpy()
 
             # Fluorophore
-            fluo = data_valid_df["fluo"][itr == self._cfr_index].to_numpy()
+            fluo = data_valid_df["fluo"][itr == self._loc_index].to_numpy()
 
             # Pool DCR values?
             num_relocs = int(np.sum(self._relocalizations))

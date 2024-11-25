@@ -345,10 +345,11 @@ def find_last_valid_iteration_v2(
     indices = trace_start + offsets
     cfr = data_full_df["cfr"].to_numpy()[indices]
     last_valid["valid_cfr"] = (np.std(cfr, axis=1) > 0.0).tolist()
-    if len(last_valid["valid_cfr"]) == 0:
+    valid_indices = np.where(last_valid["valid_cfr"])[0]
+    if len(valid_indices) == 0:
         last_valid["cfr_index"] = num_iterations - 1
     else:
-        last_valid["cfr_index"] = last_valid["valid_cfr"][-1]
+        last_valid["cfr_index"] = valid_indices[-1]
 
     # Set efo index
     last_valid["efo_index"] = num_iterations - 1

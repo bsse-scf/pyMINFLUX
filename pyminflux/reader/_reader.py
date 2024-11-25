@@ -20,7 +20,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
-from pyminflux.reader import NativeArrayReader
+from pyminflux.reader._native_reader import NativeArrayReader
 from pyminflux.reader.util import (
     convert_from_mat,
     find_last_valid_iteration,
@@ -734,6 +734,20 @@ class MinFluxReader:
         # Keep track of the last valid iteration
         self._last_valid = len(self._valid_cfr) - 1
         self._last_valid_cfr = last_valid["cfr_index"]
+
+        # Inform
+        # @TODO Remove after testing
+        print(
+            f"efo: {self._efo_index},"
+            f"cfr: {self._cfr_index}, "
+            f"dcr: {self._dcr_index}, "
+            f"eco: {self._eco_index}, "
+            f"loc: {self._loc_index}, "
+            f"valid_cfr: {self._valid_cfr}, "
+            f"reloc: {self._relocalizations}, "
+            f"last_valid: {self._last_valid}, "
+            f"last_valid_cfr: {self._last_valid_cfr}"
+        )
 
     def __repr__(self) -> str:
         """String representation of the object."""
