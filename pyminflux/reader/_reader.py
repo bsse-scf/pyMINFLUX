@@ -229,7 +229,7 @@ class MinFluxReader:
         cfr: boolean array with True for the iteration indices
              that have a valid measurement.
         """
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return []
         return self._valid_cfr
 
@@ -241,14 +241,14 @@ class MinFluxReader:
         -------
         reloc: boolean array with True for the iteration indices that are relocalized.
         """
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return []
         return self._relocalizations
 
     @property
     def valid_raw_data(self) -> Union[None, np.ndarray]:
         """Return the raw data."""
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return None
         return self._data_array[self._valid_entries].copy()
 
@@ -305,7 +305,7 @@ class MinFluxReader:
         """
 
         # Make sure there is loaded data
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             raise ValueError("No data loaded.")
 
         if self._reps == -1:
@@ -484,8 +484,13 @@ class MinFluxReader:
 
         elif self._filename.name.lower().endswith(".pmx"):
             try:
+                # Read filtered dataframe
                 self._data_array = NativeArrayReader().read(self._filename)
-                if self._data_array is None:
+
+                # Restore _valid_entries array
+                self._valid_entries = self._data_array["vld"]
+
+                if self.tot_num_entries == 0:
                     print(f"Could not open {self._filename}.")
                     return False
             except Exception as e:
@@ -523,7 +528,7 @@ class MinFluxReader:
         """
 
         # Do we have a data array to work on?
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return None
 
         if self._valid:
@@ -634,7 +639,7 @@ class MinFluxReader:
 
     def _raw_data_to_full_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return raw data arranged into a dataframe."""
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return None
 
         # Initialize output dataframe
@@ -701,7 +706,7 @@ class MinFluxReader:
 
     def _set_all_indices(self):
         """Set indices of properties to be read."""
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return False
 
         # Number of iterations

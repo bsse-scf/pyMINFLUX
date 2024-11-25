@@ -355,3 +355,214 @@ class MinFluxReaderV2(MinFluxReader):
         # Keep track of the last valid iteration
         self._last_valid = len(self._valid_cfr) - 1
         self._last_valid_cfr = last_valid["cfr_index"]
+
+    def _extend_array_with_prepend(self, arr: np.array, n: int):
+        """
+        Extends the input sorted NumPy array by prepending `n` consecutive values before each element.
+        Elements where the gap from the previous kept element is <= `n` are discarded.
+
+        Parameters
+        ----------
+
+        arr: np.ndarray
+            Sorted 1D NumPy array of integers.
+
+        n: int
+            Number of consecutive values to prepend before each element.
+
+        Returns
+        -------
+
+        ext_arr: np.ndarray
+            Extended array with new values prepended.
+        """
+
+        # Compute differences between consecutive elements
+        diffs = np.diff(arr)
+
+        # The first element is always kept
+        keep_mask = np.concatenate(([True], diffs > n))
+
+        # Select elements to keep
+        kept_elements = arr[keep_mask]
+
+        # Generate new values for each kept element
+        # For each element x in kept_elements, generate x-n, x-(n-1), ..., x-1
+        prepend_offsets = np.arange(n, 0, -1)
+        new_values = (
+            kept_elements[:, np.newaxis] - prepend_offsets
+        )  # Shape: (num_kept, n)
+
+        # Flatten the new_values array
+        new_values = new_values.flatten()
+
+        # Combine new values with the kept elements
+        combined = np.concatenate((new_values, kept_elements))
+
+        # Remove any potential duplicates and ensure the array is sorted
+        extended_array = np.unique(combined)
+
+        return extended_array
+
+    def _get_valid_subset(self):
+        """Returns the valid subset of the full dataframe from which to
+        extract the requested iteration data."""
+
+        if self._valid:
+            val_indices = self._valid_entries
+        else:
+            val_indices = np.logical_not(self._valid_entries)
+
+        # Valid
+        data_valid_df = self._data_full_df[val_indices]
+
+        # Extract the indices of the last relocalization
+        (indices,) = np.where(
+            data_valid_df["itr"] == np.where(self.relocalizations)[0][-1]
+        )
+
+        # How many entries do we need to prepend?
+        n_relocs = int(np.sum(self.relocalizations) - 1)
+
+        # Extend the array with all locations to keep
+        indices_ext = self._extend_array_with_prepend(indices, n_relocs)
+
+        return indices_ext
+
+    def _process(self) -> Union[None, pd.DataFrame]:
+        """Returns processed dataframe for valid (or invalid) entries.
+
+        Returns
+        -------
+
+        df: pd.DataFrame
+            Processed data as DataFrame.
+        """
+
+        # Do we have a data array to work on?
+        if self.tot_num_entries == 0:
+            return None
+
+        # Get valid subset
+        valid_subset = self._get_valid_subset()
+        data_valid_df = self._data_full_df.iloc[valid_subset]
+
+        # Extract the valid iterations
+        itr = data_valid_df["itr"].to_numpy()
+
+        # Extract the valid identifiers
+        tid = data_valid_df["tid"].to_numpy()
+
+        # Extract the valid time points
+        tim = data_valid_df["tim"].to_numpy()
+
+        # Extract the fluorophore IDs
+        fluo = data_valid_df["fluo"].to_numpy()
+        if np.all(fluo) == 0:
+            fluo = np.ones(fluo.shape, dtype=fluo.dtype)
+
+        # The following extraction pattern will change whether the
+        # acquisition is normal or aggregated
+        if self.is_aggregated:
+            # Extract the locations
+            loc = itr["loc"].squeeze() * self._unit_scaling_factor
+            loc[:, 2] = loc[:, 2] * self._z_scaling_factor
+
+            # Extract EFO
+            efo = itr["efo"]
+
+            # Extract CFR
+            cfr = itr["cfr"]
+
+            # Extract ECO
+            eco = itr["eco"]
+
+            # Extract DCR
+            dcr = itr["dcr"]
+
+            # Dwell
+            dwell = np.around((eco / (efo / 1000)) / self._dwell_time, decimals=0)
+
+        else:
+            # In contrast to version 1 of the reader and of the Imspector file formats, we now extract
+            # by value and not by index!
+
+            # Remove potential non-final relocalizations
+            # valid_reloc_df = valid_reloc_df[valid_reloc_df["fnl"] == True]
+
+            # Trace IDs
+            tid = tid[itr == self._cfr_index]
+
+            # Extract the valid time points
+            tim = tim[itr == self._cfr_index]
+
+            # Extract the locations
+            loc = (
+                data_valid_df[["x", "y", "z"]][itr == self._loc_index]
+                * self._unit_scaling_factor
+            )
+            loc["z"] *= self._z_scaling_factor
+            x = loc["x"].to_numpy()
+            y = loc["y"].to_numpy()
+            z = loc["z"].to_numpy()
+
+            # Extract EFO
+            efo = data_valid_df["efo"][itr == self._efo_index].to_numpy()
+
+            # Extract CFR (conditional to the presence of the last loc)
+            cfr = data_valid_df["cfr"][itr == self._cfr_index].to_numpy()
+
+            # Extract ECO
+            eco = data_valid_df["eco"][itr == self._eco_index].to_numpy()
+
+            # Fluorophore
+            fluo = data_valid_df["fluo"][itr == self._cfr_index].to_numpy()
+
+            # Pool DCR values?
+            num_relocs = int(np.sum(self._relocalizations))
+            if self._pool_dcr and num_relocs > 1:
+
+                # Calculate ECO contributions
+                eco_all = data_valid_df["eco"].to_numpy().reshape(-1, num_relocs)
+                eco_sum = eco_all.sum(axis=1)
+                eco_all_norm = eco_all / eco_sum.reshape(-1, 1)
+
+                # Extract DCR values and weigh them by the relative ECO contributions
+                dcr = data_valid_df["dcr"].to_numpy().reshape(-1, num_relocs)
+                dcr = dcr * eco_all_norm
+                dcr = dcr.sum(axis=1)
+
+            else:
+
+                # Extract DCR
+                dcr = data_valid_df["dcr"][itr == self._dcr_index].to_numpy()
+
+            # Calculate dwell
+            dwell = np.around((eco / (efo / 1000)) / self._dwell_time, decimals=0)
+
+        # Create a Pandas dataframe for the results
+        df = pd.DataFrame(
+            index=pd.RangeIndex(start=0, stop=len(tid)),
+            columns=MinFluxReader.processed_properties(),
+        )
+
+        # Store the extracted valid hits into the dataframe
+        df["tid"] = tid
+        df["x"] = x
+        df["y"] = y
+        df["z"] = z
+        df["tim"] = tim
+        df["efo"] = efo
+        df["cfr"] = cfr
+        df["eco"] = eco
+        df["dcr"] = dcr
+        df["dwell"] = dwell
+        df["fluo"] = fluo
+
+        # Check if the selected indices correspond to the last valid iteration
+        self._is_last_valid = bool(
+            self._cfr_index == self._last_valid_cfr
+            and self._efo_index == self._last_valid
+        )
+
+        return df

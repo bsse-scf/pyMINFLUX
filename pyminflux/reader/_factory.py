@@ -14,7 +14,9 @@
 from pathlib import Path
 from typing import Union
 
-from pyminflux.reader import MinFluxReader, MinFluxReaderV2
+# Avoid circular imports
+from pyminflux.reader._reader import MinFluxReader
+from pyminflux.reader._reader_v2 import MinFluxReaderV2
 from pyminflux.reader.util import (
     get_reader_version_for_mat_file,
     get_reader_version_for_npy_file,

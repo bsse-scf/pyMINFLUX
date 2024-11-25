@@ -23,6 +23,7 @@ __all__ = [
     "MSRReader",
 ]
 
+from ._factory import MinFluxReaderFactory
 from ._msr_reader import MSRReader
 from ._native_reader import (
     NativeArrayReader,
@@ -30,5 +31,4 @@ from ._native_reader import (
     NativeMetadataReader,
 )
 from ._reader import MinFluxReader
-from ._reader_factory import MinFluxReaderFactory
 from ._reader_v2 import MinFluxReaderV2

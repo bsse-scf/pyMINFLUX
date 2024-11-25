@@ -337,49 +337,29 @@ def find_last_valid_iteration_v2(
         }
         return last_valid
 
+    # Extract trace starting indices
+    (trace_start,) = np.where(data_full_df["bot"].to_numpy())
+
+    # Set cfr index
+    offsets = np.arange(num_iterations)[:, np.newaxis]
+    indices = trace_start + offsets
+    cfr = data_full_df["cfr"].to_numpy()[indices]
+    last_valid["valid_cfr"] = (np.std(cfr, axis=1) > 0.0).tolist()
+    if len(last_valid["valid_cfr"]) == 0:
+        last_valid["cfr_index"] = num_iterations - 1
+    else:
+        last_valid["cfr_index"] = last_valid["valid_cfr"][-1]
+
     # Set efo index
     last_valid["efo_index"] = num_iterations - 1
 
-    # Set cfr index
-    # @TODO Fix me!
-    last_valid["cfr_index"] = num_iterations - 1
-    last_valid["valid_cfr"] = np.arange(num_iterations).tolist()
-
-    # Set relocalized iterations: every new TID starts with "itr" = 0 and grows until
-    # num_iterations - 1, after that it falls to the first relocalized localization
-    # and repeats this many times until the new TIF starts.
-
-    # Find the locations when itr is 0
-    started = False
-    candidates = [num_iterations - 1]  # This will not be added by the algorithm below
-    last_value = -1
-    for i in range(len(data_full_df["itr"])):
-        if data_full_df["itr"][i] != 0 and not started:
-            # Make sure to start from the beginning of a trace
-            continue
-        if data_full_df["itr"][i] == 0:
-            # Beginning of a trace found
-            last_value = 0
-            started = True
-            continue
-        if i == 0:
-            # Redundant check
-            last_value = 0
-            continue
-        if data_full_df["itr"][i] - last_value == 1:
-            # If we are moving up in the iterations, just
-            # update last_value and move on
-            last_value = data_full_df["itr"][i]
-            continue
-
-        # We found a relocation
-        candidates.append(data_full_df["itr"][i])
-
-        # Update last value
-        last_value = data_full_df["itr"][i]
-
-    # Extract relocation indices
-    last_valid["reloc"] = np.unique(candidates).tolist()
+    # Find indices (values) of relocalized iterations
+    candidates = data_full_df["itr"].to_numpy()[trace_start[0] : trace_start[1]]
+    candidates = candidates[num_iterations:]
+    reloc = np.unique(candidates)
+    last_valid["reloc"] = np.array([False] * num_iterations)
+    last_valid["reloc"][reloc] = True
+    last_valid["reloc"] = last_valid["reloc"].tolist()
 
     # Set dcr index
     last_valid["dcr_index"] = num_iterations - 1
