@@ -26,7 +26,7 @@ from pyminflux.reader.util import find_last_valid_iteration_v2
 
 
 class MinFluxReaderV2(MinFluxReader):
-    __docs__ = "Reader of MINFLUX data in `.npy`, `.mat` and `.json` Imspector 2410 files, and `.pmx` version 0.6.0 and newer."
+    __docs__ = "Reader of MINFLUX data in `.npy`, `.mat` and `.json` Imspector m2410 files, and `.pmx` version 0.6.0 and newer."
 
     def __init__(
         self,
@@ -359,6 +359,7 @@ class MinFluxReaderV2(MinFluxReader):
         # Inform
         # @TODO Remove after testing
         print(
+            f"[DEBUG] "
             f"efo: {self._efo_index},"
             f"cfr: {self._cfr_index}, "
             f"dcr: {self._dcr_index}, "

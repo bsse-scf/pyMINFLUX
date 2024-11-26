@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import MinFluxReaderFactory, MinFluxReaderV2
 
 
@@ -33,15 +34,41 @@ def extract_multi_format_geometry_data_files(tmpdir):
     data_dir = Path(__file__).parent / "data"
     target_dir = data_dir / "reader_v2"
     target_dir.mkdir(parents=True, exist_ok=True)
-    jsn_file_name = target_dir / "241107-115322_minflux.json"
-    npy_file_name = target_dir / "241107-115322_minflux.npy"
-    mat_file_name = target_dir / "241107-115322_minflux.mat"
+    files = [
+        target_dir / "241107-115322_minflux.json",
+        target_dir / "241107-115322_minflux.npy",
+        target_dir / "241107-115322_minflux.mat",
+    ]
     zip_file_name = data_dir / "reader_v2.zip"
-    if (
-        not npy_file_name.is_file()
-        or not mat_file_name.is_file()
-        or not jsn_file_name.is_file()
-    ):
+
+    all_found = True
+    for f in files:
+        if not f.is_file():
+            all_found = False
+            break
+
+    if not all_found:
+        with zipfile.ZipFile(zip_file_name, "r") as zip_ref:
+            zip_ref.extractall(data_dir)
+
+    # Comparison v1 vs v2
+    target_dir = data_dir / "reader_comparison"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    files = [
+        target_dir / "2d" / "v1.npy",
+        target_dir / "2d" / "v2.npy",
+        target_dir / "3d" / "v1.npy",
+        target_dir / "3d" / "v2.npy",
+    ]
+    zip_file_name = data_dir / "reader_comparison.zip"
+
+    all_found = True
+    for f in files:
+        if not f.is_file():
+            all_found = False
+            break
+
+    if not all_found:
         with zipfile.ZipFile(zip_file_name, "r") as zip_ref:
             zip_ref.extractall(data_dir)
 
@@ -172,3 +199,95 @@ def test_reader_factory(extract_multi_format_geometry_data_files):
     assert (
         reader.__name__ == "MinFluxReaderV2"
     ), "A reader version 2 must be returned for this file."
+
+
+def test_compare_readers(extract_multi_format_geometry_data_files):
+    # Working directory
+    data_dir = Path(__file__).parent / "data"
+    target_dir = data_dir / "reader_comparison"
+
+    #
+    # 2D
+    #
+
+    # Get the reader for the NumPy array
+    npy_file_name = target_dir / "2d" / "v1.npy"
+    reader_class, status = MinFluxReaderFactory.get_reader(npy_file_name)
+    reader = reader_class(npy_file_name, z_scaling_factor=0.7)
+
+    assert reader_class is not None, "A reader must be returned for this file."
+    assert status == "", "No error message expected."
+    assert (
+        reader_class.__name__ == "MinFluxReader"
+    ), "A reader version 1 must be returned for this file."
+
+    # Get the reader for the NumPy array
+    npy_file_name_v2 = target_dir / "2d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7)
+
+    assert reader_v2_class is not None, "A reader must be returned for this file."
+    assert status_v2 == "", "No error message expected."
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Compare the processed dataframes
+    processor = MinFluxProcessor(reader, min_trace_length=4)
+    processor_v2 = MinFluxProcessor(reader_v2, min_trace_length=4)
+
+    assert (
+        processor.filtered_dataframe.columns.tolist()
+        == processor_v2.filtered_dataframe.columns.tolist()
+    ), "Columns mismatch."
+    assert len(processor.filtered_dataframe.index) == len(
+        processor_v2.filtered_dataframe.index
+    ), "Different number of entries."
+    for c in processor.filtered_dataframe:
+        # Correct for the different precision of columns in v1 vs. v2
+        c_v2 = processor_v2.filtered_dataframe[c].to_numpy()
+        c = processor.filtered_dataframe[c].to_numpy().astype(c_v2.dtype)
+        assert np.all(c == c_v2), f"Column '{c}' mismatch."
+
+    #
+    # 3D
+    #
+
+    # Get the reader for the NumPy array
+    npy_file_name = target_dir / "3d" / "v1.npy"
+    reader_class, status = MinFluxReaderFactory.get_reader(npy_file_name)
+    reader = reader_class(npy_file_name, z_scaling_factor=0.7)
+
+    assert reader_class is not None, "A reader must be returned for this file."
+    assert status == "", "No error message expected."
+    assert (
+        reader_class.__name__ == "MinFluxReader"
+    ), "A reader version 1 must be returned for this file."
+
+    # Get the reader for the NumPy array
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7)
+
+    assert reader_v2 is not None, "A reader must be returned for this file."
+    assert status_v2 == "", "No error message expected."
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Compare the processed dataframes
+    processor = MinFluxProcessor(reader, min_trace_length=4)
+    processor_v2 = MinFluxProcessor(reader_v2, min_trace_length=4)
+
+    assert (
+        processor.filtered_dataframe.columns.tolist()
+        == processor_v2.filtered_dataframe.columns.tolist()
+    ), "Columns mismatch."
+    assert len(processor.filtered_dataframe.index) == len(
+        processor_v2.filtered_dataframe.index
+    ), "Different number of entries."
+    for c in processor.filtered_dataframe:
+        # Correct for the different precision of columns in v1 vs. v2
+        c_v2 = processor_v2.filtered_dataframe[c].to_numpy()
+        c = processor.filtered_dataframe[c].to_numpy().astype(c_v2.dtype)
+        assert np.all(c == c_v2), f"Column '{c}' mismatch."
