@@ -18,7 +18,7 @@ REM "Developer Command Prompt for VS2022" and remove the `--mingw64` from the
 REM `python -m nuitka` call.
 setlocal
 
-SET VERSION=0.5.0
+SET VERSION=0.6.0
 SET PYTHON_VERSION=3.12
 
 IF "%ANACONDA_HOME%"=="" ECHO Please set environment variable ANACONDA_HOME. && exit /b

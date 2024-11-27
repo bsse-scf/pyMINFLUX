@@ -68,6 +68,10 @@ from pyminflux.utils import check_for_updates
 from pyminflux.writer import MinFluxWriter, PyMinFluxNativeWriter
 
 
+# TEMP
+__version__ = f"{__version__} (alpha 1)"
+
+
 class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     """
     Main application window.
