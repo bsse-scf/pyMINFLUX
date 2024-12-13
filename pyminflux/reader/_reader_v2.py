@@ -81,6 +81,13 @@ class MinFluxReaderV2(MinFluxReader):
     def version(self) -> int:
         return 2
 
+    @property
+    def raw_data_dataframe(self) -> Union[None, pd.DataFrame]:
+        """Return the raw data as dataframe (some properties only)."""
+        if self._data_full_df is not None:
+            return self._data_full_df
+        return None
+
     def _load(self) -> bool:
         """Load the file."""
 
@@ -138,42 +145,45 @@ class MinFluxReaderV2(MinFluxReader):
             print(f"{e}")
             return False
 
-        # Initialize the fluo field
-        data_full_df["fluo"] = 1
+        # Finalize the initialization for all imported file formats
+        if file_ext in [".npy", ".mat", ".json"]:
 
-        # **Important**: apply data types **after** creating the dataframe to make sure that
-        # data coming from binary types (.npy and .mat) and data coming from text types (.json)
-        # generate identical dataframes.
-        data_full_df_dtype = {
-            "vld": "?",
-            "fnl": "?",
-            "bot": "?",
-            "eot": "?",
-            "sta": "u1",
-            "tim": "<f8",
-            "tid": "<u4",
-            "gri": "<u4",
-            "thi": "u1",
-            "sqi": "u1",
-            "itr": "<i4",
-            "x": "<f8",
-            "y": "<f8",
-            "z": "<f8",
-            "lncx": "<f8",
-            "lncy": "<f8",
-            "lncz": "<f8",
-            "eco": "<u4",
-            "ecc": "<u4",
-            "efo": "<f4",
-            "efc": "<f4",
-            "fbg": "<f4",
-            "cfr": "<f2",
-            "dcr": "<f2",
-            "fluo": "u1",
-        }
+            # Initialize the fluo field
+            data_full_df["fluo"] = 1
 
-        # Apply the correct datatypes to the columns
-        data_full_df = data_full_df.astype(data_full_df_dtype)
+            # **Important**: apply data types **after** creating the dataframe to make sure that
+            # data coming from binary types (.npy and .mat) and data coming from text types (.json)
+            # generate identical dataframes.
+            data_full_df_dtype = {
+                "vld": "?",
+                "fnl": "?",
+                "bot": "?",
+                "eot": "?",
+                "sta": "u1",
+                "tim": "<f8",
+                "tid": "<u4",
+                "gri": "<u4",
+                "thi": "u1",
+                "sqi": "u1",
+                "itr": "<i4",
+                "x": "<f8",
+                "y": "<f8",
+                "z": "<f8",
+                "lncx": "<f8",
+                "lncy": "<f8",
+                "lncz": "<f8",
+                "eco": "<u4",
+                "ecc": "<u4",
+                "efo": "<f4",
+                "efc": "<f4",
+                "fbg": "<f4",
+                "cfr": "<f2",
+                "dcr": "<f2",
+                "fluo": "u1",
+            }
+
+            # Apply the correct datatypes to the columns
+            data_full_df = data_full_df.astype(data_full_df_dtype)
 
         # Assign the new dataframe
         self._data_full_df = data_full_df
@@ -371,54 +381,6 @@ class MinFluxReaderV2(MinFluxReader):
             f"last_valid_cfr: {self._last_valid_cfr}"
         )
 
-    def _extend_array_with_prepend(self, arr: np.array, n: int):
-        """
-        Extends the input sorted NumPy array by prepending `n` consecutive values before each element.
-        Elements where the gap from the previous kept element is <= `n` are discarded.
-
-        Parameters
-        ----------
-
-        arr: np.ndarray
-            Sorted 1D NumPy array of integers.
-
-        n: int
-            Number of consecutive values to prepend before each element.
-
-        Returns
-        -------
-
-        ext_arr: np.ndarray
-            Extended array with new values prepended.
-        """
-
-        # Compute differences between consecutive elements
-        diffs = np.diff(arr)
-
-        # The first element is always kept
-        keep_mask = np.concatenate(([True], diffs > n))
-
-        # Select elements to keep
-        kept_elements = arr[keep_mask]
-
-        # Generate new values for each kept element
-        # For each element x in kept_elements, generate x-n, x-(n-1), ..., x-1
-        prepend_offsets = np.arange(n, 0, -1)
-        new_values = (
-            kept_elements[:, np.newaxis] - prepend_offsets
-        )  # Shape: (num_kept, n)
-
-        # Flatten the new_values array
-        new_values = new_values.flatten()
-
-        # Combine new values with the kept elements
-        combined = np.concatenate((new_values, kept_elements))
-
-        # Remove any potential duplicates and ensure the array is sorted
-        extended_array = np.unique(combined)
-
-        return extended_array
-
     def _get_valid_subset(self):
         """Returns the valid subset of the full dataframe from which to
         extract the requested iteration data."""
@@ -431,18 +393,18 @@ class MinFluxReaderV2(MinFluxReader):
         # Valid
         data_valid_df = self._data_full_df[val_indices]
 
-        # Extract the indices of the last relocalization
-        (indices,) = np.where(
-            data_valid_df["itr"] == np.where(self.relocalizations)[0][-1]
+        # Extract the (unique) indices of the cfr, the selected localization
+        # and all relocalizations
+        to_retrieve = np.unique(
+            np.concatenate(
+                (
+                    np.array([self._cfr_index, self._loc_index], dtype=int),
+                    np.where(self._relocalizations)[0],
+                )
+            )
         )
-
-        # How many entries do we need to prepend?
-        n_relocs = int(np.sum(self.relocalizations) - 1)
-
-        # Extend the array with all locations to keep
-        indices_ext = self._extend_array_with_prepend(indices, n_relocs)
-
-        return indices_ext
+        indices = data_valid_df.index[data_valid_df["itr"].isin(to_retrieve)].to_numpy()
+        return indices
 
     def _process(self) -> Union[None, pd.DataFrame]:
         """Returns processed dataframe for valid (or invalid) entries.
@@ -525,6 +487,13 @@ class MinFluxReaderV2(MinFluxReader):
 
             # Extract CFR (conditional to the presence of the last loc)
             cfr = data_valid_df["cfr"][itr == self._cfr_index].to_numpy()
+            if len(cfr) < len(tid):
+                # This is the (tracking) case where the cfr value is
+                # stored from a non-relocalized iteration. Moreover,
+                # this cfr is only measured for the first, complete,
+                # sequence of the trace.
+                _, counts = np.unique(tid, return_counts=True)
+                cfr = np.repeat(cfr, counts)
 
             # Extract ECO
             eco = data_valid_df["eco"][itr == self._eco_index].to_numpy()
