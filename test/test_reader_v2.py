@@ -38,6 +38,7 @@ def extract_multi_format_geometry_data_files(tmpdir):
         target_dir / "241107-115322_minflux.json",
         target_dir / "241107-115322_minflux.npy",
         target_dir / "241107-115322_minflux.mat",
+        target_dir / "tracking.npy",
     ]
     zip_file_name = data_dir / "reader_v2.zip"
 
@@ -291,3 +292,367 @@ def test_compare_readers(extract_multi_format_geometry_data_files):
         c_v2 = processor_v2.filtered_dataframe[c].to_numpy()
         c = processor.filtered_dataframe[c].to_numpy().astype(c_v2.dtype)
         assert np.all(c == c_v2), f"Column '{c}' mismatch."
+
+
+def test_tracking_v2(extract_multi_format_geometry_data_files):
+    # Working directory
+    data_dir = Path(__file__).parent / "data"
+    target_dir = data_dir / "reader_v2"
+
+    # Get the reader for the NumPy array
+    npy_file_name_v2 = target_dir / "tracking.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7)
+
+    assert reader_v2_class is not None, "A reader must be returned for this file."
+    assert status_v2 == "", "No error message expected."
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Explicitly set the tracking flag
+    reader_v2.set_tracking(True)
+    assert (
+        len(reader_v2.processed_dataframe.index) == 2669
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 51
+    ), "Unexpected number of unique cfr values."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 154
+    ), "Unexpected number of unique tid values."
+
+    # Now treat it as a localisation dataset
+    del reader_v2
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7)
+    reader_v2.set_tracking(False)
+    assert (
+        len(reader_v2.processed_dataframe.index) == 154
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 51
+    ), "Unexpected number of unique cfr values."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 154
+    ), "Unexpected number of unique tid values."
+
+
+def test_dcr_pool_v2(extract_multi_format_geometry_data_files):
+    # Working directory
+    data_dir = Path(__file__).parent / "data"
+    target_dir = data_dir / "reader_comparison"
+
+    #
+    # 2D
+    #
+
+    # Get the reader for the NumPy array (with dcr pooling on)
+    npy_file_name_v2 = target_dir / "2d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=True)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 188676
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 4054
+    ), "Unexpected number of unique cfr values."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 15755
+    ), "Unexpected number of unique tid values."
+
+    #
+    # 3D
+    #
+
+    # Get the reader for the NumPy array (with dcr pooling on)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=True)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 12709
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 2047
+    ), "Unexpected number of unique cfr values."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+
+def test_non_last_valid(extract_multi_format_geometry_data_files):
+
+    # Working directory
+    data_dir = Path(__file__).parent / "data"
+    target_dir = data_dir / "reader_comparison"
+
+    #
+    # 3D
+    #
+
+    # Loc index = 8
+
+    # Get the reader for the NumPy array (with dcr pooling off)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=False)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 8 and the cfr index to 6
+    reader_v2.set_indices(index=8, cfr_index=6, process=True)
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 13266
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 2077
+    ), "Unexpected number of unique cfr values."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+    # Get the reader for the NumPy array (with dcr pooling on)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=True)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 8 and the cfr index to 6
+    reader_v2.set_indices(index=8, cfr_index=6, process=True)
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 13266
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 2077
+    ), "Unexpected number of unique cfr values."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+    # Loc index = 7
+
+    # Get the reader for the NumPy array (with dcr pooling off)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=False)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 7 and the cfr index to 6
+    reader_v2.set_indices(index=7, cfr_index=6, process=True)
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 13720
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 2091
+    ), "Unexpected number of unique cfr values."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+    # Get the reader for the NumPy array (with dcr pooling on)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=True)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 7 and the cfr index to 6
+    reader_v2.set_indices(index=7, cfr_index=6, process=True)
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 13720
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 2091
+    ), "Unexpected number of unique cfr values."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+    # Loc index = 6
+
+    # Get the reader for the NumPy array (with dcr pooling off)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=False)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 6 and the cfr index to 6
+    reader_v2.set_indices(index=6, cfr_index=6, process=True)
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 14035
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 2105
+    ), "Unexpected number of unique cfr values."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+    # Get the reader for the NumPy array (with dcr pooling on)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=True)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 6 and the cfr index to 6
+    reader_v2.set_indices(index=6, cfr_index=6, process=True)
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 14035
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 2105
+    ), "Unexpected number of unique cfr values."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+    # Loc index = 8, cfr_index = 8
+
+    # Get the reader for the NumPy array (with dcr pooling off)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=False)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 8 and the cfr index to 8
+    reader_v2.set_indices(index=8, cfr_index=8, process=True)
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 13266
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 1
+    ), "Unexpected number of unique cfr values."
+    assert (
+        reader_v2.processed_dataframe["cfr"].unique() == -3.05e-05
+    ), "Unexpected cfr value."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+    # Get the reader for the NumPy array (with dcr pooling on)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=True)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 8 and the cfr index to 8
+    reader_v2.set_indices(index=8, cfr_index=8, process=True)
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 13266
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 1
+    ), "Unexpected number of unique cfr values."
+    assert (
+        reader_v2.processed_dataframe["cfr"].unique() == -3.05e-05
+    ), "Unexpected cfr value."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+    # Loc index = 7, cfr_index = 7
+
+    # Get the reader for the NumPy array (with dcr pooling off)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=False)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 7 and the cfr index to 7
+    reader_v2.set_indices(index=7, cfr_index=7, process=True)
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 13720
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 1
+    ), "Unexpected number of unique cfr values."
+    assert (
+        reader_v2.processed_dataframe["cfr"].unique() == -3.05e-05
+    ), "Unexpected cfr value."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+    # Get the reader for the NumPy array (with dcr pooling on)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=True)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 7 and the cfr index to 7
+    reader_v2.set_indices(index=7, cfr_index=7, process=True)
+
+    assert (
+        len(reader_v2.processed_dataframe.index) == 13720
+    ), "Unexpected total number of entries."
+    assert (
+        len(reader_v2.processed_dataframe["cfr"].unique()) == 1
+    ), "Unexpected number of unique cfr values."
+    assert (
+        reader_v2.processed_dataframe["cfr"].unique() == -3.05e-05
+    ), "Unexpected cfr value."
+    assert (
+        len(reader_v2.processed_dataframe["tid"].unique()) == 1116
+    ), "Unexpected number of unique tid values."
+
+    # Loc index = 6, cfr_index = 9
+    # This is NOT allowed
+
+    # Get the reader for the NumPy array (with dcr pooling off)
+    npy_file_name_v2 = target_dir / "3d" / "v2.npy"
+    reader_v2_class, status_v2 = MinFluxReaderFactory.get_reader(npy_file_name_v2)
+    reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7, pool_dcr=False)
+
+    assert (
+        reader_v2_class.__name__ == "MinFluxReaderV2"
+    ), "A reader version 2 must be returned for this file."
+
+    # Set the requested localization to 6 and the cfr index to 9
+    with pytest.raises(ValueError):
+        reader_v2.set_indices(index=6, cfr_index=9, process=True)

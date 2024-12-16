@@ -302,6 +302,12 @@ class MinFluxReader:
             processing will take place.
         """
 
+        # The cfr index is not allowed to be smaller than the global iteration index
+        if index < cfr_index:
+            raise ValueError(
+                "The value of index must be greater than or equal to cfr_index."
+            )
+
         # Make sure there is loaded data
         if self.tot_num_entries == 0:
             raise ValueError("No data loaded.")

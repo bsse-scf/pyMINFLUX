@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
+from pyminflux.reader._native_reader import NativeFullDataFrameReader
 from pyminflux.reader._reader import MinFluxReader
 from pyminflux.reader.util import find_last_valid_iteration_v2
 
@@ -334,7 +335,10 @@ class MinFluxReaderV2(MinFluxReader):
 
     def _load_pmx(self, df: pd.DataFrame):
         """Load the PMX file and update the dataframe."""
-        raise Exception("No support for PMX version 2 yet!")
+        # Read filtered dataframe
+        df = NativeFullDataFrameReader().read(self._filename)
+
+        return df
 
     def _set_all_indices(self):
         """Set indices of properties to be read."""
@@ -381,6 +385,54 @@ class MinFluxReaderV2(MinFluxReader):
             f"last_valid_cfr: {self._last_valid_cfr}"
         )
 
+    def _extend_array_with_prepend(self, arr: np.array, n: int):
+        """
+        Extends the input sorted NumPy array by prepending `n` consecutive values before each element.
+        Elements where the gap from the previous kept element is <= `n` are discarded.
+
+        Parameters
+        ----------
+
+        arr: np.ndarray
+            Sorted 1D NumPy array of integers.
+
+        n: int
+            Number of consecutive values to prepend before each element.
+
+        Returns
+        -------
+
+        ext_arr: np.ndarray
+            Extended array with new values prepended.
+        """
+
+        # Compute differences between consecutive elements
+        diffs = np.diff(arr)
+
+        # The first element is always kept
+        keep_mask = np.concatenate(([True], diffs > n))
+
+        # Select elements to keep
+        kept_elements = arr[keep_mask]
+
+        # Generate new values for each kept element
+        # For each element x in kept_elements, generate x-n, x-(n-1), ..., x-1
+        prepend_offsets = np.arange(n, 0, -1)
+        new_values = (
+            kept_elements[:, np.newaxis] - prepend_offsets
+        )  # Shape: (num_kept, n)
+
+        # Flatten the new_values array
+        new_values = new_values.flatten()
+
+        # Combine new values with the kept elements
+        combined = np.concatenate((new_values, kept_elements))
+
+        # Remove any potential duplicates and ensure the array is sorted
+        extended_array = np.unique(combined)
+
+        return extended_array
+
     def _get_valid_subset(self):
         """Returns the valid subset of the full dataframe from which to
         extract the requested iteration data."""
@@ -393,17 +445,36 @@ class MinFluxReaderV2(MinFluxReader):
         # Valid
         data_valid_df = self._data_full_df[val_indices]
 
-        # Extract the (unique) indices of the cfr, the selected localization
-        # and all relocalizations
-        to_retrieve = np.unique(
-            np.concatenate(
-                (
-                    np.array([self._cfr_index, self._loc_index], dtype=int),
-                    np.where(self._relocalizations)[0],
+        # Here we have to use different logic for tracking vs. localization acquisitions
+        if self.is_tracking:
+            # Tracking will have only one cfr in the first localization, and then it is not
+            # measured anymore. In this case, we want to keep all localizations.
+            indices = data_valid_df.index[
+                (data_valid_df["itr"] == self._cfr_index)
+                | (data_valid_df["itr"] == self._loc_index)
+            ].to_numpy()
+        else:
+            # For localizations, we preserve only all those iterations that have a full set
+            # from the cfr iteration to the localized iteration: but for those we make sure
+            # to have all relocalizations to support dcr pooling
+            indices = data_valid_df.index[
+                data_valid_df["itr"] == self._loc_index
+            ].to_numpy()
+            if self._pool_dcr:
+                start_index = (
+                    self._loc_index
+                    - np.sum(self.relocalizations[: self._loc_index + 1])
+                    + 1
                 )
-            )
-        )
-        indices = data_valid_df.index[data_valid_df["itr"].isin(to_retrieve)].to_numpy()
+            else:
+                start_index = self._cfr_index
+            num_rows = self._loc_index - start_index
+            if num_rows > 0:
+                indices = self._extend_array_with_prepend(indices, num_rows)
+
+            # @TODO DEBUG: remove when properly tested
+            # assert np.all(np.unique(data_valid_df.iloc[indices]["itr"]) == np.arange(self._cfr_index, self._loc_index + 1))
+
         return indices
 
     def _process(self) -> Union[None, pd.DataFrame]:
@@ -488,6 +559,10 @@ class MinFluxReaderV2(MinFluxReader):
             # Extract CFR (conditional to the presence of the last loc)
             cfr = data_valid_df["cfr"][itr == self._cfr_index].to_numpy()
             if len(cfr) < len(tid):
+                # @TODO DEBUG: remove when properly tested
+                assert (
+                    self.is_tracking
+                ), "This should only happen for tracking datasets!"
                 # This is the (tracking) case where the cfr value is
                 # stored from a non-relocalized iteration. Moreover,
                 # this cfr is only measured for the first, complete,
@@ -502,7 +577,7 @@ class MinFluxReaderV2(MinFluxReader):
             fluo = data_valid_df["fluo"][itr == self._loc_index].to_numpy()
 
             # Pool DCR values?
-            num_relocs = int(np.sum(self._relocalizations))
+            num_relocs = int(np.sum(self._relocalizations[: self._loc_index + 1]))
             if self._pool_dcr and num_relocs > 1:
 
                 # Calculate ECO contributions
