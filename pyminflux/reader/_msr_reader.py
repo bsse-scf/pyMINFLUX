@@ -1595,6 +1595,9 @@ class MSRReader:
                     img_name=stack.stack_name,
                 )
 
+                if detector is None:
+                    continue
+
                 # Get acquisition number
                 match = re.match(
                     r"^.+{(?P<index>\d+)}(?P<extra>.*)$",
@@ -1627,9 +1630,6 @@ class MSRReader:
                 metadata = f"Frame: {frame_size[0]:.1f}x{frame_size[1]:.1f}µm - Pixel: {pixel_sizes[0]}nm"
                 if image["metadata"] == "":
                     image["metadata"] = metadata
-                else:
-                    if image["metadata"] != metadata:
-                        raise ValueError(f"Unexpected metadata for '{key}'")
 
                 # Append current detectir
                 image["detectors"].append(
