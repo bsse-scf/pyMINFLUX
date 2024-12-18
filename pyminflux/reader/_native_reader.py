@@ -188,7 +188,7 @@ class NativeFullDataFrameReader:
                 return None
 
             # Read dataset
-            dataset = f["/paraview/full_dataframe"]
+            dataset = f["/raw/full_dataframe"]
 
             # Read the NumPy data
             data_array = dataset[:]
@@ -200,7 +200,7 @@ class NativeFullDataFrameReader:
             column_types = dataset.attrs["column_types"]
 
             # Read the index
-            index_data = f["/paraview/full_dataframe_index"][:]
+            index_data = f["/raw/full_dataframe_index"][:]
 
             # Create DataFrame with specified columns
             df = pd.DataFrame(data_array, index=index_data, columns=column_names)
