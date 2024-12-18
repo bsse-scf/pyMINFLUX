@@ -43,7 +43,7 @@ import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
 from pyminflux.plugin import PluginManager
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.reader import MinFluxReader, NativeMetadataReader
+from pyminflux.reader import MinFluxReader, MinFluxReaderFactory, NativeMetadataReader
 from pyminflux.settings import Settings, UpdateSettings
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
@@ -66,6 +66,10 @@ from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.wizard import WizardDialog
 from pyminflux.utils import check_for_updates
 from pyminflux.writer import MinFluxWriter, PyMinFluxNativeWriter
+
+
+# TEMP
+__version__ = f"{__version__} (alpha 1)"
 
 
 class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
@@ -686,9 +690,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 # Inform
                 print(f"Loaded settings from {Path(filename).name}.")
 
-            # Now pass the filename to the MinFluxReader
+            # Now pass the filename to the (correct) MinFluxReader
             try:
-                reader = MinFluxReader(
+                reader_class, status_str = MinFluxReaderFactory.get_reader(filename)
+                reader = reader_class(
                     filename, z_scaling_factor=self.state.z_scaling_factor
                 )
             except IOError as e:

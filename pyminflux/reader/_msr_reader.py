@@ -1542,6 +1542,9 @@ class MSRReader:
                     img_name=stack.stack_name,
                 )
 
+                if detector is None:
+                    continue
+
                 # Build a (univocal) summary string
                 as_string = (
                     f"{detector}: {stack.stack_name}: "
@@ -1595,6 +1598,9 @@ class MSRReader:
                     img_name=stack.stack_name,
                 )
 
+                if detector is None:
+                    continue
+
                 # Get acquisition number
                 match = re.match(
                     r"^.+{(?P<index>\d+)}(?P<extra>.*)$",
@@ -1629,7 +1635,9 @@ class MSRReader:
                     image["metadata"] = metadata
                 else:
                     if image["metadata"] != metadata:
-                        raise ValueError(f"Unexpected metadata for '{key}'")
+                        raise ValueError(
+                            f"The same detector seems to have inconsistent metadata across acquisitions!"
+                        )
 
                 # Append current detectir
                 image["detectors"].append(

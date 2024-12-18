@@ -99,9 +99,6 @@ class Importer(QDialog, Ui_Importer):
         # Highlight cfr index
         self.highlight_cfr(self._cfr_iteration)
 
-        # Highlight relocalization index
-        self.highlight_relocalization(self._cfr_iteration)
-
         # Adjust the size of the dialog
         self.adjustSize()
 
@@ -158,9 +155,6 @@ class Importer(QDialog, Ui_Importer):
         # Highlight cfr index
         self.highlight_cfr(self._cfr_iteration)
 
-        # Highlight relocalized field
-        self.highlight_relocalization(self._cfr_iteration)
-
     @Slot(int)
     def set_all_iterations(self, checked):
 
@@ -179,9 +173,6 @@ class Importer(QDialog, Ui_Importer):
 
         # Highlight cfr index
         self.highlight_cfr(index)
-
-        # Highlight relocalization row
-        self.highlight_relocalization(index)
 
     def get_selection(self) -> dict:
         """Return the selected options."""
@@ -229,11 +220,5 @@ class Importer(QDialog, Ui_Importer):
     def highlight_cfr(self, cfr_index):
         """Highlight the label for the cfr index."""
         self.widgets_list[cfr_index][1].setStyleSheet(
-            "color: black; background-color: lightblue;"
-        )
-
-    def highlight_relocalization(self, cfr_index):
-        """Highlight the relocalized label matching the cfr index."""
-        self.widgets_list[cfr_index][2].setStyleSheet(
             "color: black; background-color: lightblue;"
         )

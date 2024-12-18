@@ -19,17 +19,15 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from scipy.io import loadmat
 
-from pyminflux.reader import NativeArrayReader
-from pyminflux.reader.util import (
-    convert_from_mat,
-    find_last_valid_iteration,
-    migrate_npy_array,
-)
+# Avoid circular import
+from pyminflux.reader._native_reader import NativeArrayReader
+from pyminflux.reader.util import find_last_valid_iteration
 
 
 class MinFluxReader:
-    __docs__ = "Reader of MINFLUX data in `.pmx`, `.npy` or `.mat` formats."
+    __docs__ = "Reader of MINFLUX data in `.pmx`, `.npy` or `.mat` formats and Imspector m2205 files, and `.pmx` version 0.1.0 - 0.5.0."
 
     __slots__ = [
         "_pool_dcr",
@@ -160,6 +158,10 @@ class MinFluxReader:
             raise IOError(f"The file {self._filename} is not a valid MINFLUX file.")
 
     @property
+    def version(self) -> int:
+        return 1
+
+    @property
     def is_last_valid(self) -> Union[bool, None]:
         """Return True if the selected iteration is the "last valid", False otherwise.
         If the dataframe has not been processed yet, `is_last_valid` will be None."""
@@ -200,16 +202,21 @@ class MinFluxReader:
     @property
     def num_valid_entries(self) -> int:
         """Number of valid entries."""
-        if self._data_array is None:
+        if self._valid_entries is None:
             return 0
-        return self._valid_entries.sum()
+        return int(self._valid_entries.sum())
 
     @property
     def num_invalid_entries(self) -> int:
         """Number of valid entries."""
-        if self._data_array is None:
+        if self._valid_entries is None:
             return 0
-        return np.logical_not(self._valid_entries).sum()
+        return int(np.logical_not(self._valid_entries).sum())
+
+    @property
+    def tot_num_entries(self) -> int:
+        """Total number of entries."""
+        return self.num_valid_entries + self.num_invalid_entries
 
     @property
     def valid_cfr(self) -> list:
@@ -220,7 +227,7 @@ class MinFluxReader:
         cfr: boolean array with True for the iteration indices
              that have a valid measurement.
         """
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return []
         return self._valid_cfr
 
@@ -232,14 +239,14 @@ class MinFluxReader:
         -------
         reloc: boolean array with True for the iteration indices that are relocalized.
         """
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return []
         return self._relocalizations
 
     @property
     def valid_raw_data(self) -> Union[None, np.ndarray]:
         """Return the raw data."""
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return None
         return self._data_array[self._valid_entries].copy()
 
@@ -295,8 +302,14 @@ class MinFluxReader:
             processing will take place.
         """
 
+        # The cfr index is not allowed to be smaller than the global iteration index
+        if index < cfr_index:
+            raise ValueError(
+                "The value of index must be greater than or equal to cfr_index."
+            )
+
         # Make sure there is loaded data
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             raise ValueError("No data loaded.")
 
         if self._reps == -1:
@@ -449,11 +462,11 @@ class MinFluxReader:
         # Call the specialized _load_*() function
         if self._filename.name.lower().endswith(".npy"):
             try:
-                data_array = np.load(str(self._filename))
+                data_array = np.load(str(self._filename), allow_pickle=False)
                 if "fluo" in data_array.dtype.names:
                     self._data_array = data_array
                 else:
-                    self._data_array = migrate_npy_array(data_array)
+                    self._data_array = _migrate_npy_array(data_array)
             except (
                 OSError,
                 UnpicklingError,
@@ -468,15 +481,20 @@ class MinFluxReader:
 
         elif self._filename.name.lower().endswith(".mat"):
             try:
-                self._data_array = convert_from_mat(self._filename)
+                self._data_array = _convert_from_mat(self._filename)
             except Exception as e:
                 print(f"Could not open {self._filename}: {e}")
                 return False
 
         elif self._filename.name.lower().endswith(".pmx"):
             try:
+                # Read filtered dataframe
                 self._data_array = NativeArrayReader().read(self._filename)
-                if self._data_array is None:
+
+                # Restore _valid_entries array
+                self._valid_entries = self._data_array["vld"]
+
+                if self.tot_num_entries == 0:
                     print(f"Could not open {self._filename}.")
                     return False
             except Exception as e:
@@ -514,7 +532,7 @@ class MinFluxReader:
         """
 
         # Do we have a data array to work on?
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return None
 
         if self._valid:
@@ -625,7 +643,7 @@ class MinFluxReader:
 
     def _raw_data_to_full_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return raw data arranged into a dataframe."""
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return None
 
         # Initialize output dataframe
@@ -692,7 +710,7 @@ class MinFluxReader:
 
     def _set_all_indices(self):
         """Set indices of properties to be read."""
-        if self._data_array is None:
+        if self.tot_num_entries == 0:
             return False
 
         # Number of iterations
@@ -721,14 +739,29 @@ class MinFluxReader:
         self._last_valid = len(self._valid_cfr) - 1
         self._last_valid_cfr = last_valid["cfr_index"]
 
+        # Inform
+        # @TODO Remove after testing
+        print(
+            f"[DEBUG] "
+            f"efo: {self._efo_index},"
+            f"cfr: {self._cfr_index}, "
+            f"dcr: {self._dcr_index}, "
+            f"eco: {self._eco_index}, "
+            f"loc: {self._loc_index}, "
+            f"valid_cfr: {self._valid_cfr}, "
+            f"reloc: {self._relocalizations}, "
+            f"last_valid: {self._last_valid}, "
+            f"last_valid_cfr: {self._last_valid_cfr}"
+        )
+
     def __repr__(self) -> str:
         """String representation of the object."""
-        if self._data_array is None:
+        if self.num_valid_entries == 0:
             return "No file loaded."
 
         str_valid = (
             "all valid"
-            if len(self._data_array) == self.num_valid_entries
+            if self.num_invalid_entries == 0
             else f"{self.num_valid_entries} valid and {self.num_invalid_entries} non valid"
         )
 
@@ -737,9 +770,231 @@ class MinFluxReader:
 
         return (
             f"File: {self._filename.name}: "
-            f"{str_acq} {aggr_str} acquisition with {len(self._data_array)} entries ({str_valid})."
+            f"{str_acq} {aggr_str} acquisition with {self.tot_num_entries} entries ({str_valid})."
         )
 
     def __str__(self) -> str:
         """Human-friendly representation of the object."""
         return self.__repr__()
+
+
+def _create_empty_data_array(n_entries: int, n_iters: int) -> np.ndarray:
+    """Initializes a structured data array compatible with those exported from Imspector.
+
+    Parameters
+    ----------
+
+    n_entries: int
+        Number of localizations in the array.
+
+    n_iters: int
+        Number of iterations per localization.
+        10 for 3D datasets, 5 for 2D datasets, 1 for aggregated measurements.
+
+    Returns
+    -------
+
+    array: Empty array with the requested dimensionality.
+    """
+
+    return np.empty(
+        n_entries,
+        dtype=np.dtype(
+            [
+                (
+                    "itr",
+                    [
+                        ("itr", "<i4"),
+                        ("tic", "<u8"),
+                        ("loc", "<f8", (3,)),
+                        ("lnc", "<f8", (3,)),
+                        ("eco", "<i4"),
+                        ("ecc", "<i4"),
+                        ("efo", "<f8"),
+                        ("efc", "<f8"),
+                        ("sta", "<i4"),
+                        ("cfr", "<f8"),
+                        ("dcr", "<f8"),
+                        ("ext", "<f8", (3,)),
+                        ("gvy", "<f8"),
+                        ("gvx", "<f8"),
+                        ("eoy", "<f8"),
+                        ("eox", "<f8"),
+                        ("dmz", "<f8"),
+                        ("lcy", "<f8"),
+                        ("lcx", "<f8"),
+                        ("lcz", "<f8"),
+                        ("fbg", "<f8"),
+                    ],
+                    (n_iters,),
+                ),
+                ("sqi", "<u4"),
+                ("gri", "<u4"),
+                ("tim", "<f8"),
+                ("tid", "<i4"),
+                ("vld", "?"),
+                ("act", "?"),
+                ("dos", "<i4"),
+                ("sky", "<i4"),
+                ("fluo", "<u1"),
+            ]
+        ),
+    )
+
+
+def _migrate_npy_array(data_array) -> Union[np.ndarray, None]:
+    """Migrate the raw Imspector NumPy array into a pyMINFLUX raw array.
+
+    Parameters
+    ----------
+
+    data_array: np.ndarray
+        MINFLUX NumPy array.
+
+    Returns
+    -------
+
+    new_array: np.ndarray
+        Migrated MINFLUX NumPy array (with "fluo" column).
+    """
+
+    # Make sure that data_array is not None
+    if data_array is None:
+        return None
+
+    # Initialize the empty target array
+    new_array = _create_empty_data_array(len(data_array), data_array["itr"].shape[-1])
+
+    # Copy the data over
+    for field_name in data_array.dtype.names:
+        if field_name == "itr":
+            for itr_field_name in data_array["itr"].dtype.names:
+                new_array["itr"][itr_field_name] = data_array["itr"][itr_field_name]
+        else:
+            new_array[field_name] = data_array[field_name]
+
+    # Make sure to initialize the "fluo" column
+    if "fluo" not in data_array.dtype.names:
+        new_array["fluo"] = np.uint8(0)
+
+    # Return the migrated array
+    return new_array
+
+
+def _convert_from_mat(filename: Union[Path, str]) -> Union[np.ndarray, None]:
+    """Load MINFLUX MAT file and convert it to MINFLUX NPY array in memory.
+
+    Parameters
+    ----------
+
+    filename: Union[Path, str]
+        Full path of file to be opened.
+
+    Returns
+    -------
+
+    data_array: Union[np.ndarray, None]
+        NumPy array if the loading and converting was successful, None otherwise.
+    """
+
+    # Load .mat file
+    try:
+        mat_array = loadmat(str(filename))
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Could not open {filename}: {e}")
+        return None
+
+    # Process it
+    try:
+        # Number of entries
+        n_entries = len(mat_array["itr"]["itr"][0][0])
+
+        # Number of iterations
+        n_iters = mat_array["itr"]["itr"][0][0].shape[-1]
+
+        # Initialize an empty structure NumPy data array
+        data_array = _create_empty_data_array(n_entries, n_iters)
+
+        # Copy the data over
+        data_array["vld"] = mat_array["vld"].ravel().astype(data_array.dtype["vld"])
+        data_array["sqi"] = mat_array["sqi"].ravel().astype(data_array.dtype["sqi"])
+        data_array["gri"] = mat_array["gri"].ravel().astype(data_array.dtype["gri"])
+        data_array["tim"] = mat_array["tim"].ravel().astype(data_array.dtype["tim"])
+        data_array["tid"] = mat_array["tid"].ravel().astype(data_array.dtype["tid"])
+        data_array["act"] = mat_array["act"].ravel().astype(data_array.dtype["act"])
+        data_array["dos"] = mat_array["dos"].ravel().astype(data_array.dtype["dos"])
+        data_array["sky"] = mat_array["sky"].ravel().astype(data_array.dtype["sky"])
+        data_array["itr"]["itr"] = mat_array["itr"]["itr"][0][0].astype(
+            data_array["itr"]["itr"].dtype
+        )
+        data_array["itr"]["tic"] = mat_array["itr"]["tic"][0][0].astype(
+            data_array["itr"]["tic"].dtype
+        )
+        data_array["itr"]["loc"] = mat_array["itr"]["loc"][0][0].astype(
+            data_array["itr"]["loc"].dtype
+        )
+        data_array["itr"]["lnc"] = mat_array["itr"]["lnc"][0][0].astype(
+            data_array["itr"]["lnc"].dtype
+        )
+        data_array["itr"]["eco"] = mat_array["itr"]["eco"][0][0].astype(
+            data_array["itr"]["eco"].dtype
+        )
+        data_array["itr"]["ecc"] = mat_array["itr"]["ecc"][0][0].astype(
+            data_array["itr"]["ecc"].dtype
+        )
+        data_array["itr"]["efo"] = mat_array["itr"]["efo"][0][0].astype(
+            data_array["itr"]["efo"].dtype
+        )
+        data_array["itr"]["efc"] = mat_array["itr"]["efc"][0][0].astype(
+            data_array["itr"]["efc"].dtype
+        )
+        data_array["itr"]["sta"] = mat_array["itr"]["sta"][0][0].astype(
+            data_array["itr"]["sta"].dtype
+        )
+        data_array["itr"]["cfr"] = mat_array["itr"]["cfr"][0][0].astype(
+            data_array["itr"]["cfr"].dtype
+        )
+        data_array["itr"]["dcr"] = mat_array["itr"]["dcr"][0][0].astype(
+            data_array["itr"]["dcr"].dtype
+        )
+        data_array["itr"]["ext"] = mat_array["itr"]["ext"][0][0].astype(
+            data_array["itr"]["ext"].dtype
+        )
+        data_array["itr"]["gvy"] = mat_array["itr"]["gvy"][0][0].astype(
+            data_array["itr"]["gvy"].dtype
+        )
+        data_array["itr"]["gvx"] = mat_array["itr"]["gvx"][0][0].astype(
+            data_array["itr"]["gvx"].dtype
+        )
+        data_array["itr"]["eoy"] = mat_array["itr"]["eoy"][0][0].astype(
+            data_array["itr"]["eoy"].dtype
+        )
+        data_array["itr"]["eox"] = mat_array["itr"]["eox"][0][0].astype(
+            data_array["itr"]["eox"].dtype
+        )
+        data_array["itr"]["dmz"] = mat_array["itr"]["dmz"][0][0].astype(
+            data_array["itr"]["dmz"].dtype
+        )
+        data_array["itr"]["lcy"] = mat_array["itr"]["lcy"][0][0].astype(
+            data_array["itr"]["lcy"].dtype
+        )
+        data_array["itr"]["lcx"] = mat_array["itr"]["lcx"][0][0].astype(
+            data_array["itr"]["lcx"].dtype
+        )
+        data_array["itr"]["lcz"] = mat_array["itr"]["lcz"][0][0].astype(
+            data_array["itr"]["lcz"].dtype
+        )
+        data_array["itr"]["fbg"] = mat_array["itr"]["fbg"][0][0].astype(
+            data_array["itr"]["fbg"].dtype
+        )
+
+    except KeyError as k:
+        print(f"Error processing file array: could not find key {k}.")
+        data_array = None
+
+    except Exception as e:
+        print(f"Error processing file array: unexpected structure.")
+        data_array = None
+
+    # Return success
+    return data_array

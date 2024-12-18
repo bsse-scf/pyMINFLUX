@@ -13,8 +13,15 @@
 #   limitations under the License.
 
 from ._util import (
-    convert_from_mat,
-    create_empty_data_array,
     find_last_valid_iteration,
-    migrate_npy_array,
+    find_last_valid_iteration_v2,
+    get_reader_version_for_mat_file,
+    get_reader_version_for_npy_file,
 )
+
+__all__ = [
+    "find_last_valid_iteration",
+    "find_last_valid_iteration_v2",
+    "get_reader_version_for_mat_file",
+    "get_reader_version_for_npy_file",
+]
