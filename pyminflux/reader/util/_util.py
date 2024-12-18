@@ -170,8 +170,17 @@ def find_last_valid_iteration_v2(
     # Set efo index
     last_valid["efo_index"] = num_iterations - 1
 
-    # Find indices (values) of relocalized iterations
-    candidates = data_full_df["itr"].to_numpy()[trace_start[0] : trace_start[1]]
+    # Find indices (values) of relocalized iterations (from the first complete iteration)
+    (complete_iterations,) = np.where(np.diff(trace_start) > num_iterations)
+    if len(complete_iterations) == 0:
+        raise ValueError("No complete iterations found!")
+    first_complete_iteration = complete_iterations[0]
+
+    candidates = data_full_df["itr"].to_numpy()[
+        trace_start[first_complete_iteration] : trace_start[
+            first_complete_iteration + 1
+        ]
+    ]
     candidates = candidates[num_iterations:]
     reloc = np.unique(candidates)
     last_valid["reloc"] = np.array([False] * num_iterations)

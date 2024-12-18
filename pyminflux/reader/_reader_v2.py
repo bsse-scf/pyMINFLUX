@@ -353,9 +353,13 @@ class MinFluxReaderV2(MinFluxReader):
 
         # Query the data to find the last valid iteration
         # for all measurements
-        last_valid = find_last_valid_iteration_v2(
-            self._data_full_df, num_iterations=self._reps
-        )
+        try:
+            last_valid = find_last_valid_iteration_v2(
+                self._data_full_df, num_iterations=self._reps
+            )
+        except ValueError as e:
+            print(f"[ERROR] {e}")
+            return False
 
         # Set the extracted indices
         self._efo_index = last_valid["efo_index"]
@@ -445,10 +449,19 @@ class MinFluxReaderV2(MinFluxReader):
         # Valid
         data_valid_df = self._data_full_df[val_indices]
 
-        # Here we have to use different logic for tracking vs. localization acquisitions
-        if self.is_tracking:
-            # Tracking will have only one cfr in the first localization, and then it is not
-            # measured anymore. In this case, we want to keep all localizations.
+        # Here we have to use different logic for tracking vs. localization
+        # acquisitions. Tracking (and potentially other custom sequences)
+        # only have one cfr value per trace id.
+        condition = (data_valid_df["itr"].eq(self._cfr_index)).groupby(
+            data_valid_df["tid"]
+        ).sum() == 1
+        one_cfr_per_tid = np.all(condition)
+
+        if one_cfr_per_tid:
+            # Traces that only have one cfr in the first localization (and then not
+            # measured anymore) are a special case of incomplete iterations. In this
+            # case, we do not want to drop them: to make them valid, we copy the cfr
+            # value from the first iterations to all subsequent localizations.
             indices = data_valid_df.index[
                 (data_valid_df["itr"] == self._cfr_index)
                 | (data_valid_df["itr"] == self._loc_index)
@@ -559,10 +572,6 @@ class MinFluxReaderV2(MinFluxReader):
             # Extract CFR (conditional to the presence of the last loc)
             cfr = data_valid_df["cfr"][itr == self._cfr_index].to_numpy()
             if len(cfr) < len(tid):
-                # @TODO DEBUG: remove when properly tested
-                assert (
-                    self.is_tracking
-                ), "This should only happen for tracking datasets!"
                 # This is the (tracking) case where the cfr value is
                 # stored from a non-relocalized iteration. Moreover,
                 # this cfr is only measured for the first, complete,

@@ -322,12 +322,13 @@ def test_tracking_v2(extract_multi_format_geometry_data_files):
         len(reader_v2.processed_dataframe["tid"].unique()) == 154
     ), "Unexpected number of unique tid values."
 
-    # Now treat it as a localisation dataset
+    # Now treat it as a localisation dataset: it still must be recognized
+    # as a tracking dataset, with only one cfr per trace at the first localisation.
     del reader_v2
     reader_v2 = reader_v2_class(npy_file_name_v2, z_scaling_factor=0.7)
     reader_v2.set_tracking(False)
     assert (
-        len(reader_v2.processed_dataframe.index) == 154
+        len(reader_v2.processed_dataframe.index) == 2669
     ), "Unexpected total number of entries."
     assert (
         len(reader_v2.processed_dataframe["cfr"].unique()) == 51
