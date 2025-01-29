@@ -315,7 +315,8 @@ def get_reader_version_for_pmx_file(file_path):
         if file_version in ["1.0", "2.0"]:
             return 1
         else:
-            return 2
+            reader_version = int(f.attrs["reader_version"])
+            return reader_version
 
 
 def version_str_to_int(version_string: str) -> int:
