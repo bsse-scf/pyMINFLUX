@@ -21,7 +21,8 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
-from pyminflux.reader._native_reader import NativeFullDataFrameReader
+# Avoid circular imports
+from pyminflux.reader._pmx_reader import PMXReader
 from pyminflux.reader._reader import MinFluxReader
 from pyminflux.reader.util import find_last_valid_iteration_v2
 
@@ -63,7 +64,8 @@ class MinFluxReaderV2(MinFluxReader):
             Dwell time in milliseconds.
         """
 
-        # Version 2 does not use the _data_array property, but uses the full dataframe instead
+        # Version 2 does not use the _full_raw_data_array property, but uses the full dataframe instead
+        self._full_raw_dataframe = None
 
         # Call the base constructor
         super().__init__(
@@ -75,19 +77,26 @@ class MinFluxReaderV2(MinFluxReader):
             dwell_time=dwell_time,
         )
 
-        # Delete the _data_array property from version 1
-        del self._data_array
+        # Delete the _full_raw_data_array property from version 1 (version 2 does NOT
+        # store the raw data from Imspector, but the processed dataframes that is
+        # derived from it).
+        del self._full_raw_data_array
 
     @property
     def version(self) -> int:
         return 2
 
+    # @property
+    # def raw_dataframe(self) -> Union[None, pd.DataFrame]:
+    #     """Return the raw dataframe (all properties)."""
+    #     return self._full_raw_dataframe
+
     @property
-    def raw_data_dataframe(self) -> Union[None, pd.DataFrame]:
-        """Return the raw data as dataframe (some properties only)."""
-        if self._data_full_df is not None:
-            return self._data_full_df
-        return None
+    def valid_raw_dataframe(self) -> Union[None, np.ndarray]:
+        """Return the raw data."""
+        if self.tot_num_entries == 0:
+            return None
+        return self._full_raw_dataframe[self._valid_entries].copy()
 
     def _load(self) -> bool:
         """Load the file."""
@@ -96,7 +105,7 @@ class MinFluxReaderV2(MinFluxReader):
             print(f"File {self._filename} does not exist.")
             return False
 
-        data_full_df = pd.DataFrame(
+        raw_dataframe = pd.DataFrame(
             columns=[
                 "vld",
                 "fnl",
@@ -132,13 +141,13 @@ class MinFluxReaderV2(MinFluxReader):
         # Call the specialized _load_*() function
         try:
             if file_ext == ".npy":
-                data_full_df = self._load_numpy(data_full_df)
+                raw_dataframe = self._load_numpy(raw_dataframe)
             elif file_ext == ".mat":
-                data_full_df = self._load_mat(data_full_df)
+                raw_dataframe = self._load_mat(raw_dataframe)
             elif file_ext == ".json":
-                data_full_df = self._load_json(data_full_df)
+                raw_dataframe = self._load_json(raw_dataframe)
             elif file_ext == ".pmx":
-                data_full_df = self._load_pmx(data_full_df)
+                raw_dataframe = self._load_pmx(raw_dataframe)
             else:
                 print(f"Unexpected file {self._filename}.")
                 return False
@@ -150,7 +159,7 @@ class MinFluxReaderV2(MinFluxReader):
         if file_ext in [".npy", ".mat", ".json"]:
 
             # Initialize the fluo field
-            data_full_df["fluo"] = 1
+            raw_dataframe["fluo"] = 1
 
             # **Important**: apply data types **after** creating the dataframe to make sure that
             # data coming from binary types (.npy and .mat) and data coming from text types (.json)
@@ -184,16 +193,18 @@ class MinFluxReaderV2(MinFluxReader):
             }
 
             # Apply the correct datatypes to the columns
-            data_full_df = data_full_df.astype(data_full_df_dtype)
+            raw_dataframe = raw_dataframe.astype(data_full_df_dtype)
 
         # Assign the new dataframe
-        self._data_full_df = data_full_df
+        self._full_raw_dataframe = raw_dataframe
 
         # Store a logical array with the valid entries
-        self._valid_entries = self._data_full_df["vld"]
+        self._valid_entries = self._full_raw_dataframe["vld"]
 
         # Cache whether the data is 2D or 3D and whether is aggregated
-        self._is_3d = not np.all(np.abs(self._data_full_df["z"].to_numpy()) < 1e-11)
+        self._is_3d = not np.all(
+            np.abs(self._full_raw_dataframe["z"].to_numpy()) < 1e-11
+        )
 
         # Set all relevant indices
         self._set_all_indices()
@@ -336,7 +347,7 @@ class MinFluxReaderV2(MinFluxReader):
     def _load_pmx(self, df: pd.DataFrame):
         """Load the PMX file and update the dataframe."""
         # Read filtered dataframe
-        df = NativeFullDataFrameReader().read(self._filename)
+        df = PMXReader.get_dataframe(self._filename)
 
         return df
 
@@ -346,7 +357,7 @@ class MinFluxReaderV2(MinFluxReader):
             return False
 
         # Number of iterations
-        self._reps = int(np.max(self._data_full_df["itr"]) + 1)
+        self._reps = int(np.max(self._full_raw_dataframe["itr"]) + 1)
 
         # Is this an aggregated acquisition?
         self._is_aggregated = self._reps == 1
@@ -355,7 +366,7 @@ class MinFluxReaderV2(MinFluxReader):
         # for all measurements
         try:
             last_valid = find_last_valid_iteration_v2(
-                self._data_full_df, num_iterations=self._reps
+                self._full_raw_dataframe, num_iterations=self._reps
             )
         except ValueError as e:
             print(f"[ERROR] {e}")
@@ -447,7 +458,7 @@ class MinFluxReaderV2(MinFluxReader):
             val_indices = np.logical_not(self._valid_entries)
 
         # Valid
-        data_valid_df = self._data_full_df[val_indices]
+        data_valid_df = self._full_raw_dataframe[val_indices]
 
         # Here we have to use different logic for tracking vs. localization
         # acquisitions. Tracking (and potentially other custom sequences)
@@ -506,7 +517,7 @@ class MinFluxReaderV2(MinFluxReader):
 
         # Get valid subset
         valid_subset = self._get_valid_subset()
-        data_valid_df = self._data_full_df.iloc[valid_subset]
+        data_valid_df = self._full_raw_dataframe.iloc[valid_subset]
 
         # Extract the valid iterations
         itr = data_valid_df["itr"].to_numpy()

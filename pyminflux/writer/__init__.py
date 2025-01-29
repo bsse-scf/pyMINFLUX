@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 __doc__ = "Writer of processed MINFLUX data."
-__all__ = ["MinFluxWriter", "PyMinFluxNativeWriter"]
+__all__ = ["MinFluxWriter", "PMXWriter"]
 
-from ._native_writer import PyMinFluxNativeWriter
+from ._pmx_writer import PMXWriter
 from ._writer import MinFluxWriter

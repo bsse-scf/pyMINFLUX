@@ -28,7 +28,7 @@ class MinFluxWriter:
         """Write (filtered) data as a NumPy structured array with the same structure as in the Imspector `.npy` file."""
 
         # Get the raw data
-        filtered_array = processor.filtered_numpy_array
+        filtered_array = processor.filtered_raw_data_array
         if filtered_array is None:
             return False
 

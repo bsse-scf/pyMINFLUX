@@ -12,8 +12,10 @@
 #  See the License for the specific language governing permissions and
 #   limitations under the License.
 import ast
+import re
 from typing import Optional
 
+import h5py
 import numpy as np
 import pandas as pd
 from scipy.io import whosmat
@@ -286,3 +288,45 @@ def get_reader_version_for_mat_file(file_path):
             break
 
     return reader_version
+
+
+def get_reader_version_for_pmx_file(file_path):
+    """Return version of MinFluxReader required to open this .pmx file without loading it.
+
+
+    filename: Union[Path, str]
+        Full path to the `.pmx` file to scan.
+
+    Returns
+    -------
+
+    reader_version: int
+        Return the version for the MinFluxReader version needed to open this *.pmx file.
+    """
+    # Open the file and read the data
+    with h5py.File(file_path, "r") as f:
+
+        # Read the file_version attribute
+        file_version = f.attrs["file_version"]
+
+        if file_version not in ["1.0", "2.0", "3.0"]:
+            raise ValueError("Unsupported file version.")
+
+        if file_version in ["1.0", "2.0"]:
+            return 1
+        else:
+            return 2
+
+
+def version_str_to_int(version_string: str) -> int:
+    """Convert version string in the form MAJOR.MINOR(.PATCH) to int for comparisons."""
+
+    version_pattern = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?$")
+
+    match = version_pattern.match(version_string)
+    if not match:
+        raise ValueError(f"Invalid version string format: {version_string}")
+    major = int(match.group(1))
+    minor = int(match.group(2))
+    patch = int(match.group(3)) if match.group(3) else 0
+    return major * 10000 + minor * 100 + patch

@@ -12,4 +12,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from ._decorators import deprecated
 from ._utils import check_for_updates, intersect_2d_ranges
+
+__all__ = [
+    "check_for_updates",
+    "intersect_2d_ranges",
+    "deprecated",
+]

@@ -21,25 +21,23 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
-# Avoid circular import
-from pyminflux.reader._native_reader import NativeArrayReader
+from pyminflux.reader._pmx_reader import PMXReader
 from pyminflux.reader.util import find_last_valid_iteration
 
 
 class MinFluxReader:
-    __docs__ = "Reader of MINFLUX data in `.pmx`, `.npy` or `.mat` formats and Imspector m2205 files, and `.pmx` version 0.1.0 - 0.5.0."
+    __docs__ = "Reader of MINFLUX data in `.pmx`, `.npy` or `.mat` formats and Imspector m2205 files, and `.pmx` version 1.0 - 2.0."
 
     __slots__ = [
         "_pool_dcr",
         "_cfr_index",
-        "_data_array",
-        "_data_df",
-        "_data_full_df",
+        "_processed_dataframe",
         "_dcr_index",
         "_dwell_time",
         "_eco_index",
         "_efo_index",
         "_filename",
+        "_full_raw_data_array",
         "_is_3d",
         "_is_aggregated",
         "_is_last_valid",
@@ -115,9 +113,8 @@ class MinFluxReader:
         self._dwell_time = dwell_time
 
         # Initialize the data
-        self._data_array = None
-        self._data_df = None
-        self._data_full_df = None
+        self._full_raw_data_array = None
+        self._processed_dataframe = None
         self._valid_entries = None
 
         # Whether the acquisition is 2D or 3D
@@ -165,7 +162,7 @@ class MinFluxReader:
     def is_last_valid(self) -> Union[bool, None]:
         """Return True if the selected iteration is the "last valid", False otherwise.
         If the dataframe has not been processed yet, `is_last_valid` will be None."""
-        if self._data_df is None:
+        if self._processed_dataframe is None:
             return None
         return self._is_last_valid
 
@@ -244,28 +241,20 @@ class MinFluxReader:
         return self._relocalizations
 
     @property
-    def valid_raw_data(self) -> Union[None, np.ndarray]:
+    def valid_raw_data_array(self) -> Union[None, np.ndarray]:
         """Return the raw data."""
         if self.tot_num_entries == 0:
             return None
-        return self._data_array[self._valid_entries].copy()
+        return self._full_raw_data_array[self._valid_entries].copy()
 
     @property
     def processed_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return the raw data as dataframe (some properties only)."""
-        if self._data_df is not None:
-            return self._data_df
+        if self._processed_dataframe is not None:
+            return self._processed_dataframe
 
-        self._data_df = self._process()
-        return self._data_df
-
-    @property
-    def raw_data_dataframe(self) -> Union[None, pd.DataFrame]:
-        """Return the raw data as dataframe (some properties only)."""
-        if self._data_full_df is not None:
-            return self._data_full_df
-        self._data_full_df = self._raw_data_to_full_dataframe()
-        return self._data_full_df
+        self._processed_dataframe = self._process()
+        return self._processed_dataframe
 
     @property
     def filename(self) -> Union[Path, None]:
@@ -345,8 +334,8 @@ class MinFluxReader:
 
         # Re-process the file? If the processed dataframe already exists,
         # the processing will take place anyway.
-        if process or self._data_df is not None:
-            self._process()
+        if process or self._processed_dataframe is not None:
+            self._processed_dataframe = self._process()
 
     def set_tracking(self, is_tracking: bool, process: bool = True):
         """Sets whether the acquisition is tracking or localization.
@@ -373,8 +362,8 @@ class MinFluxReader:
         self._is_tracking = is_tracking
 
         # Re-process the file?
-        if process or self._data_df is not None:
-            self._process()
+        if process or self._processed_dataframe is not None:
+            self._processed_dataframe = self._process()
 
     def set_dwell_time(self, dwell_time: float, process: bool = True):
         """
@@ -400,8 +389,8 @@ class MinFluxReader:
         self._dwell_time = dwell_time
 
         # Re-process the file?
-        if process or self._data_df is not None:
-            self._process()
+        if process or self._processed_dataframe is not None:
+            self._processed_dataframe = self._process()
 
     def set_pool_dcr(self, pool_dcr: bool, process: bool = True):
         """
@@ -427,8 +416,8 @@ class MinFluxReader:
         self._pool_dcr = pool_dcr
 
         # Re-process the file?
-        if process or self._data_df is not None:
-            self._process()
+        if process or self._processed_dataframe is not None:
+            self._processed_dataframe = self._process()
 
     @classmethod
     def processed_properties(cls) -> list:
@@ -464,9 +453,9 @@ class MinFluxReader:
             try:
                 data_array = np.load(str(self._filename), allow_pickle=False)
                 if "fluo" in data_array.dtype.names:
-                    self._data_array = data_array
+                    self._full_raw_data_array = data_array
                 else:
-                    self._data_array = _migrate_npy_array(data_array)
+                    self._full_raw_data_array = _migrate_npy_array(data_array)
             except (
                 OSError,
                 UnpicklingError,
@@ -481,7 +470,7 @@ class MinFluxReader:
 
         elif self._filename.name.lower().endswith(".mat"):
             try:
-                self._data_array = _convert_from_mat(self._filename)
+                self._full_raw_data_array = _convert_from_mat(self._filename)
             except Exception as e:
                 print(f"Could not open {self._filename}: {e}")
                 return False
@@ -489,12 +478,9 @@ class MinFluxReader:
         elif self._filename.name.lower().endswith(".pmx"):
             try:
                 # Read filtered dataframe
-                self._data_array = NativeArrayReader().read(self._filename)
+                self._full_raw_data_array = PMXReader.get_array(self._filename)
 
-                # Restore _valid_entries array
-                self._valid_entries = self._data_array["vld"]
-
-                if self.tot_num_entries == 0:
+                if self._full_raw_data_array is None:
                     print(f"Could not open {self._filename}.")
                     return False
             except Exception as e:
@@ -506,13 +492,14 @@ class MinFluxReader:
             return False
 
         # Store a logical array with the valid entries
-        self._valid_entries = self._data_array["vld"]
+        self._valid_entries = self._full_raw_data_array["vld"]
 
         # Cache whether the data is 2D or 3D and whether is aggregated
         # The cases are different for localization vs. tracking experiments
-        # num_locs = self._data_array["itr"].shape[1]
+        # num_locs = self._full_raw_data_array["itr"].shape[1]
         self._is_3d = (
-            float(np.nanmean(self._data_array["itr"][:, -1]["loc"][:, -1])) != 0.0
+            float(np.nanmean(self._full_raw_data_array["itr"][:, -1]["loc"][:, -1]))
+            != 0.0
         )
 
         # Set all relevant indices
@@ -541,16 +528,16 @@ class MinFluxReader:
             indices = np.logical_not(self._valid_entries)
 
         # Extract the valid iterations
-        itr = self._data_array["itr"][indices]
+        itr = self._full_raw_data_array["itr"][indices]
 
         # Extract the valid identifiers
-        tid = self._data_array["tid"][indices]
+        tid = self._full_raw_data_array["tid"][indices]
 
         # Extract the valid time points
-        tim = self._data_array["tim"][indices]
+        tim = self._full_raw_data_array["tim"][indices]
 
         # Extract the fluorophore IDs
-        fluo = self._data_array["fluo"][indices]
+        fluo = self._full_raw_data_array["fluo"][indices]
         if np.all(fluo) == 0:
             fluo = np.ones(fluo.shape, dtype=fluo.dtype)
 
@@ -641,80 +628,13 @@ class MinFluxReader:
 
         return df
 
-    def _raw_data_to_full_dataframe(self) -> Union[None, pd.DataFrame]:
-        """Return raw data arranged into a dataframe."""
-        if self.tot_num_entries == 0:
-            return None
-
-        # Initialize output dataframe
-        df = pd.DataFrame(columns=MinFluxReader.raw_properties())
-
-        # Allocate space for the columns
-        n_rows = len(self._data_array) * self._reps
-
-        # Get all unique TIDs and their counts
-        _, tid_counts = np.unique(self._data_array["tid"], return_counts=True)
-
-        # Get all tids (repeated over the repetitions)
-        tid = np.repeat(self._data_array["tid"], self._reps)
-
-        # Create virtual IDs to mark the measurements of repeated tids
-        # @TODO Optimize this!
-        aid = np.zeros((n_rows, 1), dtype=np.int32)
-        index = 0
-        for c in np.nditer(tid_counts):
-            tmp = np.repeat(np.arange(c), self._reps)
-            n = len(tmp)
-            aid[index : index + n, 0] = tmp
-            index += n
-
-        # Get all valid flags (repeated over the repetitions)
-        vld = np.repeat(self._data_array["vld"], self._reps)
-
-        # Get all timepoints (repeated over the repetitions)
-        tim = np.repeat(self._data_array["tim"], self._reps)
-
-        # Get all localizations (reshaped to drop the first dimension)
-        loc = (
-            self._data_array["itr"]["loc"].reshape((n_rows, 3))
-            * self._unit_scaling_factor
-        )
-        loc[:, 2] = loc[:, 2] * self._z_scaling_factor
-
-        # Get all efos (reshaped to drop the first dimension)
-        efo = self._data_array["itr"]["efo"].reshape((n_rows, 1))
-
-        # Get all cfrs (reshaped to drop the first dimension)
-        cfr = self._data_array["itr"]["cfr"].reshape((n_rows, 1))
-
-        # Get all ecos (reshaped to drop the first dimension)
-        eco = self._data_array["itr"]["eco"].reshape((n_rows, 1))
-
-        # Get all dcrs (reshaped to drop the first dimension)
-        dcr = self._data_array["itr"]["dcr"].reshape((n_rows, 1))
-
-        # Build the dataframe
-        df["tid"] = tid.astype(np.int32)
-        df["aid"] = aid.astype(np.int32)
-        df["vld"] = vld
-        df["tim"] = tim
-        df["x"] = loc[:, 0]
-        df["y"] = loc[:, 1]
-        df["z"] = loc[:, 2]
-        df["efo"] = efo
-        df["cfr"] = cfr
-        df["eco"] = eco
-        df["dcr"] = dcr
-
-        return df
-
     def _set_all_indices(self):
         """Set indices of properties to be read."""
         if self.tot_num_entries == 0:
             return False
 
         # Number of iterations
-        self._reps = self._data_array["itr"].shape[1]
+        self._reps = self._full_raw_data_array["itr"].shape[1]
 
         # Is this an aggregated acquisition?
         if self._reps == 1:
@@ -724,7 +644,7 @@ class MinFluxReader:
 
         # Query the data to find the last valid iteration
         # for all measurements
-        last_valid = find_last_valid_iteration(self._data_array)
+        last_valid = find_last_valid_iteration(self._full_raw_data_array)
 
         # Set the extracted indices
         self._efo_index = last_valid["efo_index"]

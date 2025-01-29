@@ -17,7 +17,7 @@ from typing import Union
 
 
 @dataclass
-class NativeMetadata:
+class PMXMetadata:
     """Metadata associated to `.pmx` native pyMINFLUX file format.
 
     Version 2.0

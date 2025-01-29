@@ -155,12 +155,19 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
-            if file_version != "1.0" and file_version != "2.0":
+            if file_version not in ["1.0", "2.0", "3.0"]:
                 self._message = f"Incompatible file version {file_version}."
                 return None
 
+            if file_version in ["1.0", "2.0"]:
+                dataset_path = "/paraview/dataframe"
+                index_path = "/paraview/dataframe_index"
+            else:  # version "3.0"
+                dataset_path = "/dataframes/filtered_dataframe"
+                index_path = "/dataframes/filtered_dataframe_index"
+
             # Read dataset
-            dataset = f["/paraview/dataframe"]
+            dataset = f[dataset_path]
 
             # Read the NumPy data
             data_array = dataset[:]
@@ -171,8 +178,13 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
             # Read column data types
             column_types = dataset.attrs["column_types"]
 
+            # float16 types in recent versions of Imspector data
+            # do not have equivalent VTK types; instead, we will
+            # use float32 for conversion
+            column_types[column_types == "float16"] = "float32"
+
             # Read the index
-            index_data = f["/paraview/dataframe_index"][:]
+            index_data = f[index_path][:]
 
             # Create DataFrame with specified columns
             df = pd.DataFrame(data_array, index=index_data, columns=column_names)

@@ -43,7 +43,7 @@ import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
 from pyminflux.plugin import PluginManager
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.reader import MinFluxReader, MinFluxReaderFactory, NativeMetadataReader
+from pyminflux.reader import MinFluxReaderFactory, PMXReader
 from pyminflux.settings import Settings, UpdateSettings
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
@@ -65,8 +65,7 @@ from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.wizard import WizardDialog
 from pyminflux.utils import check_for_updates
-from pyminflux.writer import MinFluxWriter, PyMinFluxNativeWriter
-
+from pyminflux.writer import MinFluxWriter, PMXWriter
 
 # Version info
 __modifier__ = " (alpha 2)"
@@ -607,7 +606,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             filename = filename.parent / f"{filename.stem}.pmx"
 
         # Write to disk
-        writer = PyMinFluxNativeWriter(self.processor)
+        writer = PMXWriter(self.processor)
         result = writer.write(filename)
 
         # Save
@@ -658,7 +657,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             ext = filename.lower()[-4:]
 
             # Make sure we have a supported file
-            if ext not in [".pmx", ".npy", ".mat"]:
+            if ext not in [".pmx", ".npy", ".mat", ".json"]:
                 QMessageBox.critical(
                     self,
                     "Error",
@@ -675,7 +674,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # If we have a `.pmx` file, we first scan the metadata and update
             # the State
             if ext == ".pmx":
-                metadata = NativeMetadataReader.scan(filename)
+                metadata = PMXReader.get_metadata(filename)
                 if metadata is None:
                     # Could not read the metadata. Abort loading.
                     QMessageBox.critical(

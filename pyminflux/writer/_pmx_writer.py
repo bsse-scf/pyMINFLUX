@@ -22,13 +22,17 @@ from pyminflux.processor import MinFluxProcessor
 from pyminflux.ui.state import State
 
 
-class PyMinFluxNativeWriter:
-    __docs__ = "Writer of (processed) MINFLUX into native `.pmx` format."
+class PMXWriter:
+    """Writer of (processed) MINFLUX into native `.pmx` format."""
 
     def __init__(self, processor: MinFluxProcessor):
         self.processor = processor
         self.state = State()
         self._message = ""
+
+        # HDF5 has no native support for boolean datatypes; therefore
+        # we convert back and forth between bool and np.int8
+        self.boolean_columns = ["vld", "fnl", "bot", "eot"]
 
     def write(self, file_name: Union[Path, str]) -> bool:
 
@@ -38,23 +42,39 @@ class PyMinFluxNativeWriter:
             with h5py.File(file_name, "w") as f:
 
                 # Set file version attribute
-                f.attrs["file_version"] = "2.0"
+                f.attrs["file_version"] = "3.0"
+
+                # Set MinFluxReader version
+                f.attrs["reader_version"] = self.processor.reader.version
 
                 # Create groups
                 raw_data_group = f.create_group("raw")
-                paraview_group = f.create_group("paraview")
                 parameters_group = f.create_group("parameters")
+                paraview_group = f.create_group("paraview")
 
-                # Store the filtered numpy array (with fluorophores)
-                raw_data_group.create_dataset(
-                    "npy", data=self.processor.filtered_numpy_array, compression="gzip"
+                # If the reader is version 1, we store filtered_raw_data_array
+                # as "raw/npy" for backwards compatibility
+                if self.processor.reader.version == 1:
+                    raw_data_group.create_dataset(
+                        "npy",
+                        data=self.processor.filtered_raw_data_array,
+                        compression="gzip",
+                    )
+                elif self.processor.reader.version == 2:
+                    self._store_dataframe(
+                        raw_data_group,
+                        self.processor.filtered_raw_dataframe,
+                        "df",
+                    )
+                else:
+                    raise ValueError("Unexpected reader version!")
+
+                # Store the filtered dataframe for compatibility with ParaView
+                self._store_dataframe(
+                    paraview_group,
+                    self.processor.filtered_dataframe,
+                    "filtered_dataframe",
                 )
-
-                # Store the pandas dataframe: to make sure not to depend on additional
-                # dependencies (like "tables") that are not bundled with ParaView, we
-                # save the dataframe as a NumPy array and save the column names and types
-                # as attributes.
-                self._store_dataframe(paraview_group)
 
                 # Store important parameters
                 self._store_parameters(parameters_group)
@@ -77,36 +97,45 @@ class PyMinFluxNativeWriter:
         """Return last error message."""
         return self._message
 
-    def _store_dataframe(self, group):
-        """Write the Pandas DataFrame in a way that it can be reloaded without external dependencies."""
+    def _store_dataframe(self, group, dataframe, datataset_name):
+        """Write a Pandas DataFrame in a way that it can be reloaded without external dependencies.
 
-        if self.processor.filtered_dataframe is None:
+        To support external tools like ParaView (via our reader plug-in) that may not have required
+        Pandas dependencies (like "tables"), we save the dataframe as a NumPy array and save the
+        column names and types as attributes.
+        """
+
+        if dataframe is None:
             return
 
-        dataset = group.create_dataset(
-            "dataframe",
-            data=self.processor.filtered_dataframe.to_numpy(),
-            compression="gzip",
-        )
-
         # Convert the column names to a list of strings
-        column_names = self.processor.filtered_dataframe.columns.tolist()
+        column_names = dataframe.columns.tolist()
 
         # Convert column data types to a list of strings
-        column_types = [
-            str(self.processor.filtered_dataframe[col].dtype)
-            for col in self.processor.filtered_dataframe.columns
-        ]
+        column_types = [str(dataframe[col].dtype) for col in dataframe.columns]
+
+        # Convert boolean types to np.int8 to be hdf5-compatible
+        for col in self.boolean_columns:
+            if col in dataframe.columns:
+                dataframe[col] = np.int8(dataframe[col])
+
+        dataset = group.create_dataset(
+            datataset_name,
+            data=dataframe.to_numpy(),
+            compression="gzip",
+        )
 
         # Store the column names as an attribute of the dataset
         dataset.attrs["column_names"] = column_names
 
-        # Store column data types as attribute of the dataset
+        # Store (original) column data types as attribute of the dataset
         dataset.attrs["column_types"] = column_types
 
         # We preserve the index as well (as a Dataset, since it can be large)
-        index_data = np.array(self.processor.filtered_dataframe.index)
-        group.create_dataset("dataframe_index", data=index_data, compression="gzip")
+        index_data = np.array(dataframe.index)
+        group.create_dataset(
+            f"{datataset_name}_index", data=index_data, compression="gzip"
+        )
 
     def _store_parameters(self, group):
         """Write important parameters."""

@@ -17,6 +17,8 @@ from ._util import (
     find_last_valid_iteration_v2,
     get_reader_version_for_mat_file,
     get_reader_version_for_npy_file,
+    get_reader_version_for_pmx_file,
+    version_str_to_int,
 )
 
 __all__ = [
@@ -24,4 +26,6 @@ __all__ = [
     "find_last_valid_iteration_v2",
     "get_reader_version_for_mat_file",
     "get_reader_version_for_npy_file",
+    "get_reader_version_for_pmx_file",
+    "version_str_to_int",
 ]

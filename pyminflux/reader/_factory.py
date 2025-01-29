@@ -20,6 +20,7 @@ from pyminflux.reader._reader_v2 import MinFluxReaderV2
 from pyminflux.reader.util import (
     get_reader_version_for_mat_file,
     get_reader_version_for_npy_file,
+    get_reader_version_for_pmx_file,
 )
 
 
@@ -66,8 +67,7 @@ class MinFluxReaderFactory:
         elif file_ext == ".json":
             reader_version = 2
         elif file_ext == ".pmx":
-            # @TODO: Add support when MinFluxReaderV2 will support `.pmx` files as well.
-            reader_version = -1
+            reader_version = get_reader_version_for_pmx_file(filename)
         else:
             return None, f"{filename} is not supported."
 

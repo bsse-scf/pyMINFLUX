@@ -18,22 +18,16 @@ from typing import Union
 import h5py
 import pandas as pd
 
-from pyminflux.reader.metadata import NativeMetadata
+from pyminflux.reader.metadata import PMXMetadata
+from pyminflux.reader.util import version_str_to_int
 
 
-class NativeMetadataReader:
-    """Reads metadata information from `.pmx` files."""
+class PMXReader:
+    """Reader of (processed) MINFLUX from native `.pmx` format."""
 
     @staticmethod
-    def scan(filename: Union[Path, str]):
-        """Constructor.
-
-        Parameters
-        ----------
-
-        filename: Union[Path, str]
-            Full path to the `.pmx` file to scan.
-        """
+    def get_metadata(filename) -> PMXMetadata:
+        """Reads metadata information from `.pmx` files."""
 
         # Open the file
         with h5py.File(filename, "r") as f:
@@ -41,36 +35,51 @@ class NativeMetadataReader:
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
-            if file_version != "1.0" and file_version != "2.0":
+            # First, check that the version is known
+            if file_version not in ["1.0", "2.0", "3.0"]:
                 return None
 
-            # Version 1 parameters
-            try:
-                z_scaling_factor = float(f["parameters/z_scaling_factor"][()])
-            except KeyError:
-                return None
+            # Convert version string to number
+            version_int = version_str_to_int(file_version)
 
-            try:
-                min_trace_length = int(f["parameters/min_trace_length"][()])
-            except KeyError:
-                return None
+            # Initialize parameters (for versions above version 1.0)
+            tr_len_thresholds = None
+            time_thresholds = None
+            dwell_time = 1.0
+            is_tracking = False
+            pool_dcr = False
+            scale_bar_size = 500
 
-            try:
-                efo_thresholds = tuple(f["parameters/applied_efo_thresholds"][:])
-            except KeyError as e:
-                efo_thresholds = None
-            try:
-                cfr_thresholds = tuple(f["parameters/applied_cfr_thresholds"][:])
-            except KeyError as e:
-                cfr_thresholds = None
+            # Version 1.0 parameters
+            if version_int > 0:
 
-            try:
-                num_fluorophores = int(f["parameters/num_fluorophores"][()])
-            except KeyError:
-                return None
+                try:
+                    z_scaling_factor = float(f["parameters/z_scaling_factor"][()])
+                except KeyError:
+                    return None
+
+                try:
+                    min_trace_length = int(f["parameters/min_trace_length"][()])
+                except KeyError:
+                    return None
+
+                try:
+                    efo_thresholds = tuple(f["parameters/applied_efo_thresholds"][:])
+                except KeyError as e:
+                    efo_thresholds = None
+                try:
+                    cfr_thresholds = tuple(f["parameters/applied_cfr_thresholds"][:])
+                except KeyError as e:
+                    cfr_thresholds = None
+
+                try:
+                    num_fluorophores = int(f["parameters/num_fluorophores"][()])
+                except KeyError:
+                    return None
 
             # Version 2.0 parameters
-            if file_version == "2.0":
+            if version_int > 10000:
+                # Parameters are present in the file, and we can read them
 
                 try:
                     # This setting can be missing
@@ -110,16 +119,13 @@ class NativeMetadataReader:
                 except KeyError as e:
                     return None
 
-            else:
-                tr_len_thresholds = None
-                time_thresholds = None
-                dwell_time = 1.0
-                is_tracking = False
-                pool_dcr = False
-                scale_bar_size = 500
+            # Version 3.0 parameters
+            if version_int > 20000:
+                # No new parameters since version 2.0
+                pass
 
         # Store and return
-        metadata = NativeMetadata(
+        metadata = PMXMetadata(
             pool_dcr=pool_dcr,
             cfr_thresholds=cfr_thresholds,
             dwell_time=dwell_time,
@@ -135,42 +141,9 @@ class NativeMetadataReader:
 
         return metadata
 
-
-class NativeArrayReader:
-    """Reads the native NumPy array from `.pmx` files version 1.0 and 2.0."""
-
     @staticmethod
-    def read(filename: Union[Path, str]):
-        """Constructor.
-
-        Parameters
-        ----------
-
-        filename: Union[Path, str]
-            Full path to the `.pmx` file to scan.
-        """
-
-        # Open the file and read the data
-        with h5py.File(filename, "r") as f:
-
-            # Read the file_version attribute
-            file_version = f.attrs["file_version"]
-
-            if file_version != "1.0" and file_version != "2.0":
-                return None
-
-            # We only read the raw NumPy array
-            data_array = f["raw/npy"][:]
-
-        return data_array
-
-
-class NativeFullDataFrameReader:
-    """Reads the full Pandas DataFrame from `.pmx` files version 3.0."""
-
-    @staticmethod
-    def read(filename: Union[Path, str]):
-        """Constructor.
+    def get_dataframe(filename: Union[Path, str]):
+        """Return the full dataframe.
 
         Parameters
         ----------
@@ -187,8 +160,15 @@ class NativeFullDataFrameReader:
             if file_version != "3.0":
                 return None
 
-            # Read dataset
-            dataset = f["/raw/full_dataframe"]
+            # Read the reader_version attribute: it must be 2
+            reader_version = f.attrs["reader_version"]
+            if reader_version != 2:
+                raise ValueError("`reader_version` must be 2.")
+
+            #
+            # Read raw dataset
+            #
+            dataset = f["/raw/df"]
 
             # Read the NumPy data
             data_array = dataset[:]
@@ -200,7 +180,7 @@ class NativeFullDataFrameReader:
             column_types = dataset.attrs["column_types"]
 
             # Read the index
-            index_data = f["/raw/full_dataframe_index"][:]
+            index_data = f["/raw/df_index"][:]
 
             # Create DataFrame with specified columns
             df = pd.DataFrame(data_array, index=index_data, columns=column_names)
@@ -209,15 +189,11 @@ class NativeFullDataFrameReader:
             for col, dtype in zip(column_names, column_types):
                 df[col] = df[col].astype(dtype)
 
-        return df
-
-
-class NativeDataFrameReader:
-    """Reads the Pandas DataFrame from `.pmx` files versions 1.0, 2.0, and 3.0."""
+            return df
 
     @staticmethod
-    def read(filename: Union[Path, str]):
-        """Constructor.
+    def get_filtered_dataframe(filename: Union[Path, str]):
+        """Reads the Pandas DataFrame from `.pmx` files versions 1.0, 2.0, and 3.0.
 
         Parameters
         ----------
@@ -257,3 +233,40 @@ class NativeDataFrameReader:
                 df[col] = df[col].astype(dtype)
 
         return df
+
+    @staticmethod
+    def get_array(filename: Union[Path, str]):
+        """Returns the raw Numpy array (filtered). This applies to:
+
+        - pmx files version 1.0, 2.0
+        - pmx files version 3.0 with reader version 1
+
+        pmx files version 3.0 with reader version 2 only store the (filtered) raw dataframe.
+
+        Parameters
+        ----------
+
+        filename: Union[Path, str]
+            Full path to the `.pmx` file to scan.
+        """
+
+        # Open the file and read the data
+        with h5py.File(filename, "r") as f:
+
+            # Read the file_version attribute
+            file_version = f.attrs["file_version"]
+
+            if file_version not in ["1.0", "2.0", "3.0"]:
+                return None
+
+            if file_version == "3.0":
+                reader_version = f.attrs["reader_version"]
+                if reader_version == 1:
+                    data_array = f["raw/npy"][:]
+                else:
+                    return None
+            else:
+                # We only read the raw NumPy array
+                data_array = f["raw/npy"][:]
+
+        return data_array
