@@ -26,7 +26,7 @@ class PMXReader:
     """Reader of (processed) MINFLUX from native `.pmx` format."""
 
     @staticmethod
-    def get_metadata(filename) -> PMXMetadata:
+    def get_metadata(filename) -> Union[PMXMetadata, None]:
         """Reads metadata information from `.pmx` files."""
 
         # Open the file

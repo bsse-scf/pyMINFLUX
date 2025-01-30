@@ -282,18 +282,8 @@ class MinFluxProcessor:
         if self.reader.version != 2:
             raise ValueError("Only reader version 2 is supported.")
 
-        # valid_raw_dataframe is a MinFluxReaderV2 property
-        if self.reader.valid_raw_dataframe is None or self._selected_rows_dict is None:
-            return None
-
-        # Extract combination of fluorophore 1 and 2 filtered dataframes
-        mask_1 = (
-            self.reader.valid_raw_dataframe["fluo"] == 1
-        ) & self._selected_rows_dict[1]
-        mask_2 = (
-            self.reader.valid_raw_dataframe["fluo"] == 2
-        ) & self._selected_rows_dict[2]
-        return self.reader.valid_raw_dataframe.loc[mask_1 | mask_2]
+        # valid_full_raw_dataframe is a MinFluxReaderV2 property
+        return self.reader.valid_full_raw_dataframe
 
     @property
     def filtered_dataframe(self) -> Union[None, pd.DataFrame]:
@@ -340,6 +330,13 @@ class MinFluxProcessor:
         if full_dataframe is None:
             return None
 
+        # Get the IIDs from the currently filtered localizations
+        iids = self.filtered_dataframe["iid"].to_numpy()
+
+        # Extract all rows matching the current set of iids
+        full_dataframe = full_dataframe[full_dataframe["iid"].isin(iids)]
+
+        # If needed, filter by fluorophore ID
         if self.current_fluorophore_id == 0:
             return full_dataframe
         elif self.current_fluorophore_id == 1:

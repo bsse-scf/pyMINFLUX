@@ -28,7 +28,7 @@ from pyminflux.reader.util import find_last_valid_iteration_v2
 
 
 class MinFluxReaderV2(MinFluxReader):
-    __docs__ = "Reader of MINFLUX data in `.npy`, `.mat` and `.json` Imspector m2410 files, and `.pmx` version 0.6.0 and newer."
+    """Reader of MINFLUX data in `.npy`, `.mat` and `.json` Imspector m2410 files, and `.pmx` version 0.6.0 and newer."""
 
     def __init__(
         self,
@@ -86,17 +86,30 @@ class MinFluxReaderV2(MinFluxReader):
     def version(self) -> int:
         return 2
 
-    # @property
-    # def raw_dataframe(self) -> Union[None, pd.DataFrame]:
-    #     """Return the raw dataframe (all properties)."""
-    #     return self._full_raw_dataframe
-
     @property
-    def valid_raw_dataframe(self) -> Union[None, np.ndarray]:
+    def valid_full_raw_dataframe(self) -> Union[None, np.ndarray]:
         """Return the raw data."""
         if self.tot_num_entries == 0:
             return None
         return self._full_raw_dataframe[self._valid_entries].copy()
+
+    @classmethod
+    def processed_properties(cls) -> list:
+        """Returns the properties read from the file that correspond to the processed dataframe column names."""
+        return [
+            "tid",
+            "tim",
+            "x",
+            "y",
+            "z",
+            "efo",
+            "cfr",
+            "eco",
+            "dcr",
+            "dwell",
+            "fluo",
+            "iid",  # Custom: iteration ID
+        ]
 
     def _load(self) -> bool:
         """Load the file."""
@@ -131,7 +144,8 @@ class MinFluxReaderV2(MinFluxReader):
                 "fbg",
                 "cfr",
                 "dcr",
-                "fluo",  # Custom field
+                "fluo",  # Custom: fluorophore ID
+                "iid",  # Custom: iteration ID
             ]
         )
 
@@ -190,7 +204,11 @@ class MinFluxReaderV2(MinFluxReader):
                 "cfr": "<f2",
                 "dcr": "<f2",
                 "fluo": "u1",
+                "iid": "<u4",
             }
+
+            # Apply the iteration ID
+            raw_dataframe["iid"] = raw_dataframe["fnl"].cumsum().shift(fill_value=0) + 1
 
             # Apply the correct datatypes to the columns
             raw_dataframe = raw_dataframe.astype(data_full_df_dtype)
@@ -517,7 +535,10 @@ class MinFluxReaderV2(MinFluxReader):
 
         # Get valid subset
         valid_subset = self._get_valid_subset()
-        data_valid_df = self._full_raw_dataframe.iloc[valid_subset]
+        data_valid_df = self._full_raw_dataframe.loc[valid_subset]
+
+        # Extract the iteration IDs
+        iid = data_valid_df["iid"].to_numpy()
 
         # Extract the valid iterations
         itr = data_valid_df["itr"].to_numpy()
@@ -560,6 +581,9 @@ class MinFluxReaderV2(MinFluxReader):
         else:
             # In contrast to version 1 of the reader and of the Imspector file formats, we now extract
             # by value and not by index!
+
+            # Extract the iteration IDs
+            iid = iid[itr == self._loc_index]
 
             # Trace IDs
             tid = tid[itr == self._loc_index]
@@ -618,10 +642,11 @@ class MinFluxReaderV2(MinFluxReader):
             # Calculate dwell
             dwell = np.around((eco / (efo / 1000)) / self._dwell_time, decimals=0)
 
-        # Create a Pandas dataframe for the results
+        # Create a Pandas dataframe for the results (make sure to use properties
+        # from the V2 reader
         df = pd.DataFrame(
             index=pd.RangeIndex(start=0, stop=len(tid)),
-            columns=MinFluxReader.processed_properties(),
+            columns=self.processed_properties(),
         )
 
         # Store the extracted valid hits into the dataframe
@@ -636,6 +661,7 @@ class MinFluxReaderV2(MinFluxReader):
         df["dcr"] = dcr
         df["dwell"] = dwell
         df["fluo"] = fluo
+        df["iid"] = iid
 
         # Check if the selected indices correspond to the last valid iteration
         self._is_last_valid = bool(
