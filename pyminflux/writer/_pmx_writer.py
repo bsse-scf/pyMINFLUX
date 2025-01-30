@@ -73,7 +73,7 @@ class PMXWriter:
                 self._store_dataframe(
                     paraview_group,
                     self.processor.filtered_dataframe,
-                    "filtered_dataframe",
+                    "dataframe",
                 )
 
                 # Store important parameters

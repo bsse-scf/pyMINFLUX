@@ -159,15 +159,8 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
                 self._message = f"Incompatible file version {file_version}."
                 return None
 
-            if file_version in ["1.0", "2.0"]:
-                dataset_path = "/paraview/dataframe"
-                index_path = "/paraview/dataframe_index"
-            else:  # version "3.0"
-                dataset_path = "/dataframes/filtered_dataframe"
-                index_path = "/dataframes/filtered_dataframe_index"
-
             # Read dataset
-            dataset = f[dataset_path]
+            dataset = f["/paraview/dataframe"]
 
             # Read the NumPy data
             data_array = dataset[:]
@@ -184,7 +177,7 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
             column_types[column_types == "float16"] = "float32"
 
             # Read the index
-            index_data = f[index_path][:]
+            index_data = f["/paraview/dataframe_index"][:]
 
             # Create DataFrame with specified columns
             df = pd.DataFrame(data_array, index=index_data, columns=column_names)
