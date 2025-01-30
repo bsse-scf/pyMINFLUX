@@ -162,7 +162,14 @@ def find_last_valid_iteration_v2(
     offsets = np.arange(num_iterations)[:, np.newaxis]
     indices = trace_start + offsets
     cfr = data_full_df["cfr"].to_numpy()[indices]
-    last_valid["valid_cfr"] = (np.std(cfr, axis=1) > 0.0).tolist()
+
+    # In the pathological case where there is only one trace in the dataset,
+    # we cannot look at the variation in cfr values across traces, but only
+    # at the values in this specific one.
+    if len(trace_start) == 1:
+        last_valid["valid_cfr"] = (cfr.ravel() > 0.0).tolist()
+    else:
+        last_valid["valid_cfr"] = (np.std(cfr, axis=1) > 0.0).tolist()
     valid_indices = np.where(last_valid["valid_cfr"])[0]
     if len(valid_indices) == 0:
         last_valid["cfr_index"] = num_iterations - 1
@@ -171,6 +178,11 @@ def find_last_valid_iteration_v2(
 
     # Set efo index
     last_valid["efo_index"] = num_iterations - 1
+
+    # Again, in the pathological case where there is only one trace, we add a fake
+    # next trace start for the next steps to work.
+    if len(trace_start) == 1:
+        trace_start = np.append(trace_start, [len(data_full_df.index)]).ravel()
 
     # Find indices (values) of relocalized iterations (from the first complete iteration)
     (complete_iterations,) = np.where(np.diff(trace_start) > num_iterations)
