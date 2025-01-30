@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.reader import MinFluxReaderFactory, MinFluxReaderV2
+from pyminflux.reader import MinFluxReader, MinFluxReaderFactory, MinFluxReaderV2
 
 
 @pytest.fixture(autouse=False)
@@ -135,8 +135,8 @@ def test_read_npy_v2(extract_multi_format_geometry_data_files):
     ), "Unexpected number of entries in MAT file."
 
     # Check that the MAT dataframe is the same as the NumPy one
-    assert npy_reader._data_full_df.equals(
-        mat_reader._data_full_df
+    assert npy_reader.processed_dataframe.equals(
+        mat_reader.processed_dataframe
     ), "NumPy and MAT dataframe are different."
 
     #
@@ -149,8 +149,8 @@ def test_read_npy_v2(extract_multi_format_geometry_data_files):
     ), "Unexpected number of entries in json file."
 
     # Check that the json dataframe is the same as the NumPy one
-    assert npy_reader._data_full_df.equals(
-        json_reader._data_full_df
+    assert npy_reader.processed_dataframe.equals(
+        json_reader.processed_dataframe
     ), "NumPy and json dataframe are different."
 
 
@@ -239,8 +239,13 @@ def test_compare_readers(extract_multi_format_geometry_data_files):
 
     assert (
         processor.filtered_dataframe.columns.tolist()
-        == processor_v2.filtered_dataframe.columns.tolist()
+        == MinFluxReader.processed_properties()
     ), "Columns mismatch."
+    assert (
+        processor_v2.filtered_dataframe.columns.tolist()
+        == MinFluxReaderV2.processed_properties()
+    ), "Columns mismatch."
+
     assert len(processor.filtered_dataframe.index) == len(
         processor_v2.filtered_dataframe.index
     ), "Different number of entries."
@@ -282,8 +287,13 @@ def test_compare_readers(extract_multi_format_geometry_data_files):
 
     assert (
         processor.filtered_dataframe.columns.tolist()
-        == processor_v2.filtered_dataframe.columns.tolist()
+        == MinFluxReader.processed_properties()
     ), "Columns mismatch."
+    assert (
+        processor_v2.filtered_dataframe.columns.tolist()
+        == MinFluxReaderV2.processed_properties()
+    ), "Columns mismatch."
+
     assert len(processor.filtered_dataframe.index) == len(
         processor_v2.filtered_dataframe.index
     ), "Different number of entries."

@@ -225,13 +225,15 @@ def get_reader_version_for_npy_file(file_path):
 
     reader_version: int
         Return the version for the MinFluxReader version needed to open this Imspector *.npy file.
+        If the file is invalid or in case of error, return -1.
     """
     with open(file_path, "rb") as f:
         # Read the magic string
         magic_string = f.read(6)
 
         if not magic_string == b"\x93NUMPY":
-            raise ValueError(f"{file_path} is not a valid .npy file.")
+            print(f"{file_path} is not a valid .npy file.")
+            return -1
 
         # Set file pointer at the beginning of the header
         f.seek(8)
@@ -253,7 +255,7 @@ def get_reader_version_for_npy_file(file_path):
 
         except Exception as parse_error:
             print(f"Manual parsing failed: {parse_error}")
-            raise
+            return -1
 
     # Process header dictionary
     reader_version = 1
@@ -282,10 +284,15 @@ def get_reader_version_for_mat_file(file_path):
 
     reader_version: int
         Return the version for the MinFluxReader version needed to open this Imspector *.mat file.
+        If the file is invalid or in case of error, return -1.
     """
 
     # Returns a list of tuples: (variable name, shape, dtype)
-    mat_metadata = whosmat(file_path)
+    try:
+        mat_metadata = whosmat(file_path)
+    except ValueError as e:
+        print(f"Error parsing file {file_path}: {e}")
+        return -1
 
     # Process the list
     reader_version = 1
@@ -314,6 +321,7 @@ def get_reader_version_for_pmx_file(file_path):
 
     reader_version: int
         Return the version for the MinFluxReader version needed to open this *.pmx file.
+        If the file is invalid or in case of error, return -1.
     """
     # Open the file and read the data
     with h5py.File(file_path, "r") as f:
@@ -322,12 +330,15 @@ def get_reader_version_for_pmx_file(file_path):
         file_version = f.attrs["file_version"]
 
         if file_version not in ["1.0", "2.0", "3.0"]:
-            raise ValueError("Unsupported file version.")
+            return -1
 
         if file_version in ["1.0", "2.0"]:
             return 1
         else:
-            reader_version = int(f.attrs["reader_version"])
+            try:
+                reader_version = int(f.attrs["reader_version"])
+            except (KeyError, ValueError) as e:
+                reader_version = -1
             return reader_version
 
 

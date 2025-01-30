@@ -76,5 +76,9 @@ class MinFluxReaderFactory:
             return MinFluxReader, ""
         elif reader_version == 2:
             return MinFluxReaderV2, ""
+        elif reader_version == -1:
+            # In case parsing the files failed, the returned reader_version would be 1.
+            return None, f"Error processing file {filename}."
         else:
+            # Unexpected version number
             return None, f"MinFluxReader version {reader_version} is not supported."

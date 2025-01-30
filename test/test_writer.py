@@ -63,7 +63,9 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     assert reader.processed_dataframe is not None, "Failed processing dataframe."
-    assert processor.full_dataframe is not None, "Failed retrieving full dataframe."
+    assert (
+        processor.processed_dataframe is not None
+    ), "Failed retrieving full dataframe."
     assert processor.filtered_dataframe is not None, "Failed filtering dataframe."
 
     # Assign fluorophores
@@ -104,7 +106,7 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
         reloaded_processor = MinFluxProcessor(reloaded_reader)
 
     assert (
-        reloaded_processor.full_dataframe is not None
+        reloaded_processor.processed_dataframe is not None
     ), "Failed retrieving full dataframe."
     assert (
         reloaded_processor.filtered_dataframe is not None
@@ -112,10 +114,10 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
 
     # Now compare the processed file with its reloaded version
     assert (
-        len(processor.full_dataframe.index) == 12580
+        len(processor.processed_dataframe.index) == 12580
     ), "Original processor's full dataframe must be untouched."
     assert (
-        len(reloaded_processor.full_dataframe.index) == 2432
+        len(reloaded_processor.processed_dataframe.index) == 2432
     ), "Unexpected number of entries in reloaded .npy file."
     assert (
         len(reloaded_processor.filtered_dataframe.index) == 2432
@@ -149,7 +151,9 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     assert reader.processed_dataframe is not None, "Failed processing dataframe."
-    assert processor.full_dataframe is not None, "Failed retrieving full dataframe."
+    assert (
+        processor.processed_dataframe is not None
+    ), "Failed retrieving full dataframe."
     assert processor.filtered_dataframe is not None, "Failed filtering dataframe."
 
     # Assign fluorophores
@@ -187,11 +191,11 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
 
     # Now get the filtered Numpy array for fluorophore ID = "All", "1", and "2"
     processor.current_fluorophore_id = 0
-    filtered_numpy_array_all = processor.filtered_numpy_array
+    filtered_numpy_array_all = processor.filtered_raw_data_array
     processor.current_fluorophore_id = 1
-    filtered_numpy_array_1 = processor.filtered_numpy_array
+    filtered_numpy_array_1 = processor.filtered_raw_data_array
     processor.current_fluorophore_id = 2
-    filtered_numpy_array_2 = processor.filtered_numpy_array
+    filtered_numpy_array_2 = processor.filtered_raw_data_array
 
     # And finally, compare the extracted data
     assert len(filtered_dataframe_all.index) == len(filtered_numpy_array_all)
@@ -320,7 +324,9 @@ def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     assert reader.processed_dataframe is not None, "Failed processing dataframe."
-    assert processor.full_dataframe is not None, "Failed retrieving full dataframe."
+    assert (
+        processor.processed_dataframe is not None
+    ), "Failed retrieving full dataframe."
     assert processor.filtered_dataframe is not None, "Failed filtering dataframe."
 
     # Assign fluorophores
@@ -360,7 +366,7 @@ def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
 
     # Now compare the processed file with its reloaded version
     assert (
-        len(processor.full_dataframe.index) == 12580
+        len(processor.processed_dataframe.index) == 12580
     ), "Original processor's full dataframe must be untouched."
     assert (
         len(reloaded_dataframe.index) == 2432

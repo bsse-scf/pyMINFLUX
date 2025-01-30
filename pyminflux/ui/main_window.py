@@ -696,11 +696,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 reader = reader_class(
                     filename, z_scaling_factor=self.state.z_scaling_factor
                 )
-            except IOError as e:
+            except (TypeError, IOError) as e:
                 QMessageBox.critical(
                     self,
                     "Error",
-                    f"{e}",
+                    f"Could not process invalid file {filename}.",
                 )
                 return
 

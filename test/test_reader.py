@@ -114,11 +114,6 @@ def test_access(extract_multi_format_geometry_data_files):
         reader.is_pool_dcr is True
     ), "The pool DCR flag is passed as a parameter to the constructor."
 
-    # Now access the raw dataframe, this will not change the properties from above.
-    # The property `is_last_valid` is still None
-    df_raw = reader.raw_data_dataframe
-    assert df_raw is not None, "The raw dataframe is generated at access."
-
     assert reader.is_3d is True, "The 3D information is extracted at load/scan."
     assert (
         reader.is_aggregated is False
