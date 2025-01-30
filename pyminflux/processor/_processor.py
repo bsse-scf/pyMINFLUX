@@ -283,7 +283,25 @@ class MinFluxProcessor:
             raise ValueError("Only reader version 2 is supported.")
 
         # valid_full_raw_dataframe is a MinFluxReaderV2 property
-        return self.reader.valid_full_raw_dataframe
+        raw_array = self.reader.valid_full_raw_dataframe
+
+        # Now extract the fluorophore assignments from self.processed_dataframe and
+        # expand them onto the raw array
+        fluo_map = dict(
+            zip(
+                self.processed_dataframe["iid"],
+                self.processed_dataframe["fluo"].astype(np.uint8),
+            )
+        )
+
+        # Finally map the matching fluo values onto raw_array["fluo"]
+        raw_array["fluo"] = 1
+        fluo = raw_array["iid"].map(fluo_map).to_numpy()
+        fluo[np.isnan(fluo)] = 0
+        raw_array["fluo"] = fluo
+
+        # Return the array with the assigned fluorophores
+        return raw_array
 
     @property
     def filtered_dataframe(self) -> Union[None, pd.DataFrame]:

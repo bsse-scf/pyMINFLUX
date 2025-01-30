@@ -520,6 +520,11 @@ def test_consistence_of_pmx_versions(extract_pmx_various_versions):
     assert (
         len(reader_v1_pmx.processed_dataframe.columns) == 11
     ), "Unexpected number of columns in processed dataframe."
+    n_fluo1_v1 = np.sum(reader_v1_pmx.processed_dataframe["fluo"] == 1)
+    n_fluo2_v1 = np.sum(reader_v1_pmx.processed_dataframe["fluo"] == 2)
+    assert n_fluo1_v1 == 920, "Unexpected number of fluo IDs = 1"
+    assert n_fluo2_v1 == 136, "Unexpected number of fluo IDs = 2"
+    assert n_fluo1_v1 + n_fluo2_v1 == len(reader_v1_pmx.processed_dataframe.index)
 
     # Load V2 PMX file with the MinFluxReader
     reader_class_v2_pmx, status_str = MinFluxReaderFactory.get_reader(v2_pmx)
@@ -536,6 +541,11 @@ def test_consistence_of_pmx_versions(extract_pmx_various_versions):
         reader_v2_pmx.processed_dataframe.columns
         == reader_v1_pmx.processed_dataframe.columns
     ), "Processed dataframe columns mismatch."
+    n_fluo1_v2 = np.sum(reader_v2_pmx.processed_dataframe["fluo"] == 1)
+    n_fluo2_v2 = np.sum(reader_v2_pmx.processed_dataframe["fluo"] == 2)
+    assert n_fluo1_v2 == 920, "Unexpected number of fluo IDs = 1"
+    assert n_fluo2_v2 == 136, "Unexpected number of fluo IDs = 2"
+    assert n_fluo1_v2 + n_fluo2_v2 == len(reader_v2_pmx.processed_dataframe.index)
 
     # Load V3 PMX file with the MinFluxReader (this is a different dataset from V1 and V2)
     reader_class_v3_pmx, status_str = MinFluxReaderFactory.get_reader(v3_pmx)
@@ -543,8 +553,13 @@ def test_consistence_of_pmx_versions(extract_pmx_various_versions):
     assert reader_class_v3_pmx is MinFluxReaderV2, "Expected V2 MinFluxReader class!"
     reader_v3_pmx = reader_class_v3_pmx(v3_pmx, z_scaling_factor=0.7)
     assert (
-        len(reader_v3_pmx.processed_dataframe.index) == 465
+        len(reader_v3_pmx.processed_dataframe.index) == 404
     ), "Unexpected number of localizations in file."
     assert (
         len(reader_v3_pmx.processed_dataframe.columns) == 12
     ), "Unexpected number of columns in processed dataframe."
+    n_fluo1_v3 = np.sum(reader_v3_pmx.processed_dataframe["fluo"] == 1)
+    n_fluo2_v3 = np.sum(reader_v3_pmx.processed_dataframe["fluo"] == 2)
+    assert n_fluo1_v3 == 138, "Unexpected number of fluo IDs = 1"
+    assert n_fluo2_v3 == 266, "Unexpected number of fluo IDs = 2"
+    assert n_fluo1_v3 + n_fluo2_v3 == len(reader_v3_pmx.processed_dataframe.index)
