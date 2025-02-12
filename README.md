@@ -14,6 +14,17 @@ Reader, analyzer, and viewer of MINFLUX raw data.
 
 **Please note**: since **pyMINFLUX.exe** on Windows and **pyMINFLUX.app** on macOS come from an *unidentified developer* and are not (yet) digitally signed, both operating systems may prevent them from running. In this case, please have a look at our [troubleshooting guide](https://github.com/bsse-scf/pyMINFLUX/wiki/Troubleshooting#installation). Please mind that this only applies to the **compiled executables**.
 
+On macOS, it is recommended to download the zipped app via **curl** or **wget** to prevent Gatekeeper from quarantining the application (see also [troubleshooting guide](https://github.com/bsse-scf/pyMINFLUX/wiki/Troubleshooting#installation)).
+
+```bash
+$ curl -LJO https://github.com/bsse-scf/pyMINFLUX/releases/download/0.5.0/pyMINFLUX_0.5.0_macos_m1.zip
+```
+Alternatively, if `wget` is installed:
+
+```bash
+$ wget --content-disposition https://github.com/bsse-scf/pyMINFLUX/releases/download/0.5.0/pyMINFLUX_0.5.0_macos_m1.zip
+```
+
 ### pip
 
 The latest version of pyMINFLUX can also be installed from [pypi.org](https://pypi.org/project/pyminflux/). pyMINFLUX is compatible with and tested on Python 3.10 and 3.11. It is recommended to install pyMINFLUX in a conda environment as follows:
