@@ -25,6 +25,13 @@ Alternatively, if `wget` is installed:
 $ wget --content-disposition https://github.com/bsse-scf/pyMINFLUX/releases/download/0.5.0/pyMINFLUX_0.5.0_macos_m1.zip
 ```
 
+The equivalent call for **Powershell** on Windows is:
+
+```bash
+$ Invoke-WebRequest -Uri "https://github.com/bsse-scf/pyMINFLUX/releases/download/0.5.0/pyMINFLUX_0.5.0_win.zip" -OutFile C:\pyMINFLUX_0.5.0_win.zip 
+```
+Adapt the path for the `-OutFile` argument as needed.
+
 ### pip
 
 The latest version of pyMINFLUX can also be installed from [pypi.org](https://pypi.org/project/pyminflux/). pyMINFLUX is compatible with and tested on Python 3.10 and 3.11. It is recommended to install pyMINFLUX in a conda environment as follows:
