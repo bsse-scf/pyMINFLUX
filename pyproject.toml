@@ -76,7 +76,7 @@ ordered-set = "^4.1.0"
 pytest-cov = "^4.1.0"
 pre-commit = "^3.6.0"
 pdoc3 = "^0.10.0"
-nuitka = "^2.4.11"
+nuitka = "^2.6.7"
 zstandard = "^0.23.0"
 ruff = "^0.4.10"
 
