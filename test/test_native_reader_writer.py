@@ -518,7 +518,7 @@ def test_consistence_of_pmx_versions(extract_pmx_various_versions):
         len(reader_v1_pmx.processed_dataframe.index) == 1056
     ), "Unexpected number of localizations in file."
     assert (
-        len(reader_v1_pmx.processed_dataframe.columns) == 11
+        len(reader_v1_pmx.processed_dataframe.columns) == 12
     ), "Unexpected number of columns in processed dataframe."
     n_fluo1_v1 = np.sum(reader_v1_pmx.processed_dataframe["fluo"] == 1)
     n_fluo2_v1 = np.sum(reader_v1_pmx.processed_dataframe["fluo"] == 2)
@@ -535,7 +535,7 @@ def test_consistence_of_pmx_versions(extract_pmx_various_versions):
         len(reader_v2_pmx.processed_dataframe.index) == 1056
     ), "Unexpected number of localizations in file."
     assert (
-        len(reader_v2_pmx.processed_dataframe.columns) == 11
+        len(reader_v2_pmx.processed_dataframe.columns) == 12
     ), "Unexpected number of columns in processed dataframe."
     assert np.all(
         reader_v2_pmx.processed_dataframe.columns
@@ -556,7 +556,7 @@ def test_consistence_of_pmx_versions(extract_pmx_various_versions):
         len(reader_v3_pmx.processed_dataframe.index) == 404
     ), "Unexpected number of localizations in file."
     assert (
-        len(reader_v3_pmx.processed_dataframe.columns) == 12
+        len(reader_v3_pmx.processed_dataframe.columns) == 13
     ), "Unexpected number of columns in processed dataframe."
     n_fluo1_v3 = np.sum(reader_v3_pmx.processed_dataframe["fluo"] == 1)
     n_fluo2_v3 = np.sum(reader_v3_pmx.processed_dataframe["fluo"] == 2)

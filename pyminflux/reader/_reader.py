@@ -434,12 +434,26 @@ class MinFluxReader:
             "dcr",
             "dwell",
             "fluo",
+            "fbg",
         ]
 
     @classmethod
     def raw_properties(cls) -> list:
         """Returns the properties read from the file and dynamic that correspond to the raw dataframe column names."""
-        return ["tid", "aid", "vld", "tim", "x", "y", "z", "efo", "cfr", "eco", "dcr"]
+        return [
+            "tid",
+            "aid",
+            "vld",
+            "tim",
+            "x",
+            "y",
+            "z",
+            "efo",
+            "cfr",
+            "eco",
+            "dcr",
+            "fbg",
+        ]
 
     def _load(self) -> bool:
         """Load the file."""
@@ -560,6 +574,9 @@ class MinFluxReader:
             # Extract DCR
             dcr = itr["dcr"]
 
+            # Extract the background
+            bfg = itr["bfg"]
+
             # Dwell
             dwell = np.around((eco / (efo / 1000)) / self._dwell_time, decimals=0)
 
@@ -576,6 +593,9 @@ class MinFluxReader:
 
             # Extract ECO
             eco = itr[:, self._eco_index]["eco"]
+
+            # Extract the background
+            fbg = itr[:, self._relocalizations]["fbg"]
 
             # Pool DCR values?
             if self._pool_dcr and np.sum(self._relocalizations) > 1:
@@ -615,6 +635,7 @@ class MinFluxReader:
         df["eco"] = eco
         df["dcr"] = dcr
         df["dwell"] = dwell
+        df["fbg"] = fbg
         df["fluo"] = fluo
 
         # Remove rows with NaNs in the loc matrix

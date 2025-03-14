@@ -250,6 +250,10 @@ def test_compare_readers(extract_multi_format_geometry_data_files):
         processor_v2.filtered_dataframe.index
     ), "Different number of entries."
     for c in processor.filtered_dataframe:
+        # The 'fbg' is known to have significantly different values between v1 and v2
+        # because of the new algorithm used to determine it
+        if c == "fbg":
+            continue
         # Correct for the different precision of columns in v1 vs. v2
         c_v2 = processor_v2.filtered_dataframe[c].to_numpy()
         c = processor.filtered_dataframe[c].to_numpy().astype(c_v2.dtype)
@@ -298,6 +302,10 @@ def test_compare_readers(extract_multi_format_geometry_data_files):
         processor_v2.filtered_dataframe.index
     ), "Different number of entries."
     for c in processor.filtered_dataframe:
+        # The 'fbg' is known to have significantly different values between v1 and v2
+        # because of the new algorithm used to determine it
+        if c == "fbg":
+            continue
         # Correct for the different precision of columns in v1 vs. v2
         c_v2 = processor_v2.filtered_dataframe[c].to_numpy()
         c = processor.filtered_dataframe[c].to_numpy().astype(c_v2.dtype)

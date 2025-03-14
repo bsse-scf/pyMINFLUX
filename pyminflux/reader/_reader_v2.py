@@ -108,6 +108,7 @@ class MinFluxReaderV2(MinFluxReader):
             "dcr",
             "dwell",
             "fluo",
+            "fbg",
             "iid",  # Custom: iteration ID
         ]
 
@@ -144,6 +145,7 @@ class MinFluxReaderV2(MinFluxReader):
                 "fbg",
                 "cfr",
                 "dcr",
+                "fbg",
                 "fluo",  # Custom: fluorophore ID
                 "iid",  # Custom: iteration ID
             ]
@@ -575,6 +577,9 @@ class MinFluxReaderV2(MinFluxReader):
             # Extract DCR
             dcr = data_valid_df["dcr"].to_numpy()
 
+            # Extract the background
+            fbg = data_valid_df["fbg"].to_numpy()
+
             # Dwell
             dwell = np.around((eco / (efo / 1000)) / self._dwell_time, decimals=0)
 
@@ -616,6 +621,9 @@ class MinFluxReaderV2(MinFluxReader):
 
             # Extract ECO
             eco = data_valid_df["eco"][itr == self._eco_index].to_numpy()
+
+            # Extract the background
+            fbg = data_valid_df["fbg"][itr == self._loc_index].to_numpy()
 
             # Fluorophore
             fluo = data_valid_df["fluo"][itr == self._loc_index].to_numpy()
@@ -660,6 +668,7 @@ class MinFluxReaderV2(MinFluxReader):
         df["eco"] = eco
         df["dcr"] = dcr
         df["dwell"] = dwell
+        df["fbg"] = fbg
         df["fluo"] = fluo
         df["iid"] = iid
 
