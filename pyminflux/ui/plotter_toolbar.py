@@ -156,12 +156,14 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         # Enable the Average checkbox only for x, y plots
         if (
             not self.state.is_tracking
-            and self.state.x_param in ["x", "y"]
-            and self.state.y_param in ["x", "y"]
+            and self.state.x_param in ["x", "y", "z"]
+            and self.state.y_param in ["x", "y", "z"]
         ):
             self.ui.cbPlotAveragePos.setEnabled(True)
         else:
+            # For clarity, disable and also unckeck
             self.ui.cbPlotAveragePos.setEnabled(False)
+            self.ui.cbPlotAveragePos.setChecked(False)
 
     @Slot(int)
     def persist_color_code_and_broadcast(self, index):

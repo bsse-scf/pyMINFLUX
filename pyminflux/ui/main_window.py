@@ -1413,9 +1413,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # If an only if the requested parameters are "x" and "y" (in any order),
             # we consider the State.plot_average_localisations property.
-            if (self.state.x_param == "x" and self.state.y_param == "y") or (
-                self.state.x_param == "y" and self.state.y_param == "x"
-            ):
+            if self.state.x_param in ["x", "y", "z"] and self.state.y_param in [
+                "x",
+                "y",
+                "z",
+            ]:
                 if self.state.plot_average_localisations:
                     # Get the (potentially filtered) averaged dataframe
                     dataframe = self.processor.weighted_localizations
