@@ -17,6 +17,7 @@ from typing import Sequence
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QDialog
 
+from pyminflux.ui.state import State
 from pyminflux.ui.ui_importer import Ui_Importer
 
 
@@ -39,6 +40,13 @@ class Importer(QDialog, Ui_Importer):
         # Initialize the dialog
         self.ui = Ui_Importer()
         self.ui.setupUi(self)
+
+        # Keep a reference to the Stase
+        self.state = State()
+
+        # Hide warning label
+        self.ui.lbSelectionWarning.setStyleSheet("background-color: red;")
+        self.ui.lbSelectionWarning.setVisible(False)
 
         # Store the arguments
         self._num_iterations = len(valid_cfr)
@@ -213,6 +221,10 @@ class Importer(QDialog, Ui_Importer):
 
     def highlight_iteration(self, iteration):
         """Highlight the button for the global _iteration."""
+        if not self._relocalizations[iteration] and self.state.min_trace_length > 1:
+            self.ui.lbSelectionWarning.setVisible(True)
+        else:
+            self.ui.lbSelectionWarning.setVisible(False)
         self.widgets_list[iteration][0].setStyleSheet(
             "color: black; background-color: lightblue; border-style: flat;"
         )
