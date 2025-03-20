@@ -246,8 +246,8 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Reset button
         self.ui.pbReset.setVisible(enabled)
 
-        # Color unmixing
-        self.ui.lbColors.setVisible(enabled)
+        # Multiplexing
+        self.ui.lbMultiplexing.setVisible(enabled)
         self.ui.pbSingleColor.setVisible(enabled)
         self.ui.pbColorUnmixer.setVisible(enabled)
         self.ui.lbActiveColor.setVisible(enabled)

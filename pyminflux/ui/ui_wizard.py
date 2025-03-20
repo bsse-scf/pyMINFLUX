@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'wizard.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.7.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -61,7 +61,9 @@ class Ui_WizardDialog(object):
         if not WizardDialog.objectName():
             WizardDialog.setObjectName("WizardDialog")
         WizardDialog.resize(357, 939)
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.MinimumExpanding)
+        sizePolicy = QSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.MinimumExpanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(WizardDialog.sizePolicy().hasHeightForWidth())
@@ -69,7 +71,7 @@ class Ui_WizardDialog(object):
         self.gridLayout = QGridLayout(WizardDialog)
         self.gridLayout.setObjectName("gridLayout")
         self.verticalSpacer = QSpacerItem(
-            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
         )
 
         self.gridLayout.addItem(self.verticalSpacer, 17, 0, 1, 1)
@@ -88,18 +90,18 @@ class Ui_WizardDialog(object):
         self.mainLayout.addWidget(self.pbReset)
 
         self.verticalSpacer_2 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+            20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
         )
 
         self.mainLayout.addItem(self.verticalSpacer_2)
 
-        self.lbColors = QLabel(WizardDialog)
-        self.lbColors.setObjectName("lbColors")
+        self.lbMultiplexing = QLabel(WizardDialog)
+        self.lbMultiplexing.setObjectName("lbMultiplexing")
         font = QFont()
         font.setBold(True)
-        self.lbColors.setFont(font)
+        self.lbMultiplexing.setFont(font)
 
-        self.mainLayout.addWidget(self.lbColors)
+        self.mainLayout.addWidget(self.lbMultiplexing)
 
         self.color_layout = QHBoxLayout()
         self.color_layout.setObjectName("color_layout")
@@ -119,7 +121,9 @@ class Ui_WizardDialog(object):
         self.fluorophores_layout.setObjectName("fluorophores_layout")
         self.lbActiveColor = QLabel(WizardDialog)
         self.lbActiveColor.setObjectName("lbActiveColor")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy1 = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
+        )
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(
@@ -132,7 +136,9 @@ class Ui_WizardDialog(object):
         self.cmActiveColor = QComboBox(WizardDialog)
         self.cmActiveColor.addItem("")
         self.cmActiveColor.setObjectName("cmActiveColor")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy2 = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(
@@ -145,7 +151,7 @@ class Ui_WizardDialog(object):
         self.mainLayout.addLayout(self.fluorophores_layout)
 
         self.verticalSpacer_4 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+            20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
         )
 
         self.mainLayout.addItem(self.verticalSpacer_4)
@@ -162,7 +168,7 @@ class Ui_WizardDialog(object):
         self.mainLayout.addWidget(self.pbTimeInspector)
 
         self.verticalSpacer_3 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+            20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
         )
 
         self.mainLayout.addItem(self.verticalSpacer_3)
@@ -187,7 +193,7 @@ class Ui_WizardDialog(object):
 
         self.leEFOLowerBound = QLineEdit(WizardDialog)
         self.leEFOLowerBound.setObjectName("leEFOLowerBound")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(
@@ -270,7 +276,7 @@ class Ui_WizardDialog(object):
         self.mainLayout.addWidget(self.pbCFRFilter)
 
         self.verticalSpacer_5 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+            20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
         )
 
         self.mainLayout.addItem(self.verticalSpacer_5)
@@ -316,8 +322,8 @@ class Ui_WizardDialog(object):
             QCoreApplication.translate("WizardDialog", "Load", None)
         )
         self.pbReset.setText(QCoreApplication.translate("WizardDialog", "Reset", None))
-        self.lbColors.setText(
-            QCoreApplication.translate("WizardDialog", "DCR unmixing", None)
+        self.lbMultiplexing.setText(
+            QCoreApplication.translate("WizardDialog", "Multiplexing", None)
         )
         self.pbSingleColor.setText(
             QCoreApplication.translate("WizardDialog", "Single fluorophore", None)
