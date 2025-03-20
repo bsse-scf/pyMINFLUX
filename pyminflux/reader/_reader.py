@@ -595,7 +595,7 @@ class MinFluxReader:
             eco = itr[:, self._eco_index]["eco"]
 
             # Extract the background
-            fbg = itr[:, self._relocalizations]["fbg"]
+            fbg = itr[:, self._loc_index]["fbg"]
 
             # Pool DCR values?
             if self._pool_dcr and np.sum(self._relocalizations) > 1:

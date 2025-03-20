@@ -142,7 +142,6 @@ class MinFluxReaderV2(MinFluxReader):
                 "ecc",
                 "efo",
                 "efc",
-                "fbg",
                 "cfr",
                 "dcr",
                 "fbg",
