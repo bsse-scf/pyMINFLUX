@@ -59,7 +59,7 @@ select = ["NPY201"]
 python = ">=3.10,<3.13"
 numpy = "^2.0.0"
 pandas = "^2.2.3"
-pyarrow = "^17.0.0"
+pyarrow = "^19.0.1"
 pyside6 = "<6.8.0"
 pyqtgraph = "^0.13.7"
 scipy = "^1.14.0"
