@@ -66,6 +66,9 @@ class Plotter(PlotWidget):
         # Keep a reference to the singleton State class
         self.state = State()
 
+        # Keep track of whether the y axis is inverted
+        self._y_axis_inverted = False
+
         # Keep track of the mapping between unique identifiers or fluorophore identifiers and cached QBrushes
         self._id_to_brush = None
         self._fid_to_brush = None
@@ -209,6 +212,9 @@ class Plotter(PlotWidget):
                         lambda _: self.remove_confocal_image(redraw=True)
                     )
                     menu.addAction(remove_confocal_image_action)
+                flip_y_axis_action = QAction("Flip y axis")
+                flip_y_axis_action.triggered.connect(self.invert_y_axis)
+                menu.addAction(flip_y_axis_action)
                 export_action = QAction("Export plot")
                 export_action.triggered.connect(
                     lambda checked: export_plot_interactive(self.getPlotItem())
@@ -222,6 +228,14 @@ class Plotter(PlotWidget):
                 # Call the parent method
                 ev.ignore()
                 super().mousePressEvent(ev)
+
+    def invert_y_axis(self):
+        """Invert the Y axis of the plot."""
+        if self._y_axis_inverted:
+            self.getPlotItem().getViewBox().invertY(False)
+        else:
+            self.getPlotItem().getViewBox().invertY(True)
+        self._y_axis_inverted = not self._y_axis_inverted
 
     def mouseMoveEvent(self, ev):
         # Is the user drawing an ROI?
