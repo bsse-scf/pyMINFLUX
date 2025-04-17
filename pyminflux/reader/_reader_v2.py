@@ -19,6 +19,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+import zarr
 from scipy.io import loadmat
 
 # Avoid circular imports
@@ -115,7 +116,7 @@ class MinFluxReaderV2(MinFluxReader):
     def _load(self) -> bool:
         """Load the file."""
 
-        if not self._filename.is_file():
+        if not self._filename.exists():
             print(f"File {self._filename} does not exist.")
             return False
 
@@ -150,12 +151,21 @@ class MinFluxReaderV2(MinFluxReader):
             ]
         )
 
-        # Determine file type
-        file_ext = self._filename.suffix.lower()
+        # Do we have a  Zarr file?
+        if self._filename.is_dir():
+            # Create phony file_ext ".zarr" for the following logic
+            file_ext = ".zarr"
+
+        else:
+            # Determine file type
+            file_ext = self._filename.suffix.lower()
 
         # Call the specialized _load_*() function
         try:
-            if file_ext == ".npy":
+            if file_ext == ".zarr":
+                # Load and convert to NumPy
+                raw_dataframe = self._load_zarr(raw_dataframe)
+            elif file_ext == ".npy":
                 raw_dataframe = self._load_numpy(raw_dataframe)
             elif file_ext == ".mat":
                 raw_dataframe = self._load_mat(raw_dataframe)
@@ -171,7 +181,7 @@ class MinFluxReaderV2(MinFluxReader):
             return False
 
         # Finalize the initialization for all imported file formats
-        if file_ext in [".npy", ".mat", ".json"]:
+        if file_ext in [".zarr", ".npy", ".mat", ".json"]:
 
             # Initialize the fluo field
             raw_dataframe["fluo"] = 1
@@ -230,6 +240,51 @@ class MinFluxReaderV2(MinFluxReader):
 
         # Return success
         return True
+
+    def _load_zarr(self, df: pd.DataFrame):
+        """Load the Zarr file and update the dataframe."""
+
+        # Let's add some robustness
+        filename = (
+            self._filename if self._filename.name == "mfx" else self._filename / "mfx"
+        )
+
+        # Load array
+        npy_array = np.array(zarr.load(str(filename)))
+
+        # Fill the dataframe
+        for name in npy_array.dtype.names:
+            if name == "dcr":
+                # In version 2, the dcr is 2D: dcr[:, 0] corresponds to the dcr of
+                # version 1, while dcr[:, 1] is just 1.0 - dcr[:, 0]. We drop the
+                # second dimension.
+                df["dcr"] = npy_array["dcr"][:, 0]
+                continue
+
+            # Special cases
+            if name == "loc":
+                df["x"] = npy_array["loc"][:, 0]
+                df["y"] = npy_array["loc"][:, 1]
+                df["z"] = npy_array["loc"][:, 2]
+                continue
+
+            if name == "lnc":
+                df["lncx"] = npy_array["lnc"][:, 0]
+                df["lncy"] = npy_array["lnc"][:, 1]
+                df["lncz"] = npy_array["lnc"][:, 2]
+                continue
+
+            # Single arrays
+            df[name] = npy_array[name]
+
+        # Incomplete traces are kept in the Zarr file; we drop them before
+        # building the clean dataframe.
+        thresh = int(np.max(df["itr"]) + 1)
+        tid_counts = df["tid"].value_counts()
+        valid_traces = tid_counts[tid_counts >= thresh].index
+        df = df[df["tid"].isin(valid_traces)]
+
+        return df
 
     def _load_numpy(self, df: pd.DataFrame):
         """Load the NumPy file and update the dataframe."""

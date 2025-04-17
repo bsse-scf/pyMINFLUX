@@ -14,6 +14,8 @@
 from pathlib import Path
 from typing import Union
 
+import zarr
+
 # Avoid circular imports
 from pyminflux.reader._reader import MinFluxReader
 from pyminflux.reader._reader_v2 import MinFluxReaderV2
@@ -53,8 +55,15 @@ class MinFluxReaderFactory:
         # Check if the file exists
         filename = Path(filename)
 
-        if not filename.is_file():
+        if not filename.exists():
             return None, f"{filename} does not exist."
+
+        # If filename is a folder, we check for a valid Zarr file
+        if filename.is_dir():
+            if zarr.load(str(filename)) is not None:
+                return MinFluxReaderV2, ""
+            else:
+                return None, f"{filename} is not a valid Zarr file."
 
         # Determine file type
         file_ext = filename.suffix.lower()

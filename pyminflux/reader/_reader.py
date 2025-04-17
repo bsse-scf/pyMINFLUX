@@ -93,7 +93,7 @@ class MinFluxReader:
 
         # Store the filename
         self._filename: Path = Path(filename)
-        if not self._filename.is_file():
+        if not self._filename.exists():
             raise IOError(f"The file {self._filename} does not seem to exist.")
 
         # Keep track of whether the chosen sequence is the last valid.
