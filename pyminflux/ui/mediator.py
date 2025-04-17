@@ -386,6 +386,9 @@ class Mediator:
         self.dialogs["wizard"].load_data_triggered.connect(
             self.dialogs["main_window"].select_and_load_or_import_data_file
         )
+        self.dialogs["wizard"].load_zarr_triggered.connect(
+            self.dialogs["main_window"].select_and_load_zarr
+        )
         self.dialogs["wizard"].reset_filters_triggered.connect(
             self.dialogs["main_window"].reset_filters_and_broadcast
         )

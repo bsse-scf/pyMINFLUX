@@ -347,6 +347,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Menu actions
         self.ui.actionLoad.triggered.connect(self.select_and_load_or_import_data_file)
+        self.ui.actionLoad_Zarr.triggered.connect(self.select_and_load_zarr)
         self.ui.actionSave.triggered.connect(self.save_native_file)
         self.ui.actionExport_data.triggered.connect(self.export_filtered_data)
         self.ui.actionExport_stats.triggered.connect(self.export_filtered_stats)
@@ -620,6 +621,27 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
 
     @Slot()
+    def select_and_load_zarr(self, folder: Optional[str] = None):
+        """Select and load a zarr file."""
+
+        # Do we have a path to a folder?
+        if folder is None or not folder:
+            # Open a file dialog for the user to pick a Zarr folder
+            if self.state.last_selected_path is not None:
+                save_path = str(self.state.last_selected_path)
+            else:
+                save_path = str(Path(".").absolute())
+
+            folder = QFileDialog.getExistingDirectory(
+                self,
+                "Load Zarr",
+                save_path,
+            )
+
+        # Now call the standard loading slot
+        self.select_and_load_or_import_data_file(folder)
+
+    @Slot()
     def select_and_load_or_import_data_file(self, filename: Optional[str] = None):
         """
         Pick a MINFLUX `.pmx` file to load, or an Imspector `.npy' or '.mat' file to import.
@@ -648,16 +670,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Make sure that we are working with a string
         filename = str(filename)
 
-        if filename != "" and Path(filename).is_file():
+        if filename != "" and Path(filename).exists():
 
             # Pick the right reader
-            if len(filename) < 5:
-                print(f"Invalid file {filename}: skipping.")
-                return
-            ext = filename.lower()[-4:]
+            if Path(filename).is_dir():
+                ext = ".zarr"
+            else:
+                if len(filename) < 5:
+                    print(f"Invalid file {filename}: skipping.")
+                    return
+                ext = filename.lower()[-4:]
 
             # Make sure we have a supported file
-            if ext not in [".pmx", ".npy", ".mat", ".json"]:
+            if ext not in [".zarr", ".pmx", ".npy", ".mat", ".json"]:
                 QMessageBox.critical(
                     self,
                     "Error",
