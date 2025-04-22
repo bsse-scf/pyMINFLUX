@@ -26,6 +26,7 @@ from scipy.io import loadmat
 from pyminflux.reader._pmx_reader import PMXReader
 from pyminflux.reader._reader import MinFluxReader
 from pyminflux.reader.util import find_last_valid_iteration_v2
+from pyminflux.utils._utils import find_zarr_root
 
 
 class MinFluxReaderV2(MinFluxReader):
@@ -250,18 +251,21 @@ class MinFluxReaderV2(MinFluxReader):
 
     def _load_mbm(self):
         """Load beamline monitoring data if present."""
-        # Let's add some robustness
-        filename = (
-            self._filename.parent if self._filename.name == "mfx" else self._filename
-        )
+        # Make sure that self._filename points to the root of the Zarr file
+        self._filename = find_zarr_root(self._filename)
 
         # Initialize dictionary
         mbm_data = {"mbm": {}}
 
         # Read grd/mbm
-        mbm_points = zarr.load(str(filename / "grd" / "mbm" / "points"))
-        mbm = zarr.load(str(filename / "mbm"))
-        grd_mbm = zarr.load(str(filename / "grd" / "mbm"))
+        mbm_points = zarr.load(str(self._filename / "grd" / "mbm" / "points"))
+        mbm = zarr.load(str(self._filename / "mbm"))
+        grd_mbm = zarr.load(str(self._filename / "grd" / "mbm"))
+        if mbm_points is None or mbm is None or grd_mbm is None:
+            print(f"No beamline monitoring data found in {self._filename}.")
+            self._mbm_data = mbm_data
+            return
+
         mbm_gri = grd_mbm.grp.points.attrs["points_by_gri"]
         mbm_neighbourhood = mbm.grp.attrs["neighbourhood"]
 
@@ -288,13 +292,20 @@ class MinFluxReaderV2(MinFluxReader):
     def _load_zarr(self, df: pd.DataFrame):
         """Load the Zarr file and update the dataframe."""
 
-        # Let's add some robustness
-        filename = (
-            self._filename if self._filename.name == "mfx" else self._filename / "mfx"
-        )
+        # Make sure that self._filename points to the root of the Zarr file
+        self._filename = find_zarr_root(self._filename)
+
+        # Path to "mfx"
+        filename = self._filename / "mfx"
+        if not filename.is_dir():
+            print("Could not open the Zarr file.")
+            return None
 
         # Load array
         npy_array = np.array(zarr.load(str(filename)))
+        if npy_array is None:
+            print("Could not open the Zarr file.")
+            return None
 
         # Fill the dataframe
         for name in npy_array.dtype.names:

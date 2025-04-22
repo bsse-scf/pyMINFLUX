@@ -13,6 +13,8 @@
 #  limitations under the License.
 
 import re
+from pathlib import Path
+from typing import Union
 
 import requests
 
@@ -102,3 +104,47 @@ def intersect_2d_ranges(first_range, second_range):
         min(first_range[1], second_range[1]),
     )
     return out_range
+
+
+def find_zarr_root(start_path: Union[str, Path]) -> Path:
+    """Traverses up the directory tree from a given Zarr path to find the root of the Zarr store.
+
+    Parameters
+    ----------
+
+    start_path: start_path: Union[str, Path]
+        Path to a group or array within the Zarr store.
+
+    Returns
+    -------
+
+    path: Path
+        Path to the root of the Zarr store.
+
+    Raises:
+        FileNotFoundError: If no Zarr root is found.
+    """
+
+    # Start from the passed path
+    path = Path(start_path).resolve()
+
+    while path != path.parent:
+        zgroup = path / ".zgroup"
+        zarray = path / ".zarray"
+
+        # If either of these files exists, this directory might be a Zarr group/array
+        if zgroup.exists() or zarray.exists():
+            parent = path.parent
+            parent_zgroup = parent / ".zgroup"
+            parent_zarray = parent / ".zarray"
+
+            # If the parent does not have Zarr metadata, we've found the root
+            if not (parent_zgroup.exists() or parent_zarray.exists()):
+                return path
+            # Else, move one level up
+            path = parent
+        else:
+            # No Zarr metadata here, so we move up
+            path = path.parent
+
+    raise FileNotFoundError("No Zarr root found in the directory hierarchy.")

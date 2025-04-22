@@ -13,10 +13,11 @@
 #  limitations under the License.
 
 from ._decorators import deprecated
-from ._utils import check_for_updates, intersect_2d_ranges
+from ._utils import check_for_updates, find_zarr_root, intersect_2d_ranges
 
 __all__ = [
     "check_for_updates",
+    "find_zarr_root",
     "intersect_2d_ranges",
     "deprecated",
 ]
