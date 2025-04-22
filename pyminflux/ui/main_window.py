@@ -638,6 +638,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 save_path,
             )
 
+            if folder == "":
+                # The user cancelled the dialog
+                return
+
         # Now call the standard loading slot
         self.select_and_load_or_import_data_file(folder)
 
