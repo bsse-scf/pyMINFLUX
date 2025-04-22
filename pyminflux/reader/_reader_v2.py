@@ -68,6 +68,9 @@ class MinFluxReaderV2(MinFluxReader):
         # Version 2 does not use the _full_raw_data_array property, but uses the full dataframe instead
         self._full_raw_dataframe = None
 
+        # Store beamline monitoring data is present
+        self._mbm = None
+
         # Call the base constructor
         super().__init__(
             filename=filename,
@@ -238,8 +241,49 @@ class MinFluxReaderV2(MinFluxReader):
         # Set all relevant indices
         self._set_all_indices()
 
+        # In case of a Zarr file, try loading beamline monitoring data
+        if file_ext == ".zarr":
+            self._load_mbm()
+
         # Return success
         return True
+
+    def _load_mbm(self):
+        """Load beamline monitoring data if present."""
+        # Let's add some robustness
+        filename = (
+            self._filename.parent if self._filename.name == "mfx" else self._filename
+        )
+
+        # Initialize dictionary
+        mbm_data = {"mbm": {}}
+
+        # Read grd/mbm
+        mbm_points = zarr.load(str(filename / "grd" / "mbm" / "points"))
+        mbm = zarr.load(str(filename / "mbm"))
+        grd_mbm = zarr.load(str(filename / "grd" / "mbm"))
+        mbm_gri = grd_mbm.grp.points.attrs["points_by_gri"]
+        mbm_neighbourhood = mbm.grp.attrs["neighbourhood"]
+
+        num_beads = 0
+        num_used_beads = 0
+        for key in mbm_gri:
+            bead_name = mbm_gri[key]["name"]
+            pts = mbm_points[mbm_points["gri"] == int(key)]
+            bead_data = {"bead_name": bead_name, "gri": key, "used": 0, "points": pts}
+            if mbm_gri[key]["times_failed_in_row"] < mbm_gri[key]["stickiness"]:
+                bead_data["used"] = 1
+                num_used_beads += 1
+            mbm_data["mbm"][bead_name] = bead_data
+            num_beads += 1
+
+        # Store the loaded information
+        self._mbm_data = {"mbm_data": mbm_data, "mbm_neighborhood": mbm_neighbourhood}
+        print(
+            f"Read {num_beads} "
+            f"{'beads' if num_beads != 1 else 'bead'} ({num_used_beads} "
+            f"used)."
+        )
 
     def _load_zarr(self, df: pd.DataFrame):
         """Load the Zarr file and update the dataframe."""
