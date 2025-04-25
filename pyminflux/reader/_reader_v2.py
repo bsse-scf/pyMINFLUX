@@ -92,6 +92,11 @@ class MinFluxReaderV2(MinFluxReader):
         return 2
 
     @property
+    def mbm_data(self):
+        """Return the loaded beamline monitoring data."""
+        return self._mbm_data
+
+    @property
     def valid_full_raw_dataframe(self) -> Union[None, np.ndarray]:
         """Return the raw data."""
         if self.tot_num_entries == 0:
