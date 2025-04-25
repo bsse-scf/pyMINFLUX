@@ -1,5 +1,5 @@
 @ECHO OFF
-REM Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+REM Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 REM
 REM Licensed under the Apache License, Version 2.0 (the "License");
 REM you may not use this file except in compliance with the License.
