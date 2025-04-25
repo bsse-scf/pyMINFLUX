@@ -286,8 +286,12 @@ class MinFluxReaderV2(MinFluxReader):
             mbm_data["mbm"][bead_name] = bead_data
             num_beads += 1
 
+        # Add mbm_neighbourhood information
+        mbm_data["mbm_neighborhood"] = mbm_neighbourhood
+
         # Store the loaded information
-        self._mbm_data = {"mbm_data": mbm_data, "mbm_neighborhood": mbm_neighbourhood}
+        self._mbm_data = mbm_data
+
         print(
             f"Read {num_beads} "
             f"{'beads' if num_beads != 1 else 'bead'} ({num_used_beads} "
