@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import json
+import time
 from json import JSONDecodeError
 from pathlib import Path
 from pickle import UnpicklingError
@@ -596,7 +597,7 @@ class MinFluxReaderV2(MinFluxReader):
             val_indices = np.logical_not(self._valid_entries)
 
         # Valid
-        data_valid_df = self._full_raw_dataframe[val_indices]
+        data_valid_df = self._full_raw_dataframe.loc[val_indices]
 
         # Here we have to use different logic for tracking vs. localization
         # acquisitions. Tracking (and potentially other custom sequences)

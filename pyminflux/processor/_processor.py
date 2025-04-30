@@ -20,7 +20,7 @@ from numpy.typing import NDArray
 from scipy.stats import mode
 
 from pyminflux.analysis import calculate_total_distance_traveled, calculate_trace_time
-from pyminflux.reader import MinFluxReader
+from pyminflux.reader import MinFluxReader, MinFluxReaderV2
 
 
 class MinFluxProcessor:
@@ -36,6 +36,7 @@ class MinFluxProcessor:
         "_current_fluorophore_id",
         "_filtered_stats_dataframe",
         "_min_trace_length",
+        "_num_locs_to_drop",
         "_selected_rows_dict",
         "_stats_to_be_recomputed",
         "_weighted_localizations",
@@ -43,7 +44,12 @@ class MinFluxProcessor:
         "_use_weighted_localizations",
     ]
 
-    def __init__(self, reader: MinFluxReader, min_trace_length: int = 1):
+    def __init__(
+        self,
+        reader: Union[MinFluxReader, MinFluxReaderV2],
+        min_trace_length: int = 1,
+        num_locs_to_drop: int = 0,
+    ):
         """Constructor.
 
         Parameters
@@ -54,18 +60,25 @@ class MinFluxProcessor:
 
         min_trace_length: int (Default = 1)
             Minimum number of localizations for a trace to be kept. Shorter traces are dropped.
+
+        num_locs_to_drop: int = 0
+            Number of initial localizations of every trace to drop.
         """
 
         # Store a reference to the MinFluxReader
         self.reader: MinFluxReader = reader
 
-        # Global options
+        # Global options (to be applied after every operation)
         self._min_trace_length: int = min_trace_length
+
+        # Initial filtering (to be applied only once as the very first operation)
+        self._num_locs_to_drop = num_locs_to_drop
 
         # Cache the filtered stats dataframe
         self._filtered_stats_dataframe = None
 
-        # Keep separate arrays of booleans to cache selection state for all fluorophores IDs.
+        # Keep separate arrays of booleans to cache selection state for all
+        # fluorophore IDs. Flag early localizations if num_locs_to_drop > 0.
         self._selected_rows_dict = None
         self._init_selected_rows_dict()
 
@@ -93,16 +106,33 @@ class MinFluxProcessor:
         if self.processed_dataframe is None:
             return
 
-        # How many fluorophores do we have?
+        # Drop first localizations if requested
+        if self._num_locs_to_drop == 0:
+            # If _num_locs_to_drop == 0, keep all entries
+            keep_mask = pd.Series(
+                data=np.ones(len(self.processed_dataframe.index), dtype=bool),
+                index=self.processed_dataframe.index,
+            )
+
+        else:
+            # If _num_locs_to_drop == 0, drop the first entries from each trace
+            df = self.processed_dataframe.copy()
+
+            # Group sizes: each row gets its tid-group’s total count
+            group_sizes = df.groupby("tid")["tid"].transform("size")
+
+            # Row positions: 0-based index within each tid
+            row_positions = df.groupby("tid").cumcount()
+
+            # Boolean mask: True if group is large enough AND row is after the first m
+            keep_mask = (group_sizes >= self._num_locs_to_drop) & (
+                row_positions >= self._num_locs_to_drop
+            )
+
+        # Store the mask for each fluorophore
         self._selected_rows_dict = {
-            1: pd.Series(
-                data=np.ones(len(self.processed_dataframe.index), dtype=bool),
-                index=self.processed_dataframe.index,
-            ),
-            2: pd.Series(
-                data=np.ones(len(self.processed_dataframe.index), dtype=bool),
-                index=self.processed_dataframe.index,
-            ),
+            1: keep_mask.copy(),  # Make sure not to store references
+            2: keep_mask.copy(),
         }
 
     @property
@@ -457,7 +487,7 @@ class MinFluxProcessor:
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
 
-        # Extract combination of fluorophore 1 and 2 filtered dataframes
+        # Extract the combination of fluorophore 1 and 2 filtered dataframes
         mask_1 = (self.processed_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
         mask_2 = (self.processed_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
         mask = mask_1 | mask_2

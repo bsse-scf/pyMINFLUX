@@ -43,7 +43,12 @@ import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
 from pyminflux.plugin import PluginManager
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.reader import MinFluxReaderFactory, PMXReader
+from pyminflux.reader import (
+    MinFluxReader,
+    MinFluxReaderFactory,
+    MinFluxReaderV2,
+    PMXReader,
+)
 from pyminflux.settings import Settings, UpdateSettings
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
@@ -266,6 +271,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                     "options/min_trace_length", self.state.min_trace_length
                 )
             )
+
+        # Read and set 'num_locs_to_drop' option
+        self.state.num_locs_to_drop = int(
+            settings.instance.value(
+                "options/num_locs_to_drop", self.state.num_locs_to_drop
+            )
+        )
 
         # Read and set 'z_scaling_factor' option
         self.state.z_scaling_factor = float(
@@ -773,7 +785,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.state.last_selected_path = Path(filename).parent
 
             # Add initialize the processor with the reader
-            self.processor = MinFluxProcessor(reader, self.state.min_trace_length)
+            self.processor = MinFluxProcessor(
+                reader,
+                self.state.min_trace_length,
+                self.state.num_locs_to_drop,
+            )
 
             # Make sure to set current value of use_weighted_localizations
             self.processor.use_weighted_localizations = (

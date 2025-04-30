@@ -163,6 +163,7 @@ class PMXWriter:
                 data=self.state.applied_time_thresholds,
             )
         group.create_dataset("num_fluorophores", data=self.processor.num_fluorophores)
+        group.create_dataset("num_locs_to_drop", data=self.state.num_locs_to_drop)
         group.create_dataset("dwell_time", data=self.state.dwell_time)
         group.create_dataset("scale_bar_size", data=self.state.scale_bar_size)
 

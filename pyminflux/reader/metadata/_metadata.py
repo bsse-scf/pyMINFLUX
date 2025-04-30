@@ -20,6 +20,10 @@ from typing import Union
 class PMXMetadata:
     """Metadata associated to `.pmx` native pyMINFLUX file format.
 
+    Version 3.0
+    -----------
+        num_locs_to_drop: int
+
     Version 2.0
     -----------
         pool_dcr: bool
@@ -46,6 +50,7 @@ class PMXMetadata:
     is_tracking: bool
     min_trace_length: int
     num_fluorophores: int
+    num_locs_to_drop: int
     scale_bar_size: float
     time_thresholds: Union[None, tuple[float, float]]
     tr_len_thresholds: Union[None, tuple[float, float]]

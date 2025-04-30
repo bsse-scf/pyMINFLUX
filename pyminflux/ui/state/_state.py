@@ -56,6 +56,7 @@ class State(metaclass=Singleton):
         "loc_precision_range",
         "min_trace_length",
         "num_fluorophores",
+        "num_locs_to_drop",
         "open_console_at_start",
         "plot_3d",
         "plot_3d_orthogonal",
@@ -87,6 +88,9 @@ class State(metaclass=Singleton):
 
         # Minimum number of localizations to consider a trace
         self.min_trace_length: int = 1
+
+        # Number of localizations to drop at the beginning of a trace
+        self.num_locs_to_drop: int = 0
 
         # EFO bin size in Hz (if 0.0, the bin size will be automatically estimated)
         self.efo_bin_size_hz: float = 1000.0
@@ -206,6 +210,7 @@ class State(metaclass=Singleton):
             "loc_precision_range": self.loc_precision_range,
             "min_trace_length": self.min_trace_length,
             "num_fluorophores": self.num_fluorophores,
+            "num_locs_to_drop": self.num_locs_to_drop,
             "open_console_at_start": self.open_console_at_start,
             "plot_3d": self.plot_3d,
             "plot_3d_orthogonal": self.plot_3d_orthogonal,
@@ -267,6 +272,7 @@ class State(metaclass=Singleton):
         self.loc_precision_range = None
         self.min_trace_length = 1
         self.num_fluorophores = 1
+        self.num_locs_to_drop = 1
         self.open_console_at_start = False
         self.plot_average_localisations = False
         self.plot_3d = False
@@ -296,6 +302,7 @@ class State(metaclass=Singleton):
         self.is_tracking = metadata.is_tracking
         self.min_trace_length = metadata.min_trace_length
         self.num_fluorophores = metadata.num_fluorophores
+        self.num_locs_to_drop = metadata.num_locs_to_drop
         self.scale_bar_size = metadata.scale_bar_size
         self.time_thresholds = metadata.time_thresholds
         self.tr_len_thresholds = metadata.tr_len_thresholds
