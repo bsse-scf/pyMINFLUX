@@ -676,10 +676,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self,
                 "Load file",
                 save_path,
-                "All Supported Files (*.pmx *.npy *.mat);;"
+                "All Supported Files (*.pmx *.npy *.mat *.json);;"
                 "pyMINFLUX file (*.pmx);;"
                 "Imspector NumPy files (*.npy);;"
-                "Imspector MATLAB mat files (*.mat)",
+                "Imspector MATLAB mat files (*.mat);;",
+                "Imspector JSON files (*.json)",
             )
             filename = res[0]
 
@@ -695,7 +696,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 if len(filename) < 5:
                     print(f"Invalid file {filename}: skipping.")
                     return
-                ext = filename.lower()[-4:]
+                dot_pos = filename.rfind(".")
+                if dot_pos == -1:
+                    ext = "invalid"
+                else:
+                    ext = filename[dot_pos:].lower()
 
             # Make sure we have a supported file
             if ext not in [".zarr", ".pmx", ".npy", ".mat", ".json"]:

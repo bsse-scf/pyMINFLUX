@@ -36,7 +36,6 @@ class MinFluxReaderV2(MinFluxReader):
     def __init__(
         self,
         filename: Union[Path, str],
-        valid: bool = True,
         z_scaling_factor: float = 1.0,
         is_tracking: bool = False,
         pool_dcr: bool = False,
@@ -49,9 +48,6 @@ class MinFluxReaderV2(MinFluxReader):
 
         filename: Union[Path, str]
             Full path to the `.pmx`, `.npy` or `.mat` file to read
-
-        valid: bool (optional, default = True)
-            Whether to load only valid localizations.
 
         z_scaling_factor: float (optional, default = 1.0)
             Refractive index mismatch correction factor to apply to the z coordinates.
@@ -76,7 +72,7 @@ class MinFluxReaderV2(MinFluxReader):
         # Call the base constructor
         super().__init__(
             filename=filename,
-            valid=valid,
+            valid=True,  # Pass valid=True to the base class
             z_scaling_factor=z_scaling_factor,
             is_tracking=is_tracking,
             pool_dcr=pool_dcr,
@@ -194,7 +190,7 @@ class MinFluxReaderV2(MinFluxReader):
         if file_ext in [".zarr", ".npy", ".mat", ".json"]:
 
             # Initialize the fluo field
-            raw_dataframe["fluo"] = 1
+            raw_dataframe.loc[:, "fluo"] = 1
 
             # **Important**: apply data types **after** creating the dataframe to make sure that
             # data coming from binary types (.npy and .mat) and data coming from text types (.json)
@@ -229,7 +225,9 @@ class MinFluxReaderV2(MinFluxReader):
             }
 
             # Apply the iteration ID
-            raw_dataframe["iid"] = raw_dataframe["fnl"].cumsum().shift(fill_value=0) + 1
+            raw_dataframe.loc[:, "iid"] = (
+                raw_dataframe["fnl"].cumsum().shift(fill_value=0) + 1
+            )
 
             # Apply the correct datatypes to the columns
             raw_dataframe = raw_dataframe.astype(data_full_df_dtype)
@@ -239,11 +237,13 @@ class MinFluxReaderV2(MinFluxReader):
 
         # Store a logical array with the valid entries
         self._valid_entries = self._full_raw_dataframe["vld"]
+        if not np.all(self._get_valid_subset()):
+            print("All entries at this stage must be valid!")
+            return False
 
         # Cache whether the data is 2D or 3D and whether is aggregated
-        self._is_3d = not np.all(
-            np.abs(self._full_raw_dataframe["z"].to_numpy()) < 1e-11
-        )
+        z_values = self._full_raw_dataframe[self._valid_entries]["z"].to_numpy()
+        self._is_3d = np.abs(z_values).max() > 1e-11
 
         # Set all relevant indices
         self._set_all_indices()
@@ -317,6 +317,9 @@ class MinFluxReaderV2(MinFluxReader):
             print("Could not open the Zarr file.")
             return None
 
+        # Drop all invalid entries
+        npy_array = npy_array[npy_array["vld"]]
+
         # Fill the dataframe
         for name in npy_array.dtype.names:
             if name == "dcr":
@@ -345,9 +348,7 @@ class MinFluxReaderV2(MinFluxReader):
         # Incomplete traces are kept in the Zarr file; we drop them before
         # building the clean dataframe.
         thresh = int(np.max(df["itr"]) + 1)
-        tid_counts = df["tid"].value_counts()
-        valid_traces = tid_counts[tid_counts >= thresh].index
-        df = df[df["tid"].isin(valid_traces)]
+        df = df[df.groupby("tid")["tid"].transform("size") >= thresh]
 
         return df
 
@@ -367,6 +368,9 @@ class MinFluxReaderV2(MinFluxReader):
             Exception,
         ) as e:
             raise Exception(f"Could not open {self._filename}: {e}")
+
+        # Drop all invalid entries
+        npy_array = npy_array[npy_array["vld"]]
 
         # Fill the dataframe
         for name in npy_array.dtype.names:
@@ -431,6 +435,9 @@ class MinFluxReaderV2(MinFluxReader):
             # Single arrays
             df[key] = mat_array[key].ravel()
 
+        # Only keep valid entries
+        df = df[df["vld"] == 1]
+
         return df
 
     def _load_json(self, df: pd.DataFrame):
@@ -480,6 +487,9 @@ class MinFluxReaderV2(MinFluxReader):
         # Fill dataframe
         for key in d:
             df[key] = d[key]
+
+        # Only keep valid entries
+        df = df[df["vld"]]
 
         return df
 
@@ -591,10 +601,8 @@ class MinFluxReaderV2(MinFluxReader):
         """Returns the valid subset of the full dataframe from which to
         extract the requested iteration data."""
 
-        if self._valid:
-            val_indices = self._valid_entries
-        else:
-            val_indices = np.logical_not(self._valid_entries)
+        # MinFluxReaderV2 only works with valid entries
+        val_indices = self._valid_entries
 
         # Valid
         data_valid_df = self._full_raw_dataframe.loc[val_indices]

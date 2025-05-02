@@ -155,7 +155,7 @@ def find_last_valid_iteration_v2(
         }
         return last_valid
 
-    # Extract trace starting indices
+    # Extract trace starting indices: all localizations are valid at this point
     (trace_start,) = np.where(data_full_df["bot"].to_numpy())
 
     # Set cfr index
@@ -185,7 +185,7 @@ def find_last_valid_iteration_v2(
         trace_start = np.append(trace_start, [len(data_full_df.index)]).ravel()
 
     # Find indices (values) of relocalized iterations (from the first complete iteration)
-    (complete_iterations,) = np.where(np.diff(trace_start) > num_iterations)
+    (complete_iterations,) = np.where(np.diff(trace_start) >= num_iterations)
     if len(complete_iterations) == 0:
         raise ValueError("No complete iterations found!")
     first_complete_iteration = complete_iterations[0]
