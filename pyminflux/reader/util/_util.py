@@ -20,6 +20,8 @@ import numpy as np
 import pandas as pd
 from scipy.io import whosmat
 
+from pyminflux.utils import remove_subarray_occurrences
+
 
 def find_last_valid_iteration(data_array: np.ndarray):
     """Find last valid iteration across all relevant parameters.
@@ -190,13 +192,20 @@ def find_last_valid_iteration_v2(
         raise ValueError("No complete iterations found!")
     first_complete_iteration = complete_iterations[0]
 
+    # For robustness, use more than one trace to extract the repeating iterations
+    num_iterations_to_consider = min(10, len(complete_iterations))
     candidates = data_full_df["itr"].to_numpy()[
         trace_start[first_complete_iteration] : trace_start[
-            first_complete_iteration + 1
+            first_complete_iteration + num_iterations_to_consider
         ]
     ]
     candidates = candidates[num_iterations:]
-    reloc = np.unique(candidates)
+
+    # Remove full iterations, what is left are the relocalized indices
+    filtered_candidates = remove_subarray_occurrences(
+        candidates, np.arange(num_iterations)
+    )
+    reloc = np.unique(filtered_candidates)
     last_valid["reloc"] = np.array([False] * num_iterations)
     last_valid["reloc"][reloc] = True
     last_valid["reloc"] = last_valid["reloc"].tolist()

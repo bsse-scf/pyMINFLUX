@@ -16,6 +16,7 @@ import re
 from pathlib import Path
 from typing import Union
 
+import numpy as np
 import requests
 
 import pyminflux
@@ -148,3 +149,48 @@ def find_zarr_root(start_path: Union[str, Path]) -> Path:
             path = path.parent
 
     raise FileNotFoundError("No Zarr root found in the directory hierarchy.")
+
+
+def remove_subarray_occurrences(candidates: np.ndarray, template: np.ndarray):
+    """Remove every complete, contiguous occurrence of `template` from the 1‑D NumPy array `candidates`.
+
+    Parameters
+    ----------
+
+    candidates: np.ndarray
+        1D array of numbers.
+
+    template: np.ndarray
+        1D array of numbers. Must be shorter than candidates.
+
+    Returns
+    -------
+
+    filtered_candidates: np.ndarray
+        A new 1‑D array; the input is not modified.
+    """
+
+    # Make sure we are working with NumPy array
+    candidates = np.asarray(candidates)
+    template = np.asarray(template)
+
+    m = template.size
+    if m == 0 or candidates.size < m:
+        return candidates.copy()
+
+    # All length‑m windows (view, no copy)
+    windows = np.lib.stride_tricks.sliding_window_view(candidates, m)
+
+    # Start positions where the whole window equals the template
+    match_starts = np.where(np.all(windows == template, axis=1))[0]
+    if match_starts.size == 0:
+        return candidates.copy()
+
+    # Indices that belong to any full template occurrence
+    delete_idx = (match_starts[:, None] + np.arange(m)).ravel()
+
+    # Boolean mask: keep everything that is *not* in delete_idx
+    keep_mask = np.ones(candidates.size, dtype=bool)
+    keep_mask[delete_idx] = False
+
+    return candidates[keep_mask]
