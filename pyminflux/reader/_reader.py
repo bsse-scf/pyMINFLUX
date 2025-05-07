@@ -680,21 +680,6 @@ class MinFluxReader:
         self._last_valid = len(self._valid_cfr) - 1
         self._last_valid_cfr = last_valid["cfr_index"]
 
-        # Inform
-        # @TODO Remove after testing
-        print(
-            f"[DEBUG] "
-            f"efo: {self._efo_index},"
-            f"cfr: {self._cfr_index}, "
-            f"dcr: {self._dcr_index}, "
-            f"eco: {self._eco_index}, "
-            f"loc: {self._loc_index}, "
-            f"valid_cfr: {self._valid_cfr}, "
-            f"reloc: {self._relocalizations}, "
-            f"last_valid: {self._last_valid}, "
-            f"last_valid_cfr: {self._last_valid_cfr}"
-        )
-
     def __repr__(self) -> str:
         """String representation of the object."""
         if self.num_valid_entries == 0:

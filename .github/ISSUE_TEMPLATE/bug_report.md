@@ -21,7 +21,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Environment (please complete the following information):**
  - OS: [e.g. macOS, Linux, Windows]
- - OS details: [e.g. Ubuntu Linux 23.04]
+ - OS details: [e.g. Ubuntu Linux 24.04]
  - Version [e.g. 0.6.0]
  - Distribution [pre-pakaged app, pypi, git]
  - Python version [e.g., 3.10]

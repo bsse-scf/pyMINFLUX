@@ -679,7 +679,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "All Supported Files (*.pmx *.npy *.mat *.json);;"
                 "pyMINFLUX file (*.pmx);;"
                 "Imspector NumPy files (*.npy);;"
-                "Imspector MATLAB mat files (*.mat);;",
+                "Imspector MATLAB mat files (*.mat);;"
                 "Imspector JSON files (*.json)",
             )
             filename = res[0]
