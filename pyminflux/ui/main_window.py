@@ -73,7 +73,7 @@ from pyminflux.utils import check_for_updates
 from pyminflux.writer import MinFluxWriter, PMXWriter
 
 # Version info
-__modifier__ = " (alpha 3)"
+__modifier__ = ""
 __version__ = f"{__version__}{__modifier__}"
 
 
