@@ -224,10 +224,26 @@ class MinFluxReaderV2(MinFluxReader):
                 "iid": "<u4",
             }
 
-            # Apply the iteration ID
-            raw_dataframe.loc[:, "iid"] = (
-                raw_dataframe["fnl"].cumsum().shift(fill_value=0) + 1
-            )
+            # Apply the iteration ID. A new iid is started if:
+            # 1. Previous row had fnl=True OR
+            # 2. Current row has a different tid than the previous row
+
+            # Calculate tid differences
+            tid_values = raw_dataframe["tid"].values
+            tid_diff = np.zeros(len(tid_values), dtype=bool)
+            tid_diff[1:] = (
+                tid_values[1:] != tid_values[:-1]
+            )  # Compare current with previous, skip first row
+
+            # Calculate previous fnl flags
+            prev_fnl = np.zeros(len(raw_dataframe), dtype=bool)
+            prev_fnl[1:] = raw_dataframe["fnl"].values[:-1]  # Previous row's fnl
+
+            # Combine conditions - either previous row had fnl=True or current row has new tid
+            new_iid = np.logical_or(prev_fnl, tid_diff)
+
+            # Calculate iid by cumulative sum of these indicators, adding 1 for the first group
+            raw_dataframe.loc[:, "iid"] = new_iid.cumsum() + 1
 
             # Apply the correct datatypes to the columns
             raw_dataframe = raw_dataframe.astype(data_full_df_dtype)
