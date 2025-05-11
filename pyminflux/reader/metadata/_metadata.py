@@ -22,7 +22,7 @@ class PMXMetadata:
 
     Version 3.0
     -----------
-        num_locs_to_drop: int
+        No new properties.
 
     Version 2.0
     -----------
@@ -50,7 +50,6 @@ class PMXMetadata:
     is_tracking: bool
     min_trace_length: int
     num_fluorophores: int
-    num_locs_to_drop: int
     scale_bar_size: float
     time_thresholds: Union[None, tuple[float, float]]
     tr_len_thresholds: Union[None, tuple[float, float]]

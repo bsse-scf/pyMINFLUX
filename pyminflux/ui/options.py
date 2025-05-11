@@ -61,7 +61,6 @@ class Options(QDialog, Ui_Options):
         # Keep track of the validity of all entries
         self.valid = {
             "leMinTIDNum": True,
-            "leMinNumLocs": True,
             "leEFOBinSize": True,
             "leEFOSingleEmitterFrequency": True,
             "cbWeightAvgLocByECO": True,
@@ -78,8 +77,7 @@ class Options(QDialog, Ui_Options):
         # Set defaults
         self.ui.leMinTIDNum.setText(str(self.state.min_trace_length))
         self.ui.leMinTIDNum.setValidator(QIntValidator(bottom=0))
-        self.ui.leNumLocsToDrop.setText(str(self.state.num_locs_to_drop))
-        self.ui.leNumLocsToDrop.setValidator(QIntValidator(bottom=0))
+
         self.ui.leEFOBinSize.setText(str(self.state.efo_bin_size_hz))
         self.ui.leEFOBinSize.setValidator(QDoubleValidator(bottom=0.0))
         self.ui.leEFOSingleEmitterFrequency.setText(
@@ -129,7 +127,6 @@ class Options(QDialog, Ui_Options):
     def setup_conn(self):
         """Set up signal-slot connections."""
         self.ui.leMinTIDNum.textChanged.connect(self.persist_min_trace_length)
-        self.ui.leNumLocsToDrop.textChanged.connect(self.persist_num_locs_to_drop)
         self.ui.pbSetDefault.clicked.connect(self.set_as_new_default)
         self.ui.cbWeightAvgLocByECO.stateChanged.connect(
             self.persist_weigh_avg_localization_by_eco
@@ -158,11 +155,6 @@ class Options(QDialog, Ui_Options):
             lambda _: self.ui.teHelp.setText(
                 "Minimum number of localizations within a trace to be considered for "
                 "plotting and precision calculation."
-            )
-        )
-        self.ui.pbNumLocsToDropHelp.clicked.connect(
-            lambda _: self.ui.teHelp.setText(
-                "Number of localizations to be dropped at the beginning of each trace."
             )
         )
         self.ui.pbZScalingFactorHelp.clicked.connect(
@@ -229,18 +221,6 @@ class Options(QDialog, Ui_Options):
 
         # Signal the change
         self.min_trace_length_option_changed.emit()
-
-    @Slot(str)
-    def persist_num_locs_to_drop(self, text):
-        try:
-            num_locs_to_drop = int(text)
-        except Exception as _:
-            self.ui.leNumLocsToDrop.setStyleSheet("background-color: red;")
-            self.valid["leMinNumLocs"] = False
-            return
-        self.ui.leNumLocsToDrop.setStyleSheet("")
-        self.valid["leMinNumLocs"] = True
-        self.state.num_locs_to_drop = num_locs_to_drop
 
     @Slot(str)
     def persist_z_scaling_factor(self, text):
@@ -441,9 +421,6 @@ class Options(QDialog, Ui_Options):
         settings = Settings()
         settings.instance.setValue(
             "options/min_trace_length", int(self.state.min_trace_length)
-        )
-        settings.instance.setValue(
-            "options/num_locs_to_drop", int(self.state.num_locs_to_drop)
         )
         settings.instance.setValue(
             "options/z_scaling_factor", float(self.state.z_scaling_factor)

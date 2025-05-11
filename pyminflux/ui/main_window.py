@@ -272,13 +272,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 )
             )
 
-        # Read and set 'num_locs_to_drop' option
-        self.state.num_locs_to_drop = int(
-            settings.instance.value(
-                "options/num_locs_to_drop", self.state.num_locs_to_drop
-            )
-        )
-
         # Read and set 'z_scaling_factor' option
         self.state.z_scaling_factor = float(
             settings.instance.value(
@@ -793,7 +786,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.processor = MinFluxProcessor(
                 reader,
                 self.state.min_trace_length,
-                self.state.num_locs_to_drop,
             )
 
             # Make sure to set current value of use_weighted_localizations

@@ -49,7 +49,6 @@ class PMXReader:
             is_tracking = False
             pool_dcr = False
             scale_bar_size = 500
-            num_locs_to_drop = 0
 
             # Version 1.0 parameters
             if version_int > 0:
@@ -121,12 +120,7 @@ class PMXReader:
                     return None
 
             # Version 3.0 parameters
-            if version_int > 20000:
-                # Parameters are present in the file, and we can read them
-                try:
-                    num_locs_to_drop = int(f["parameters/num_locs_to_drop"][()])
-                except KeyError:
-                    return None
+            # No new parameters
 
         # Store and return
         metadata = PMXMetadata(
@@ -137,7 +131,6 @@ class PMXReader:
             is_tracking=is_tracking,
             min_trace_length=min_trace_length,
             num_fluorophores=num_fluorophores,
-            num_locs_to_drop=num_locs_to_drop,
             scale_bar_size=scale_bar_size,
             time_thresholds=time_thresholds,
             tr_len_thresholds=tr_len_thresholds,
