@@ -29,9 +29,6 @@ source $ANACONDA_HOME/etc/profile.d/conda.sh
 conda create -n pyminflux-build python=$PYTHON_VERSION -y
 conda activate pyminflux-build
 
-# Install nuitka
-python -m pip install nuitka ordered_set zstandard patchelf
-
 # Install static python lib
 conda install libpython-static -y
 
