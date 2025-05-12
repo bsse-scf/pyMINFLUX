@@ -9,7 +9,6 @@ All notable changes to this project will be documented in this file. Detailed in
 * Add support for importing data in the formats `.npy` `.mat.`, `.json`, and `.zarr` 
   from **Imspector version m2410 and newer**. 
 * Initial support for reading and storing beamline monitoring data from `.zarr` files.
-* Add option to remove first `n` localizations from all traces.
 * Read and add `fbg` parameter to data viewer and histogram plotter.
 * Rename "DCR Unmixing" to "Multiplexing" in Wizard.
 * Allow showing average localization for XZ and YZ projections.
