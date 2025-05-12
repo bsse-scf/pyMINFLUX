@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. Detailed information can be found in the [git log](https://github.com/bsse-scf/pyMINFLUX/commits/master/).
 
-## [0.6.0] - TBD
+## [0.6.0] - 2025-05-12
 
 ### New features
 
