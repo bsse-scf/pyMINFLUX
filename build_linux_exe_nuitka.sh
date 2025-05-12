@@ -58,6 +58,7 @@ python -m nuitka pyminflux/main.py -o pyMINFLUX \
 --include-module=vispy.app.backends._pyside6 \
 --include-module=pydoc \
 --include-data-dir="$VISPY_GLSL_DIR=vispy/glsl" \
+--include-data-files=/usr/lib/x86_64-linux-gnu/libxcb-cursor.so.0=. \
 --linux-icon=pyminflux/ui/assets/Logo_v3.ico \
 --enable-plugin=pylint-warnings \
 --enable-plugin=pyside6 \
