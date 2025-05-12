@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ from typing import Sequence
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QDialog
 
+from pyminflux.ui.state import State
 from pyminflux.ui.ui_importer import Ui_Importer
 
 
@@ -39,6 +40,13 @@ class Importer(QDialog, Ui_Importer):
         # Initialize the dialog
         self.ui = Ui_Importer()
         self.ui.setupUi(self)
+
+        # Keep a reference to the Stase
+        self.state = State()
+
+        # Hide warning label
+        self.ui.lbSelectionWarning.setStyleSheet("background-color: red;")
+        self.ui.lbSelectionWarning.setVisible(False)
 
         # Store the arguments
         self._num_iterations = len(valid_cfr)
@@ -99,9 +107,6 @@ class Importer(QDialog, Ui_Importer):
         # Highlight cfr index
         self.highlight_cfr(self._cfr_iteration)
 
-        # Highlight relocalization index
-        self.highlight_relocalization(self._cfr_iteration)
-
         # Adjust the size of the dialog
         self.adjustSize()
 
@@ -158,9 +163,6 @@ class Importer(QDialog, Ui_Importer):
         # Highlight cfr index
         self.highlight_cfr(self._cfr_iteration)
 
-        # Highlight relocalized field
-        self.highlight_relocalization(self._cfr_iteration)
-
     @Slot(int)
     def set_all_iterations(self, checked):
 
@@ -179,9 +181,6 @@ class Importer(QDialog, Ui_Importer):
 
         # Highlight cfr index
         self.highlight_cfr(index)
-
-        # Highlight relocalization row
-        self.highlight_relocalization(index)
 
     def get_selection(self) -> dict:
         """Return the selected options."""
@@ -222,6 +221,10 @@ class Importer(QDialog, Ui_Importer):
 
     def highlight_iteration(self, iteration):
         """Highlight the button for the global _iteration."""
+        if not self._relocalizations[iteration] and self.state.min_trace_length > 1:
+            self.ui.lbSelectionWarning.setVisible(True)
+        else:
+            self.ui.lbSelectionWarning.setVisible(False)
         self.widgets_list[iteration][0].setStyleSheet(
             "color: black; background-color: lightblue; border-style: flat;"
         )
@@ -229,11 +232,5 @@ class Importer(QDialog, Ui_Importer):
     def highlight_cfr(self, cfr_index):
         """Highlight the label for the cfr index."""
         self.widgets_list[cfr_index][1].setStyleSheet(
-            "color: black; background-color: lightblue;"
-        )
-
-    def highlight_relocalization(self, cfr_index):
-        """Highlight the relocalized label matching the cfr index."""
-        self.widgets_list[cfr_index][2].setStyleSheet(
             "color: black; background-color: lightblue;"
         )

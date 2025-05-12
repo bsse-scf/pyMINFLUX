@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -43,7 +43,12 @@ import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
 from pyminflux.plugin import PluginManager
 from pyminflux.processor import MinFluxProcessor
-from pyminflux.reader import MinFluxReader, NativeMetadataReader
+from pyminflux.reader import (
+    MinFluxReader,
+    MinFluxReaderFactory,
+    MinFluxReaderV2,
+    PMXReader,
+)
 from pyminflux.settings import Settings, UpdateSettings
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
@@ -65,7 +70,11 @@ from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.wizard import WizardDialog
 from pyminflux.utils import check_for_updates
-from pyminflux.writer import MinFluxWriter, PyMinFluxNativeWriter
+from pyminflux.writer import MinFluxWriter, PMXWriter
+
+# Version info
+__modifier__ = ""
+__version__ = f"{__version__}{__modifier__}"
 
 
 class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
@@ -343,6 +352,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Menu actions
         self.ui.actionLoad.triggered.connect(self.select_and_load_or_import_data_file)
+        self.ui.actionLoad_Zarr.triggered.connect(self.select_and_load_zarr)
         self.ui.actionSave.triggered.connect(self.save_native_file)
         self.ui.actionExport_data.triggered.connect(self.export_filtered_data)
         self.ui.actionExport_stats.triggered.connect(self.export_filtered_stats)
@@ -602,7 +612,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             filename = filename.parent / f"{filename.stem}.pmx"
 
         # Write to disk
-        writer = PyMinFluxNativeWriter(self.processor)
+        writer = PMXWriter(self.processor)
         result = writer.write(filename)
 
         # Save
@@ -614,6 +624,31 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Error",
                 f"Could not save file {Path(filename).name}!\n\nThe error was:\n{writer.message}",
             )
+
+    @Slot()
+    def select_and_load_zarr(self, folder: Optional[str] = None):
+        """Select and load a zarr file."""
+
+        # Do we have a path to a folder?
+        if folder is None or not folder:
+            # Open a file dialog for the user to pick a Zarr folder
+            if self.state.last_selected_path is not None:
+                save_path = str(self.state.last_selected_path)
+            else:
+                save_path = str(Path(".").absolute())
+
+            folder = QFileDialog.getExistingDirectory(
+                self,
+                "Load Zarr",
+                save_path,
+            )
+
+            if folder == "":
+                # The user cancelled the dialog
+                return
+
+        # Now call the standard loading slot
+        self.select_and_load_or_import_data_file(folder)
 
     @Slot()
     def select_and_load_or_import_data_file(self, filename: Optional[str] = None):
@@ -634,26 +669,34 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self,
                 "Load file",
                 save_path,
-                "All Supported Files (*.pmx *.npy *.mat);;"
+                "All Supported Files (*.pmx *.npy *.mat *.json);;"
                 "pyMINFLUX file (*.pmx);;"
                 "Imspector NumPy files (*.npy);;"
-                "Imspector MATLAB mat files (*.mat)",
+                "Imspector MATLAB mat files (*.mat);;"
+                "Imspector JSON files (*.json)",
             )
             filename = res[0]
 
         # Make sure that we are working with a string
         filename = str(filename)
 
-        if filename != "" and Path(filename).is_file():
+        if filename != "" and Path(filename).exists():
 
             # Pick the right reader
-            if len(filename) < 5:
-                print(f"Invalid file {filename}: skipping.")
-                return
-            ext = filename.lower()[-4:]
+            if Path(filename).is_dir():
+                ext = ".zarr"
+            else:
+                if len(filename) < 5:
+                    print(f"Invalid file {filename}: skipping.")
+                    return
+                dot_pos = filename.rfind(".")
+                if dot_pos == -1:
+                    ext = "invalid"
+                else:
+                    ext = filename[dot_pos:].lower()
 
             # Make sure we have a supported file
-            if ext not in [".pmx", ".npy", ".mat"]:
+            if ext not in [".zarr", ".pmx", ".npy", ".mat", ".json"]:
                 QMessageBox.critical(
                     self,
                     "Error",
@@ -670,7 +713,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # If we have a `.pmx` file, we first scan the metadata and update
             # the State
             if ext == ".pmx":
-                metadata = NativeMetadataReader.scan(filename)
+                metadata = PMXReader.get_metadata(filename)
                 if metadata is None:
                     # Could not read the metadata. Abort loading.
                     QMessageBox.critical(
@@ -686,16 +729,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 # Inform
                 print(f"Loaded settings from {Path(filename).name}.")
 
-            # Now pass the filename to the MinFluxReader
+            # Now pass the filename to the (correct) MinFluxReader
             try:
-                reader = MinFluxReader(
+                reader_class, status_str = MinFluxReaderFactory.get_reader(filename)
+                reader = reader_class(
                     filename, z_scaling_factor=self.state.z_scaling_factor
                 )
-            except IOError as e:
+            except (TypeError, IOError) as e:
                 QMessageBox.critical(
                     self,
                     "Error",
-                    f"{e}",
+                    f"Could not process invalid file {filename}.",
                 )
                 return
 
@@ -739,7 +783,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.state.last_selected_path = Path(filename).parent
 
             # Add initialize the processor with the reader
-            self.processor = MinFluxProcessor(reader, self.state.min_trace_length)
+            self.processor = MinFluxProcessor(
+                reader,
+                self.state.min_trace_length,
+            )
 
             # Make sure to set current value of use_weighted_localizations
             self.processor.use_weighted_localizations = (
@@ -1408,9 +1455,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # If an only if the requested parameters are "x" and "y" (in any order),
             # we consider the State.plot_average_localisations property.
-            if (self.state.x_param == "x" and self.state.y_param == "y") or (
-                self.state.x_param == "y" and self.state.y_param == "x"
-            ):
+            if self.state.x_param in ["x", "y", "z"] and self.state.y_param in [
+                "x",
+                "y",
+                "z",
+            ]:
                 if self.state.plot_average_localisations:
                     # Get the (potentially filtered) averaged dataframe
                     dataframe = self.processor.weighted_localizations

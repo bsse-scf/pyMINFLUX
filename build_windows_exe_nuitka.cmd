@@ -1,5 +1,5 @@
 @ECHO OFF
-REM Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+REM Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 REM
 REM Licensed under the Apache License, Version 2.0 (the "License");
 REM you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ REM "Developer Command Prompt for VS2022" and remove the `--mingw64` from the
 REM `python -m nuitka` call.
 setlocal
 
-SET VERSION=0.5.0
+SET VERSION=0.6.0
 SET PYTHON_VERSION=3.12
 
 IF "%ANACONDA_HOME%"=="" ECHO Please set environment variable ANACONDA_HOME. && exit /b

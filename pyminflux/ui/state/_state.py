@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Union
 
 from pyminflux.base import Singleton
-from pyminflux.reader.metadata import NativeMetadata
+from pyminflux.reader.metadata import PMXMetadata
 from pyminflux.ui.colors import ColorCode
 
 
@@ -284,8 +284,8 @@ class State(metaclass=Singleton):
         self.y_param = "y"
         self.z_scaling_factor = 0.7
 
-    def update_from_metadata(self, metadata: NativeMetadata):
-        """Update State from the NativeMetadata parameters from a `.pmx` file."""
+    def update_from_metadata(self, metadata: PMXMetadata):
+        """Update State from the PMXMetadata parameters from a `.pmx` file."""
         self.applied_cfr_thresholds = metadata.cfr_thresholds
         self.applied_efo_thresholds = metadata.efo_thresholds
         self.applied_tr_len_thresholds = metadata.tr_len_thresholds

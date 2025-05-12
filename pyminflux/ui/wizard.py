@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
@@ -26,6 +27,7 @@ from .ui_wizard import Ui_WizardDialog
 
 class WizardDialog(QDialog, Ui_WizardDialog):
     load_data_triggered = Signal()
+    load_zarr_triggered = Signal()
     load_filename_triggered = Signal(str)
     save_data_triggered = Signal()
     reset_filters_triggered = Signal()
@@ -130,18 +132,23 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         except Exception as _:
             return
 
-        # Make sure it is of the right format
-        if len(filename) < 5:
-            return
-        ext = filename.lower()[-4:]
-        if ext in [".pmx", ".npy", ".mat"]:
+        if Path(filename).is_dir():
+            # This *could* be a Zarr file, we will pass it on
             self.load_filename_triggered.emit(str(filename))
         else:
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Unsupported file {filename}.",
-            )
+
+            # Make sure it is of the right format
+            if len(filename) < 5:
+                return
+            ext = filename.lower()[-4:]
+            if ext in [".pmx", ".npy", ".mat"]:
+                self.load_filename_triggered.emit(str(filename))
+            else:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Unsupported file {filename}.",
+                )
 
     def set_processor(self, processor):
         """Store a reference to the processor."""
@@ -152,6 +159,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
 
     def setup_conn(self):
         self.ui.pbLoadData.clicked.connect(lambda _: self.load_data_triggered.emit())
+        self.ui.pbLoadZarr.clicked.connect(lambda _: self.load_zarr_triggered.emit())
         self.ui.pbReset.clicked.connect(self.reset_filters)
         self.ui.pbSingleColor.clicked.connect(self.reset_fluorophores)
         self.ui.pbColorUnmixer.clicked.connect(
@@ -246,8 +254,8 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Reset button
         self.ui.pbReset.setVisible(enabled)
 
-        # Color unmixing
-        self.ui.lbColors.setVisible(enabled)
+        # Multiplexing
+        self.ui.lbMultiplexing.setVisible(enabled)
         self.ui.pbSingleColor.setVisible(enabled)
         self.ui.pbColorUnmixer.setVisible(enabled)
         self.ui.lbActiveColor.setVisible(enabled)

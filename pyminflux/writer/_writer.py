@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ class MinFluxWriter:
         """Write (filtered) data as a NumPy structured array with the same structure as in the Imspector `.npy` file."""
 
         # Get the raw data
-        filtered_array = processor.filtered_numpy_array
+        filtered_array = processor.filtered_raw_data_array
         if filtered_array is None:
             return False
 

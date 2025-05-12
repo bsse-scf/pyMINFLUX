@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,4 +12,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from ._utils import check_for_updates, intersect_2d_ranges
+from ._decorators import deprecated
+from ._utils import (
+    check_for_updates,
+    find_zarr_root,
+    intersect_2d_ranges,
+    remove_subarray_occurrences,
+)
+
+__all__ = [
+    "check_for_updates",
+    "find_zarr_root",
+    "intersect_2d_ranges",
+    "deprecated",
+    "remove_subarray_occurrences",
+]

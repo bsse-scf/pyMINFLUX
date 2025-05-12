@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pyminflux.reader import MinFluxReader
+from pyminflux.reader import MinFluxReader, MinFluxReaderFactory
 
 
 @pytest.fixture(autouse=False)
@@ -114,11 +114,6 @@ def test_access(extract_multi_format_geometry_data_files):
         reader.is_pool_dcr is True
     ), "The pool DCR flag is passed as a parameter to the constructor."
 
-    # Now access the raw dataframe, this will not change the properties from above.
-    # The property `is_last_valid` is still None
-    df_raw = reader.raw_data_dataframe
-    assert df_raw is not None, "The raw dataframe is generated at access."
-
     assert reader.is_3d is True, "The 3D information is extracted at load/scan."
     assert (
         reader.is_aggregated is False
@@ -197,3 +192,25 @@ def test_access(extract_multi_format_geometry_data_files):
     dcr_before = reader.processed_dataframe["dcr"].to_numpy()
     reader.set_pool_dcr(False, process=False)
     assert reader.is_pool_dcr is False, "The is_pool_dcr flag is changed immediately."
+
+
+def test_reader_factory(extract_multi_format_geometry_data_files):
+    # Get the reader for the NumPy array
+    npy_file_name = Path(__file__).parent / "data" / "230321-111601_minflux2D_3.npy"
+    reader, status = MinFluxReaderFactory.get_reader(npy_file_name)
+
+    assert reader is not None, "A reader must be returned for this file."
+    assert status == "", "No error message expected."
+    assert (
+        reader.__name__ == "MinFluxReader"
+    ), "A reader version 1 must be returned for this file."
+
+    # Get the reader for the MAT array
+    mat_file_name = Path(__file__).parent / "data" / "230321-111601_minflux2D_3.mat"
+    reader, status = MinFluxReaderFactory.get_reader(mat_file_name)
+
+    assert reader is not None, "A reader must be returned for this file."
+    assert status == "", "No error message expected."
+    assert (
+        reader.__name__ == "MinFluxReader"
+    ), "A reader version 1 must be returned for this file."

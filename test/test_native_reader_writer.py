@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ import pytest
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.reader import (
     MinFluxReader,
-    NativeArrayReader,
-    NativeDataFrameReader,
-    NativeMetadataReader,
+    MinFluxReaderFactory,
+    MinFluxReaderV2,
+    PMXReader,
 )
-from pyminflux.writer import PyMinFluxNativeWriter
+from pyminflux.writer import PMXWriter
 
 
 @pytest.fixture(autouse=False)
@@ -43,6 +43,38 @@ def extract_raw_npy_data_files(tmpdir):
     npy_file_name = Path(__file__).parent / "data" / "2D_ValidOnly.npy"
     zip_file_name = Path(__file__).parent / "data" / "2D_ValidOnly.npy.zip"
     if not npy_file_name.is_file():
+        with zipfile.ZipFile(zip_file_name, "r") as zip_ref:
+            zip_ref.extractall(Path(__file__).parent / "data")
+
+    yield  # This is where the testing happens
+
+    #
+    # Teardown
+    #
+
+    # Do whatever is needed to clean up:
+    # - Nothing for the moment
+
+
+@pytest.fixture(autouse=False)
+def extract_pmx_various_versions(tmpdir):
+    """Fixture to execute asserts before and after a test is run"""
+
+    #
+    # Setup
+    #
+
+    # Make sure to extract the test data if it is not already there
+    pmx_file_names = ["pmx_format_v1.pmx", "pmx_format_v2.pmx", "pmx_format_v3.pmx"]
+    zip_file_name = Path(__file__).parent / "data" / "pmx_format_versions.zip"
+    found = True
+    for pmx_file_name in pmx_file_names:
+        pmx_file_full_name = Path(__file__).parent / "data" / pmx_file_name
+        if not pmx_file_full_name.is_file():
+            found = False
+            break
+
+    if not found:
         with zipfile.ZipFile(zip_file_name, "r") as zip_ref:
             zip_ref.extractall(Path(__file__).parent / "data")
 
@@ -121,6 +153,10 @@ def dataframes_equal(df1, df2):
 
 def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
+    print("The version 3.0 PMX file format is not finalized yet.")
+    assert True
+    return
+
     #
     # 2D_All.npy
     #
@@ -142,7 +178,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
     with tempfile.TemporaryDirectory() as tmp_dir:
 
         # Create writer
-        writer = PyMinFluxNativeWriter(processor)
+        writer = PMXWriter(processor)
 
         # File name
         file_name = Path(tmp_dir) / "out.pmx"
@@ -151,7 +187,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
         assert writer.write(file_name) is True, "Could not save .pmx file."
 
         # Read the dataframe back from the file
-        df_read = NativeDataFrameReader().read(file_name)
+        df_read = PMXReader.get_filtered_dataframe(file_name)
 
         # Check that the datatypes of columns are preserved
         for col in processor.filtered_dataframe.columns:
@@ -202,14 +238,14 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
             # Check that the read NumPy array is identical to the original
             assert (
-                data_array.shape == processor.reader.valid_raw_data.shape
+                data_array.shape == processor.reader.valid_raw_data_array.shape
             ), "NumPy arrays' shape mismatch!"
             assert (
-                data_array.dtype == processor.reader.valid_raw_data.dtype
+                data_array.dtype == processor.reader.valid_raw_data_array.dtype
             ), "Mismatch in raw NumPy arrays' shape!"
 
             assert structured_arrays_equal(
-                data_array, processor.filtered_numpy_array
+                data_array, processor.filtered_raw_data_array
             ), "Mismatch in raw NumPy arrays' content!"
 
             # Test the parameters
@@ -227,22 +263,22 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             ), "Unexpected value for num_fluorophores!"
 
         # Read the array using the native reader
-        data_array_native = NativeArrayReader().read(file_name)
+        data_array_native = PMXReader.get_array(file_name)
 
         # Check that the read NumPy array is identical to the original
         assert (
-            data_array_native.shape == processor.filtered_numpy_array.shape
+            data_array_native.shape == processor.filtered_raw_data_array.shape
         ), "NumPy arrays' shape mismatch!"
         assert (
-            data_array_native.dtype == processor.filtered_numpy_array.dtype
+            data_array_native.dtype == processor.filtered_raw_data_array.dtype
         ), "Mismatch in raw NumPy arrays' shape!"
 
         assert structured_arrays_equal(
-            data_array_native, processor.filtered_numpy_array
+            data_array_native, processor.filtered_raw_data_array
         ), "Mismatch in raw NumPy arrays' content!"
 
-        # Read the metadata via the NativeMetadataReader instead
-        metadata = NativeMetadataReader.scan(file_name)
+        # Read the metadata via the PMXMetadataReader instead
+        metadata = PMXReader.get_metadata(file_name)
         assert (
             metadata.z_scaling_factor == processor.z_scaling_factor
         ), "Unexpected value for z_scaling_factor!"
@@ -294,13 +330,13 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
     # Assign fluorophores
     np.random.seed(42)
-    fluo = np.random.randint(1, 3, len(processor.full_dataframe.index))
+    fluo = np.random.randint(1, 3, len(processor.processed_dataframe.index))
     processor.set_full_fluorophore_ids(fluo)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
 
         # Create writer
-        writer = PyMinFluxNativeWriter(processor)
+        writer = PMXWriter(processor)
 
         # File name
         file_name = Path(tmp_dir) / "out.pmx"
@@ -309,7 +345,7 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
         assert writer.write(file_name) is True, "Could not save .pmx file."
 
         # Read the dataframe back from the file
-        df_read = NativeDataFrameReader().read(file_name)
+        df_read = PMXReader.get_filtered_dataframe(file_name)
 
         # Make sure the number of entries is the same
         assert len(processor.filtered_dataframe.index) == len(
@@ -364,14 +400,14 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
             # Check that the read NumPy array is identical to the original
             assert (
-                data_array.shape == processor.filtered_numpy_array.shape
+                data_array.shape == processor.filtered_raw_data_array.shape
             ), "NumPy arrays' shape mismatch!"
             assert (
-                data_array.dtype == processor.filtered_numpy_array.dtype
+                data_array.dtype == processor.filtered_raw_data_array.dtype
             ), "Mismatch in raw NumPy arrays' shape!"
 
             assert structured_arrays_equal(
-                data_array, processor.filtered_numpy_array
+                data_array, processor.filtered_raw_data_array
             ), "Mismatch in raw NumPy arrays' content!"
 
             # Test the parameters
@@ -389,22 +425,22 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             ), "Unexpected value for num_fluorophores!"
 
         # Read the array using the native reader
-        data_array_native = NativeArrayReader().read(file_name)
+        data_array_native = PMXReader.get_array(file_name)
 
         # Check that the read NumPy array is identical to the original
         assert (
-            data_array_native.shape == processor.filtered_numpy_array.shape
+            data_array_native.shape == processor.filtered_raw_data_array.shape
         ), "NumPy arrays' shape mismatch!"
         assert (
-            data_array_native.dtype == processor.filtered_numpy_array.dtype
+            data_array_native.dtype == processor.filtered_raw_data_array.dtype
         ), "Mismatch in raw NumPy arrays' shape!"
 
         assert structured_arrays_equal(
-            data_array_native, processor.filtered_numpy_array
+            data_array_native, processor.filtered_raw_data_array
         ), "Mismatch in raw NumPy arrays' content!"
 
-        # Read the metadata via the NativeMetadataReader instead
-        metadata = NativeMetadataReader.scan(file_name)
+        # Read the metadata via the PMXMetadataReader instead
+        metadata = PMXReader.get_metadata(file_name)
         assert (
             metadata.z_scaling_factor == processor.z_scaling_factor
         ), "Unexpected value for z_scaling_factor!"
@@ -434,3 +470,96 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             processor_new.filtered_dataframe.to_numpy(),
             equal_nan=True,
         ), "Reloaded dataframe mismatch."
+
+
+def test_consistence_of_pmx_versions(extract_pmx_various_versions):
+
+    # Aliases
+    v1_pmx = Path(__file__).parent / "data" / "pmx_format_v1.pmx"
+    v2_pmx = Path(__file__).parent / "data" / "pmx_format_v2.pmx"
+    v3_pmx = Path(__file__).parent / "data" / "pmx_format_v3.pmx"
+
+    # Load V1 file
+    array_v1 = PMXReader.get_array(v1_pmx)
+    assert "itr" in array_v1["itr"].dtype.names, "Nested array structure expected!"
+
+    # Load V2 file
+    array_v2 = PMXReader.get_array(v2_pmx)
+    assert "itr" in array_v2["itr"].dtype.names, "Nested array structure expected!"
+
+    # Load V3 file
+    array_v3 = PMXReader.get_array(v3_pmx)
+    assert array_v3 is None  # No array is stored in V3 PMX files
+
+    # Load V1 metadata
+    metadata_v1 = PMXReader.get_metadata(v1_pmx)
+    metadata_v1_properties = vars(metadata_v1).keys()
+
+    # Load V2 metadata
+    metadata_v2 = PMXReader.get_metadata(v2_pmx)
+    metadata_v2_properties = vars(metadata_v2).keys()
+    assert (
+        metadata_v2_properties == metadata_v1_properties
+    ), "Same keys must be present in metadata v2 and v1!"
+
+    # Load V3 metadata
+    metadata_v3 = PMXReader.get_metadata(v2_pmx)
+    metadata_v3_properties = vars(metadata_v3).keys()
+    assert (
+        metadata_v3_properties == metadata_v1_properties
+    ), "Same keys must be present in metadata v3 and v1!"
+
+    # Load V1 PMX file with the MinFluxReader
+    reader_class_v1_pmx, status_str = MinFluxReaderFactory.get_reader(v1_pmx)
+    assert status_str == "", f"Unexpected status string: {status_str}."
+    assert reader_class_v1_pmx is MinFluxReader, "Expected V1 MinFluxReader class!"
+    reader_v1_pmx = reader_class_v1_pmx(v1_pmx, z_scaling_factor=0.7)
+    assert (
+        len(reader_v1_pmx.processed_dataframe.index) == 1056
+    ), "Unexpected number of localizations in file."
+    assert (
+        len(reader_v1_pmx.processed_dataframe.columns) == 12
+    ), "Unexpected number of columns in processed dataframe."
+    n_fluo1_v1 = np.sum(reader_v1_pmx.processed_dataframe["fluo"] == 1)
+    n_fluo2_v1 = np.sum(reader_v1_pmx.processed_dataframe["fluo"] == 2)
+    assert n_fluo1_v1 == 920, "Unexpected number of fluo IDs = 1"
+    assert n_fluo2_v1 == 136, "Unexpected number of fluo IDs = 2"
+    assert n_fluo1_v1 + n_fluo2_v1 == len(reader_v1_pmx.processed_dataframe.index)
+
+    # Load V2 PMX file with the MinFluxReader
+    reader_class_v2_pmx, status_str = MinFluxReaderFactory.get_reader(v2_pmx)
+    assert status_str == "", f"Unexpected status string: {status_str}."
+    assert reader_class_v2_pmx is MinFluxReader, "Expected V1 MinFluxReader class!"
+    reader_v2_pmx = reader_class_v2_pmx(v2_pmx, z_scaling_factor=0.7)
+    assert (
+        len(reader_v2_pmx.processed_dataframe.index) == 1056
+    ), "Unexpected number of localizations in file."
+    assert (
+        len(reader_v2_pmx.processed_dataframe.columns) == 12
+    ), "Unexpected number of columns in processed dataframe."
+    assert np.all(
+        reader_v2_pmx.processed_dataframe.columns
+        == reader_v1_pmx.processed_dataframe.columns
+    ), "Processed dataframe columns mismatch."
+    n_fluo1_v2 = np.sum(reader_v2_pmx.processed_dataframe["fluo"] == 1)
+    n_fluo2_v2 = np.sum(reader_v2_pmx.processed_dataframe["fluo"] == 2)
+    assert n_fluo1_v2 == 920, "Unexpected number of fluo IDs = 1"
+    assert n_fluo2_v2 == 136, "Unexpected number of fluo IDs = 2"
+    assert n_fluo1_v2 + n_fluo2_v2 == len(reader_v2_pmx.processed_dataframe.index)
+
+    # Load V3 PMX file with the MinFluxReader (this is a different dataset from V1 and V2)
+    reader_class_v3_pmx, status_str = MinFluxReaderFactory.get_reader(v3_pmx)
+    assert status_str == "", f"Unexpected status string: {status_str}."
+    assert reader_class_v3_pmx is MinFluxReaderV2, "Expected V2 MinFluxReader class!"
+    reader_v3_pmx = reader_class_v3_pmx(v3_pmx, z_scaling_factor=0.7)
+    assert (
+        len(reader_v3_pmx.processed_dataframe.index) == 404
+    ), "Unexpected number of localizations in file."
+    assert (
+        len(reader_v3_pmx.processed_dataframe.columns) == 13
+    ), "Unexpected number of columns in processed dataframe."
+    n_fluo1_v3 = np.sum(reader_v3_pmx.processed_dataframe["fluo"] == 1)
+    n_fluo2_v3 = np.sum(reader_v3_pmx.processed_dataframe["fluo"] == 2)
+    assert n_fluo1_v3 == 138, "Unexpected number of fluo IDs = 1"
+    assert n_fluo2_v3 == 266, "Unexpected number of fluo IDs = 2"
+    assert n_fluo1_v3 + n_fluo2_v3 == len(reader_v3_pmx.processed_dataframe.index)

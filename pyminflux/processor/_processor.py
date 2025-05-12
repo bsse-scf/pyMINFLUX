@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -11,7 +11,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
 from pathlib import Path
 from typing import Optional, Union
 
@@ -21,7 +20,7 @@ from numpy.typing import NDArray
 from scipy.stats import mode
 
 from pyminflux.analysis import calculate_total_distance_traveled, calculate_trace_time
-from pyminflux.reader import MinFluxReader
+from pyminflux.reader import MinFluxReader, MinFluxReaderV2
 
 
 class MinFluxProcessor:
@@ -44,7 +43,11 @@ class MinFluxProcessor:
         "_use_weighted_localizations",
     ]
 
-    def __init__(self, reader: MinFluxReader, min_trace_length: int = 1):
+    def __init__(
+        self,
+        reader: Union[MinFluxReader, MinFluxReaderV2],
+        min_trace_length: int = 1,
+    ):
         """Constructor.
 
         Parameters
@@ -60,13 +63,14 @@ class MinFluxProcessor:
         # Store a reference to the MinFluxReader
         self.reader: MinFluxReader = reader
 
-        # Global options
+        # Global options (to be applied after every operation)
         self._min_trace_length: int = min_trace_length
 
         # Cache the filtered stats dataframe
         self._filtered_stats_dataframe = None
 
-        # Keep separate arrays of booleans to cache selection state for all fluorophores IDs.
+        # Keep separate arrays of booleans to cache selection state for all
+        # fluorophore IDs.
         self._selected_rows_dict = None
         self._init_selected_rows_dict()
 
@@ -91,19 +95,19 @@ class MinFluxProcessor:
 
     def _init_selected_rows_dict(self):
         """Initialize the selected rows array."""
-        if self.full_dataframe is None:
+        if self.processed_dataframe is None:
             return
 
-        # How many fluorophores do we have?
+        # Create selection mask
+        keep_mask = pd.Series(
+            data=np.ones(len(self.processed_dataframe.index), dtype=bool),
+            index=self.processed_dataframe.index,
+        )
+
+        # Store the mask for each fluorophore
         self._selected_rows_dict = {
-            1: pd.Series(
-                data=np.ones(len(self.full_dataframe.index), dtype=bool),
-                index=self.full_dataframe.index,
-            ),
-            2: pd.Series(
-                data=np.ones(len(self.full_dataframe.index), dtype=bool),
-                index=self.full_dataframe.index,
-            ),
+            1: keep_mask.copy(),  # Make sure not to store references
+            2: keep_mask.copy(),
         }
 
     @property
@@ -183,36 +187,43 @@ class MinFluxProcessor:
     @property
     def num_fluorophores(self) -> int:
         """Return the number of fluorophores."""
-        if self.full_dataframe is None:
+        if self.processed_dataframe is None:
             return 0
-        return len(np.unique(self.full_dataframe["fluo"].to_numpy()))
+        return len(np.unique(self.processed_dataframe["fluo"].to_numpy()))
 
-    @property
-    def filtered_numpy_array_all(self):
-        """Return the raw NumPy array with applied filters (for all fluorophores)."""
+    def _filtered_raw_data_array_all_fluorophores(self):
+        """Return the raw NumPy array with applied filters (for all fluorophores).
+
+        This is only compatible with version 1 MinFluxReader (check performed by
+        the invoked protected methods).
+        """
 
         # Copy the raw NumPy array
-        raw_array = self.reader.valid_raw_data
+        raw_array = self.reader.valid_raw_data_array
         if raw_array is None:
             return None
 
-        if self.full_dataframe is None or self._selected_rows_dict is None:
+        if self.processed_dataframe is None or self._selected_rows_dict is None:
             return None
 
         # Append the fluorophore ID data
-        raw_array["fluo"] = self.full_dataframe["fluo"].astype(np.uint8)
+        raw_array["fluo"] = self.processed_dataframe["fluo"].astype(np.uint8)
 
         # Extract combination of fluorophore 1 and 2 filtered dataframes
-        mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
-        mask_2 = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
+        mask_1 = (self.processed_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
+        mask_2 = (self.processed_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
         return raw_array[mask_1 | mask_2]
 
     @property
-    def filtered_numpy_array(self):
-        """Return the raw NumPy array with applied filters for the selected fluorophores."""
+    def filtered_raw_data_array(self):
+        """Return the raw NumPy array with applied filters for the selected fluorophores.
+
+        This is only compatible with version 1 MinFluxReader (check performed by
+        the invoked protected methods).
+        """
 
         # Copy the raw NumPy array
-        full_array = self.filtered_numpy_array_all
+        full_array = self._filtered_raw_data_array_all_fluorophores()
         if full_array is None:
             return None
 
@@ -228,13 +239,13 @@ class MinFluxProcessor:
             )
 
     @property
-    def full_dataframe(self) -> Union[None, pd.DataFrame]:
+    def processed_dataframe(self) -> Union[None, pd.DataFrame]:
         """Return the full dataframe (with valid entries only), with no selections or filters.
 
         Returns
         -------
 
-        full_dataframe: Union[None, pd.DataFrame]
+        processed_dataframe: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
         return self.reader.processed_dataframe
@@ -246,7 +257,7 @@ class MinFluxProcessor:
             return None
         return self.reader.filename
 
-    def _filtered_dataframe_all(self) -> Union[None, pd.DataFrame]:
+    def _filtered_dataframe_all_fluorophores(self) -> Union[None, pd.DataFrame]:
         """Return joint dataframe for all fluorophores and with all filters applied.
 
         Returns
@@ -255,13 +266,47 @@ class MinFluxProcessor:
         filtered_dataframe_all: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
-        if self.full_dataframe is None or self._selected_rows_dict is None:
+        if self.processed_dataframe is None or self._selected_rows_dict is None:
             return None
 
         # Extract combination of fluorophore 1 and 2 filtered dataframes
-        mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
-        mask_2 = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
-        return self.full_dataframe.loc[mask_1 | mask_2]
+        mask_1 = (self.processed_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
+        mask_2 = (self.processed_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
+        return self.processed_dataframe.loc[mask_1 | mask_2]
+
+    def _filtered_raw_dataframe_all_fluorophores(self) -> Union[None, pd.DataFrame]:
+        """Return joint raw dataframe (all properties) for all fluorophores and with all filters applied.
+
+        Returns
+        -------
+
+        filtered_dataframe_all: Union[None, pd.DataFrame]
+            A Pandas dataframe or None if no file was loaded.
+        """
+        # This is only compatible with MinFluxReader version 2
+        if self.reader.version != 2:
+            raise ValueError("Only reader version 2 is supported.")
+
+        # valid_full_raw_dataframe is a MinFluxReaderV2 property
+        raw_array = self.reader.valid_full_raw_dataframe
+
+        # Now extract the fluorophore assignments from self.processed_dataframe and
+        # expand them onto the raw array
+        fluo_map = dict(
+            zip(
+                self.processed_dataframe["iid"],
+                self.processed_dataframe["fluo"].astype(np.uint8),
+            )
+        )
+
+        # Finally map the matching fluo values onto raw_array["fluo"]
+        raw_array["fluo"] = 1
+        fluo = raw_array["iid"].map(fluo_map).to_numpy()
+        fluo[np.isnan(fluo)] = 0
+        raw_array["fluo"] = fluo
+
+        # Return the array with the assigned fluorophores
+        return raw_array
 
     @property
     def filtered_dataframe(self) -> Union[None, pd.DataFrame]:
@@ -273,14 +318,14 @@ class MinFluxProcessor:
         filtered_dataframe: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
-        if self.full_dataframe is None:
+        if self.processed_dataframe is None:
             return None
         if self.current_fluorophore_id == 0:
-            return self._filtered_dataframe_all()
+            return self._filtered_dataframe_all_fluorophores()
         else:
             # Use .loc to filter the dataframe in a single step
-            filtered_df = self.full_dataframe.loc[
-                self.full_dataframe["fluo"] == self.current_fluorophore_id
+            filtered_df = self.processed_dataframe.loc[
+                self.processed_dataframe["fluo"] == self.current_fluorophore_id
             ]
             if self._selected_rows_dict is None:
                 return None
@@ -288,6 +333,43 @@ class MinFluxProcessor:
                 self.current_fluorophore_id, []
             )
             return filtered_df.loc[selected_indices]
+
+    @property
+    def filtered_raw_dataframe(self) -> Union[None, pd.DataFrame]:
+        """Return joint dataframe with all filters applied.
+
+        Returns
+        -------
+
+        filtered_dataframe: Union[None, pd.DataFrame]
+            A Pandas dataframe or None if no file was loaded.
+        """
+        # This is only compatible with MinFluxReader version 2
+        if self.reader.version != 2:
+            raise ValueError("Only reader version 2 is supported.")
+
+        # Copy the raw dataframe array
+        full_dataframe = self._filtered_raw_dataframe_all_fluorophores()
+        if full_dataframe is None:
+            return None
+
+        # Get the IIDs from the currently filtered localizations
+        iids = self.filtered_dataframe["iid"].to_numpy()
+
+        # Extract all rows matching the current set of iids
+        full_dataframe = full_dataframe[full_dataframe["iid"].isin(iids)]
+
+        # If needed, filter by fluorophore ID
+        if self.current_fluorophore_id == 0:
+            return full_dataframe
+        elif self.current_fluorophore_id == 1:
+            return full_dataframe[full_dataframe["fluo"] == 1]
+        elif self.current_fluorophore_id == 2:
+            return full_dataframe[full_dataframe["fluo"] == 2]
+        else:
+            raise ValueError(
+                f"Unexpected fluorophore ID {self.current_fluorophore_id}."
+            )
 
     @property
     def filtered_dataframe_stats(self) -> Union[None, pd.DataFrame]:
@@ -363,97 +445,13 @@ class MinFluxProcessor:
         self._init_selected_rows_dict()
 
         # Reset the mapping to the corresponding fluorophore
-        self.full_dataframe["fluo"] = 1
+        self.processed_dataframe["fluo"] = 1
 
         # Default fluorophore is 0 (no selection)
         self.current_fluorophore_id = 0
 
         # Apply global filters
         self._apply_global_filters()
-
-    def update_localizations(
-        self, x: np.ndarray, y: np.ndarray, z: Optional[np.ndarray] = None
-    ):
-        """Updates the localization coordinates of current filtered dataframe.
-
-        This can be used for instance after a drift correction.
-
-        Parameters
-        ----------
-
-        x: np.ndarray
-            Array of x coordinates.
-
-        y: np.ndarray
-            Array of y coordinates.
-
-        z: np.ndarray (Optional)
-            Optional array of z coordinates. Omit it to skip.
-            If the acquisition is 2D, it will be ignored in any case.
-        """
-
-        if (
-            self.full_dataframe is None
-            or self._selected_rows_dict is None
-            or self.reader._data_df is None
-            or self.reader._valid_entries is None
-        ):
-            return
-
-        # Make sure to work with NumPy arrays
-        x = np.array(x)
-        y = np.array(y)
-        if z is not None and self.is_3d:
-            z = np.array(z)
-
-        # Select the correct rows to update
-        if self.current_fluorophore_id == 0:
-            mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
-            mask_2 = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
-            mask = mask_1 | mask_2
-        elif self.current_fluorophore_id == 1:
-            mask = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
-        else:
-            mask = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
-
-        # Make sure that the lengths match
-        assert np.sum(mask.to_numpy()) == len(x), "Unexpected number of elements in x."
-        assert np.sum(mask.to_numpy()) == len(y), "Unexpected number of elements in y."
-        if z is not None and self.is_3d:
-            assert np.sum(mask.to_numpy()) == len(
-                z
-            ), "Unexpected number of elements in z."
-
-        # Re-assign the data at the reader level
-        self.reader._data_df.loc[mask, "x"] = x
-        self.reader._data_df.loc[mask, "y"] = y
-        if z is not None and self.is_3d:
-            self.reader._data_df.loc[mask, "z"] = z
-
-        # Also update the raw structured NumPy array. Since NumPy
-        # will return a copy if we try to access the "loc" array
-        # directly using logical arrays, we need to iterate over
-        # all rows one by one!
-        #
-        # Furthermore, we need to scale the values by the factor
-        # self.reader._unit_scaling_factor
-        x_scaled = x / self.reader._unit_scaling_factor
-        y_scaled = y / self.reader._unit_scaling_factor
-        if z is not None and self.is_3d:
-            z_scaled = z / self.reader._unit_scaling_factor
-        idx = self.reader._loc_index
-        vld_indices = np.where(self.reader._valid_entries)[0]
-        mask_indices = np.where(mask)[0]
-        for i, I in enumerate(mask_indices):
-            if I in vld_indices:
-                self.reader._data_array[I]["itr"][idx]["loc"][0] = x_scaled[i]
-                self.reader._data_array[I]["itr"][idx]["loc"][1] = y_scaled[i]
-                if z is not None and self.is_3d:
-                    self.reader._data_array[I]["itr"][idx]["loc"][2] = z_scaled[i]
-
-        # Mark derived data to be recomputed
-        self._stats_to_be_recomputed = True
-        self._weighted_localizations_to_be_recomputed = True
 
     def set_fluorophore_ids(self, fluorophore_ids: NDArray[np.uint8]):
         """Assign the fluorophore IDs to current filtered dataset."""
@@ -464,12 +462,12 @@ class MinFluxProcessor:
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
 
-        # Extract combination of fluorophore 1 and 2 filtered dataframes
-        mask_1 = (self.full_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
-        mask_2 = (self.full_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
+        # Extract the combination of fluorophore 1 and 2 filtered dataframes
+        mask_1 = (self.processed_dataframe["fluo"] == 1) & self._selected_rows_dict[1]
+        mask_2 = (self.processed_dataframe["fluo"] == 2) & self._selected_rows_dict[2]
         mask = mask_1 | mask_2
-        self.full_dataframe.loc[mask, "fluo"] = fluorophore_ids.astype(np.uint8)
-        self.full_dataframe.loc[~mask, "fluo"] = np.uint8(0)
+        self.processed_dataframe.loc[mask, "fluo"] = fluorophore_ids.astype(np.uint8)
+        self.processed_dataframe.loc[~mask, "fluo"] = np.uint8(0)
 
         # Apply global filters
         self._init_selected_rows_dict()
@@ -477,13 +475,13 @@ class MinFluxProcessor:
 
     def set_full_fluorophore_ids(self, fluorophore_ids: NDArray[np.uint8]):
         """Assign the fluorophore IDs to the original, full dataframe ignoring current filters."""
-        if self.full_dataframe is None:
+        if self.processed_dataframe is None:
             return
-        if len(fluorophore_ids) != len(self.full_dataframe.index):
+        if len(fluorophore_ids) != len(self.processed_dataframe.index):
             raise ValueError(
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
-        self.full_dataframe["fluo"] = fluorophore_ids.astype(np.uint8)
+        self.processed_dataframe["fluo"] = fluorophore_ids.astype(np.uint8)
 
         # Apply global filters
         self._init_selected_rows_dict()
@@ -736,7 +734,7 @@ class MinFluxProcessor:
 
     def _filter_by_tid_length(self, index):
         # Make sure to count only currently selected rows
-        df = self.full_dataframe.copy()
+        df = self.processed_dataframe.copy()
         df.loc[np.invert(self._selected_rows_dict[index]), "tid"] = np.nan
 
         # Select all rows where the count of TIDs is larger than self._min_trace_num
@@ -911,7 +909,7 @@ class MinFluxProcessor:
         """Calculate per-trace statistics."""
 
         # Make sure we have processed dataframe to work on
-        if self.full_dataframe is None:
+        if self.processed_dataframe is None:
             return
 
         # Only recompute statistics if needed

@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. Detailed information can be found in the [git log](https://github.com/bsse-scf/pyMINFLUX/commits/master/).
 
+## [0.6.0] - TBD
+
+### New features
+
+* Add support for importing data in the formats `.npy` `.mat.`, `.json`, and `.zarr` 
+  from **Imspector version m2410 and newer**. 
+* Initial support for reading and storing beamline monitoring data from `.zarr` files.
+* Add option to remove first `n` localizations from all traces.
+* Read and add `fbg` parameter to data viewer and histogram plotter.
+* Rename "DCR Unmixing" to "Multiplexing" in Wizard.
+* Allow showing average localization for XZ and YZ projections.
+* Warn before importing non-relocalized iterations if the minimum number of 
+  localizations per trace is larger than one.
+
+### Bug fixes
+
+* Make estimation of which iterations relocalize more robust.
+* Make scanning of detectors in MSR files more robust.
+
 ## [0.5.0] - 2024-10-25
 
 ### New features

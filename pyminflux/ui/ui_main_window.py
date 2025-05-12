@@ -110,6 +110,8 @@ class Ui_MainWindow(object):
         self.actionSave.setObjectName("actionSave")
         self.actionHistogram_Plotter = QAction(MainWindow)
         self.actionHistogram_Plotter.setObjectName("actionHistogram_Plotter")
+        self.actionLoad_Zarr = QAction(MainWindow)
+        self.actionLoad_Zarr.setObjectName("actionLoad_Zarr")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -143,6 +145,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuAnalysis.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
         self.menuFile.addAction(self.actionLoad)
+        self.menuFile.addAction(self.actionLoad_Zarr)
         self.menuFile.addAction(self.actionSave)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionExport_data)
@@ -262,6 +265,9 @@ class Ui_MainWindow(object):
         # endif // QT_CONFIG(shortcut)
         self.actionHistogram_Plotter.setText(
             QCoreApplication.translate("MainWindow", "Histogram Plotter", None)
+        )
+        self.actionLoad_Zarr.setText(
+            QCoreApplication.translate("MainWindow", "Load Zarr", None)
         )
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", "File", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", "View", None))

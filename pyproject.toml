@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyminflux"
-version = "0.5.0"
+version = "0.6.0"
 description = "Reader, processor, and viewer of MINFLUX raw data."
 authors = ["Aaron Ponti <aaron.ponti@bsse.ethz.ch>"]
 license = "Apache-2.0"
@@ -50,7 +50,7 @@ force_grid_wrap = 0
 use_parentheses = true
 line_length = 88
 combine_as_imports = true
-known_third_party = ["PySide6", "h5py", "natsort", "numpy", "pandas", "paraview", "pyqtgraph", "pytest", "requests", "scipy", "sklearn", "vispy", "vtkmodules"]
+known_third_party = ["PySide6", "h5py", "natsort", "numpy", "pandas", "paraview", "pyqtgraph", "pytest", "requests", "scipy", "sklearn", "vispy", "vtkmodules", "zarr"]
 
 [tool.ruff.lint]
 select = ["NPY201"]
@@ -59,7 +59,7 @@ select = ["NPY201"]
 python = ">=3.10,<3.13"
 numpy = "^2.0.0"
 pandas = "^2.2.3"
-pyarrow = "^17.0.0"
+pyarrow = "^19.0.1"
 pyside6 = "<6.8.0"
 pyqtgraph = "^0.13.7"
 scipy = "^1.14.0"
@@ -67,8 +67,8 @@ scikit-learn = "^1.5.0"
 requests = "^2.32"
 h5py = "^3.11.0"
 vispy = "^0.14.3"
-nuitka = "^2.4.5"
 natsort = "^8.4.0"
+zarr = "<3.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
@@ -76,7 +76,8 @@ ordered-set = "^4.1.0"
 pytest-cov = "^4.1.0"
 pre-commit = "^3.6.0"
 pdoc3 = "^0.10.0"
-nuitka = "^2.4.11"
+nuitka = "<2.7.0"
+patchelf = { version = "^0.17.2.2", markers = "sys_platform == 'linux'" }
 zstandard = "^0.23.0"
 ruff = "^0.4.10"
 

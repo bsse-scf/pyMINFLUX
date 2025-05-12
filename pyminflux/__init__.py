@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 import pyqtgraph as pg
 
 __APP_NAME__ = "pyMINFLUX"
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 # PyQtGraph settings
 pg.setConfigOption("imageAxisOrder", "row-major")  # For best performance

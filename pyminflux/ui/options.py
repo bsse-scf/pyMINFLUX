@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@ class Options(QDialog, Ui_Options):
         # Set defaults
         self.ui.leMinTIDNum.setText(str(self.state.min_trace_length))
         self.ui.leMinTIDNum.setValidator(QIntValidator(bottom=0))
+
         self.ui.leEFOBinSize.setText(str(self.state.efo_bin_size_hz))
         self.ui.leEFOBinSize.setValidator(QDoubleValidator(bottom=0.0))
         self.ui.leEFOSingleEmitterFrequency.setText(

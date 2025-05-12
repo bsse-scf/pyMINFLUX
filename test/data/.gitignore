@@ -6,3 +6,6 @@ precision_*.npy
 tracking_*.npy
 230321-*.mat
 230321-*.npy
+*.pmx
+/reader_v2/
+/reader_comparison/

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'wizard.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.7.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -61,26 +61,41 @@ class Ui_WizardDialog(object):
         if not WizardDialog.objectName():
             WizardDialog.setObjectName("WizardDialog")
         WizardDialog.resize(357, 939)
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.MinimumExpanding)
+        sizePolicy = QSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.MinimumExpanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(WizardDialog.sizePolicy().hasHeightForWidth())
         WizardDialog.setSizePolicy(sizePolicy)
         self.gridLayout = QGridLayout(WizardDialog)
         self.gridLayout.setObjectName("gridLayout")
-        self.verticalSpacer = QSpacerItem(
-            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
-        )
-
-        self.gridLayout.addItem(self.verticalSpacer, 17, 0, 1, 1)
-
         self.mainLayout = QVBoxLayout()
         self.mainLayout.setObjectName("mainLayout")
+        self.loadLayout = QHBoxLayout()
+        self.loadLayout.setObjectName("loadLayout")
         self.pbLoadData = QPushButton(WizardDialog)
         self.pbLoadData.setObjectName("pbLoadData")
-        self.pbLoadData.setMinimumSize(QSize(320, 0))
+        sizePolicy1 = QSizePolicy(
+            QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed
+        )
+        sizePolicy1.setHorizontalStretch(1)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.pbLoadData.sizePolicy().hasHeightForWidth())
+        self.pbLoadData.setSizePolicy(sizePolicy1)
+        self.pbLoadData.setMinimumSize(QSize(160, 0))
 
-        self.mainLayout.addWidget(self.pbLoadData)
+        self.loadLayout.addWidget(self.pbLoadData)
+
+        self.pbLoadZarr = QPushButton(WizardDialog)
+        self.pbLoadZarr.setObjectName("pbLoadZarr")
+        sizePolicy1.setHeightForWidth(self.pbLoadZarr.sizePolicy().hasHeightForWidth())
+        self.pbLoadZarr.setSizePolicy(sizePolicy1)
+        self.pbLoadZarr.setMinimumSize(QSize(160, 0))
+
+        self.loadLayout.addWidget(self.pbLoadZarr)
+
+        self.mainLayout.addLayout(self.loadLayout)
 
         self.pbReset = QPushButton(WizardDialog)
         self.pbReset.setObjectName("pbReset")
@@ -88,18 +103,18 @@ class Ui_WizardDialog(object):
         self.mainLayout.addWidget(self.pbReset)
 
         self.verticalSpacer_2 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+            20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
         )
 
         self.mainLayout.addItem(self.verticalSpacer_2)
 
-        self.lbColors = QLabel(WizardDialog)
-        self.lbColors.setObjectName("lbColors")
+        self.lbMultiplexing = QLabel(WizardDialog)
+        self.lbMultiplexing.setObjectName("lbMultiplexing")
         font = QFont()
         font.setBold(True)
-        self.lbColors.setFont(font)
+        self.lbMultiplexing.setFont(font)
 
-        self.mainLayout.addWidget(self.lbColors)
+        self.mainLayout.addWidget(self.lbMultiplexing)
 
         self.color_layout = QHBoxLayout()
         self.color_layout.setObjectName("color_layout")
@@ -119,33 +134,37 @@ class Ui_WizardDialog(object):
         self.fluorophores_layout.setObjectName("fluorophores_layout")
         self.lbActiveColor = QLabel(WizardDialog)
         self.lbActiveColor.setObjectName("lbActiveColor")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(
+        sizePolicy2 = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
+        )
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(
             self.lbActiveColor.sizePolicy().hasHeightForWidth()
         )
-        self.lbActiveColor.setSizePolicy(sizePolicy1)
+        self.lbActiveColor.setSizePolicy(sizePolicy2)
 
         self.fluorophores_layout.addWidget(self.lbActiveColor)
 
         self.cmActiveColor = QComboBox(WizardDialog)
         self.cmActiveColor.addItem("")
         self.cmActiveColor.setObjectName("cmActiveColor")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(
+        sizePolicy3 = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(
             self.cmActiveColor.sizePolicy().hasHeightForWidth()
         )
-        self.cmActiveColor.setSizePolicy(sizePolicy2)
+        self.cmActiveColor.setSizePolicy(sizePolicy3)
 
         self.fluorophores_layout.addWidget(self.cmActiveColor)
 
         self.mainLayout.addLayout(self.fluorophores_layout)
 
         self.verticalSpacer_4 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+            20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
         )
 
         self.mainLayout.addItem(self.verticalSpacer_4)
@@ -162,7 +181,7 @@ class Ui_WizardDialog(object):
         self.mainLayout.addWidget(self.pbTimeInspector)
 
         self.verticalSpacer_3 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+            20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
         )
 
         self.mainLayout.addItem(self.verticalSpacer_3)
@@ -187,13 +206,13 @@ class Ui_WizardDialog(object):
 
         self.leEFOLowerBound = QLineEdit(WizardDialog)
         self.leEFOLowerBound.setObjectName("leEFOLowerBound")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(
+        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(
             self.leEFOLowerBound.sizePolicy().hasHeightForWidth()
         )
-        self.leEFOLowerBound.setSizePolicy(sizePolicy3)
+        self.leEFOLowerBound.setSizePolicy(sizePolicy4)
 
         self.efo_lower_bound_layout.addWidget(self.leEFOLowerBound)
 
@@ -208,10 +227,10 @@ class Ui_WizardDialog(object):
 
         self.leEFOUpperBound = QLineEdit(WizardDialog)
         self.leEFOUpperBound.setObjectName("leEFOUpperBound")
-        sizePolicy3.setHeightForWidth(
+        sizePolicy4.setHeightForWidth(
             self.leEFOUpperBound.sizePolicy().hasHeightForWidth()
         )
-        self.leEFOUpperBound.setSizePolicy(sizePolicy3)
+        self.leEFOUpperBound.setSizePolicy(sizePolicy4)
 
         self.efo_upper_bound_layout.addWidget(self.leEFOUpperBound)
 
@@ -237,10 +256,10 @@ class Ui_WizardDialog(object):
 
         self.leCFRLowerBound = QLineEdit(WizardDialog)
         self.leCFRLowerBound.setObjectName("leCFRLowerBound")
-        sizePolicy3.setHeightForWidth(
+        sizePolicy4.setHeightForWidth(
             self.leCFRLowerBound.sizePolicy().hasHeightForWidth()
         )
-        self.leCFRLowerBound.setSizePolicy(sizePolicy3)
+        self.leCFRLowerBound.setSizePolicy(sizePolicy4)
 
         self.cfr_lower_bound_layout.addWidget(self.leCFRLowerBound)
 
@@ -255,10 +274,10 @@ class Ui_WizardDialog(object):
 
         self.leCFRUpperBound = QLineEdit(WizardDialog)
         self.leCFRUpperBound.setObjectName("leCFRUpperBound")
-        sizePolicy3.setHeightForWidth(
+        sizePolicy4.setHeightForWidth(
             self.leCFRUpperBound.sizePolicy().hasHeightForWidth()
         )
-        self.leCFRUpperBound.setSizePolicy(sizePolicy3)
+        self.leCFRUpperBound.setSizePolicy(sizePolicy4)
 
         self.cfr_upper_bound_layout.addWidget(self.leCFRUpperBound)
 
@@ -270,7 +289,7 @@ class Ui_WizardDialog(object):
         self.mainLayout.addWidget(self.pbCFRFilter)
 
         self.verticalSpacer_5 = QSpacerItem(
-            20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed
+            20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
         )
 
         self.mainLayout.addItem(self.verticalSpacer_5)
@@ -287,7 +306,12 @@ class Ui_WizardDialog(object):
 
         self.gridLayout.addLayout(self.mainLayout, 0, 0, 1, 1)
 
-        QWidget.setTabOrder(self.pbLoadData, self.pbReset)
+        self.verticalSpacer = QSpacerItem(
+            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
+        )
+
+        self.gridLayout.addItem(self.verticalSpacer, 17, 0, 1, 1)
+
         QWidget.setTabOrder(self.pbReset, self.pbSingleColor)
         QWidget.setTabOrder(self.pbSingleColor, self.pbColorUnmixer)
         QWidget.setTabOrder(self.pbColorUnmixer, self.cmActiveColor)
@@ -315,9 +339,12 @@ class Ui_WizardDialog(object):
         self.pbLoadData.setText(
             QCoreApplication.translate("WizardDialog", "Load", None)
         )
+        self.pbLoadZarr.setText(
+            QCoreApplication.translate("WizardDialog", "Load Zarr", None)
+        )
         self.pbReset.setText(QCoreApplication.translate("WizardDialog", "Reset", None))
-        self.lbColors.setText(
-            QCoreApplication.translate("WizardDialog", "DCR unmixing", None)
+        self.lbMultiplexing.setText(
+            QCoreApplication.translate("WizardDialog", "Multiplexing", None)
         )
         self.pbSingleColor.setText(
             QCoreApplication.translate("WizardDialog", "Single fluorophore", None)

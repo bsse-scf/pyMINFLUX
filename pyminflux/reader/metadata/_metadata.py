@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,8 +17,12 @@ from typing import Union
 
 
 @dataclass
-class NativeMetadata:
+class PMXMetadata:
     """Metadata associated to `.pmx` native pyMINFLUX file format.
+
+    Version 3.0
+    -----------
+        No new properties.
 
     Version 2.0
     -----------

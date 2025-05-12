@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -385,6 +385,9 @@ class Mediator:
 
         self.dialogs["wizard"].load_data_triggered.connect(
             self.dialogs["main_window"].select_and_load_or_import_data_file
+        )
+        self.dialogs["wizard"].load_zarr_triggered.connect(
+            self.dialogs["main_window"].select_and_load_zarr
         )
         self.dialogs["wizard"].reset_filters_triggered.connect(
             self.dialogs["main_window"].reset_filters_and_broadcast

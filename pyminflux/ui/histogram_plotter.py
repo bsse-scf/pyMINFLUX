@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -50,11 +50,12 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
         # Keep track of whether there is a plot to export
         self.plot_ready_to_export = False
 
-        # We only allow plotting of three parameters: "eco", "dwell" and "tim_tot"
-        self.plotting_parameters = ["eco", "dwell", "tim_tot"]
+        # We only allow plotting of three parameters: "eco", "dwell", "fbg", and "tim_tot"
+        self.plotting_parameters = ["eco", "dwell", "fbg", "tim_tot"]
         self.plotting_parameters_source = {
             "eco": "df",
             "dwell": "df",
+            "fbg": "df",
             "tim_tot": "df_stats",
         }
 
@@ -163,7 +164,7 @@ class HistogramPlotter(QDialog, Ui_HistogramPlotter):
             x_range = [bins[0] - 0.1, bins[0] + 0.1]
             bin_width = 0.05
         else:
-            bin_width = 0.9 * (bins[1] - bins[0])
+            bin_width = 0.95 * (bins[1] - bins[0])
         max_freq = freqs.max()
         if max_freq == 0.0:
             max_freq = 0.1

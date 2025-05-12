@@ -1,4 +1,4 @@
-#  Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+#  Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 __doc__ = "Writer of processed MINFLUX data."
-__all__ = ["MinFluxWriter", "PyMinFluxNativeWriter"]
+__all__ = ["MinFluxWriter", "PMXWriter"]
 
-from ._native_writer import PyMinFluxNativeWriter
+from ._pmx_writer import PMXWriter
 from ._writer import MinFluxWriter

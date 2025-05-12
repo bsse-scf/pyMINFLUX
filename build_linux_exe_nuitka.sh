@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2022 - 2024 D-BSSE, ETH Zurich.
+# Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 #  limitations under the License.
 #
 
-VERSION=0.5.0
+VERSION=0.6.0
 PYTHON_VERSION=3.12
 
 if [[ -z "$ANACONDA_HOME" ]]; then
@@ -28,9 +28,6 @@ source $ANACONDA_HOME/etc/profile.d/conda.sh
 # Create and activate a dedicated env
 conda create -n pyminflux-build python=$PYTHON_VERSION -y
 conda activate pyminflux-build
-
-# Install nuitka
-python -m pip install nuitka ordered_set zstandard patchelf
 
 # Install static python lib
 conda install libpython-static -y
