@@ -27,11 +27,11 @@ REM Create and activate a dedicated env
 call conda create -n pyminflux-build python=%PYTHON_VERSION% -y
 call conda activate pyminflux-build
 
-REM Install nuitka
-python -m pip install nuitka ordered_set zstandard
-
 REM Install dependencies
 poetry.exe install
+
+REM Remove zstandard (to reduce the risk of false positives in Windows Defender
+pip unintstall zstandard -y
 
 REM Determine the path to the vispy glsl directory
 for /f "delims=" %%i in ('python -c "import vispy, os; print(os.path.join(os.path.dirname(vispy.__file__), 'glsl'))"') do set VISPY_GLSL_DIR=%%i
@@ -47,8 +47,10 @@ rmdir /s /q build
 rmdir /s /q dist
 
 REM Build the executable
+REM Note: if `--mingw64 --clang` causes Windows Defender to give false positives,
+REM use `--msvc=latest` instead
 python -m nuitka pyminflux/main.py -o pyMINFLUX ^
---mingw64 ^
+--mingw64 --clang ^
 --assume-yes-for-downloads ^
 --windows-console-mode=disable ^
 --noinclude-default-mode=error ^
