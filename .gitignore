@@ -18,3 +18,4 @@ __pycache__/
 /htmlcov/
 /coverage.xml
 /.ruff_cache/
+/_playground
