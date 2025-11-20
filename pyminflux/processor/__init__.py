@@ -15,6 +15,16 @@
 __doc__ = "Processor of MINFLUX data."
 __all__ = [
     "MinFluxProcessor",
+    "get_bead_positions_from_mbm",
+    "merge_dataframes_with_alignment",
+    "load_zarr_for_beads",
+    "get_next_fluorophore_id",
 ]
 
 from ._processor import MinFluxProcessor
+from ._merge import (
+    get_bead_positions_from_mbm,
+    merge_dataframes_with_alignment,
+    load_zarr_for_beads,
+    get_next_fluorophore_id,
+)

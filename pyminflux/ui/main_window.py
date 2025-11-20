@@ -41,8 +41,15 @@ from PySide6.QtWidgets import (
 
 import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
+from pyminflux.correct import align_datasets_using_beads
 from pyminflux.plugin import PluginManager
-from pyminflux.processor import MinFluxProcessor
+from pyminflux.processor import (
+    MinFluxProcessor,
+    get_bead_positions_from_mbm,
+    merge_dataframes_with_alignment,
+    load_zarr_for_beads,
+    get_next_fluorophore_id,
+)
 from pyminflux.reader import (
     MinFluxReader,
     MinFluxReaderFactory,
@@ -52,9 +59,11 @@ from pyminflux.reader import (
 from pyminflux.settings import Settings, UpdateSettings
 from pyminflux.threads import AutoUpdateCheckerWorker
 from pyminflux.ui.analyzer import Analyzer
+from pyminflux.ui.bead_correspondence_dialog import BeadCorrespondenceDialog
 from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.colorbar import ColorBarWidget
 from pyminflux.ui.colors import ColorCode, reset_all_colors
+from pyminflux.ui.dataset_merge_dialog import DatasetMergeDialog
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.histogram_plotter import HistogramPlotter
@@ -115,6 +124,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Keep a reference to the MinFluxProcessor
         self.processor = None
+
+        # Keep track of the current dataset's Zarr path for merging
+        self.current_zarr_path = None
+        self.current_filename = None
 
         # Read the application settings and update the state
         self.load_and_apply_settings()
@@ -650,6 +663,173 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Now call the standard loading slot
         self.select_and_load_or_import_data_file(folder)
 
+    def _merge_datasets(
+        self,
+        new_filename: str,
+        new_reader: MinFluxReader,
+        merge_mode: int,
+    ) -> bool:
+        """
+        Merge a new dataset with the currently loaded one.
+        
+        Args:
+            new_filename: Path to the new dataset file
+            new_reader: Reader object for the new dataset
+            merge_mode: DatasetMergeDialog.RESULT_MERGE_AUTO or RESULT_MERGE_MANUAL
+            
+        Returns:
+            True if merge successful, False otherwise
+        """
+        # Determine Zarr paths for both datasets
+        new_ext = ".zarr" if Path(new_filename).is_dir() else Path(new_filename).suffix.lower()
+        
+        # Get reference zarr path
+        if self.current_zarr_path is not None:
+            ref_zarr_path = self.current_zarr_path
+        else:
+            # Current dataset is not from Zarr, ask user for it
+            QMessageBox.information(
+                self,
+                "Select Reference Zarr File",
+                "The currently loaded dataset does not have bead data.\n"
+                "Please select the corresponding Zarr folder with bead measurements.",
+            )
+            ref_zarr_path = QFileDialog.getExistingDirectory(
+                self,
+                "Select Reference Zarr Folder",
+                str(self.state.last_selected_path) if self.state.last_selected_path else ".",
+            )
+            if not ref_zarr_path:
+                print("Merge cancelled: No reference Zarr path selected.")
+                return False
+        
+        # Get moving zarr path
+        if new_ext == ".zarr":
+            mov_zarr_path = new_filename
+        else:
+            # New dataset is not from Zarr, ask user for it
+            QMessageBox.information(
+                self,
+                "Select Moving Zarr File",
+                "The new dataset does not have bead data.\n"
+                "Please select the corresponding Zarr folder with bead measurements.",
+            )
+            mov_zarr_path = QFileDialog.getExistingDirectory(
+                self,
+                "Select Moving Zarr Folder",
+                str(self.state.last_selected_path) if self.state.last_selected_path else ".",
+            )
+            if not mov_zarr_path:
+                print("Merge cancelled: No moving Zarr path selected.")
+                return False
+        
+        # Load MBM data from both Zarr files
+        print(f"Loading bead data from reference: {ref_zarr_path}")
+        ref_reader, ref_mbm_dict = load_zarr_for_beads(ref_zarr_path)
+        if ref_reader is None or not ref_mbm_dict:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Could not load bead data from reference Zarr file:\n{ref_zarr_path}",
+            )
+            return False
+        
+        print(f"Loading bead data from moving: {mov_zarr_path}")
+        mov_reader, mov_mbm_dict = load_zarr_for_beads(mov_zarr_path)
+        if mov_reader is None or not mov_mbm_dict:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Could not load bead data from moving Zarr file:\n{mov_zarr_path}",
+            )
+            return False
+        
+        # Get bead positions
+        ref_bead_positions = get_bead_positions_from_mbm(ref_mbm_dict, n_points=3)
+        mov_bead_positions = get_bead_positions_from_mbm(mov_mbm_dict, n_points=3)
+        
+        print(f"Reference beads: {list(ref_bead_positions.keys())}")
+        print(f"Moving beads: {list(mov_bead_positions.keys())}")
+        
+        # Determine bead correspondence
+        bead_correspondence = None
+        if merge_mode == DatasetMergeDialog.RESULT_MERGE_MANUAL:
+            # Show manual correspondence dialog
+            corr_dialog = BeadCorrespondenceDialog(
+                ref_bead_positions,
+                mov_bead_positions,
+                parent=self
+            )
+            if corr_dialog.exec() != QDialog.DialogCode.Accepted:
+                print("Merge cancelled: User cancelled bead correspondence.")
+                return False
+            
+            bead_correspondence = corr_dialog.get_correspondence()
+            print(f"Manual bead correspondence: {bead_correspondence}")
+        else:
+            # Automatic correspondence by name
+            print("Using automatic bead correspondence by name")
+        
+        # Perform alignment
+        print("Performing bead-based alignment...")
+        
+        # Create QC plot path in the same directory as the new file
+        qc_plot_path = Path(new_filename).parent / f"alignment_qc_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        transform_model = align_datasets_using_beads(
+            ref_mbm_dict,
+            mov_mbm_dict,
+            bead_correspondence=bead_correspondence,
+            transform_type='euclidean',
+            n_points=3,
+            qc_plot_path=qc_plot_path
+        )
+        
+        if transform_model is None:
+            QMessageBox.critical(
+                self,
+                "Error",
+                "Bead alignment failed. Cannot merge datasets.",
+            )
+            return False
+        
+        print("Alignment successful. Merging datasets...")
+        
+        # Get current and new dataframes
+        df_reference = self.processor.reader.processed_dataframe
+        df_moving = new_reader.processed_dataframe
+        
+        # Get next fluorophore ID
+        next_fluo_id = get_next_fluorophore_id(df_reference)
+        print(f"Assigning fluorophore ID {next_fluo_id} to moving dataset")
+        
+        # Merge dataframes
+        df_merged = merge_dataframes_with_alignment(
+            df_reference,
+            df_moving,
+            transform_model,
+            next_fluo_id=next_fluo_id
+        )
+        
+        print(f"Merged dataset has {len(df_merged)} localizations")
+        
+        # Update the reader's dataframe
+        self.processor.reader._processed_dataframe = df_merged
+        
+        # Recreate the processor to update internal state
+        old_min_trace_length = self.processor.min_trace_length
+        old_use_weighted = self.processor.use_weighted_localizations
+        
+        self.processor = MinFluxProcessor(
+            self.processor.reader,
+            old_min_trace_length,
+        )
+        self.processor.use_weighted_localizations = old_use_weighted
+        
+        print(f"Merge completed. Dataset now has {self.processor.num_fluorophores} fluorophore(s)")
+        
+        return True
+
     @Slot()
     def select_and_load_or_import_data_file(self, filename: Optional[str] = None):
         """
@@ -703,6 +883,30 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                     f"Unsupported file {filename}.",
                 )
                 return
+
+            # Check if a dataset is already loaded and ask about merging
+            should_merge = False
+            merge_mode = DatasetMergeDialog.RESULT_REPLACE
+            
+            if self.processor is not None and self.current_filename is not None:
+                # A dataset is already loaded - ask user what to do
+                merge_dialog = DatasetMergeDialog(
+                    current_filename=Path(self.current_filename).name,
+                    new_filename=Path(filename).name,
+                    parent=self
+                )
+                
+                if merge_dialog.exec() != QDialog.DialogCode.Accepted:
+                    print("Loading cancelled by user.")
+                    return
+                
+                merge_mode = merge_dialog.get_merge_choice()
+                
+                if merge_mode != DatasetMergeDialog.RESULT_REPLACE:
+                    should_merge = True
+                    print(f"User chose to merge datasets (mode: {merge_mode})")
+                else:
+                    print("User chose to replace current dataset")
 
             # Reload the default settings
             self.load_and_apply_settings()
@@ -779,6 +983,43 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Show some info
             print(reader)
 
+            # Handle dataset merging if requested
+            if should_merge:
+                success = self._merge_datasets(filename, reader, merge_mode)
+                if not success:
+                    QMessageBox.warning(
+                        self,
+                        "Merge Failed",
+                        "Dataset merge failed. Loading new dataset normally instead.",
+                    )
+                    # Continue with normal loading after merge failure
+                else:
+                    # Merge successful - update UI and return
+                    # The processor has already been updated by _merge_datasets
+                    
+                    # Update window title to show both datasets
+                    self.setWindowTitle(
+                        f"{__APP_NAME__} v{__version__} - [{Path(self.current_filename).name} + {Path(filename).name}]"
+                    )
+                    
+                    # Update the state
+                    self.state.last_selected_path = Path(filename).parent
+                    
+                    # Update UI
+                    self.full_update_ui()
+                    self.plotter.enableAutoRange(enable=True)
+                    self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
+                    
+                    # Update external tools
+                    if self.analyzer is not None:
+                        self.analyzer.set_processor(self.processor)
+                        self.analyzer.plot()
+                    
+                    self.wizard.set_processor(self.processor)
+                    
+                    print("Dataset merge completed successfully.")
+                    return
+
             # Process the file
             self.state.last_selected_path = Path(filename).parent
 
@@ -797,6 +1038,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.setWindowTitle(
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
+
+            # Store current filename and Zarr path for potential merging
+            self.current_filename = filename
+            if ext == ".zarr":
+                self.current_zarr_path = filename
+            else:
+                # For non-Zarr files, we don't have bead data yet
+                self.current_zarr_path = None
 
             # Reset the color caches
             reset_all_colors()
