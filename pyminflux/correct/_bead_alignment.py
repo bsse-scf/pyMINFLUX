@@ -17,8 +17,7 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Tuple, Union, Optional, Dict
-from matplotlib import pyplot as plt
+from typing import Union, Optional, Dict
 
 
 def _kabsch(P: np.ndarray, Q: np.ndarray, allow_reflection: bool = False):
@@ -96,16 +95,64 @@ class RigidTransform:
         return np.linalg.norm(transformed - dst, axis=1)
 
 
-def kabsch_registration(
+class TranslationTransform:
+    """Translation-only transformation model for cases with insufficient correspondences."""
+    
+    def __init__(self, translation: np.ndarray):
+        """
+        Initialize translation-only transform.
+        
+        Args:
+            translation: (d,) translation vector
+        """
+        self.translation = translation
+        self.dimensionality = translation.shape[0]
+        
+        # Build homogeneous transformation matrix for compatibility
+        d = self.dimensionality
+        self.params = np.eye(d + 1)
+        self.params[:d, d] = translation
+        
+        # Store identity rotation for compatibility
+        self.rotation = np.eye(d)
+    
+    def __call__(self, coords: np.ndarray) -> np.ndarray:
+        """
+        Apply transformation to coordinates.
+        
+        Args:
+            coords: (n, d) array of coordinates
+            
+        Returns:
+            Transformed coordinates (n, d)
+        """
+        return coords + self.translation
+    
+    def residuals(self, src: np.ndarray, dst: np.ndarray) -> np.ndarray:
+        """
+        Calculate residuals between transformed source and destination.
+        
+        Args:
+            src: (n, d) source points
+            dst: (n, d) destination points
+            
+        Returns:
+            (n,) array of residuals (Euclidean distances)
+        """
+        transformed = self(src)
+        return np.linalg.norm(transformed - dst, axis=1)
+
+
+def point_registration(
     pts_fixed: np.ndarray,
     pts_moving: np.ndarray,
     transform_type: str = 'euclidean',
-) -> Tuple[np.ndarray, np.ndarray, int, Optional[RigidTransform]]:
+) -> Optional[Union[RigidTransform, TranslationTransform]]:
     """
-    Estimate rigid transformation between two sets of corresponding points using Kabsch algorithm.
+    Estimate transformation between two sets of corresponding points.
     
-    This function assumes that the user-verified correspondences are of good quality
-    and computes the optimal rigid transformation directly without RANSAC.
+    For 3+ correspondences, the Kabsch algorithm is used for rigid alignment.
+    When fewer than 3 correspondences are available, a translation-only transform is used.
 
     Args:
         pts_fixed (np.ndarray): The (N, D) array of points in the fixed coordinate system.
@@ -114,21 +161,17 @@ def kabsch_registration(
                             Currently only 'euclidean' (rigid: rotation+translation) is supported.
 
     Returns:
-        Tuple[np.ndarray, np.ndarray, int, Optional[RigidTransform]]:
-            - H (np.ndarray): The (D+1, D+1) homogeneous transformation matrix.
-            - inliers_mask (np.ndarray): A boolean mask (all True since we trust the correspondences).
-            - num_inliers (int): The total count of points (all are inliers).
-            - model (Optional[RigidTransform]): The estimated transformation model.
+        Optional[Union[RigidTransform, TranslationTransform]]: The estimated transformation model.
     """
     if transform_type.lower() != 'euclidean':
         raise ValueError("Only 'euclidean' transform type is currently supported.")
     
     n_points, d = pts_moving.shape
     
-    if n_points < 2:
+    if n_points < 1:
         raise ValueError(
             f"Not enough data points ({n_points}) for alignment. "
-            f"At least 2 points are required."
+            f"At least 1 point is required."
         )
     
     if pts_fixed.shape != pts_moving.shape:
@@ -137,20 +180,19 @@ def kabsch_registration(
             f"Got pts_fixed: {pts_fixed.shape}, pts_moving: {pts_moving.shape}"
         )
     
-    # Compute optimal rigid transformation using Kabsch algorithm
+    # Use translation-only transform for 1-2 correspondences
+    if n_points < 3:
+        # Compute mean translation
+        t = pts_fixed.mean(axis=0) - pts_moving.mean(axis=0)
+        
+        # Create translation-only transformation model
+        return TranslationTransform(t)
+    
+    # Compute optimal rigid transformation using Kabsch algorithm for 3+ correspondences
     R, t = _kabsch(pts_moving, pts_fixed, allow_reflection=False)
     
     # Create transformation model
-    model = RigidTransform(R, t)
-    
-    # All points are considered inliers since we trust the user-verified correspondences
-    inliers_mask = np.ones(n_points, dtype=bool)
-    num_inliers = n_points
-    
-    # Build homogeneous transformation matrix
-    H = model.params
-    
-    return H, inliers_mask, num_inliers, model
+    return RigidTransform(R, t)
 
 
 def mbm_dict_to_dataframe(mbm_dict: Dict, additional_metadata: Optional[Dict] = None) -> pd.DataFrame:
@@ -203,7 +245,6 @@ def align_datasets_using_beads(
     bead_correspondence: Optional[Dict[str, str]] = None,
     transform_type: str = 'euclidean',
     n_points: Optional[int] = 3,
-    qc_plot_path: Optional[Path] = None
 ) -> Optional[object]:
     """
     Align two datasets using bead localizations.
@@ -215,7 +256,6 @@ def align_datasets_using_beads(
                            If None, assumes beads with same names correspond.
         transform_type: Type of transformation ('euclidean' or 'affine')
         n_points: Number of earliest time points to average per bead
-        qc_plot_path: Optional path to save QC plots
         
     Returns:
         model: The transformation model, or None if alignment fails
@@ -288,7 +328,7 @@ def align_datasets_using_beads(
             pts_mov.append(pos_mov)
             used_beads.append((bead_ref, bead_mov))
     
-    if len(pts_ref) < 2:
+    if len(pts_ref) < 1:
         print(f"Error: Not enough valid bead pairs ({len(pts_ref)}).")
         return None
     
@@ -297,10 +337,13 @@ def align_datasets_using_beads(
     
     print(f"Aligning using {len(pts_ref)} bead positions")
     
-    # Execute alignment using Kabsch algorithm
-    # We trust the user-verified correspondences, so no RANSAC is needed
+    # Warn if using translation-only mode
+    if len(pts_ref) < 3:
+        print(f"Warning: Only {len(pts_ref)} bead pair(s) available. Using translation-only alignment.")
+    
+    # Execute alignment
     try:
-        affine, inliers_mask, num_inliers, model = kabsch_registration(
+        model = point_registration(
             pts_ref,
             pts_mov,
             transform_type=transform_type,
@@ -316,46 +359,11 @@ def align_datasets_using_beads(
     # Calculate residuals
     residuals = model.residuals(pts_mov, pts_ref)
     residual_mean = np.mean(residuals)
-    residual_inlier_mean = np.mean(residuals[inliers_mask]) if num_inliers > 0 else 0
     residual_before = np.mean(np.linalg.norm(pts_mov - pts_ref, axis=1))
     
-    print(f"Alignment completed. Number of inliers: {num_inliers}/{pts_ref.shape[0]}.")
-    print(f"Mean residual (inliers): {residual_inlier_mean:.2f} nm.")
+    alignment_mode = "translation-only" if len(pts_ref) < 3 else "rigid (rotation + translation)"
+    print(f"Alignment completed using {alignment_mode} mode.")
+    print(f"Mean residual: {residual_mean:.2f} nm.")
     print(f"Mean residual before alignment: {residual_before:.2f} nm.")
-    
-    # Create QC plots if requested
-    if qc_plot_path is not None:
-        try:
-            qc_plot_path = Path(qc_plot_path)
-            
-            # Matplotlib plot
-            plt.figure(figsize=(10, 10))
-            plt.scatter(pts_ref[:, 1], pts_ref[:, 2], c='red', label='Reference beads', s=50, alpha=0.7)
-            plt.scatter(pts_mov[:, 1], pts_mov[:, 2], c='blue', label='Moving beads', s=50, alpha=0.5)
-            
-            pts_mov_transformed = model(pts_mov)
-            plt.scatter(pts_mov_transformed[:, 1], pts_mov_transformed[:, 2], 
-                       c='green', label='Aligned beads', s=50, marker='x')
-            
-            # Draw lines connecting corresponding beads
-            for i in range(len(pts_ref)):
-                plt.plot([pts_ref[i, 1], pts_mov_transformed[i, 1]], 
-                        [pts_ref[i, 2], pts_mov_transformed[i, 2]], 
-                        'k-', alpha=0.3, linewidth=0.5)
-            
-            plt.title(f'Bead Alignment QC\nMean residual (inliers): {residual_inlier_mean:.2f} nm')
-            plt.xlabel('Y (nm)')
-            plt.ylabel('X (nm)')
-            plt.axis('equal')
-            plt.legend()
-            plt.grid(True, alpha=0.3)
-            plt.tight_layout()
-            plt.savefig(qc_plot_path.with_suffix('.pdf'), dpi=300)
-            plt.close()
-            
-            print(f"QC plot saved to {qc_plot_path.with_suffix('.pdf')}")
-            
-        except Exception as e:
-            print(f"Warning: Could not create QC plot: {e}")
     
     return model

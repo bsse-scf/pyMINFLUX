@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (
 )
 
 # Import the Kabsch alignment function
-from pyminflux.correct._bead_alignment import _kabsch, RigidTransform
+from pyminflux.correct._bead_alignment import _kabsch, RigidTransform, TranslationTransform
 
 
 class BeadCorrespondenceDialog(QDialog):
@@ -92,8 +92,8 @@ class BeadCorrespondenceDialog(QDialog):
         # Auto-match by name if requested
         if auto_match:
             self._auto_match_by_name()
-            # Automatically calculate alignment if we have enough correspondences
-            if len(self.correspondence) >= 3:
+            # Automatically calculate alignment if we have correspondences
+            if len(self.correspondence) >= 1:
                 self._calculate_alignment()
     
     def _setup_ui(self):
@@ -112,6 +112,16 @@ class BeadCorrespondenceDialog(QDialog):
         instructions.setWordWrap(True)
         instructions.setStyleSheet("QLabel { color: #333; padding: 8px; background-color: #f8f8f8; border-radius: 4px; }")
         main_layout.addWidget(instructions)
+        
+        # Warning label (initially hidden)
+        self.warning_label = QLabel()
+        self.warning_label.setWordWrap(True)
+        self.warning_label.setStyleSheet(
+            "QLabel { color: #856404; padding: 8px; background-color: #fff3cd; "
+            "border: 1px solid #ffc107; border-radius: 4px; }"
+        )
+        self.warning_label.setVisible(False)
+        main_layout.addWidget(self.warning_label)
         
         # Create main horizontal splitter
         h_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -595,9 +605,11 @@ class BeadCorrespondenceDialog(QDialog):
     
     def _calculate_alignment(self):
         """Calculate alignment using current correspondences and display residuals."""
-        if len(self.correspondence) < 3:
+        num_correspondences = len(self.correspondence)
+        
+        if num_correspondences < 1:
             self.status_label.setText(
-                "Error: At least 3 bead correspondences required for 3D alignment calculation."
+                "Error: At least 1 bead correspondence required for alignment calculation."
             )
             self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
             return
@@ -613,8 +625,8 @@ class BeadCorrespondenceDialog(QDialog):
                 pts_mov.append(self.new_beads[new_bead_name])
                 bead_pairs.append((new_bead_name, current_bead_name))
         
-        if len(pts_ref) < 3:
-            self.status_label.setText("Error: Not enough valid bead pairs for 3D alignment.")
+        if len(pts_ref) < 1:
+            self.status_label.setText("Error: Not enough valid bead pairs for alignment.")
             self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
             return
         
@@ -622,9 +634,27 @@ class BeadCorrespondenceDialog(QDialog):
         pts_mov = np.array(pts_mov)
         
         try:
-            # Calculate Kabsch alignment
-            R, t = _kabsch(pts_mov, pts_ref, allow_reflection=False)
-            self.current_transform = RigidTransform(R, t)
+            # Check if we have enough correspondences for full rigid transformation
+            if len(pts_ref) < 3:
+                # Use translation-only transformation for 1-2 correspondences
+                t = pts_ref.mean(axis=0) - pts_mov.mean(axis=0)
+                self.current_transform = TranslationTransform(t)
+                
+                # Show warning in the instructions area
+                warning_msg = (
+                    f"⚠️ <b>Warning: Using translation-only alignment</b><br>"
+                    f"Only {len(pts_ref)} bead correspondence(s) available. "
+                    f"At least 3 correspondences are required for full rigid alignment (rotation + translation). "
+                    f"Currently using translation-only mode, which may result in less accurate alignment.<br>"
+                    f"<b>Consider adding more bead correspondences for better results.</b>"
+                )
+            else:
+                # Calculate full Kabsch alignment (rotation + translation)
+                R, t = _kabsch(pts_mov, pts_ref, allow_reflection=False)
+                self.current_transform = RigidTransform(R, t)
+                
+                # Clear any previous warning
+                warning_msg = None
             
             # Calculate residuals for each bead pair
             self.residuals = {}
@@ -643,10 +673,23 @@ class BeadCorrespondenceDialog(QDialog):
             
             # Update status with success message
             mean_residual = np.mean(list(self.residuals.values()))
-            self.status_label.setText(
-                f"Alignment calculated successfully with {len(self.residuals)} bead pairs."
-            )
-            self.status_label.setStyleSheet("QLabel { color: green; font-weight: bold; }")
+            if len(pts_ref) < 3:
+                self.status_label.setText(
+                    f"⚠️ Translation-only alignment calculated with {len(self.residuals)} bead pair(s). "
+                    f"Add more correspondences for full rigid alignment."
+                )
+                self.status_label.setStyleSheet("QLabel { color: orange; font-weight: bold; }")
+            else:
+                self.status_label.setText(
+                    f"Alignment calculated successfully with {len(self.residuals)} bead pairs."
+                )
+                self.status_label.setStyleSheet("QLabel { color: green; font-weight: bold; }")
+            
+            # Show/hide warning in instructions area
+            if warning_msg:
+                self._show_alignment_warning(warning_msg)
+            else:
+                self._hide_alignment_warning()
             
         except Exception as e:
             self.status_label.setText(f"Error calculating alignment: {e}")
@@ -656,6 +699,7 @@ class BeadCorrespondenceDialog(QDialog):
             self.show_transformed_checkbox.setEnabled(False)
             self.show_transformed_checkbox.setChecked(False)
             self._update_residual_display()
+            self._hide_alignment_warning()
     
     def _update_residual_display(self):
         """Update the residual column in the table and mean residual label."""
@@ -724,14 +768,39 @@ class BeadCorrespondenceDialog(QDialog):
     
     def _on_accept(self):
         """Handle accept - validate that we have enough correspondences."""
-        if len(self.correspondence) < 3:
+        if len(self.correspondence) < 1:
             self.status_label.setText(
-                "Error: At least 3 bead correspondences are required for 3D alignment."
+                "Error: At least 1 bead correspondence is required for alignment."
             )
             self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
             return
         
+        # Show additional warning if using translation-only mode
+        if len(self.correspondence) < 3:
+            from PySide6.QtWidgets import QMessageBox
+            result = QMessageBox.warning(
+                self,
+                "Translation-Only Alignment",
+                f"You have selected {len(self.correspondence)} bead correspondence(s).\n\n"
+                "This will use translation-only alignment, which does not account for rotation. "
+                "For more accurate alignment, it is recommended to have at least 3 bead correspondences.\n\n"
+                "Do you want to proceed with translation-only alignment?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if result != QMessageBox.StandardButton.Yes:
+                return
+        
         self.accept()
+    
+    def _show_alignment_warning(self, message: str):
+        """Show alignment warning message."""
+        self.warning_label.setText(message)
+        self.warning_label.setVisible(True)
+    
+    def _hide_alignment_warning(self):
+        """Hide alignment warning message."""
+        self.warning_label.setVisible(False)
     
     def get_correspondence(self) -> Dict[str, str]:
         """

@@ -777,7 +777,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             bead_correspondence=bead_correspondence,
             transform_type='euclidean',
             n_points=3,
-            qc_plot_path=None
         )
         
         if transform_model is None:

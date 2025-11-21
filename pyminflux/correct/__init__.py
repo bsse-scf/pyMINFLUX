@@ -16,14 +16,18 @@ __doc__ = "Correction/restoration functions."
 __all__ = [
     "drift_correction_time_windows_2d",
     "drift_correction_time_windows_3d",
-    "kabsch_registration",
+    "point_registration",
     "mbm_dict_to_dataframe",
     "align_datasets_using_beads",
+    "RigidTransform",
+    "TranslationTransform",
 ]
 
 from ._correct import drift_correction_time_windows_2d, drift_correction_time_windows_3d
 from ._bead_alignment import (
-    kabsch_registration,
+    point_registration,
     mbm_dict_to_dataframe,
     align_datasets_using_beads,
+    RigidTransform,
+    TranslationTransform,
 )
