@@ -62,7 +62,7 @@ class BeadCorrespondenceDialog(QDialog):
         """
         super().__init__(parent)
         
-        self.setWindowTitle("Assign Bead Correspondences")
+        self.setWindowTitle("Bead-Based Dataset Alignment")
         self.setModal(True)
         self.resize(1400, 800)
         
@@ -93,15 +93,12 @@ class BeadCorrespondenceDialog(QDialog):
         
         # Instructions
         instructions = QLabel(
-            "Match each bead in the current dataset (red circles) with the corresponding bead "
-            "in the new dataset (blue squares). Use the dropdown in each row to select the match. "
-            "Lines in the plot show assigned correspondences."
+            "Match beads between datasets and verify alignment quality. "
+            "Red circles = current dataset, blue squares = new dataset. "
+            "Green dashed lines show assigned correspondences."
         )
         instructions.setWordWrap(True)
-        instructions.setToolTip(
-            "Click on beads in the plot or select them in the table to assign matches. "
-            "Green dashed lines connect matched beads."
-        )
+        instructions.setStyleSheet("QLabel { color: #555; font-style: italic; padding: 5px; }")
         main_layout.addWidget(instructions)
         
         # Create main horizontal splitter
@@ -112,7 +109,7 @@ class BeadCorrespondenceDialog(QDialog):
         plot_layout = QVBoxLayout()
         plot_layout.setContentsMargins(0, 0, 0, 0)
         
-        plot_label = QLabel("<b>Bead Positions (XY view)</b>")
+        plot_label = QLabel("<b>Bead Positions (XY Projection)</b>")
         plot_layout.addWidget(plot_label)
         
         # Create pyqtgraph plot
@@ -133,13 +130,55 @@ class BeadCorrespondenceDialog(QDialog):
         table_layout = QVBoxLayout()
         table_layout.setContentsMargins(0, 0, 0, 0)
         
+        # Table title
         table_layout.addWidget(QLabel("<b>Bead Correspondence Assignments</b>"))
         
-        # Single correspondence table
+        # Matching controls (first row)
+        matching_layout = QHBoxLayout()
+        auto_match_btn = QPushButton("Auto-match by name")
+        auto_match_btn.setToolTip("Automatically match beads that have identical names in both datasets")
+        auto_match_btn.clicked.connect(self._auto_match_by_name)
+        matching_layout.addWidget(auto_match_btn)
+        
+        clear_btn = QPushButton("Clear all matches")
+        clear_btn.setToolTip("Remove all current bead correspondences")
+        clear_btn.clicked.connect(self._clear_all_matches)
+        matching_layout.addWidget(clear_btn)
+        matching_layout.addStretch()
+        
+        table_layout.addLayout(matching_layout)
+        
+        # Alignment controls (second row)
+        alignment_layout = QHBoxLayout()
+        alignment_layout.addWidget(QLabel("<b>Alignment Quality Control:</b>"))
+        
+        self.calc_alignment_btn = QPushButton("Calculate Alignment")
+        self.calc_alignment_btn.setToolTip(
+            "Calculate the rigid transformation using currently selected bead correspondences "
+            "and display residual errors for each bead pair"
+        )
+        self.calc_alignment_btn.clicked.connect(self._calculate_alignment)
+        alignment_layout.addWidget(self.calc_alignment_btn)
+        
+        # Mean residual label
+        self.mean_residual_label = QLabel("Mean residual: N/A")
+        self.mean_residual_label.setStyleSheet(
+            "QLabel { color: #666; font-weight: bold; padding: 5px; }"
+        )
+        self.mean_residual_label.setToolTip("Mean residual error across all matched bead pairs")
+        alignment_layout.addWidget(self.mean_residual_label)
+        alignment_layout.addStretch()
+        
+        table_layout.addLayout(alignment_layout)
+        
+        # Add spacing
+        table_layout.addSpacing(10)
+        
+        # Single correspondence table (with scroll support)
         self.correspondence_table = QTableWidget()
         self.correspondence_table.setColumnCount(3)
         self.correspondence_table.setHorizontalHeaderLabels(
-            ["Current Dataset Bead (Red)", "→ Matches New Dataset Bead (Blue)", "Residual (nm)"]
+            ["Current Dataset", "New Dataset", "Residual (nm)"]
         )
         header = self.correspondence_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -148,8 +187,11 @@ class BeadCorrespondenceDialog(QDialog):
         self.correspondence_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.correspondence_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.correspondence_table.setToolTip(
-            "For each current bead (red), select which new bead (blue) it corresponds to"
+            "Select matching beads from the dropdown. Click 'Calculate Alignment' to preview alignment quality."
         )
+        # Enable vertical scrolling
+        self.correspondence_table.setVerticalScrollMode(QTableWidget.ScrollMode.ScrollPerPixel)
+        self.correspondence_table.setMinimumHeight(200)  # Ensure minimum visible area
         self.correspondence_table.itemSelectionChanged.connect(self._on_table_selection_changed)
         table_layout.addWidget(self.correspondence_table)
         
@@ -161,43 +203,9 @@ class BeadCorrespondenceDialog(QDialog):
         
         main_layout.addWidget(h_splitter)
         
-        # Buttons row
-        buttons_layout = QHBoxLayout()
-        
-        auto_match_btn = QPushButton("Auto-match by name")
-        auto_match_btn.setToolTip("Automatically match beads that have identical names in both datasets")
-        auto_match_btn.clicked.connect(self._auto_match_by_name)
-        buttons_layout.addWidget(auto_match_btn)
-        
-        clear_btn = QPushButton("Clear all matches")
-        clear_btn.setToolTip("Remove all current bead correspondences")
-        clear_btn.clicked.connect(self._clear_all_matches)
-        buttons_layout.addWidget(clear_btn)
-        
-        buttons_layout.addStretch()
-        
-        # Calculate alignment button
-        self.calc_alignment_btn = QPushButton("Calculate Alignment")
-        self.calc_alignment_btn.setToolTip(
-            "Calculate the rigid transformation using currently selected bead correspondences "
-            "and display residual errors for each bead pair"
-        )
-        self.calc_alignment_btn.clicked.connect(self._calculate_alignment)
-        buttons_layout.addWidget(self.calc_alignment_btn)
-        
-        # Mean residual label
-        self.mean_residual_label = QLabel("Mean residual: N/A")
-        self.mean_residual_label.setStyleSheet(
-            "QLabel { color: #333; font-weight: bold; padding: 5px; }"
-        )
-        self.mean_residual_label.setToolTip("Mean residual error across all matched bead pairs")
-        buttons_layout.addWidget(self.mean_residual_label)
-        
-        main_layout.addLayout(buttons_layout)
-        
-        # Status label
+        # Status label at the bottom
         self.status_label = QLabel("")
-        self.status_label.setStyleSheet("QLabel { color: #666; }")
+        self.status_label.setStyleSheet("QLabel { color: #666; padding: 5px; }")
         main_layout.addWidget(self.status_label)
         
         # Dialog buttons
