@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QSplitter,
     QWidget,
+    QCheckBox,
 )
 
 # Import the Kabsch alignment function
@@ -82,6 +83,7 @@ class BeadCorrespondenceDialog(QDialog):
         # Axis selection for plotting
         self.x_axis_idx = 2  # Default to X (index 2 in [z, y, x])
         self.y_axis_idx = 1  # Default to Y (index 1 in [z, y, x])
+        self.show_transformed = False  # Whether to show transformed beads
         
         self._setup_ui()
         self._populate_tables()
@@ -122,7 +124,7 @@ class BeadCorrespondenceDialog(QDialog):
         plot_label = QLabel("<b>Bead Positions</b>")
         plot_layout.addWidget(plot_label)
         
-        # Axis selection controls
+        # Axis selection controls and transformation checkbox
         axis_layout = QHBoxLayout()
         axis_layout.addWidget(QLabel("X-axis:"))
         self.x_axis_combo = QComboBox()
@@ -143,6 +145,19 @@ class BeadCorrespondenceDialog(QDialog):
         self.y_axis_combo.setCurrentIndex(1)  # Default to Y
         self.y_axis_combo.currentIndexChanged.connect(self._on_axis_changed)
         axis_layout.addWidget(self.y_axis_combo)
+        
+        axis_layout.addSpacing(20)
+        
+        # Transformation visualization checkbox (on same line)
+        self.show_transformed_checkbox = QCheckBox("Show transformed beads")
+        self.show_transformed_checkbox.setToolTip(
+            "When checked, displays the new dataset beads after applying the calculated transformation. "
+            "This allows you to visualize how well the alignment works. "
+            "Requires running 'Calculate Alignment' first."
+        )
+        self.show_transformed_checkbox.setEnabled(False)  # Disabled until alignment is calculated
+        self.show_transformed_checkbox.stateChanged.connect(self._on_show_transformed_changed)
+        axis_layout.addWidget(self.show_transformed_checkbox)
         
         axis_layout.addStretch()
         plot_layout.addLayout(axis_layout)
@@ -345,8 +360,14 @@ class BeadCorrespondenceDialog(QDialog):
         # Plot new dataset beads (blue squares)
         for bead_name, pos in self.new_beads.items():
             # pos is [z, y, x]
-            x_val = pos[self.x_axis_idx]
-            y_val = pos[self.y_axis_idx]
+            # If transformation is available and checkbox is checked, transform the position
+            if self.show_transformed and self.current_transform is not None:
+                pos_transformed = self.current_transform(pos.reshape(1, -1))[0]
+                x_val = pos_transformed[self.x_axis_idx]
+                y_val = pos_transformed[self.y_axis_idx]
+            else:
+                x_val = pos[self.x_axis_idx]
+                y_val = pos[self.y_axis_idx]
             
             scatter = pg.ScatterPlotItem(
                 [x_val],
@@ -385,9 +406,15 @@ class BeadCorrespondenceDialog(QDialog):
                 new_pos = self.new_beads[new_name]
                 current_pos = self.current_beads[current_name]
                 
-                # Use selected axes
-                new_x = new_pos[self.x_axis_idx]
-                new_y = new_pos[self.y_axis_idx]
+                # If transformation is available and checkbox is checked, transform the new position
+                if self.show_transformed and self.current_transform is not None:
+                    new_pos_transformed = self.current_transform(new_pos.reshape(1, -1))[0]
+                    new_x = new_pos_transformed[self.x_axis_idx]
+                    new_y = new_pos_transformed[self.y_axis_idx]
+                else:
+                    new_x = new_pos[self.x_axis_idx]
+                    new_y = new_pos[self.y_axis_idx]
+                
                 current_x = current_pos[self.x_axis_idx]
                 current_y = current_pos[self.y_axis_idx]
                 
@@ -513,6 +540,12 @@ class BeadCorrespondenceDialog(QDialog):
         # Restore status message
         self._update_status()
     
+    def _on_show_transformed_changed(self, state):
+        """Handle show transformed checkbox state change."""
+        self.show_transformed = (state == Qt.CheckState.Checked.value)
+        # Redraw the plot with or without transformation
+        self._plot_beads()
+    
     def _clear_all_matches(self):
         """Clear all bead correspondences."""
         for combo in self.correspondence_combos.values():
@@ -521,6 +554,8 @@ class BeadCorrespondenceDialog(QDialog):
         # Clear residuals
         self.residuals = {}
         self.current_transform = None
+        self.show_transformed_checkbox.setEnabled(False)
+        self.show_transformed_checkbox.setChecked(False)
         self._update_residual_display()
     
     def _auto_match_by_name(self):
@@ -554,6 +589,8 @@ class BeadCorrespondenceDialog(QDialog):
         # Clear residuals when correspondence changes
         self.residuals = {}
         self.current_transform = None
+        self.show_transformed_checkbox.setEnabled(False)
+        self.show_transformed_checkbox.setChecked(False)
         self._update_residual_display()
     
     def _calculate_alignment(self):
@@ -601,6 +638,9 @@ class BeadCorrespondenceDialog(QDialog):
             # Update display
             self._update_residual_display()
             
+            # Enable the "show transformed" checkbox
+            self.show_transformed_checkbox.setEnabled(True)
+            
             # Update status with success message
             mean_residual = np.mean(list(self.residuals.values()))
             self.status_label.setText(
@@ -613,6 +653,8 @@ class BeadCorrespondenceDialog(QDialog):
             self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
             self.residuals = {}
             self.current_transform = None
+            self.show_transformed_checkbox.setEnabled(False)
+            self.show_transformed_checkbox.setChecked(False)
             self._update_residual_display()
     
     def _update_residual_display(self):
