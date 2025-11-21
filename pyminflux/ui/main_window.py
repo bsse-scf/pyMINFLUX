@@ -670,7 +670,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self,
         new_filename: str,
         new_reader: MinFluxReader,
-        merge_mode: int,
     ) -> bool:
         """
         Merge a new dataset with the currently loaded one.
@@ -678,7 +677,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         Args:
             new_filename: Path to the new dataset file
             new_reader: Reader object for the new dataset
-            merge_mode: DatasetMergeDialog.RESULT_MERGE_AUTO or RESULT_MERGE_MANUAL
             
         Returns:
             True if merge successful, False otherwise
@@ -754,24 +752,20 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print(f"Reference beads: {list(ref_bead_positions.keys())}")
         print(f"Moving beads: {list(mov_bead_positions.keys())}")
         
-        # Determine bead correspondence
-        bead_correspondence = None
-        if merge_mode == DatasetMergeDialog.RESULT_MERGE_MANUAL:
-            # Show manual correspondence dialog
-            corr_dialog = BeadCorrespondenceDialog(
-                ref_bead_positions,
-                mov_bead_positions,
-                parent=self
-            )
-            if corr_dialog.exec() != QDialog.DialogCode.Accepted:
-                print("Merge cancelled: User cancelled bead correspondence.")
-                return False
-            
-            bead_correspondence = corr_dialog.get_correspondence()
-            print(f"Manual bead correspondence: {bead_correspondence}")
-        else:
-            # Automatic correspondence by name
-            print("Using automatic bead correspondence by name")
+        # Always show the correspondence dialog with auto-matching enabled
+        # This allows users to verify the automatic matches and adjust if needed
+        corr_dialog = BeadCorrespondenceDialog(
+            ref_bead_positions,
+            mov_bead_positions,
+            auto_match=True,  # Automatically match beads by name
+            parent=self
+        )
+        if corr_dialog.exec() != QDialog.DialogCode.Accepted:
+            print("Merge cancelled: User cancelled bead correspondence.")
+            return False
+        
+        bead_correspondence = corr_dialog.get_correspondence()
+        print(f"Bead correspondence: {bead_correspondence}")
         
         # Perform alignment
         print("Performing bead-based alignment...")
@@ -1348,28 +1342,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             return
         
-        # Ask user to select merge mode
-        dialog = QMessageBox(self)
-        dialog.setWindowTitle("Dataset Combiner")
-        dialog.setText("How would you like to merge datasets?")
-        dialog.setInformativeText(
-            "Choose automatic alignment (matches beads by name) or "
-            "manual alignment (you select bead correspondences)."
-        )
-        auto_btn = dialog.addButton("Automatic", QMessageBox.ActionRole)
-        manual_btn = dialog.addButton("Manual", QMessageBox.ActionRole)
-        cancel_btn = dialog.addButton(QMessageBox.Cancel)
-        dialog.exec()
-        
-        if dialog.clickedButton() == cancel_btn:
-            return
-        
-        merge_mode = (
-            DatasetMergeDialog.RESULT_MERGE_AUTO
-            if dialog.clickedButton() == auto_btn
-            else DatasetMergeDialog.RESULT_MERGE_MANUAL
-        )
-        
         # Ask user to select the new Zarr dataset
         # Only Zarr datasets contain bead data needed for alignment
         save_path = str(self.state.last_selected_path)
@@ -1423,8 +1395,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         reader.set_dwell_time(selection["dwell_time"], process=False)
         reader.set_pool_dcr(selection["pool_dcr"], process=False)
         
-        # Now attempt to merge
-        success = self._merge_datasets(filename, reader, merge_mode)
+        # Now attempt to merge - always show the correspondence dialog with auto-matching
+        success = self._merge_datasets(filename, reader)
         
         if not success:
             QMessageBox.warning(

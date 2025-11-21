@@ -45,6 +45,7 @@ class BeadCorrespondenceDialog(QDialog):
         self, 
         reference_beads: Dict[str, np.ndarray],
         moving_beads: Dict[str, np.ndarray],
+        auto_match: bool = False,
         parent=None
     ):
         """
@@ -53,6 +54,7 @@ class BeadCorrespondenceDialog(QDialog):
         Args:
             reference_beads: Dict mapping bead names to their positions [z, y, x] in current (reference) dataset
             moving_beads: Dict mapping bead names to their positions [z, y, x] in new (moving) dataset
+            auto_match: If True, automatically match beads by name on initialization
             parent: Parent widget
         """
         super().__init__(parent)
@@ -73,6 +75,10 @@ class BeadCorrespondenceDialog(QDialog):
         self._setup_ui()
         self._populate_tables()
         self._plot_beads()
+        
+        # Auto-match by name if requested
+        if auto_match:
+            self._auto_match_by_name()
     
     def _setup_ui(self):
         """Set up the user interface."""
