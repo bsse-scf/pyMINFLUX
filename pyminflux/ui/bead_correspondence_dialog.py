@@ -86,6 +86,9 @@ class BeadCorrespondenceDialog(QDialog):
         # Auto-match by name if requested
         if auto_match:
             self._auto_match_by_name()
+            # Automatically calculate alignment if we have enough correspondences
+            if len(self.correspondence) >= 3:
+                self._calculate_alignment()
     
     def _setup_ui(self):
         """Set up the user interface."""
