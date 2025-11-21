@@ -107,7 +107,8 @@ class BeadCorrespondenceDialog(QDialog):
             "Match corresponding beads between the current (red circles) and new (blue squares) datasets. "
             "When you click OK, all localizations in the new dataset will be transformed using the "
             "rigid transformation computed from the matched bead positions. The added localizations "
-            "will be assigned a new \"fluo\" value."
+            "will be assigned a new \"fluo\" value.<br>"
+            "<b>Tip:</b> Hold <b>Shift</b> and click a new bead (blue) to assign it to the currently selected current bead (red)."
         )
         instructions.setWordWrap(True)
         instructions.setStyleSheet("QLabel { color: #333; padding: 8px; background-color: #f8f8f8; border-radius: 4px; }")
@@ -470,12 +471,65 @@ class BeadCorrespondenceDialog(QDialog):
     
     def _on_new_point_clicked(self, plot, points):
         """Handle click on a new dataset bead in the plot."""
-        # When clicking a new bead (blue), find which current bead it's matched to
-        # and select that row in the table
         if len(points) > 0:
             new_bead_name = points[0].data()
             
-            # Find which current bead is matched to this new bead
+            # Check if Shift key is pressed using QApplication
+            from PySide6.QtWidgets import QApplication
+            from PySide6.QtCore import Qt as QtCore_Qt
+            modifiers = QApplication.keyboardModifiers()
+            shift_pressed = modifiers & QtCore_Qt.KeyboardModifier.ShiftModifier
+            
+            # If Shift is pressed and a current bead is selected, assign correspondence
+            if shift_pressed:
+                selected_row = self.correspondence_table.currentRow()
+                if selected_row >= 0:
+                    current_bead_name = self.correspondence_table.item(selected_row, 0).text()
+                    combo = self.correspondence_combos[current_bead_name]
+                    
+                    # Check if this new bead is already assigned to another current bead
+                    old_current_bead = None
+                    for other_current_name, other_combo in self.correspondence_combos.items():
+                        if other_current_name != current_bead_name and other_combo.currentData() == new_bead_name:
+                            old_current_bead = other_current_name
+                            # Unset the old correspondence
+                            other_combo.setCurrentIndex(0)  # Set to "-- None --"
+                            break
+                    
+                    # Find and set the new bead in the combo box
+                    index = combo.findData(new_bead_name)
+                    if index >= 0:
+                        combo.setCurrentIndex(index)
+                        
+                        # Show visual feedback
+                        if old_current_bead:
+                            self.status_label.setText(
+                                f"✓ Moved '{new_bead_name}' from '{old_current_bead}' to '{current_bead_name}'"
+                            )
+                        else:
+                            self.status_label.setText(
+                                f"✓ Assigned '{new_bead_name}' to '{current_bead_name}'"
+                            )
+                        self.status_label.setStyleSheet("QLabel { color: green; font-weight: bold; }")
+                        
+                        # Keep the row selected so user can continue assigning
+                        return
+                    else:
+                        self.status_label.setText(
+                            f"Error: '{new_bead_name}' not found in dropdown"
+                        )
+                        self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
+                        return
+                else:
+                    # No current bead selected, show hint
+                    self.status_label.setText(
+                        "To assign: First select a current bead (red), then Shift+click a new bead (blue)"
+                    )
+                    self.status_label.setStyleSheet("QLabel { color: orange; font-weight: bold; }")
+                    # Continue with normal behavior below
+            
+            # Normal behavior: find which current bead is matched to this new bead
+            # and select that row in the table
             for current_name, combo in self.correspondence_combos.items():
                 if combo.currentData() == new_bead_name:
                     # Found the match, select this row
