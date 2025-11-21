@@ -17,81 +17,140 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from skimage.measure import ransac
-from skimage.transform import EuclideanTransform, AffineTransform
 from typing import Tuple, Union, Optional, Dict
 from matplotlib import pyplot as plt
 
 
-def robust_point_cloud_registration(
+def _kabsch(P: np.ndarray, Q: np.ndarray, allow_reflection: bool = False):
+    """
+    Rigid (no scale) least-squares alignment using Kabsch algorithm.
+    Find R, t such that R @ P + t ≈ Q.
+    
+    Args:
+        P: (n, d) array of points to be aligned
+        Q: (n, d) array of reference points
+        allow_reflection: If False, enforce det(R) = +1
+        
+    Returns:
+        R: (d, d) rotation matrix
+        t: (d,) translation vector
+    """
+    assert P.shape == Q.shape
+    Pc = P - P.mean(axis=0)
+    Qc = Q - Q.mean(axis=0)
+    H = Pc.T @ Qc
+    U, S, Vt = np.linalg.svd(H)
+    R = Vt.T @ U.T
+    if not allow_reflection and np.linalg.det(R) < 0:
+        Vt[-1, :] *= -1
+        R = Vt.T @ U.T
+    t = Q.mean(axis=0) - R @ P.mean(axis=0)
+    return R, t
+
+
+class RigidTransform:
+    """Simple rigid transformation model compatible with the existing interface."""
+    
+    def __init__(self, rotation: np.ndarray, translation: np.ndarray):
+        """
+        Initialize rigid transform.
+        
+        Args:
+            rotation: (d, d) rotation matrix
+            translation: (d,) translation vector
+        """
+        self.rotation = rotation
+        self.translation = translation
+        self.dimensionality = rotation.shape[0]
+        
+        # Build homogeneous transformation matrix for compatibility
+        d = self.dimensionality
+        self.params = np.eye(d + 1)
+        self.params[:d, :d] = rotation
+        self.params[:d, d] = translation
+    
+    def __call__(self, coords: np.ndarray) -> np.ndarray:
+        """
+        Apply transformation to coordinates.
+        
+        Args:
+            coords: (n, d) array of coordinates
+            
+        Returns:
+            Transformed coordinates (n, d)
+        """
+        return (self.rotation @ coords.T).T + self.translation
+    
+    def residuals(self, src: np.ndarray, dst: np.ndarray) -> np.ndarray:
+        """
+        Calculate residuals between transformed source and destination.
+        
+        Args:
+            src: (n, d) source points
+            dst: (n, d) destination points
+            
+        Returns:
+            (n,) array of residuals (Euclidean distances)
+        """
+        transformed = self(src)
+        return np.linalg.norm(transformed - dst, axis=1)
+
+
+def kabsch_registration(
     pts_fixed: np.ndarray,
     pts_moving: np.ndarray,
     transform_type: str = 'euclidean',
-    residual_threshold: float = 0.1,
-    max_trials: int = 1000
-) -> Tuple[np.ndarray, np.ndarray, int, Optional[object]]:
+) -> Tuple[np.ndarray, np.ndarray, int, Optional[RigidTransform]]:
     """
-    Robustly estimates a geometric transformation between two sets of corresponding points
-    using the RANSAC (Random Sample Consensus) algorithm from scikit-image.
-
-    The primary output is the estimated homogeneous transformation matrix.
+    Estimate rigid transformation between two sets of corresponding points using Kabsch algorithm.
+    
+    This function assumes that the user-verified correspondences are of good quality
+    and computes the optimal rigid transformation directly without RANSAC.
 
     Args:
         pts_fixed (np.ndarray): The (N, D) array of points in the fixed coordinate system.
         pts_moving (np.ndarray): The (N, D) array of points in the moving coordinate system.
         transform_type (str): The type of transformation to estimate. 
-                            Options: 'euclidean' (rigid: rotation+translation) or 
-                            'affine' (rotation+translation+scale+shear). 
-                            Defaults to 'euclidean'.
-        residual_threshold (float): Maximum distance for a point pair to be considered 
-                                    an 'inlier' to the model. Defaults to 0.1.
-        max_trials (int): Maximum number of RANSAC iterations. Defaults to 1000.
+                            Currently only 'euclidean' (rigid: rotation+translation) is supported.
 
     Returns:
-        Tuple[np.ndarray, np.ndarray, int, Optional[object]]:
+        Tuple[np.ndarray, np.ndarray, int, Optional[RigidTransform]]:
             - H (np.ndarray): The (D+1, D+1) homogeneous transformation matrix.
-            - inliers_mask (np.ndarray): A boolean mask indicating the inlier correspondences.
-            - num_inliers (int): The total count of inliers.
-            - model (Optional[object]): The estimated scikit-image transform model object.
+            - inliers_mask (np.ndarray): A boolean mask (all True since we trust the correspondences).
+            - num_inliers (int): The total count of points (all are inliers).
+            - model (Optional[RigidTransform]): The estimated transformation model.
     """
-    # 1. Select the appropriate scikit-image Transform class and minimum samples
-    if transform_type.lower() == 'euclidean':
-        model_class = EuclideanTransform
-        # EuclideanTransform needs 2 points in 2D or 3 points in 3D
-        min_samples = pts_moving.shape[1] 
-    elif transform_type.lower() == 'affine':
-        model_class = AffineTransform
-        # AffineTransform needs 3 points in 2D or 4 points in 3D
-        min_samples = pts_moving.shape[1] + 1 
-    else:
-        raise ValueError("Invalid transform_type. Choose 'euclidean' or 'affine'.")
-
-    # Ensure min_samples is valid given the data size
-    if pts_moving.shape[0] < min_samples or pts_fixed.shape[0] < min_samples:
-        raise ValueError(
-            f"Not enough data points ({pts_moving.shape[0]}) for the selected "
-            f"transformation type ({transform_type.upper()}), which requires "
-            f"{min_samples} samples."
-        )
-
-    # 2. Run RANSAC to robustly estimate the transformation
-    model_robust, inliers = ransac(
-        (pts_moving, pts_fixed),
-        model_class,
-        min_samples=min_samples,
-        residual_threshold=residual_threshold,
-        max_trials=max_trials
-    )
-
-    if model_robust is None:
-        print("RANSAC failed to find a robust model.")
-        return np.eye(pts_moving.shape[1] + 1), np.zeros(pts_moving.shape[0], dtype=bool), 0, None
-
-    # 3. Extract results
-    H = model_robust.params 
-    num_inliers = np.sum(inliers)
+    if transform_type.lower() != 'euclidean':
+        raise ValueError("Only 'euclidean' transform type is currently supported.")
     
-    return H, inliers, num_inliers, model_robust
+    n_points, d = pts_moving.shape
+    
+    if n_points < 2:
+        raise ValueError(
+            f"Not enough data points ({n_points}) for alignment. "
+            f"At least 2 points are required."
+        )
+    
+    if pts_fixed.shape != pts_moving.shape:
+        raise ValueError(
+            f"Point arrays must have the same shape. "
+            f"Got pts_fixed: {pts_fixed.shape}, pts_moving: {pts_moving.shape}"
+        )
+    
+    # Compute optimal rigid transformation using Kabsch algorithm
+    R, t = _kabsch(pts_moving, pts_fixed, allow_reflection=False)
+    
+    # Create transformation model
+    model = RigidTransform(R, t)
+    
+    # All points are considered inliers since we trust the user-verified correspondences
+    inliers_mask = np.ones(n_points, dtype=bool)
+    num_inliers = n_points
+    
+    # Build homogeneous transformation matrix
+    H = model.params
+    
+    return H, inliers_mask, num_inliers, model
 
 
 def mbm_dict_to_dataframe(mbm_dict: Dict, additional_metadata: Optional[Dict] = None) -> pd.DataFrame:
@@ -238,14 +297,13 @@ def align_datasets_using_beads(
     
     print(f"Aligning using {len(pts_ref)} bead positions")
     
-    # Execute alignment
+    # Execute alignment using Kabsch algorithm
+    # We trust the user-verified correspondences, so no RANSAC is needed
     try:
-        affine, inliers_mask, num_inliers, model = robust_point_cloud_registration(
+        affine, inliers_mask, num_inliers, model = kabsch_registration(
             pts_ref,
             pts_mov,
             transform_type=transform_type,
-            residual_threshold=np.max(np.std(pts_ref, axis=0)) / 10,
-            max_trials=2000
         )
     except Exception as e:
         print(f"Error during registration: {e}")
