@@ -86,13 +86,13 @@ class BeadCorrespondenceDialog(QDialog):
         
         # Instructions
         instructions = QLabel(
-            "Assign correspondences between beads in the new dataset (blue) "
-            "and the current dataset (red). Select beads in the table or click them in the plot. "
-            "Lines show assigned correspondences."
+            "Match each bead in the current dataset (red circles) with the corresponding bead "
+            "in the new dataset (blue squares). Use the dropdown in each row to select the match. "
+            "Lines in the plot show assigned correspondences."
         )
         instructions.setWordWrap(True)
         instructions.setToolTip(
-            "Click on beads in the plot or select them in the tables to assign matches. "
+            "Click on beads in the plot or select them in the table to assign matches. "
             "Green dashed lines connect matched beads."
         )
         main_layout.addWidget(instructions)
@@ -121,57 +121,30 @@ class BeadCorrespondenceDialog(QDialog):
         plot_widget.setLayout(plot_layout)
         h_splitter.addWidget(plot_widget)
         
-        # Right side: Tables
-        tables_widget = QWidget()
-        tables_layout = QVBoxLayout()
-        tables_layout.setContentsMargins(0, 0, 0, 0)
+        # Right side: Single table
+        table_widget = QWidget()
+        table_layout = QVBoxLayout()
+        table_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Create vertical splitter for tables
-        v_splitter = QSplitter(Qt.Orientation.Vertical)
+        table_layout.addWidget(QLabel("<b>Bead Correspondence Assignments</b>"))
         
-        # New dataset beads table
-        new_widget = QWidget()
-        new_layout = QVBoxLayout()
-        new_layout.setContentsMargins(0, 0, 0, 0)
-        new_layout.addWidget(QLabel("<b>New Dataset Beads (Blue)</b>"))
-        
-        self.new_table = QTableWidget()
-        self.new_table.setColumnCount(5)
-        self.new_table.setHorizontalHeaderLabels(
-            ["Bead Name", "Z (nm)", "Y (nm)", "X (nm)", "→ Matches"]
+        # Single correspondence table
+        self.correspondence_table = QTableWidget()
+        self.correspondence_table.setColumnCount(2)
+        self.correspondence_table.setHorizontalHeaderLabels(
+            ["Current Dataset Bead (Red)", "→ Matches New Dataset Bead (Blue)"]
         )
-        self.new_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.new_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.new_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self.new_table.setToolTip("Select a new bead (blue squares in plot) to assign it to a current bead")
-        self.new_table.itemSelectionChanged.connect(self._on_new_selection_changed)
-        new_layout.addWidget(self.new_table)
-        new_widget.setLayout(new_layout)
-        v_splitter.addWidget(new_widget)
-        
-        # Current dataset beads table
-        current_widget = QWidget()
-        current_layout = QVBoxLayout()
-        current_layout.setContentsMargins(0, 0, 0, 0)
-        current_layout.addWidget(QLabel("<b>Current Dataset Beads (Red)</b>"))
-        
-        self.current_table = QTableWidget()
-        self.current_table.setColumnCount(4)
-        self.current_table.setHorizontalHeaderLabels(
-            ["Bead Name", "Z (nm)", "Y (nm)", "X (nm)"]
+        self.correspondence_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.correspondence_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.correspondence_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.correspondence_table.setToolTip(
+            "For each current bead (red), select which new bead (blue) it corresponds to"
         )
-        self.current_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.current_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.current_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self.current_table.setToolTip("Select a current bead (red circles in plot) to match with a new bead")
-        self.current_table.itemSelectionChanged.connect(self._on_current_selection_changed)
-        current_layout.addWidget(self.current_table)
-        current_widget.setLayout(current_layout)
-        v_splitter.addWidget(current_widget)
+        self.correspondence_table.itemSelectionChanged.connect(self._on_table_selection_changed)
+        table_layout.addWidget(self.correspondence_table)
         
-        tables_layout.addWidget(v_splitter)
-        tables_widget.setLayout(tables_layout)
-        h_splitter.addWidget(tables_widget)
+        table_widget.setLayout(table_layout)
+        h_splitter.addWidget(table_widget)
         
         # Set splitter proportions (plot gets more space)
         h_splitter.setSizes([700, 500])
@@ -193,11 +166,6 @@ class BeadCorrespondenceDialog(QDialog):
         
         buttons_layout.addStretch()
         
-        assign_btn = QPushButton("Assign Selected Match")
-        assign_btn.clicked.connect(self._assign_selected_match)
-        assign_btn.setToolTip("Assign the currently selected new bead to the selected current bead")
-        buttons_layout.addWidget(assign_btn)
-        
         main_layout.addLayout(buttons_layout)
         
         # Status label
@@ -216,46 +184,25 @@ class BeadCorrespondenceDialog(QDialog):
         self.setLayout(main_layout)
     
     def _populate_tables(self):
-        """Populate the bead tables."""
-        # Populate new dataset table
-        self.new_table.setRowCount(len(self.new_beads))
+        """Populate the correspondence table."""
+        # Populate with current dataset beads (one row per bead)
+        self.correspondence_table.setRowCount(len(self.current_beads))
         self.correspondence_combos = {}
         
-        for row, (bead_name, pos) in enumerate(sorted(self.new_beads.items())):
-            # Bead name
-            name_item = QTableWidgetItem(bead_name)
+        for row, (current_bead_name, pos) in enumerate(sorted(self.current_beads.items())):
+            # Current bead name (first column)
+            name_item = QTableWidgetItem(current_bead_name)
             name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.new_table.setItem(row, 0, name_item)
+            self.correspondence_table.setItem(row, 0, name_item)
             
-            # Position
-            for col, val in enumerate(pos):
-                pos_item = QTableWidgetItem(f"{val:.2f}")
-                pos_item.setFlags(pos_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                self.new_table.setItem(row, col + 1, pos_item)
-            
-            # Correspondence combo box
+            # Correspondence combo box (second column) - maps to new dataset beads
             combo = QComboBox()
             combo.addItem("-- None --", None)
-            for current_name in sorted(self.current_beads.keys()):
-                combo.addItem(current_name, current_name)
+            for new_name in sorted(self.new_beads.keys()):
+                combo.addItem(new_name, new_name)
             combo.currentIndexChanged.connect(self._update_correspondence)
-            self.new_table.setCellWidget(row, 4, combo)
-            self.correspondence_combos[bead_name] = combo
-        
-        # Populate current dataset table
-        self.current_table.setRowCount(len(self.current_beads))
-        
-        for row, (bead_name, pos) in enumerate(sorted(self.current_beads.items())):
-            # Bead name
-            name_item = QTableWidgetItem(bead_name)
-            name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.current_table.setItem(row, 0, name_item)
-            
-            # Position
-            for col, val in enumerate(pos):
-                pos_item = QTableWidgetItem(f"{val:.2f}")
-                pos_item.setFlags(pos_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                self.current_table.setItem(row, col + 1, pos_item)
+            self.correspondence_table.setCellWidget(row, 1, combo)
+            self.correspondence_combos[current_bead_name] = combo
         
         self._update_status()
     
@@ -361,78 +308,58 @@ class BeadCorrespondenceDialog(QDialog):
     
     def _on_new_point_clicked(self, plot, points):
         """Handle click on a new dataset bead in the plot."""
+        # When clicking a new bead (blue), find which current bead it's matched to
+        # and select that row in the table
         if len(points) > 0:
-            bead_name = points[0].data()
-            # Find and select this bead in the table
-            for row in range(self.new_table.rowCount()):
-                item = self.new_table.item(row, 0)
-                if item and item.text() == bead_name:
-                    self.new_table.selectRow(row)
-                    break
+            new_bead_name = points[0].data()
+            
+            # Find which current bead is matched to this new bead
+            for current_name, combo in self.correspondence_combos.items():
+                if combo.currentData() == new_bead_name:
+                    # Found the match, select this row
+                    for row in range(self.correspondence_table.rowCount()):
+                        item = self.correspondence_table.item(row, 0)
+                        if item and item.text() == current_name:
+                            self.correspondence_table.selectRow(row)
+                            return
+            
+            # If not matched, just highlight the bead
+            for bead_name in self.new_scatter_items.keys():
+                self._highlight_bead(bead_name, is_current=False, highlight=(bead_name == new_bead_name))
     
     def _on_current_point_clicked(self, plot, points):
         """Handle click on a current dataset bead in the plot."""
         if len(points) > 0:
             bead_name = points[0].data()
             # Find and select this bead in the table
-            for row in range(self.current_table.rowCount()):
-                item = self.current_table.item(row, 0)
+            for row in range(self.correspondence_table.rowCount()):
+                item = self.correspondence_table.item(row, 0)
                 if item and item.text() == bead_name:
-                    self.current_table.selectRow(row)
+                    self.correspondence_table.selectRow(row)
                     break
     
-    def _on_new_selection_changed(self):
-        """Handle selection change in new dataset beads table."""
-        # Unhighlight all new beads
+    def _on_table_selection_changed(self):
+        """Handle selection change in the correspondence table."""
+        # Unhighlight all beads
+        for bead_name in self.current_scatter_items.keys():
+            self._highlight_bead(bead_name, is_current=True, highlight=False)
         for bead_name in self.new_scatter_items.keys():
             self._highlight_bead(bead_name, is_current=False, highlight=False)
         
-        # Highlight selected bead
-        selected_rows = self.new_table.selectedItems()
+        # Highlight selected current bead and its matched new bead
+        selected_rows = self.correspondence_table.selectedItems()
         if selected_rows:
-            row = self.new_table.currentRow()
+            row = self.correspondence_table.currentRow()
             if row >= 0:
-                bead_name = self.new_table.item(row, 0).text()
-                self._highlight_bead(bead_name, is_current=False, highlight=True)
-    
-    def _on_current_selection_changed(self):
-        """Handle selection change in current dataset beads table."""
-        # Unhighlight all current beads
-        for bead_name in self.current_scatter_items.keys():
-            self._highlight_bead(bead_name, is_current=True, highlight=False)
-        
-        # Highlight selected bead
-        selected_rows = self.current_table.selectedItems()
-        if selected_rows:
-            row = self.current_table.currentRow()
-            if row >= 0:
-                bead_name = self.current_table.item(row, 0).text()
-                self._highlight_bead(bead_name, is_current=True, highlight=True)
-    
-    def _assign_selected_match(self):
-        """Assign the selected new bead to the selected current bead."""
-        new_row = self.new_table.currentRow()
-        current_row = self.current_table.currentRow()
-        
-        if new_row < 0:
-            self.status_label.setText("Please select a new bead first.")
-            self.status_label.setStyleSheet("QLabel { color: orange; font-weight: bold; }")
-            return
-        
-        if current_row < 0:
-            self.status_label.setText("Please select a current bead to match.")
-            self.status_label.setStyleSheet("QLabel { color: orange; font-weight: bold; }")
-            return
-        
-        new_name = self.new_table.item(new_row, 0).text()
-        current_name = self.current_table.item(current_row, 0).text()
-        
-        # Update the combo box
-        if new_name in self.correspondence_combos:
-            combo = self.correspondence_combos[new_name]
-            index = combo.findData(current_name)
-            if index >= 0:
-                combo.setCurrentIndex(index)
+                current_bead_name = self.correspondence_table.item(row, 0).text()
+                self._highlight_bead(current_bead_name, is_current=True, highlight=True)
+                
+                # Also highlight the matched new bead if any
+                if current_bead_name in self.correspondence_combos:
+                    combo = self.correspondence_combos[current_bead_name]
+                    new_bead_name = combo.currentData()
+                    if new_bead_name is not None:
+                        self._highlight_bead(new_bead_name, is_current=False, highlight=True)
     
     def _clear_all_matches(self):
         """Clear all bead correspondences."""
@@ -442,10 +369,11 @@ class BeadCorrespondenceDialog(QDialog):
     def _auto_match_by_name(self):
         """Automatically match beads with the same names."""
         matched = 0
-        for bead_name, combo in self.correspondence_combos.items():
-            if bead_name in self.current_beads:
+        for current_bead_name, combo in self.correspondence_combos.items():
+            # Check if there's a new bead with the same name
+            if current_bead_name in self.new_beads:
                 # Find the index of this bead name in the combo box
-                index = combo.findData(bead_name)
+                index = combo.findData(current_bead_name)
                 if index >= 0:
                     combo.setCurrentIndex(index)
                     matched += 1
@@ -455,27 +383,30 @@ class BeadCorrespondenceDialog(QDialog):
     
     def _update_correspondence(self):
         """Update the correspondence mapping when a combo box changes."""
+        # Build correspondence mapping: new_name -> current_name
+        # (Note: we store it inverted from the UI representation for backward compatibility)
         self.correspondence = {}
-        for bead_name, combo in self.correspondence_combos.items():
-            ref_name = combo.currentData()
-            if ref_name is not None:
-                self.correspondence[bead_name] = ref_name
+        for current_bead_name, combo in self.correspondence_combos.items():
+            new_bead_name = combo.currentData()
+            if new_bead_name is not None:
+                # Store as new_name -> current_name (inverted from UI)
+                self.correspondence[new_bead_name] = current_bead_name
         self._update_correspondence_lines()
         self._update_status()
     
     def _update_status(self):
         """Update the status message."""
         num_matched = len(self.correspondence)
-        num_total = len(self.new_beads)
+        num_total = len(self.current_beads)
         
         if num_matched == 0:
             status_text = "No correspondences assigned."
             status_color = "red"
         elif num_matched < num_total:
-            status_text = f"{num_matched} of {num_total} beads matched."
+            status_text = f"{num_matched} of {num_total} current beads matched."
             status_color = "orange"
         else:
-            status_text = f"All {num_matched} beads matched."
+            status_text = f"All {num_matched} current beads matched."
             status_color = "green"
         
         self.status_label.setText(status_text)
