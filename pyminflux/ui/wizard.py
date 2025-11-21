@@ -29,6 +29,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     load_data_triggered = Signal()
     load_zarr_triggered = Signal()
     load_filename_triggered = Signal(str)
+    merge_filename_triggered = Signal(str)
     save_data_triggered = Signal()
     reset_filters_triggered = Signal()
     open_unmixer_triggered = Signal()
@@ -133,9 +134,16 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         except Exception as _:
             return
 
+        # Check if Shift key is held for merge operation
+        modifiers = event.modifiers()
+        is_merge_operation = modifiers & Qt.ShiftModifier
+
         if Path(filename).is_dir():
             # This *could* be a Zarr file, we will pass it on
-            self.load_filename_triggered.emit(str(filename))
+            if is_merge_operation:
+                self.merge_filename_triggered.emit(str(filename))
+            else:
+                self.load_filename_triggered.emit(str(filename))
         else:
 
             # Make sure it is of the right format
@@ -143,7 +151,16 @@ class WizardDialog(QDialog, Ui_WizardDialog):
                 return
             ext = filename.lower()[-4:]
             if ext in [".pmx", ".npy", ".mat"]:
-                self.load_filename_triggered.emit(str(filename))
+                if is_merge_operation:
+                    # For merge, we need Zarr files with bead data
+                    QMessageBox.information(
+                        self,
+                        "Merge Requires Zarr",
+                        f"To merge datasets, please drag and drop a Zarr directory (not {ext} files).\n"
+                        f"Only Zarr datasets contain the bead measurement data needed for alignment.",
+                    )
+                else:
+                    self.load_filename_triggered.emit(str(filename))
             else:
                 QMessageBox.critical(
                     self,
