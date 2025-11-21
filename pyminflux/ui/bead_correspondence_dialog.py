@@ -51,8 +51,8 @@ class BeadCorrespondenceDialog(QDialog):
         Constructor.
         
         Args:
-            reference_beads: Dict mapping bead names to their positions [z, y, x] in reference dataset
-            moving_beads: Dict mapping bead names to their positions [z, y, x] in moving dataset
+            reference_beads: Dict mapping bead names to their positions [z, y, x] in current (reference) dataset
+            moving_beads: Dict mapping bead names to their positions [z, y, x] in new (moving) dataset
             parent: Parent widget
         """
         super().__init__(parent)
@@ -61,14 +61,14 @@ class BeadCorrespondenceDialog(QDialog):
         self.setModal(True)
         self.resize(1400, 800)
         
-        self.reference_beads = reference_beads
-        self.moving_beads = moving_beads
-        self.correspondence = {}  # Will store moving_name -> reference_name mapping
+        self.current_beads = reference_beads  # Current dataset (reference for alignment)
+        self.new_beads = moving_beads  # New dataset (will be transformed)
+        self.correspondence = {}  # Will store new_name -> current_name mapping
         
         # Store plot items for interactive highlighting
-        self.ref_scatter_items = {}  # bead_name -> scatter plot item
-        self.mov_scatter_items = {}  # bead_name -> scatter plot item
-        self.correspondence_lines = {}  # moving_name -> line item
+        self.current_scatter_items = {}  # bead_name -> scatter plot item
+        self.new_scatter_items = {}  # bead_name -> scatter plot item
+        self.correspondence_lines = {}  # new_name -> line item
         
         self._setup_ui()
         self._populate_tables()
@@ -80,9 +80,9 @@ class BeadCorrespondenceDialog(QDialog):
         
         # Instructions
         instructions = QLabel(
-            "Assign correspondences between beads in the moving dataset (blue) "
-            "and the reference dataset (red). Select beads in the table or click them in the plot. "
-            "Lines show current correspondences."
+            "Assign correspondences between beads in the new dataset (blue) "
+            "and the current dataset (red). Select beads in the table or click them in the plot. "
+            "Lines show assigned correspondences."
         )
         instructions.setWordWrap(True)
         instructions.setToolTip(
@@ -123,45 +123,45 @@ class BeadCorrespondenceDialog(QDialog):
         # Create vertical splitter for tables
         v_splitter = QSplitter(Qt.Orientation.Vertical)
         
-        # Moving beads table
-        moving_widget = QWidget()
-        moving_layout = QVBoxLayout()
-        moving_layout.setContentsMargins(0, 0, 0, 0)
-        moving_layout.addWidget(QLabel("<b>Moving Dataset Beads (Blue)</b>"))
+        # New dataset beads table
+        new_widget = QWidget()
+        new_layout = QVBoxLayout()
+        new_layout.setContentsMargins(0, 0, 0, 0)
+        new_layout.addWidget(QLabel("<b>New Dataset Beads (Blue)</b>"))
         
-        self.moving_table = QTableWidget()
-        self.moving_table.setColumnCount(5)
-        self.moving_table.setHorizontalHeaderLabels(
+        self.new_table = QTableWidget()
+        self.new_table.setColumnCount(5)
+        self.new_table.setHorizontalHeaderLabels(
             ["Bead Name", "Z (nm)", "Y (nm)", "X (nm)", "→ Matches"]
         )
-        self.moving_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.moving_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.moving_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self.moving_table.setToolTip("Select a moving bead (blue squares in plot) to assign it to a reference bead")
-        self.moving_table.itemSelectionChanged.connect(self._on_moving_selection_changed)
-        moving_layout.addWidget(self.moving_table)
-        moving_widget.setLayout(moving_layout)
-        v_splitter.addWidget(moving_widget)
+        self.new_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.new_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.new_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.new_table.setToolTip("Select a new bead (blue squares in plot) to assign it to a current bead")
+        self.new_table.itemSelectionChanged.connect(self._on_new_selection_changed)
+        new_layout.addWidget(self.new_table)
+        new_widget.setLayout(new_layout)
+        v_splitter.addWidget(new_widget)
         
-        # Reference beads table
-        reference_widget = QWidget()
-        reference_layout = QVBoxLayout()
-        reference_layout.setContentsMargins(0, 0, 0, 0)
-        reference_layout.addWidget(QLabel("<b>Reference Dataset Beads (Red)</b>"))
+        # Current dataset beads table
+        current_widget = QWidget()
+        current_layout = QVBoxLayout()
+        current_layout.setContentsMargins(0, 0, 0, 0)
+        current_layout.addWidget(QLabel("<b>Current Dataset Beads (Red)</b>"))
         
-        self.reference_table = QTableWidget()
-        self.reference_table.setColumnCount(4)
-        self.reference_table.setHorizontalHeaderLabels(
+        self.current_table = QTableWidget()
+        self.current_table.setColumnCount(4)
+        self.current_table.setHorizontalHeaderLabels(
             ["Bead Name", "Z (nm)", "Y (nm)", "X (nm)"]
         )
-        self.reference_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.reference_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.reference_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self.reference_table.setToolTip("Select a reference bead (red circles in plot) to match with a moving bead")
-        self.reference_table.itemSelectionChanged.connect(self._on_reference_selection_changed)
-        reference_layout.addWidget(self.reference_table)
-        reference_widget.setLayout(reference_layout)
-        v_splitter.addWidget(reference_widget)
+        self.current_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.current_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.current_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.current_table.setToolTip("Select a current bead (red circles in plot) to match with a new bead")
+        self.current_table.itemSelectionChanged.connect(self._on_current_selection_changed)
+        current_layout.addWidget(self.current_table)
+        current_widget.setLayout(current_layout)
+        v_splitter.addWidget(current_widget)
         
         tables_layout.addWidget(v_splitter)
         tables_widget.setLayout(tables_layout)
@@ -189,7 +189,7 @@ class BeadCorrespondenceDialog(QDialog):
         
         assign_btn = QPushButton("Assign Selected Match")
         assign_btn.clicked.connect(self._assign_selected_match)
-        assign_btn.setToolTip("Assign the currently selected moving bead to the selected reference bead")
+        assign_btn.setToolTip("Assign the currently selected new bead to the selected current bead")
         buttons_layout.addWidget(assign_btn)
         
         main_layout.addLayout(buttons_layout)
@@ -211,45 +211,45 @@ class BeadCorrespondenceDialog(QDialog):
     
     def _populate_tables(self):
         """Populate the bead tables."""
-        # Populate moving table
-        self.moving_table.setRowCount(len(self.moving_beads))
+        # Populate new dataset table
+        self.new_table.setRowCount(len(self.new_beads))
         self.correspondence_combos = {}
         
-        for row, (bead_name, pos) in enumerate(sorted(self.moving_beads.items())):
+        for row, (bead_name, pos) in enumerate(sorted(self.new_beads.items())):
             # Bead name
             name_item = QTableWidgetItem(bead_name)
             name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.moving_table.setItem(row, 0, name_item)
+            self.new_table.setItem(row, 0, name_item)
             
             # Position
             for col, val in enumerate(pos):
                 pos_item = QTableWidgetItem(f"{val:.2f}")
                 pos_item.setFlags(pos_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                self.moving_table.setItem(row, col + 1, pos_item)
+                self.new_table.setItem(row, col + 1, pos_item)
             
             # Correspondence combo box
             combo = QComboBox()
             combo.addItem("-- None --", None)
-            for ref_name in sorted(self.reference_beads.keys()):
-                combo.addItem(ref_name, ref_name)
+            for current_name in sorted(self.current_beads.keys()):
+                combo.addItem(current_name, current_name)
             combo.currentIndexChanged.connect(self._update_correspondence)
-            self.moving_table.setCellWidget(row, 4, combo)
+            self.new_table.setCellWidget(row, 4, combo)
             self.correspondence_combos[bead_name] = combo
         
-        # Populate reference table
-        self.reference_table.setRowCount(len(self.reference_beads))
+        # Populate current dataset table
+        self.current_table.setRowCount(len(self.current_beads))
         
-        for row, (bead_name, pos) in enumerate(sorted(self.reference_beads.items())):
+        for row, (bead_name, pos) in enumerate(sorted(self.current_beads.items())):
             # Bead name
             name_item = QTableWidgetItem(bead_name)
             name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.reference_table.setItem(row, 0, name_item)
+            self.current_table.setItem(row, 0, name_item)
             
             # Position
             for col, val in enumerate(pos):
                 pos_item = QTableWidgetItem(f"{val:.2f}")
                 pos_item.setFlags(pos_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                self.reference_table.setItem(row, col + 1, pos_item)
+                self.current_table.setItem(row, col + 1, pos_item)
         
         self._update_status()
     
@@ -258,22 +258,27 @@ class BeadCorrespondenceDialog(QDialog):
         # Store text items for labels
         self.text_items = []
         
-        # Plot reference beads (red)
-        for bead_name, pos in self.reference_beads.items():
+        # Flag to track if legend items have been added
+        current_added_to_legend = False
+        new_added_to_legend = False
+        
+        # Plot current dataset beads (red circles)
+        for bead_name, pos in self.current_beads.items():
             # pos is [z, y, x]
             scatter = pg.ScatterPlotItem(
                 [pos[2]],  # x
                 [pos[1]],  # y
-                size=15,
+                size=10,
                 pen=pg.mkPen(color='r', width=2),
                 brush=pg.mkBrush(255, 100, 100, 150),
                 symbol='o',
-                name=f'Ref: {bead_name}'
+                name='Current dataset' if not current_added_to_legend else None
             )
             scatter.setData([pos[2]], [pos[1]], data=[bead_name])
-            scatter.sigClicked.connect(self._on_reference_point_clicked)
+            scatter.sigClicked.connect(self._on_current_point_clicked)
             self.plot_widget.addItem(scatter)
-            self.ref_scatter_items[bead_name] = scatter
+            self.current_scatter_items[bead_name] = scatter
+            current_added_to_legend = True
             
             # Add text label
             text = pg.TextItem(text=bead_name, color=(200, 0, 0), anchor=(0.5, 1.5))
@@ -281,22 +286,23 @@ class BeadCorrespondenceDialog(QDialog):
             self.plot_widget.addItem(text)
             self.text_items.append(text)
         
-        # Plot moving beads (blue)
-        for bead_name, pos in self.moving_beads.items():
+        # Plot new dataset beads (blue squares)
+        for bead_name, pos in self.new_beads.items():
             # pos is [z, y, x]
             scatter = pg.ScatterPlotItem(
                 [pos[2]],  # x
                 [pos[1]],  # y
-                size=15,
+                size=10,
                 pen=pg.mkPen(color='b', width=2),
                 brush=pg.mkBrush(100, 100, 255, 150),
                 symbol='s',
-                name=f'Mov: {bead_name}'
+                name='New dataset' if not new_added_to_legend else None
             )
             scatter.setData([pos[2]], [pos[1]], data=[bead_name])
-            scatter.sigClicked.connect(self._on_moving_point_clicked)
+            scatter.sigClicked.connect(self._on_new_point_clicked)
             self.plot_widget.addItem(scatter)
-            self.mov_scatter_items[bead_name] = scatter
+            self.new_scatter_items[bead_name] = scatter
+            new_added_to_legend = True
             
             # Add text label
             text = pg.TextItem(text=bead_name, color=(0, 0, 200), anchor=(0.5, -0.5))
@@ -312,113 +318,113 @@ class BeadCorrespondenceDialog(QDialog):
         self.correspondence_lines.clear()
         
         # Draw new lines
-        for mov_name, ref_name in self.correspondence.items():
-            if mov_name in self.moving_beads and ref_name in self.reference_beads:
-                mov_pos = self.moving_beads[mov_name]
-                ref_pos = self.reference_beads[ref_name]
+        for new_name, current_name in self.correspondence.items():
+            if new_name in self.new_beads and current_name in self.current_beads:
+                new_pos = self.new_beads[new_name]
+                current_pos = self.current_beads[current_name]
                 
-                # Create line from moving to reference
+                # Create line from new to current
                 line = pg.PlotCurveItem(
-                    [mov_pos[2], ref_pos[2]],  # x coordinates
-                    [mov_pos[1], ref_pos[1]],  # y coordinates
+                    [new_pos[2], current_pos[2]],  # x coordinates
+                    [new_pos[1], current_pos[1]],  # y coordinates
                     pen=pg.mkPen(color='g', width=2, style=Qt.PenStyle.DashLine)
                 )
                 self.plot_widget.addItem(line)
-                self.correspondence_lines[mov_name] = line
+                self.correspondence_lines[new_name] = line
     
-    def _highlight_bead(self, bead_name: str, is_reference: bool, highlight: bool = True):
+    def _highlight_bead(self, bead_name: str, is_current: bool, highlight: bool = True):
         """Highlight or unhighlight a bead in the plot."""
-        if is_reference:
-            if bead_name in self.ref_scatter_items:
-                scatter = self.ref_scatter_items[bead_name]
+        if is_current:
+            if bead_name in self.current_scatter_items:
+                scatter = self.current_scatter_items[bead_name]
                 if highlight:
-                    scatter.setSize(25)
+                    scatter.setSize(20)
                     scatter.setPen(pg.mkPen(color='r', width=4))
                 else:
-                    scatter.setSize(15)
+                    scatter.setSize(10)
                     scatter.setPen(pg.mkPen(color='r', width=2))
         else:
-            if bead_name in self.mov_scatter_items:
-                scatter = self.mov_scatter_items[bead_name]
+            if bead_name in self.new_scatter_items:
+                scatter = self.new_scatter_items[bead_name]
                 if highlight:
-                    scatter.setSize(25)
+                    scatter.setSize(20)
                     scatter.setPen(pg.mkPen(color='b', width=4))
                 else:
-                    scatter.setSize(15)
+                    scatter.setSize(10)
                     scatter.setPen(pg.mkPen(color='b', width=2))
     
-    def _on_moving_point_clicked(self, plot, points):
-        """Handle click on a moving bead in the plot."""
+    def _on_new_point_clicked(self, plot, points):
+        """Handle click on a new dataset bead in the plot."""
         if len(points) > 0:
             bead_name = points[0].data()
             # Find and select this bead in the table
-            for row in range(self.moving_table.rowCount()):
-                item = self.moving_table.item(row, 0)
+            for row in range(self.new_table.rowCount()):
+                item = self.new_table.item(row, 0)
                 if item and item.text() == bead_name:
-                    self.moving_table.selectRow(row)
+                    self.new_table.selectRow(row)
                     break
     
-    def _on_reference_point_clicked(self, plot, points):
-        """Handle click on a reference bead in the plot."""
+    def _on_current_point_clicked(self, plot, points):
+        """Handle click on a current dataset bead in the plot."""
         if len(points) > 0:
             bead_name = points[0].data()
             # Find and select this bead in the table
-            for row in range(self.reference_table.rowCount()):
-                item = self.reference_table.item(row, 0)
+            for row in range(self.current_table.rowCount()):
+                item = self.current_table.item(row, 0)
                 if item and item.text() == bead_name:
-                    self.reference_table.selectRow(row)
+                    self.current_table.selectRow(row)
                     break
     
-    def _on_moving_selection_changed(self):
-        """Handle selection change in moving beads table."""
-        # Unhighlight all moving beads
-        for bead_name in self.mov_scatter_items.keys():
-            self._highlight_bead(bead_name, is_reference=False, highlight=False)
+    def _on_new_selection_changed(self):
+        """Handle selection change in new dataset beads table."""
+        # Unhighlight all new beads
+        for bead_name in self.new_scatter_items.keys():
+            self._highlight_bead(bead_name, is_current=False, highlight=False)
         
         # Highlight selected bead
-        selected_rows = self.moving_table.selectedItems()
+        selected_rows = self.new_table.selectedItems()
         if selected_rows:
-            row = self.moving_table.currentRow()
+            row = self.new_table.currentRow()
             if row >= 0:
-                bead_name = self.moving_table.item(row, 0).text()
-                self._highlight_bead(bead_name, is_reference=False, highlight=True)
+                bead_name = self.new_table.item(row, 0).text()
+                self._highlight_bead(bead_name, is_current=False, highlight=True)
     
-    def _on_reference_selection_changed(self):
-        """Handle selection change in reference beads table."""
-        # Unhighlight all reference beads
-        for bead_name in self.ref_scatter_items.keys():
-            self._highlight_bead(bead_name, is_reference=True, highlight=False)
+    def _on_current_selection_changed(self):
+        """Handle selection change in current dataset beads table."""
+        # Unhighlight all current beads
+        for bead_name in self.current_scatter_items.keys():
+            self._highlight_bead(bead_name, is_current=True, highlight=False)
         
         # Highlight selected bead
-        selected_rows = self.reference_table.selectedItems()
+        selected_rows = self.current_table.selectedItems()
         if selected_rows:
-            row = self.reference_table.currentRow()
+            row = self.current_table.currentRow()
             if row >= 0:
-                bead_name = self.reference_table.item(row, 0).text()
-                self._highlight_bead(bead_name, is_reference=True, highlight=True)
+                bead_name = self.current_table.item(row, 0).text()
+                self._highlight_bead(bead_name, is_current=True, highlight=True)
     
     def _assign_selected_match(self):
-        """Assign the selected moving bead to the selected reference bead."""
-        mov_row = self.moving_table.currentRow()
-        ref_row = self.reference_table.currentRow()
+        """Assign the selected new bead to the selected current bead."""
+        new_row = self.new_table.currentRow()
+        current_row = self.current_table.currentRow()
         
-        if mov_row < 0:
-            self.status_label.setText("Please select a moving bead first.")
+        if new_row < 0:
+            self.status_label.setText("Please select a new bead first.")
             self.status_label.setStyleSheet("QLabel { color: orange; font-weight: bold; }")
             return
         
-        if ref_row < 0:
-            self.status_label.setText("Please select a reference bead to match.")
+        if current_row < 0:
+            self.status_label.setText("Please select a current bead to match.")
             self.status_label.setStyleSheet("QLabel { color: orange; font-weight: bold; }")
             return
         
-        mov_name = self.moving_table.item(mov_row, 0).text()
-        ref_name = self.reference_table.item(ref_row, 0).text()
+        new_name = self.new_table.item(new_row, 0).text()
+        current_name = self.current_table.item(current_row, 0).text()
         
         # Update the combo box
-        if mov_name in self.correspondence_combos:
-            combo = self.correspondence_combos[mov_name]
-            index = combo.findData(ref_name)
+        if new_name in self.correspondence_combos:
+            combo = self.correspondence_combos[new_name]
+            index = combo.findData(current_name)
             if index >= 0:
                 combo.setCurrentIndex(index)
     
@@ -431,7 +437,7 @@ class BeadCorrespondenceDialog(QDialog):
         """Automatically match beads with the same names."""
         matched = 0
         for bead_name, combo in self.correspondence_combos.items():
-            if bead_name in self.reference_beads:
+            if bead_name in self.current_beads:
                 # Find the index of this bead name in the combo box
                 index = combo.findData(bead_name)
                 if index >= 0:
@@ -454,7 +460,7 @@ class BeadCorrespondenceDialog(QDialog):
     def _update_status(self):
         """Update the status message."""
         num_matched = len(self.correspondence)
-        num_total = len(self.moving_beads)
+        num_total = len(self.new_beads)
         
         if num_matched == 0:
             status_text = "No correspondences assigned."
@@ -485,6 +491,6 @@ class BeadCorrespondenceDialog(QDialog):
         Get the bead correspondence mapping.
         
         Returns:
-            Dictionary mapping moving bead names to reference bead names
+            Dictionary mapping new bead names to current bead names
         """
         return self.correspondence
