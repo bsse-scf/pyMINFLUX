@@ -771,16 +771,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Perform alignment
         print("Performing bead-based alignment...")
         
-        # Create QC plot path in the same directory as the new file
-        qc_plot_path = Path(new_filename).parent / f"alignment_qc_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
         transform_model = align_datasets_using_beads(
             ref_mbm_dict,
             mov_mbm_dict,
             bead_correspondence=bead_correspondence,
             transform_type='euclidean',
             n_points=3,
-            qc_plot_path=qc_plot_path
+            qc_plot_path=None
         )
         
         if transform_model is None:
