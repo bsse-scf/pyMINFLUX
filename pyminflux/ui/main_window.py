@@ -1333,6 +1333,85 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.analyzer.show()
         self.analyzer.activateWindow()
 
+    def _perform_merge_with_zarr(self, filename: str, source: str = "Combiner") -> bool:
+        """
+        Common merge workflow for both combiner and drag-and-drop operations.
+        
+        Args:
+            filename: Path to the Zarr folder to merge
+            source: Description of the merge source (for logging)
+            
+        Returns:
+            True if merge was successful, False otherwise
+        """
+        # Create reader for the new dataset
+        try:
+            reader_class, status_str = MinFluxReaderFactory.get_reader(filename)
+            reader = reader_class(
+                filename, z_scaling_factor=self.state.z_scaling_factor
+            )
+        except (TypeError, IOError) as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Could not process file {filename}.",
+            )
+            return False
+        
+        # Open the Importer for the new dataset
+        importer = Importer(
+            valid_cfr=reader.valid_cfr,
+            relocalizations=reader.relocalizations,
+            dwell_time=self.state.dwell_time,
+            is_tracking=self.state.is_tracking,
+            pool_dcr=self.state.pool_dcr,
+        )
+        if importer.exec_() != QDialog.Accepted:
+            print(f"{source} cancelled: Importer dialog cancelled.")
+            return False
+        
+        # Retrieve the selected options from the Importer
+        selection = importer.get_selection()
+        
+        # Update the reader object
+        reader.set_tracking(selection["is_tracking"], process=False)
+        reader.set_indices(
+            selection["iteration"], selection["cfr_iteration"], process=False
+        )
+        reader.set_dwell_time(selection["dwell_time"], process=False)
+        reader.set_pool_dcr(selection["pool_dcr"], process=False)
+        
+        # Now attempt to merge - always show the correspondence dialog with auto-matching
+        success = self._merge_datasets(filename, reader)
+        
+        if not success:
+            QMessageBox.warning(
+                self,
+                "Merge Failed",
+                "Dataset merge failed. Please check that both datasets have bead data.",
+            )
+            return False
+        
+        # Merge successful - update UI
+        self.setWindowTitle(
+            f"{__APP_NAME__} v{__version__} - [{Path(self.current_filename).name} + {Path(filename).name}]"
+        )
+        
+        self.state.last_selected_path = Path(filename).parent
+        
+        self.full_update_ui()
+        self.plotter.enableAutoRange(enable=True)
+        self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
+        
+        if self.analyzer is not None:
+            self.analyzer.set_processor(self.processor)
+            self.analyzer.plot()
+        
+        self.wizard.set_processor(self.processor)
+        
+        print(f"Dataset merge completed successfully via {source}.")
+        return True
+
     @Slot()
     def open_combiner(self):
         """Initialize and open the dataset combiner dialog."""
@@ -1358,74 +1437,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             print("Combiner cancelled: No Zarr folder selected.")
             return
         
-        ext = ".zarr"
-        
-        # Create reader for the new dataset
-        try:
-            reader_class, status_str = MinFluxReaderFactory.get_reader(filename)
-            reader = reader_class(
-                filename, z_scaling_factor=self.state.z_scaling_factor
-            )
-        except (TypeError, IOError) as e:
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Could not process file {filename}.",
-            )
-            return
-        
-        # Open the Importer for the new dataset
-        importer = Importer(
-            valid_cfr=reader.valid_cfr,
-            relocalizations=reader.relocalizations,
-            dwell_time=self.state.dwell_time,
-            is_tracking=self.state.is_tracking,
-            pool_dcr=self.state.pool_dcr,
-        )
-        if importer.exec_() != QDialog.Accepted:
-            print("Combiner cancelled: Importer dialog cancelled.")
-            return
-        
-        # Retrieve the selected options from the Importer
-        selection = importer.get_selection()
-        
-        # Update the reader object
-        reader.set_tracking(selection["is_tracking"], process=False)
-        reader.set_indices(
-            selection["iteration"], selection["cfr_iteration"], process=False
-        )
-        reader.set_dwell_time(selection["dwell_time"], process=False)
-        reader.set_pool_dcr(selection["pool_dcr"], process=False)
-        
-        # Now attempt to merge - always show the correspondence dialog with auto-matching
-        success = self._merge_datasets(filename, reader)
-        
-        if not success:
-            QMessageBox.warning(
-                self,
-                "Merge Failed",
-                "Dataset merge failed. Please check that both datasets have bead data.",
-            )
-            return
-        
-        # Merge successful - update UI
-        self.setWindowTitle(
-            f"{__APP_NAME__} v{__version__} - [{Path(self.current_filename).name} + {Path(filename).name}]"
-        )
-        
-        self.state.last_selected_path = Path(filename).parent
-        
-        self.full_update_ui()
-        self.plotter.enableAutoRange(enable=True)
-        self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
-        
-        if self.analyzer is not None:
-            self.analyzer.set_processor(self.processor)
-            self.analyzer.plot()
-        
-        self.wizard.set_processor(self.processor)
-        
-        print("Dataset merge completed successfully via Combiner.")
+        # Perform the merge
+        self._perform_merge_with_zarr(filename, source="Combiner")
 
     @Slot(str)
     def merge_dropped_file(self, filename: str):
@@ -1455,74 +1468,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             return
         
-        ext = ".zarr"
-        
-        # Create reader for the new dataset
-        try:
-            reader_class, status_str = MinFluxReaderFactory.get_reader(filename)
-            reader = reader_class(
-                filename, z_scaling_factor=self.state.z_scaling_factor
-            )
-        except (TypeError, IOError) as e:
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Could not process file {filename}.",
-            )
-            return
-        
-        # Open the Importer for the new dataset
-        importer = Importer(
-            valid_cfr=reader.valid_cfr,
-            relocalizations=reader.relocalizations,
-            dwell_time=self.state.dwell_time,
-            is_tracking=self.state.is_tracking,
-            pool_dcr=self.state.pool_dcr,
-        )
-        if importer.exec_() != QDialog.Accepted:
-            print("Merge cancelled: Importer dialog cancelled.")
-            return
-        
-        # Retrieve the selected options from the Importer
-        selection = importer.get_selection()
-        
-        # Update the reader object
-        reader.set_tracking(selection["is_tracking"], process=False)
-        reader.set_indices(
-            selection["iteration"], selection["cfr_iteration"], process=False
-        )
-        reader.set_dwell_time(selection["dwell_time"], process=False)
-        reader.set_pool_dcr(selection["pool_dcr"], process=False)
-        
-        # Now attempt to merge - always show the correspondence dialog with auto-matching
-        success = self._merge_datasets(filename, reader)
-        
-        if not success:
-            QMessageBox.warning(
-                self,
-                "Merge Failed",
-                "Dataset merge failed. Please check that both datasets have bead data.",
-            )
-            return
-        
-        # Merge successful - update UI
-        self.setWindowTitle(
-            f"{__APP_NAME__} v{__version__} - [{Path(self.current_filename).name} + {Path(filename).name}]"
-        )
-        
-        self.state.last_selected_path = Path(filename).parent
-        
-        self.full_update_ui()
-        self.plotter.enableAutoRange(enable=True)
-        self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
-        
-        if self.analyzer is not None:
-            self.analyzer.set_processor(self.processor)
-            self.analyzer.plot()
-        
-        self.wizard.set_processor(self.processor)
-        
-        print("Dataset merge completed successfully via drag-and-drop (Shift+drop).")
+        # Perform the merge
+        self._perform_merge_with_zarr(filename, source="drag-and-drop (Shift+drop)")
 
 
     def show_update_result_dialog(self, html):
