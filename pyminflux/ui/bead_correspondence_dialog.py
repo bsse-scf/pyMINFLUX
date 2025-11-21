@@ -200,6 +200,16 @@ class BeadCorrespondenceDialog(QDialog):
         auto_match_btn.clicked.connect(self._auto_match_by_name)
         matching_layout.addWidget(auto_match_btn)
         
+        self.nearest_neighbor_btn = QPushButton("Assign nearest neighbors")
+        self.nearest_neighbor_btn.setToolTip(
+            "For each current bead without a match, assign the nearest new bead "
+            "using the currently calculated transformation. "
+            "Requires running 'Calculate Alignment' first."
+        )
+        self.nearest_neighbor_btn.setEnabled(False)  # Disabled until alignment is calculated
+        self.nearest_neighbor_btn.clicked.connect(self._assign_nearest_neighbors)
+        matching_layout.addWidget(self.nearest_neighbor_btn)
+        
         clear_btn = QPushButton("Clear all matches")
         clear_btn.setToolTip("Remove all current bead correspondences")
         clear_btn.clicked.connect(self._clear_all_matches)
@@ -566,6 +576,7 @@ class BeadCorrespondenceDialog(QDialog):
         self.current_transform = None
         self.show_transformed_checkbox.setEnabled(False)
         self.show_transformed_checkbox.setChecked(False)
+        self.nearest_neighbor_btn.setEnabled(False)
         self._update_residual_display()
     
     def _auto_match_by_name(self):
@@ -581,6 +592,58 @@ class BeadCorrespondenceDialog(QDialog):
                     matched += 1
         
         self.status_label.setText(f"Auto-matched {matched} bead(s) by name.")
+        self._update_status()
+    
+    def _assign_nearest_neighbors(self):
+        """Assign nearest neighbors based on current transformation."""
+        if self.current_transform is None:
+            self.status_label.setText("Error: No transformation calculated. Run 'Calculate Alignment' first.")
+            self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
+            return
+        
+        # Get already matched new beads
+        already_matched_new_beads = set(self.correspondence.keys())
+        
+        # Transform all new bead positions
+        new_bead_names = list(self.new_beads.keys())
+        new_bead_positions = np.array([self.new_beads[name] for name in new_bead_names])
+        transformed_new_positions = self.current_transform(new_bead_positions)
+        
+        # Find unmatched current beads
+        matched = 0
+        for current_bead_name, combo in self.correspondence_combos.items():
+            # Skip if already matched
+            if combo.currentData() is not None:
+                continue
+            
+            current_pos = self.current_beads[current_bead_name]
+            
+            # Find nearest new bead (that isn't already matched)
+            min_dist = float('inf')
+            nearest_new_bead = None
+            
+            for i, new_bead_name in enumerate(new_bead_names):
+                # Skip if this new bead is already matched
+                if new_bead_name in already_matched_new_beads:
+                    continue
+                
+                # Calculate distance to transformed new bead position
+                dist = np.linalg.norm(transformed_new_positions[i] - current_pos)
+                
+                if dist < min_dist:
+                    min_dist = dist
+                    nearest_new_bead = new_bead_name
+            
+            # Assign the nearest neighbor
+            if nearest_new_bead is not None:
+                index = combo.findData(nearest_new_bead)
+                if index >= 0:
+                    combo.setCurrentIndex(index)
+                    already_matched_new_beads.add(nearest_new_bead)
+                    matched += 1
+        
+        self.status_label.setText(f"Assigned {matched} nearest neighbor(s).")
+        self.status_label.setStyleSheet("QLabel { color: green; font-weight: bold; }")
         self._update_status()
     
     def _update_correspondence(self):
@@ -601,6 +664,7 @@ class BeadCorrespondenceDialog(QDialog):
         self.current_transform = None
         self.show_transformed_checkbox.setEnabled(False)
         self.show_transformed_checkbox.setChecked(False)
+        self.nearest_neighbor_btn.setEnabled(False)
         self._update_residual_display()
     
     def _calculate_alignment(self):
@@ -668,8 +732,9 @@ class BeadCorrespondenceDialog(QDialog):
             # Update display
             self._update_residual_display()
             
-            # Enable the "show transformed" checkbox
+            # Enable the "show transformed" checkbox and nearest neighbor button
             self.show_transformed_checkbox.setEnabled(True)
+            self.nearest_neighbor_btn.setEnabled(True)
             
             # Update status with success message
             mean_residual = np.mean(list(self.residuals.values()))
@@ -698,6 +763,7 @@ class BeadCorrespondenceDialog(QDialog):
             self.current_transform = None
             self.show_transformed_checkbox.setEnabled(False)
             self.show_transformed_checkbox.setChecked(False)
+            self.nearest_neighbor_btn.setEnabled(False)
             self._update_residual_display()
             self._hide_alignment_warning()
     
