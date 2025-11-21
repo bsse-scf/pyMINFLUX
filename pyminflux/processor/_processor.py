@@ -172,8 +172,15 @@ class MinFluxProcessor:
     def current_fluorophore_id(self, fluorophore_id: int) -> None:
         """Set current fluorophore ID (0 for all)."""
 
-        if fluorophore_id not in [0, 1, 2]:
-            raise ValueError("Only 1 or 2 are valid fluorophore IDs.")
+        # Validate fluorophore ID: 0 for all, or 1 to num_fluorophores
+        if fluorophore_id < 0:
+            raise ValueError(f"Fluorophore ID must be non-negative, got {fluorophore_id}.")
+        
+        if fluorophore_id > 0 and fluorophore_id > self.num_fluorophores:
+            raise ValueError(
+                f"Fluorophore ID {fluorophore_id} is out of range. "
+                f"Valid range is 0 (all) or 1-{self.num_fluorophores}."
+            )
 
         # Set the new fluorophore_id
         self._current_fluorophore_id = fluorophore_id
@@ -231,14 +238,9 @@ class MinFluxProcessor:
 
         if self.current_fluorophore_id == 0:
             return full_array
-        elif self.current_fluorophore_id == 1:
-            return full_array[full_array["fluo"] == 1]
-        elif self.current_fluorophore_id == 2:
-            return full_array[full_array["fluo"] == 2]
         else:
-            raise ValueError(
-                f"Unexpected fluorophore ID {self.current_fluorophore_id}."
-            )
+            # Filter by the current fluorophore ID
+            return full_array[full_array["fluo"] == self.current_fluorophore_id]
 
     @property
     def processed_dataframe(self) -> Union[None, pd.DataFrame]:
@@ -366,14 +368,9 @@ class MinFluxProcessor:
         # If needed, filter by fluorophore ID
         if self.current_fluorophore_id == 0:
             return full_dataframe
-        elif self.current_fluorophore_id == 1:
-            return full_dataframe[full_dataframe["fluo"] == 1]
-        elif self.current_fluorophore_id == 2:
-            return full_dataframe[full_dataframe["fluo"] == 2]
         else:
-            raise ValueError(
-                f"Unexpected fluorophore ID {self.current_fluorophore_id}."
-            )
+            # Filter by the current fluorophore ID
+            return full_dataframe[full_dataframe["fluo"] == self.current_fluorophore_id]
 
     @property
     def filtered_dataframe_stats(self) -> Union[None, pd.DataFrame]:
