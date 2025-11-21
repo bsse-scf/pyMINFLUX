@@ -93,12 +93,15 @@ class BeadCorrespondenceDialog(QDialog):
         
         # Instructions
         instructions = QLabel(
-            "Match beads between datasets and verify alignment quality. "
-            "Red circles = current dataset, blue squares = new dataset. "
-            "Green dashed lines show assigned correspondences."
+            "<b>Dataset Alignment Using Fiducial Beads</b><br>"
+            "The bead positions shown below were extracted from beam monitoring (MBM) data. "
+            "Match corresponding beads between the current (red circles) and new (blue squares) datasets. "
+            "When you click OK, all localizations in the new dataset will be transformed using the "
+            "rigid transformation computed from the matched bead positions. The added localizations "
+            "will be assigned a new \"fluo\" value."
         )
         instructions.setWordWrap(True)
-        instructions.setStyleSheet("QLabel { color: #555; font-style: italic; padding: 5px; }")
+        instructions.setStyleSheet("QLabel { color: #333; padding: 8px; background-color: #f8f8f8; border-radius: 4px; }")
         main_layout.addWidget(instructions)
         
         # Create main horizontal splitter
@@ -214,6 +217,15 @@ class BeadCorrespondenceDialog(QDialog):
         )
         button_box.accepted.connect(self._on_accept)
         button_box.rejected.connect(self.reject)
+        
+        # Add helpful tooltip to OK button
+        ok_button = button_box.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_button:
+            ok_button.setToolTip(
+                "Apply the alignment and merge datasets. All localizations in the new dataset "
+                "will be transformed to match the current dataset's coordinate system."
+            )
+        
         main_layout.addWidget(button_box)
         
         self.setLayout(main_layout)
