@@ -34,6 +34,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     open_unmixer_triggered = Signal()
     open_time_inspector_triggered = Signal()
     open_analyzer_triggered = Signal()
+    open_combiner_triggered = Signal()
     fluorophore_id_changed = Signal(int)
     request_fluorophore_ids_reset = Signal()
     efo_bounds_modified = Signal()
@@ -161,7 +162,9 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.ui.pbLoadData.clicked.connect(lambda _: self.load_data_triggered.emit())
         self.ui.pbLoadZarr.clicked.connect(lambda _: self.load_zarr_triggered.emit())
         self.ui.pbReset.clicked.connect(self.reset_filters)
-        self.ui.pbSingleColor.clicked.connect(self.reset_fluorophores)
+        self.ui.pbSingleColor.clicked.connect(
+            lambda _: self.open_combiner_triggered.emit()
+        )
         self.ui.pbColorUnmixer.clicked.connect(
             lambda _: self.open_unmixer_triggered.emit()
         )

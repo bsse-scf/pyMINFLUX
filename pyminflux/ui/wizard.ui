@@ -104,7 +104,7 @@
        <item>
         <widget class="QPushButton" name="pbSingleColor">
          <property name="text">
-          <string>Single fluorophore</string>
+          <string>Combiner</string>
          </property>
         </widget>
        </item>

@@ -408,6 +408,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         self.ui.actionCheck_for_updates.triggered.connect(self.check_remote_for_updates)
         self.ui.actionAbout.triggered.connect(self.about)
+        
+        # Wizard signals
+        self.wizard.open_combiner_triggered.connect(self.open_combiner)
 
     def enable_ui_components(self, enabled: bool):
         """Enable/disable UI components."""
@@ -884,30 +887,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 )
                 return
 
-            # Check if a dataset is already loaded and ask about merging
-            should_merge = False
-            merge_mode = DatasetMergeDialog.RESULT_REPLACE
-            
-            if self.processor is not None and self.current_filename is not None:
-                # A dataset is already loaded - ask user what to do
-                merge_dialog = DatasetMergeDialog(
-                    current_filename=Path(self.current_filename).name,
-                    new_filename=Path(filename).name,
-                    parent=self
-                )
-                
-                if merge_dialog.exec() != QDialog.DialogCode.Accepted:
-                    print("Loading cancelled by user.")
-                    return
-                
-                merge_mode = merge_dialog.get_merge_choice()
-                
-                if merge_mode != DatasetMergeDialog.RESULT_REPLACE:
-                    should_merge = True
-                    print(f"User chose to merge datasets (mode: {merge_mode})")
-                else:
-                    print("User chose to replace current dataset")
-
             # Reload the default settings
             self.load_and_apply_settings()
 
@@ -982,43 +961,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Show some info
             print(reader)
-
-            # Handle dataset merging if requested
-            if should_merge:
-                success = self._merge_datasets(filename, reader, merge_mode)
-                if not success:
-                    QMessageBox.warning(
-                        self,
-                        "Merge Failed",
-                        "Dataset merge failed. Loading new dataset normally instead.",
-                    )
-                    # Continue with normal loading after merge failure
-                else:
-                    # Merge successful - update UI and return
-                    # The processor has already been updated by _merge_datasets
-                    
-                    # Update window title to show both datasets
-                    self.setWindowTitle(
-                        f"{__APP_NAME__} v{__version__} - [{Path(self.current_filename).name} + {Path(filename).name}]"
-                    )
-                    
-                    # Update the state
-                    self.state.last_selected_path = Path(filename).parent
-                    
-                    # Update UI
-                    self.full_update_ui()
-                    self.plotter.enableAutoRange(enable=True)
-                    self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
-                    
-                    # Update external tools
-                    if self.analyzer is not None:
-                        self.analyzer.set_processor(self.processor)
-                        self.analyzer.plot()
-                    
-                    self.wizard.set_processor(self.processor)
-                    
-                    print("Dataset merge completed successfully.")
-                    return
 
             # Process the file
             self.state.last_selected_path = Path(filename).parent
@@ -1394,6 +1336,122 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
+
+    @Slot()
+    def open_combiner(self):
+        """Initialize and open the dataset combiner dialog."""
+        if self.processor is None:
+            QMessageBox.warning(
+                self,
+                "No Dataset Loaded",
+                "Please load a dataset first before using the combiner.",
+            )
+            return
+        
+        # Ask user to select merge mode
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("Dataset Combiner")
+        dialog.setText("How would you like to merge datasets?")
+        dialog.setInformativeText(
+            "Choose automatic alignment (matches beads by name) or "
+            "manual alignment (you select bead correspondences)."
+        )
+        auto_btn = dialog.addButton("Automatic", QMessageBox.ActionRole)
+        manual_btn = dialog.addButton("Manual", QMessageBox.ActionRole)
+        cancel_btn = dialog.addButton(QMessageBox.Cancel)
+        dialog.exec()
+        
+        if dialog.clickedButton() == cancel_btn:
+            return
+        
+        merge_mode = (
+            DatasetMergeDialog.RESULT_MERGE_AUTO
+            if dialog.clickedButton() == auto_btn
+            else DatasetMergeDialog.RESULT_MERGE_MANUAL
+        )
+        
+        # Ask user to select the new Zarr dataset
+        # Only Zarr datasets contain bead data needed for alignment
+        save_path = str(self.state.last_selected_path)
+        
+        filename = QFileDialog.getExistingDirectory(
+            self,
+            "Select Zarr folder to merge",
+            save_path,
+        )
+        
+        if not filename or not Path(filename).exists():
+            print("Combiner cancelled: No Zarr folder selected.")
+            return
+        
+        ext = ".zarr"
+        
+        # Create reader for the new dataset
+        try:
+            reader_class, status_str = MinFluxReaderFactory.get_reader(filename)
+            reader = reader_class(
+                filename, z_scaling_factor=self.state.z_scaling_factor
+            )
+        except (TypeError, IOError) as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Could not process file {filename}.",
+            )
+            return
+        
+        # Open the Importer for the new dataset
+        importer = Importer(
+            valid_cfr=reader.valid_cfr,
+            relocalizations=reader.relocalizations,
+            dwell_time=self.state.dwell_time,
+            is_tracking=self.state.is_tracking,
+            pool_dcr=self.state.pool_dcr,
+        )
+        if importer.exec_() != QDialog.Accepted:
+            print("Combiner cancelled: Importer dialog cancelled.")
+            return
+        
+        # Retrieve the selected options from the Importer
+        selection = importer.get_selection()
+        
+        # Update the reader object
+        reader.set_tracking(selection["is_tracking"], process=False)
+        reader.set_indices(
+            selection["iteration"], selection["cfr_iteration"], process=False
+        )
+        reader.set_dwell_time(selection["dwell_time"], process=False)
+        reader.set_pool_dcr(selection["pool_dcr"], process=False)
+        
+        # Now attempt to merge
+        success = self._merge_datasets(filename, reader, merge_mode)
+        
+        if not success:
+            QMessageBox.warning(
+                self,
+                "Merge Failed",
+                "Dataset merge failed. Please check that both datasets have bead data.",
+            )
+            return
+        
+        # Merge successful - update UI
+        self.setWindowTitle(
+            f"{__APP_NAME__} v{__version__} - [{Path(self.current_filename).name} + {Path(filename).name}]"
+        )
+        
+        self.state.last_selected_path = Path(filename).parent
+        
+        self.full_update_ui()
+        self.plotter.enableAutoRange(enable=True)
+        self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
+        
+        if self.analyzer is not None:
+            self.analyzer.set_processor(self.processor)
+            self.analyzer.plot()
+        
+        self.wizard.set_processor(self.processor)
+        
+        print("Dataset merge completed successfully via Combiner.")
 
     def show_update_result_dialog(self, html):
         """Display the outcome of the update check in a dialog."""

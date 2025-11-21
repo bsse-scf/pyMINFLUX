@@ -347,7 +347,7 @@ class Ui_WizardDialog(object):
             QCoreApplication.translate("WizardDialog", "Multiplexing", None)
         )
         self.pbSingleColor.setText(
-            QCoreApplication.translate("WizardDialog", "Single fluorophore", None)
+            QCoreApplication.translate("WizardDialog", "Combiner", None)
         )
         self.pbColorUnmixer.setText(
             QCoreApplication.translate("WizardDialog", "Unmixer", None)
