@@ -826,6 +826,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         
         print(f"Merge completed. Dataset now has {self.processor.num_fluorophores} fluorophore(s)")
         
+        # Set color coding to BY_FLUO after merge to distinguish datasets
+        self.state.color_code = ColorCode.BY_FLUO
+        print("Color coding set to BY_FLUO to distinguish merged datasets")
+        
         return True
 
     @Slot()
