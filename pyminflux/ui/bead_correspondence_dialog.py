@@ -79,6 +79,10 @@ class BeadCorrespondenceDialog(QDialog):
         self.current_transform = None  # RigidTransform object
         self.residuals = {}  # new_name -> residual (in nm)
         
+        # Axis selection for plotting
+        self.x_axis_idx = 2  # Default to X (index 2 in [z, y, x])
+        self.y_axis_idx = 1  # Default to Y (index 1 in [z, y, x])
+        
         self._setup_ui()
         self._populate_tables()
         self._plot_beads()
@@ -115,8 +119,33 @@ class BeadCorrespondenceDialog(QDialog):
         plot_layout = QVBoxLayout()
         plot_layout.setContentsMargins(0, 0, 0, 0)
         
-        plot_label = QLabel("<b>Bead Positions (XY Projection)</b>")
+        plot_label = QLabel("<b>Bead Positions</b>")
         plot_layout.addWidget(plot_label)
+        
+        # Axis selection controls
+        axis_layout = QHBoxLayout()
+        axis_layout.addWidget(QLabel("X-axis:"))
+        self.x_axis_combo = QComboBox()
+        self.x_axis_combo.addItem("X", 2)
+        self.x_axis_combo.addItem("Y", 1)
+        self.x_axis_combo.addItem("Z", 0)
+        self.x_axis_combo.setCurrentIndex(0)  # Default to X
+        self.x_axis_combo.currentIndexChanged.connect(self._on_axis_changed)
+        axis_layout.addWidget(self.x_axis_combo)
+        
+        axis_layout.addSpacing(20)
+        
+        axis_layout.addWidget(QLabel("Y-axis:"))
+        self.y_axis_combo = QComboBox()
+        self.y_axis_combo.addItem("X", 2)
+        self.y_axis_combo.addItem("Y", 1)
+        self.y_axis_combo.addItem("Z", 0)
+        self.y_axis_combo.setCurrentIndex(1)  # Default to Y
+        self.y_axis_combo.currentIndexChanged.connect(self._on_axis_changed)
+        axis_layout.addWidget(self.y_axis_combo)
+        
+        axis_layout.addStretch()
+        plot_layout.addLayout(axis_layout)
         
         # Create pyqtgraph plot
         self.plot_widget = pg.PlotWidget()
@@ -263,9 +292,24 @@ class BeadCorrespondenceDialog(QDialog):
         self._update_status()
     
     def _plot_beads(self):
-        """Plot bead positions in XY space."""
+        """Plot bead positions using selected axes."""
+        # Clear existing plot items
+        self.plot_widget.clear()
+        
+        # Re-add legend
+        self.plot_widget.addLegend()
+        
+        # Update axis labels based on selection
+        axis_names = {0: 'Z', 1: 'Y', 2: 'X'}
+        self.plot_widget.setLabel('bottom', f'{axis_names[self.x_axis_idx]} (nm)')
+        self.plot_widget.setLabel('left', f'{axis_names[self.y_axis_idx]} (nm)')
+        
         # Store text items for labels
         self.text_items = []
+        
+        # Clear previous scatter items
+        self.current_scatter_items = {}
+        self.new_scatter_items = {}
         
         # Flag to track if legend items have been added
         current_added_to_legend = False
@@ -274,16 +318,19 @@ class BeadCorrespondenceDialog(QDialog):
         # Plot current dataset beads (red circles)
         for bead_name, pos in self.current_beads.items():
             # pos is [z, y, x]
+            x_val = pos[self.x_axis_idx]
+            y_val = pos[self.y_axis_idx]
+            
             scatter = pg.ScatterPlotItem(
-                [pos[2]],  # x
-                [pos[1]],  # y
+                [x_val],
+                [y_val],
                 size=10,
                 pen=pg.mkPen(color='r', width=2),
                 brush=pg.mkBrush(255, 100, 100, 150),
                 symbol='o',
                 name='Current dataset' if not current_added_to_legend else None
             )
-            scatter.setData([pos[2]], [pos[1]], data=[bead_name])
+            scatter.setData([x_val], [y_val], data=[bead_name])
             scatter.sigClicked.connect(self._on_current_point_clicked)
             self.plot_widget.addItem(scatter)
             self.current_scatter_items[bead_name] = scatter
@@ -291,23 +338,26 @@ class BeadCorrespondenceDialog(QDialog):
             
             # Add text label
             text = pg.TextItem(text=bead_name, color=(200, 0, 0), anchor=(0.5, 1.5))
-            text.setPos(pos[2], pos[1])
+            text.setPos(x_val, y_val)
             self.plot_widget.addItem(text)
             self.text_items.append(text)
         
         # Plot new dataset beads (blue squares)
         for bead_name, pos in self.new_beads.items():
             # pos is [z, y, x]
+            x_val = pos[self.x_axis_idx]
+            y_val = pos[self.y_axis_idx]
+            
             scatter = pg.ScatterPlotItem(
-                [pos[2]],  # x
-                [pos[1]],  # y
+                [x_val],
+                [y_val],
                 size=10,
                 pen=pg.mkPen(color='b', width=2),
                 brush=pg.mkBrush(100, 100, 255, 150),
                 symbol='s',
                 name='New dataset' if not new_added_to_legend else None
             )
-            scatter.setData([pos[2]], [pos[1]], data=[bead_name])
+            scatter.setData([x_val], [y_val], data=[bead_name])
             scatter.sigClicked.connect(self._on_new_point_clicked)
             self.plot_widget.addItem(scatter)
             self.new_scatter_items[bead_name] = scatter
@@ -315,9 +365,12 @@ class BeadCorrespondenceDialog(QDialog):
             
             # Add text label
             text = pg.TextItem(text=bead_name, color=(0, 0, 200), anchor=(0.5, -0.5))
-            text.setPos(pos[2], pos[1])
+            text.setPos(x_val, y_val)
             self.plot_widget.addItem(text)
             self.text_items.append(text)
+        
+        # Re-draw correspondence lines if any
+        self._update_correspondence_lines()
     
     def _update_correspondence_lines(self):
         """Update lines connecting corresponding beads."""
@@ -332,10 +385,16 @@ class BeadCorrespondenceDialog(QDialog):
                 new_pos = self.new_beads[new_name]
                 current_pos = self.current_beads[current_name]
                 
+                # Use selected axes
+                new_x = new_pos[self.x_axis_idx]
+                new_y = new_pos[self.y_axis_idx]
+                current_x = current_pos[self.x_axis_idx]
+                current_y = current_pos[self.y_axis_idx]
+                
                 # Create line from new to current
                 line = pg.PlotCurveItem(
-                    [new_pos[2], current_pos[2]],  # x coordinates
-                    [new_pos[1], current_pos[1]],  # y coordinates
+                    [new_x, current_x],
+                    [new_y, current_y],
                     pen=pg.mkPen(color='g', width=2, style=Qt.PenStyle.DashLine)
                 )
                 self.plot_widget.addItem(line)
@@ -416,6 +475,43 @@ class BeadCorrespondenceDialog(QDialog):
                     new_bead_name = combo.currentData()
                     if new_bead_name is not None:
                         self._highlight_bead(new_bead_name, is_current=False, highlight=True)
+    
+    def _on_axis_changed(self):
+        """Handle axis selection change."""
+        # Get new axis indices
+        new_x_axis = self.x_axis_combo.currentData()
+        new_y_axis = self.y_axis_combo.currentData()
+        
+        # Check if the same axis is selected for both
+        if new_x_axis == new_y_axis:
+            # Revert to previous selection
+            self.x_axis_combo.blockSignals(True)
+            self.y_axis_combo.blockSignals(True)
+            
+            # Find the index for the previous values
+            for i in range(self.x_axis_combo.count()):
+                if self.x_axis_combo.itemData(i) == self.x_axis_idx:
+                    self.x_axis_combo.setCurrentIndex(i)
+                if self.y_axis_combo.itemData(i) == self.y_axis_idx:
+                    self.y_axis_combo.setCurrentIndex(i)
+            
+            self.x_axis_combo.blockSignals(False)
+            self.y_axis_combo.blockSignals(False)
+            
+            # Show error message in status
+            self.status_label.setText("Error: X and Y axes must be different.")
+            self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
+            return
+        
+        # Update axis indices
+        self.x_axis_idx = new_x_axis
+        self.y_axis_idx = new_y_axis
+        
+        # Redraw the plot
+        self._plot_beads()
+        
+        # Restore status message
+        self._update_status()
     
     def _clear_all_matches(self):
         """Clear all bead correspondences."""
