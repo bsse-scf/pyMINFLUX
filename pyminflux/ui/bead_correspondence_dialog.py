@@ -116,8 +116,8 @@ class BeadCorrespondenceDialog(QDialog):
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setBackground('w')
         self.plot_widget.setAspectLocked(True)
-        self.plot_widget.setLabel('left', 'Y', units='nm')
-        self.plot_widget.setLabel('bottom', 'X', units='nm')
+        self.plot_widget.setLabel('left', 'Y (nm)')
+        self.plot_widget.setLabel('bottom', 'X (nm)')
         self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
         self.plot_widget.addLegend()
         
