@@ -35,6 +35,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+# Import the Kabsch alignment function
+from pyminflux.correct._bead_alignment import _kabsch, RigidTransform
+
 
 class BeadCorrespondenceDialog(QDialog):
     """
@@ -71,6 +74,10 @@ class BeadCorrespondenceDialog(QDialog):
         self.current_scatter_items = {}  # bead_name -> scatter plot item
         self.new_scatter_items = {}  # bead_name -> scatter plot item
         self.correspondence_lines = {}  # new_name -> line item
+        
+        # Store alignment results
+        self.current_transform = None  # RigidTransform object
+        self.residuals = {}  # new_name -> residual (in nm)
         
         self._setup_ui()
         self._populate_tables()
@@ -130,11 +137,14 @@ class BeadCorrespondenceDialog(QDialog):
         
         # Single correspondence table
         self.correspondence_table = QTableWidget()
-        self.correspondence_table.setColumnCount(2)
+        self.correspondence_table.setColumnCount(3)
         self.correspondence_table.setHorizontalHeaderLabels(
-            ["Current Dataset Bead (Red)", "→ Matches New Dataset Bead (Blue)"]
+            ["Current Dataset Bead (Red)", "→ Matches New Dataset Bead (Blue)", "Residual (nm)"]
         )
-        self.correspondence_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        header = self.correspondence_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self.correspondence_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.correspondence_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.correspondence_table.setToolTip(
@@ -165,6 +175,23 @@ class BeadCorrespondenceDialog(QDialog):
         buttons_layout.addWidget(clear_btn)
         
         buttons_layout.addStretch()
+        
+        # Calculate alignment button
+        self.calc_alignment_btn = QPushButton("Calculate Alignment")
+        self.calc_alignment_btn.setToolTip(
+            "Calculate the rigid transformation using currently selected bead correspondences "
+            "and display residual errors for each bead pair"
+        )
+        self.calc_alignment_btn.clicked.connect(self._calculate_alignment)
+        buttons_layout.addWidget(self.calc_alignment_btn)
+        
+        # Mean residual label
+        self.mean_residual_label = QLabel("Mean residual: N/A")
+        self.mean_residual_label.setStyleSheet(
+            "QLabel { color: #333; font-weight: bold; padding: 5px; }"
+        )
+        self.mean_residual_label.setToolTip("Mean residual error across all matched bead pairs")
+        buttons_layout.addWidget(self.mean_residual_label)
         
         main_layout.addLayout(buttons_layout)
         
@@ -203,6 +230,12 @@ class BeadCorrespondenceDialog(QDialog):
             combo.currentIndexChanged.connect(self._update_correspondence)
             self.correspondence_table.setCellWidget(row, 1, combo)
             self.correspondence_combos[current_bead_name] = combo
+            
+            # Residual column (third column) - initially empty
+            residual_item = QTableWidgetItem("")
+            residual_item.setFlags(residual_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            residual_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            self.correspondence_table.setItem(row, 2, residual_item)
         
         self._update_status()
     
@@ -365,6 +398,11 @@ class BeadCorrespondenceDialog(QDialog):
         """Clear all bead correspondences."""
         for combo in self.correspondence_combos.values():
             combo.setCurrentIndex(0)  # Set to "-- None --"
+        
+        # Clear residuals
+        self.residuals = {}
+        self.current_transform = None
+        self._update_residual_display()
     
     def _auto_match_by_name(self):
         """Automatically match beads with the same names."""
@@ -393,6 +431,117 @@ class BeadCorrespondenceDialog(QDialog):
                 self.correspondence[new_bead_name] = current_bead_name
         self._update_correspondence_lines()
         self._update_status()
+        
+        # Clear residuals when correspondence changes
+        self.residuals = {}
+        self.current_transform = None
+        self._update_residual_display()
+    
+    def _calculate_alignment(self):
+        """Calculate alignment using current correspondences and display residuals."""
+        if len(self.correspondence) < 3:
+            self.status_label.setText(
+                "Error: At least 3 bead correspondences required for 3D alignment calculation."
+            )
+            self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
+            return
+        
+        # Build point arrays from correspondences
+        pts_ref = []  # Reference (current) bead positions
+        pts_mov = []  # Moving (new) bead positions
+        bead_pairs = []  # Track which beads for later residual assignment
+        
+        for new_bead_name, current_bead_name in self.correspondence.items():
+            if new_bead_name in self.new_beads and current_bead_name in self.current_beads:
+                pts_ref.append(self.current_beads[current_bead_name])
+                pts_mov.append(self.new_beads[new_bead_name])
+                bead_pairs.append((new_bead_name, current_bead_name))
+        
+        if len(pts_ref) < 3:
+            self.status_label.setText("Error: Not enough valid bead pairs for 3D alignment.")
+            self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
+            return
+        
+        pts_ref = np.array(pts_ref)
+        pts_mov = np.array(pts_mov)
+        
+        try:
+            # Calculate Kabsch alignment
+            R, t = _kabsch(pts_mov, pts_ref, allow_reflection=False)
+            self.current_transform = RigidTransform(R, t)
+            
+            # Calculate residuals for each bead pair
+            self.residuals = {}
+            for (new_name, current_name), pt_mov, pt_ref in zip(bead_pairs, pts_mov, pts_ref):
+                # Transform the moving point
+                pt_transformed = self.current_transform(pt_mov.reshape(1, -1))[0]
+                # Calculate residual (Euclidean distance in nm)
+                residual = np.linalg.norm(pt_transformed - pt_ref)
+                self.residuals[new_name] = residual
+            
+            # Update display
+            self._update_residual_display()
+            
+            # Update status with success message
+            mean_residual = np.mean(list(self.residuals.values()))
+            self.status_label.setText(
+                f"Alignment calculated successfully with {len(self.residuals)} bead pairs."
+            )
+            self.status_label.setStyleSheet("QLabel { color: green; font-weight: bold; }")
+            
+        except Exception as e:
+            self.status_label.setText(f"Error calculating alignment: {e}")
+            self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
+            self.residuals = {}
+            self.current_transform = None
+            self._update_residual_display()
+    
+    def _update_residual_display(self):
+        """Update the residual column in the table and mean residual label."""
+        # Update table residual column
+        for row in range(self.correspondence_table.rowCount()):
+            current_bead_name = self.correspondence_table.item(row, 0).text()
+            combo = self.correspondence_combos[current_bead_name]
+            new_bead_name = combo.currentData()
+            
+            residual_item = self.correspondence_table.item(row, 2)
+            
+            if new_bead_name and new_bead_name in self.residuals:
+                residual = self.residuals[new_bead_name]
+                residual_item.setText(f"{residual:.2f}")
+                
+                # Color code based on residual magnitude (darker colors for better readability)
+                if residual < 10:  # < 10 nm - good
+                    residual_item.setForeground(pg.mkColor(0, 128, 0))  # Dark green
+                elif residual < 50:  # 10-50 nm - okay
+                    residual_item.setForeground(pg.mkColor(204, 102, 0))  # Dark orange
+                else:  # > 50 nm - potentially problematic
+                    residual_item.setForeground(pg.mkColor(178, 34, 34))  # Dark red
+            else:
+                residual_item.setText("")
+                residual_item.setForeground(pg.mkColor('k'))
+        
+        # Update mean residual label
+        if self.residuals:
+            mean_residual = np.mean(list(self.residuals.values()))
+            self.mean_residual_label.setText(f"Mean residual: {mean_residual:.2f} nm")
+            
+            # Color code the mean residual (darker colors)
+            if mean_residual < 10:
+                color = "#008000"  # Dark green
+            elif mean_residual < 50:
+                color = "#CC6600"  # Dark orange
+            else:
+                color = "#B22222"  # Dark red (firebrick)
+            
+            self.mean_residual_label.setStyleSheet(
+                f"QLabel {{ color: {color}; font-weight: bold; padding: 5px; }}"
+            )
+        else:
+            self.mean_residual_label.setText("Mean residual: N/A")
+            self.mean_residual_label.setStyleSheet(
+                "QLabel { color: #333; font-weight: bold; padding: 5px; }"
+            )
     
     def _update_status(self):
         """Update the status message."""
@@ -414,9 +563,9 @@ class BeadCorrespondenceDialog(QDialog):
     
     def _on_accept(self):
         """Handle accept - validate that we have enough correspondences."""
-        if len(self.correspondence) < 2:
+        if len(self.correspondence) < 3:
             self.status_label.setText(
-                "Error: At least 2 bead correspondences are required for alignment."
+                "Error: At least 3 bead correspondences are required for 3D alignment."
             )
             self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
             return
