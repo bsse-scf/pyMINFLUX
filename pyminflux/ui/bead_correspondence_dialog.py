@@ -108,6 +108,7 @@ class BeadCorrespondenceDialog(QDialog):
             "When you click OK, all localizations in the new dataset will be transformed using the "
             "rigid transformation computed from the matched bead positions. The added localizations "
             "will be assigned a new \"fluo\" value.<br>"
+            "<b>Note:</b> Reference beads are always from the <u>first dataset originally loaded</u>"
             "<b>Tip:</b> Hold <b>Shift</b> and click a new bead (blue) to assign it to the currently selected current bead (red)."
         )
         instructions.setWordWrap(True)
@@ -783,6 +784,9 @@ class BeadCorrespondenceDialog(QDialog):
                 residual = np.linalg.norm(pt_transformed - pt_ref)
                 self.residuals[new_name] = residual
             
+            # Print transformation to console
+            self._print_transformation_info()
+            
             # Update display
             self._update_residual_display()
             
@@ -930,3 +934,32 @@ class BeadCorrespondenceDialog(QDialog):
             Dictionary mapping new bead names to current bead names
         """
         return self.correspondence
+    
+    def _print_transformation_info(self):
+        """Print transformation details to console."""
+        if self.current_transform is None:
+            return
+        
+        print("\n" + "="*60)
+        print("BEAD ALIGNMENT TRANSFORMATION")
+        print("="*60)
+        
+        if isinstance(self.current_transform, TranslationTransform):
+            print("Type: Translation-only (insufficient correspondences for rotation)")
+            print(f"Translation vector [z, y, x] (nm): {self.current_transform.translation}")
+        elif isinstance(self.current_transform, RigidTransform):
+            print("Type: Rigid (rotation + translation)")
+            print("\nRotation matrix:")
+            print(self.current_transform.rotation)
+            print(f"\nTranslation vector [z, y, x] (nm): {self.current_transform.translation}")
+        
+        if self.residuals:
+            residual_values = list(self.residuals.values())
+            print(f"\nAlignment quality:")
+            print(f"  Mean residual: {np.mean(residual_values):.2f} nm")
+            print(f"  Std residual:  {np.std(residual_values):.2f} nm")
+            print(f"  Min residual:  {np.min(residual_values):.2f} nm")
+            print(f"  Max residual:  {np.max(residual_values):.2f} nm")
+            print(f"  Bead pairs used: {len(self.residuals)}")
+        
+        print("="*60 + "\n")
