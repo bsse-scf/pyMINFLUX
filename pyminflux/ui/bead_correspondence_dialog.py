@@ -38,6 +38,7 @@ from PySide6.QtWidgets import (
 
 # Import the Kabsch alignment function
 from pyminflux.correct._bead_alignment import _kabsch, RigidTransform, TranslationTransform
+from pyminflux.ui.fluorophore_naming_widget import FluorophoreNamingWidget
 
 
 class BeadCorrespondenceDialog(QDialog):
@@ -50,6 +51,9 @@ class BeadCorrespondenceDialog(QDialog):
         reference_beads: Dict[str, np.ndarray],
         moving_beads: Dict[str, np.ndarray],
         auto_match: bool = False,
+        existing_fluo_ids: list = None,
+        next_fluo_id: int = 2,
+        existing_names: dict = None,
         parent=None
     ):
         """
@@ -59,6 +63,9 @@ class BeadCorrespondenceDialog(QDialog):
             reference_beads: Dict mapping bead names to their positions [z, y, x] in current (reference) dataset
             moving_beads: Dict mapping bead names to their positions [z, y, x] in new (moving) dataset
             auto_match: If True, automatically match beads by name on initialization
+            existing_fluo_ids: List of existing fluorophore IDs in current dataset
+            next_fluo_id: The fluorophore ID that will be assigned to the new dataset
+            existing_names: Dictionary of existing fluorophore names (fluo_id -> name)
             parent: Parent widget
         """
         super().__init__(parent)
@@ -70,6 +77,11 @@ class BeadCorrespondenceDialog(QDialog):
         self.current_beads = reference_beads  # Current dataset (reference for alignment)
         self.new_beads = moving_beads  # New dataset (will be transformed)
         self.correspondence = {}  # Will store new_name -> current_name mapping
+        
+        # Fluorophore naming
+        self.existing_fluo_ids = existing_fluo_ids or [1]
+        self.next_fluo_id = next_fluo_id
+        self.existing_names = existing_names or {}
         
         # Store plot items for interactive highlighting
         self.current_scatter_items = {}  # bead_name -> scatter plot item
@@ -274,6 +286,15 @@ class BeadCorrespondenceDialog(QDialog):
         h_splitter.setSizes([700, 500])
         
         main_layout.addWidget(h_splitter)
+        
+        # Add fluorophore naming widget (with no stretch so it stays compact)
+        self.fluorophore_naming_widget = FluorophoreNamingWidget(
+            title="Fluorophore Names for Combined Dataset"
+        )
+        # Set up all fluorophore IDs (existing + new)
+        all_fluo_ids = self.existing_fluo_ids + [self.next_fluo_id]
+        self.fluorophore_naming_widget.set_fluorophores(all_fluo_ids, self.existing_names)
+        main_layout.addWidget(self.fluorophore_naming_widget, stretch=0)
         
         # Status label at the bottom
         self.status_label = QLabel("")
@@ -934,6 +955,15 @@ class BeadCorrespondenceDialog(QDialog):
             Dictionary mapping new bead names to current bead names
         """
         return self.correspondence
+    
+    def get_fluorophore_names(self) -> dict:
+        """
+        Get the fluorophore names from the naming widget.
+        
+        Returns:
+            Dictionary mapping fluo_id (int) to name (str)
+        """
+        return self.fluorophore_naming_widget.get_names()
     
     def _print_transformation_info(self):
         """Print transformation details to console."""

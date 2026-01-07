@@ -170,3 +170,12 @@ class PMXWriter:
         # back to boolean on read.
         group.create_dataset("is_tracking", data=np.int8(self.state.is_tracking))
         group.create_dataset("pool_dcr", data=np.int8(self.state.pool_dcr))
+
+        # Store fluorophore names as attributes (JSON-encoded for easy parsing)
+        # Format: {"1": "cycle1", "2": "cycle2", ...}
+        fluorophore_names = self.processor.fluorophore_names
+        if fluorophore_names:
+            # Convert to JSON string for storage
+            import json
+            names_json = json.dumps({str(k): v for k, v in fluorophore_names.items()})
+            group.attrs["fluorophore_names"] = names_json

@@ -140,6 +140,36 @@ class PMXReader:
         return metadata
 
     @staticmethod
+    def get_fluorophore_names(filename: Union[Path, str]) -> dict:
+        """Read fluorophore names from `.pmx` files.
+        
+        Parameters
+        ----------
+        filename: Union[Path, str]
+            Full path to the `.pmx` file to scan.
+            
+        Returns
+        -------
+        fluorophore_names: dict
+            Dictionary mapping fluo_id (int) to name (str).
+            Returns empty dict if fluorophore names are not present (backwards compatibility).
+        """
+        try:
+            with h5py.File(filename, "r") as f:
+                # Try to read fluorophore names from parameters group
+                if "parameters" in f and "fluorophore_names" in f["parameters"].attrs:
+                    import json
+                    names_json = f["parameters"].attrs["fluorophore_names"]
+                    # Parse JSON and convert keys back to integers
+                    names_dict = json.loads(names_json)
+                    return {int(k): v for k, v in names_dict.items()}
+        except Exception:
+            pass
+        
+        # Return empty dict for backwards compatibility (will use default string representation)
+        return {}
+
+    @staticmethod
     def get_dataframe(filename: Union[Path, str]):
         """Return the full dataframe.
 

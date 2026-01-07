@@ -25,6 +25,7 @@ from pyminflux.analysis import (
     reassign_fluo_ids_by_majority_vote,
 )
 from pyminflux.processor import MinFluxProcessor
+from pyminflux.ui.fluorophore_naming_widget import FluorophoreNamingWidget
 from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.state import State
 from pyminflux.ui.ui_color_unmixer import Ui_ColorUnmixer
@@ -80,7 +81,15 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.plot_dcr_histogram()
 
         # Add them to the UI
-        self.ui.main_layout.addWidget(self.plot_widget)
+        self.ui.main_layout.addWidget(self.plot_widget, stretch=1)
+        
+        # Add fluorophore naming widget
+        self.fluorophore_naming_widget = FluorophoreNamingWidget(
+            title="Fluorophore Names"
+        )
+        # Initially hidden until fluorophores are detected
+        self.fluorophore_naming_widget.setVisible(False)
+        self.ui.main_layout.addWidget(self.fluorophore_naming_widget, stretch=0)
 
         # Add connections
         self.ui.cbNumFluorophores.currentIndexChanged.connect(
@@ -107,6 +116,8 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         num_fluorophores = self.ui.cbNumFluorophores.currentIndex() + 1
         self.state.num_fluorophores = num_fluorophores
         self.ui.pbAssign.setEnabled(False)
+        # Hide naming widget when number changes
+        self.fluorophore_naming_widget.setVisible(False)
 
     @Slot(str)
     def persist_dcr_manual_threshold(self, text):
@@ -254,6 +265,14 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Store the predictions (1-shifted)
         self.assigned_fluorophore_ids = fluo_ids
 
+        # Update fluorophore naming widget
+        unique_fluo_ids = sorted(np.unique(fluo_ids).tolist())
+        self.fluorophore_naming_widget.set_fluorophores(
+            unique_fluo_ids,
+            self.processor.fluorophore_names
+        )
+        self.fluorophore_naming_widget.setVisible(True)
+
         # Make sure to enable the assign button
         self.ui.pbManualAssign.setEnabled(True)
 
@@ -323,6 +342,14 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Store the predictions (1-shifted)
         self.assigned_fluorophore_ids = fluo_ids
 
+        # Update fluorophore naming widget
+        unique_fluo_ids = sorted(np.unique(fluo_ids).tolist())
+        self.fluorophore_naming_widget.set_fluorophores(
+            unique_fluo_ids,
+            self.processor.fluorophore_names
+        )
+        self.fluorophore_naming_widget.setVisible(True)
+
         # Make sure to enable the assign button
         self.ui.pbAssign.setEnabled(True)
 
@@ -333,16 +360,22 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         if self.assigned_fluorophore_ids is None:
             return
 
+        # Get fluorophore names from the embedded widget
+        fluorophore_names = self.fluorophore_naming_widget.get_names()
+        
         # Assign the IDs via the processor
         self.processor.set_fluorophore_ids(self.assigned_fluorophore_ids)
+        
+        # Set the fluorophore names
+        self.processor.set_fluorophore_names(fluorophore_names)
 
         # Inform that the fluorophore IDs have been assigned
-        self.fluorophore_ids_assigned.emit(
-            len(np.unique(self.assigned_fluorophore_ids))
-        )
+        unique_fluo_ids = sorted(np.unique(self.assigned_fluorophore_ids).tolist())
+        self.fluorophore_ids_assigned.emit(len(unique_fluo_ids))
 
         # Disable the button until the new detection is run
         self.ui.pbAssign.setEnabled(False)
+        self.ui.pbManualAssign.setEnabled(False)
 
     def histogram_raise_context_menu(self, ev):
         """Create a context menu on the plot."""

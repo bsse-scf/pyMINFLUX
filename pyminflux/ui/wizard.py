@@ -15,13 +15,14 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
-from PySide6.QtGui import QDoubleValidator
+from PySide6.QtGui import QDoubleValidator, QIcon, QPixmap, QColor, QPainter
 from PySide6.QtWidgets import QDialog, QMessageBox
 
 from pyminflux.ui.state import State
 
 from ..analysis import prepare_histogram
 from ..utils import intersect_2d_ranges
+from .colors import Colors
 from .ui_wizard import Ui_WizardDialog
 
 
@@ -338,9 +339,38 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         if num_fluorophores == 1:
             self.ui.cmActiveColor.addItems(["All"])
         else:
-            self.ui.cmActiveColor.addItems(
-                ["All"] + list([str(i + 1) for i in range(num_fluorophores)])
-            )
+            # Add "All" option first
+            self.ui.cmActiveColor.addItem("All")
+            
+            # Get fluorophore colors
+            colors = Colors()
+            fid_colors = colors.fid_colors
+            
+            # Add fluorophore items with color icons
+            for i in range(num_fluorophores):
+                fluo_id = i + 1
+                
+                # Get fluorophore name from processor if available
+                if self.processor is not None:
+                    name = self.processor.get_fluorophore_name(fluo_id)
+                    text = f"{fluo_id}: {name}"
+                else:
+                    text = str(fluo_id)
+                
+                # Create small color icon for this fluorophore with spacing
+                color_idx = (fluo_id - 1) % len(fid_colors)
+                rgb = fid_colors[color_idx]
+                # Create wider pixmap with transparent background for spacing
+                pixmap = QPixmap(16, 8)
+                pixmap.fill(Qt.GlobalColor.transparent)
+                # Draw the colored square only on the left portion
+                painter = QPainter(pixmap)
+                painter.fillRect(0, 0, 8, 8, QColor(int(rgb[0]), int(rgb[1]), int(rgb[2])))
+                painter.end()
+                icon = QIcon(pixmap)
+                
+                # Add item with icon
+                self.ui.cmActiveColor.addItem(icon, text)
 
         # Release the blocker
         blocker.unblock()

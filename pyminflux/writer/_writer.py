@@ -47,7 +47,24 @@ class MinFluxWriter:
 
         # Save the filtered dataframe to disk
         try:
-            processor.filtered_dataframe.to_csv(file_name, index=False)
+            # Prepare header comment with fluorophore names
+            header_lines = []
+            fluorophore_names = processor.fluorophore_names
+            if fluorophore_names:
+                header_lines.append("# Fluorophore Names:")
+                for fluo_id in sorted(fluorophore_names.keys()):
+                    name = fluorophore_names[fluo_id]
+                    header_lines.append(f"# fluo_{fluo_id}={name}")
+            
+            # Write header and data
+            with open(file_name, 'w') as f:
+                # Write header comments
+                if header_lines:
+                    f.write('\n'.join(header_lines) + '\n')
+                
+                # Write the dataframe
+                processor.filtered_dataframe.to_csv(f, index=False)
+                
         except Exception as e:
             print(f"Could not save {file_name}: {e}")
             return False

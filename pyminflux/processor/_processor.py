@@ -35,6 +35,7 @@ class MinFluxProcessor:
         "reader",
         "_current_fluorophore_id",
         "_filtered_stats_dataframe",
+        "_fluorophore_names",
         "_min_trace_length",
         "_selected_rows_dict",
         "_stats_to_be_recomputed",
@@ -90,6 +91,10 @@ class MinFluxProcessor:
         # Whether to use weighted average for localizations
         self._use_weighted_localizations = False
 
+        # Initialize fluorophore names mapping (fluo_id -> name)
+        self._fluorophore_names = {}
+        self._init_fluorophore_names()
+
         # Apply the global filters
         self._apply_global_filters()
 
@@ -109,6 +114,17 @@ class MinFluxProcessor:
         self._selected_rows_dict = {}
         for fluo_id in unique_fluos:
             self._selected_rows_dict[int(fluo_id)] = keep_mask.copy()
+
+    def _init_fluorophore_names(self):
+        """Initialize fluorophore names with default values (string representation of fluo ID)."""
+        if self.processed_dataframe is None:
+            return
+        
+        unique_fluos = np.unique(self.processed_dataframe["fluo"].to_numpy())
+        for fluo_id in unique_fluos:
+            fluo_id_int = int(fluo_id)
+            if fluo_id_int not in self._fluorophore_names:
+                self._fluorophore_names[fluo_id_int] = str(fluo_id_int)
 
     @property
     def is_tracking(self):
@@ -197,6 +213,59 @@ class MinFluxProcessor:
         if self.processed_dataframe is None:
             return 0
         return len(np.unique(self.processed_dataframe["fluo"].to_numpy()))
+
+    @property
+    def fluorophore_names(self) -> dict:
+        """Return the fluorophore names mapping (fluo_id -> name)."""
+        return self._fluorophore_names.copy()
+
+    def set_fluorophore_name(self, fluo_id: int, name: str):
+        """Set the name for a specific fluorophore ID.
+        
+        Parameters
+        ----------
+        fluo_id: int
+            The fluorophore ID (must be >= 1)
+        name: str
+            The name to assign to this fluorophore
+        """
+        if fluo_id < 1:
+            raise ValueError(f"Fluorophore ID must be >= 1, got {fluo_id}")
+        if not isinstance(name, str):
+            raise ValueError(f"Fluorophore name must be a string, got {type(name)}")
+        self._fluorophore_names[fluo_id] = name
+
+    def set_fluorophore_names(self, names: dict):
+        """Set fluorophore names from a dictionary mapping.
+        
+        Parameters
+        ----------
+        names: dict
+            Dictionary mapping fluo_id (int) to name (str)
+        """
+        if not isinstance(names, dict):
+            raise ValueError(f"Names must be a dictionary, got {type(names)}")
+        for fluo_id, name in names.items():
+            if not isinstance(fluo_id, int) or fluo_id < 1:
+                raise ValueError(f"Fluorophore ID must be an integer >= 1, got {fluo_id}")
+            if not isinstance(name, str):
+                raise ValueError(f"Fluorophore name must be a string, got {type(name)}")
+        self._fluorophore_names = names.copy()
+
+    def get_fluorophore_name(self, fluo_id: int) -> str:
+        """Get the name for a specific fluorophore ID.
+        
+        Parameters
+        ----------
+        fluo_id: int
+            The fluorophore ID
+            
+        Returns
+        -------
+        name: str
+            The name of the fluorophore (defaults to string representation of ID if not set)
+        """
+        return self._fluorophore_names.get(fluo_id, str(fluo_id))
 
     def _filtered_raw_data_array_all_fluorophores(self):
         """Return the raw NumPy array with applied filters (for all fluorophores).
@@ -448,6 +517,9 @@ class MinFluxProcessor:
         # Reset the mapping to the corresponding fluorophore
         self.processed_dataframe["fluo"] = 1
 
+        # Reset fluorophore names
+        self._init_fluorophore_names()
+
         # Default fluorophore is 0 (no selection)
         self.current_fluorophore_id = 0
 
@@ -473,6 +545,7 @@ class MinFluxProcessor:
 
         # Apply global filters
         self._init_selected_rows_dict()
+        self._init_fluorophore_names()
         self._apply_global_filters()
 
     def set_full_fluorophore_ids(self, fluorophore_ids: NDArray[np.uint8]):
@@ -487,6 +560,7 @@ class MinFluxProcessor:
 
         # Apply global filters
         self._init_selected_rows_dict()
+        self._init_fluorophore_names()
         self._apply_global_filters()
 
     def select_by_rows(

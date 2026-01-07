@@ -66,6 +66,7 @@ from pyminflux.ui.colors import ColorCode, reset_all_colors
 from pyminflux.ui.dataset_merge_dialog import DatasetMergeDialog
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.frc_tool import FRCTool
+from pyminflux.ui.fluorophore_naming_dialog import FluorophoreNamingDialog
 from pyminflux.ui.histogram_plotter import HistogramPlotter
 from pyminflux.ui.importer import Importer
 from pyminflux.ui.mediator import Mediator
@@ -376,6 +377,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionState.triggered.connect(self.print_current_state)
         self.ui.actionHistogram_Plotter.triggered.connect(self.open_histogram_plotter)
         self.ui.actionUnmixer.triggered.connect(self.open_color_unmixer)
+        self.ui.actionSet_Fluorophore_Names.triggered.connect(self.open_fluorophore_naming_dialog)
         self.ui.actionTime_Inspector.triggered.connect(self.open_time_inspector)
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
         self.ui.actionTrace_Stats_Viewer.triggered.connect(self.open_trace_stats_viewer)
@@ -437,6 +439,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionExport_stats.setEnabled(enabled)
         self.ui.actionHistogram_Plotter.setEnabled(enabled)
         self.ui.actionUnmixer.setEnabled(enabled)
+        self.ui.actionSet_Fluorophore_Names.setEnabled(enabled)
         self.ui.actionTime_Inspector.setEnabled(enabled)
         self.ui.actionAnalyzer.setEnabled(enabled)
         self.ui.actionTrace_Stats_Viewer.setEnabled(enabled)
@@ -753,12 +756,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print(f"Reference beads: {list(ref_bead_positions.keys())}")
         print(f"Moving beads: {list(mov_bead_positions.keys())}")
         
+        # Get fluorophore information for the dialog
+        # Filter out fluorophore ID 0 (used for unassigned/placeholder data)
+        existing_fluo_ids = sorted([fid for fid in self.processor.processed_dataframe["fluo"].unique().tolist() if fid > 0])
+        next_fluo_id = get_next_fluorophore_id(self.processor.reader.processed_dataframe)
+        existing_names = self.processor.fluorophore_names
+        
         # Always show the correspondence dialog with auto-matching enabled
         # This allows users to verify the automatic matches and adjust if needed
         corr_dialog = BeadCorrespondenceDialog(
             ref_bead_positions,
             mov_bead_positions,
             auto_match=True,  # Automatically match beads by name
+            existing_fluo_ids=existing_fluo_ids,
+            next_fluo_id=next_fluo_id,
+            existing_names=existing_names,
             parent=self
         )
         if corr_dialog.exec() != QDialog.DialogCode.Accepted:
@@ -766,7 +778,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             return False
         
         bead_correspondence = corr_dialog.get_correspondence()
+        fluorophore_names = corr_dialog.get_fluorophore_names()
         print(f"Bead correspondence: {bead_correspondence}")
+        print(f"Fluorophore names: {fluorophore_names}")
         
         # Perform alignment
         print("Performing bead-based alignment...")
@@ -820,7 +834,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         self.processor.use_weighted_localizations = old_use_weighted
         
+        # Set fluorophore names from the dialog
+        self.processor.set_fluorophore_names(fluorophore_names)
+        
         print(f"Merge completed. Dataset now has {self.processor.num_fluorophores} fluorophore(s)")
+        print(f"Fluorophore names: {fluorophore_names}")
         
         # Set color coding to BY_FLUO after merge to distinguish datasets
         self.state.color_code = ColorCode.BY_FLUO
@@ -966,6 +984,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.state.min_trace_length,
             )
 
+            # Load fluorophore names from PMX file if available
+            if ext == ".pmx":
+                fluorophore_names = PMXReader.get_fluorophore_names(filename)
+                if fluorophore_names:
+                    self.processor.set_fluorophore_names(fluorophore_names)
+                    print(f"Loaded fluorophore names: {fluorophore_names}")
+
             # Make sure to set current value of use_weighted_localizations
             self.processor.use_weighted_localizations = (
                 self.state.weigh_avg_localization_by_eco
@@ -1047,7 +1072,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Make sure to autoupdate the axis on load
             self.plotter.enableAutoRange(enable=True)
 
-            # Reset the fluorophore list in the wizard
+            # Attach the processor reference to the wizard
+            self.wizard.set_processor(self.processor)
+
+            # Reset the fluorophore list in the wizard (after processor is set)
             self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
 
             # Enable selected ui components
@@ -1071,9 +1099,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             if self.analyzer is not None:
                 self.analyzer.set_processor(self.processor)
                 self.analyzer.plot()
-
-            # Attach the processor reference to the wizard
-            self.wizard.set_processor(self.processor)
 
             # Enable wizard
             self.wizard.enable_controls(True)
@@ -1400,13 +1425,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         
         self.full_update_ui()
         self.plotter.enableAutoRange(enable=True)
+        
+        # Set processor before updating fluorophore list (needs processor to get names)
+        self.wizard.set_processor(self.processor)
         self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
         
         if self.analyzer is not None:
             self.analyzer.set_processor(self.processor)
             self.analyzer.plot()
-        
-        self.wizard.set_processor(self.processor)
         
         print(f"Dataset merge completed successfully via {source}.")
         return True
@@ -1519,6 +1545,37 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.mediator.register_dialog("color_unmixer", self.color_unmixer)
         self.color_unmixer.show()
         self.color_unmixer.activateWindow()
+
+    @Slot()
+    def open_fluorophore_naming_dialog(self):
+        """Open dialog to set fluorophore names."""
+        if self.processor is None:
+            QMessageBox.information(
+                self,
+                "No Data Loaded",
+                "Please load a dataset before setting fluorophore names."
+            )
+            return
+        
+        if self.processor.num_fluorophores == 0:
+            QMessageBox.information(
+                self,
+                "No Fluorophores",
+                "No fluorophores detected in the current dataset."
+            )
+            return
+        
+        dialog = FluorophoreNamingDialog(self.processor, parent=self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            # Get the names and update the processor
+            names = dialog.get_names()
+            for fluo_id, name in names.items():
+                self.processor.set_fluorophore_name(fluo_id, name)
+            
+            # Update the wizard's fluorophore list to show new names
+            self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
+            
+            print("Fluorophore names updated successfully.")
 
     @Slot()
     def open_options_dialog(self):
