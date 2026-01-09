@@ -157,6 +157,11 @@ class Mediator:
                 self.dialogs["trace_stats_viewer"].update
             )
 
+        if "time_inspector" in self.dialogs:
+            self.dialogs["color_unmixer"].fluorophore_ids_assigned.connect(
+                self.dialogs["time_inspector"].update
+            )
+
     def _setup_data_viewer_connections(self):
         """Set up the Data Viewer connections."""
 

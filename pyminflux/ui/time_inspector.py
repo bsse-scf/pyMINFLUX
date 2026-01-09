@@ -22,6 +22,7 @@ from PySide6.QtWidgets import QDialog, QMenu
 from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.roi_ranges import ROIRanges
 from pyminflux.ui.state import State
+from pyminflux.ui.time_plotter import TimePlotter
 from pyminflux.ui.ui_time_inspector import Ui_TimeInspector
 
 
@@ -217,46 +218,22 @@ class TimeInspector(QDialog, Ui_TimeInspector):
 
     def plot_localizations_per_unit_time(self):
         """Plot number of localizations per unit time."""
-
-        # Is the data cached?
-        if self.localizations_per_unit_time_cache is None:
-            if len(self.processor.filtered_dataframe.index) == 0:
-                # No data to plot
-                return
-
-            # Create `time_resolution_sec` bins starting at 0.0.
-            bin_edges = np.arange(
-                start=0.0,
-                stop=self.processor.filtered_dataframe["tim"].max()
-                + self.time_resolution_sec,
-                step=self.time_resolution_sec,
-            )
-            bin_centers = bin_edges[:-1] + 0.5 * self.time_resolution_sec
-            bin_width = self.time_resolution_sec
-
-            # Calculate the histogram of localizations per unit time
-            self.localizations_per_unit_time_cache, _ = np.histogram(
-                self.processor.filtered_dataframe["tim"].to_numpy(),
-                bins=bin_edges,
-                density=False,
-            )
-
-            # Cache the x range
-            self.x_axis = (bin_centers - 0.5 * bin_width) / self.time_resolution_sec
-
-        # Plot the histogram
-        chart = pg.BarGraphItem(
-            x=self.x_axis,
-            height=self.localizations_per_unit_time_cache,
-            width=0.9 * (self.x_axis[1] - self.x_axis[0]),
-            brush=self.brush,
+        cache_dict = {
+            'data': self.localizations_per_unit_time_cache,
+            'x_axis': self.x_axis
+        }
+        
+        TimePlotter.plot_localizations_per_unit_time(
+            self.plot_widget,
+            self.processor,
+            self.time_resolution_sec,
+            cache_dict,
+            self.brush
         )
-
-        # Update the plot
-        self.plot_widget.setXRange(self.x_axis[0], self.x_axis[-1])
-        self.plot_widget.setYRange(0.0, self.localizations_per_unit_time_cache.max())
-        self.plot_widget.setLabel("left", text="Number of localizations per min")
-        self.plot_widget.addItem(chart)
+        
+        # Update cache references
+        self.localizations_per_unit_time_cache = cache_dict['data']
+        self.x_axis = cache_dict['x_axis']
 
     def plot_localization_precision_per_unit_time(self, std_err: bool = False):
         """Plot localization precision as a function of time.
@@ -267,126 +244,32 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         std_err: bool
             Set to True to plot the standard error instead of the standard deviation.
         """
-
-        # Add a legend
-        if self.plot_widget.plotItem.legend is None:
-            self.plot_widget.plotItem.addLegend()
-
-        # Is the data cached?
-        if (
-            not std_err and self.localization_precision_per_unit_time_cache_x is None
-        ) or (
-            std_err and self.localization_precision_stderr_per_unit_time_cache_x is None
-        ):
-            # Create `time_resolution_sec` bins starting at 0.0.
-            bin_edges = np.arange(
-                start=0.0,
-                stop=self.processor.filtered_dataframe["tim"].max()
-                + self.time_resolution_sec,
-                step=self.time_resolution_sec,
-            )
-            bin_centers = bin_edges[:-1] + 0.5 * self.time_resolution_sec
-            bin_width = self.time_resolution_sec
-
-            # Allocate space for the results
-            x_pr = np.zeros(len(bin_edges) - 1)
-            y_pr = np.zeros(len(bin_edges) - 1)
-            z_pr = np.zeros(len(bin_edges) - 1)
-
-            # Now process all bins
-            for i in range(len(bin_edges) - 1):
-                time_range = (bin_edges[i], bin_edges[i + 1])
-                df = self.processor.select_by_1d_range("tim", time_range)
-                if len(df.index) > 0:
-                    stats = self.processor.calculate_statistics_on(df)
-                    if std_err:
-                        x_pr[i] = stats["sx"].mean() / np.sqrt(len(stats["sx"]))
-                        y_pr[i] = stats["sy"].mean() / np.sqrt(len(stats["sy"]))
-                        z_pr[i] = stats["sz"].mean() / np.sqrt(len(stats["sz"]))
-                    else:
-                        x_pr[i] = stats["sx"].mean()
-                        y_pr[i] = stats["sy"].mean()
-                        z_pr[i] = stats["sz"].mean()
-                else:
-                    x_pr[i] = 0.0
-                    y_pr[i] = 0.0
-                    z_pr[i] = 0.0
-
-            # Cache results for future plotting
-            if std_err:
-                self.localization_precision_stderr_per_unit_time_cache_x = x_pr
-                self.localization_precision_stderr_per_unit_time_cache_y = y_pr
-                self.localization_precision_stderr_per_unit_time_cache_z = z_pr
-            else:
-                self.localization_precision_per_unit_time_cache_x = x_pr
-                self.localization_precision_per_unit_time_cache_y = y_pr
-                self.localization_precision_per_unit_time_cache_z = z_pr
-
-            # Cache the x range
-            self.x_axis = (bin_centers - 0.5 * bin_width) / self.time_resolution_sec
-
-        # It one or more charts already exists, remove them
-        for item in self.plot_widget.allChildItems():
-            self.plot_widget.removeItem(item)
-
-        # Alias
-        if std_err:
-            x_pr = self.localization_precision_stderr_per_unit_time_cache_x
-            y_pr = self.localization_precision_stderr_per_unit_time_cache_y
-            z_pr = self.localization_precision_stderr_per_unit_time_cache_z
-        else:
-            x_pr = self.localization_precision_per_unit_time_cache_x
-            y_pr = self.localization_precision_per_unit_time_cache_y
-            z_pr = self.localization_precision_per_unit_time_cache_z
-
-        # Get the max bin number for normalization
-        n_max = np.max([x_pr.max(), y_pr.max(), z_pr.max()])
-
-        if self.processor.is_3d:
-            offset = 1 / 3
-            bar_width = 0.9 / 3
-        else:
-            offset = 1 / 2
-            bar_width = 0.9 / 2
-
-        # Create the sx bar charts
-        chart = pg.BarGraphItem(
-            x=self.x_axis,
-            height=x_pr,
-            width=bar_width,
-            brush="r",
-            alpha=0.5,
-            name="σx",
+        cache_dict = {
+            'x': self.localization_precision_per_unit_time_cache_x,
+            'y': self.localization_precision_per_unit_time_cache_y,
+            'z': self.localization_precision_per_unit_time_cache_z,
+            'x_stderr': self.localization_precision_stderr_per_unit_time_cache_x,
+            'y_stderr': self.localization_precision_stderr_per_unit_time_cache_y,
+            'z_stderr': self.localization_precision_stderr_per_unit_time_cache_z,
+            'x_axis': self.x_axis
+        }
+        
+        TimePlotter.plot_localization_precision_per_unit_time(
+            self.plot_widget,
+            self.processor,
+            self.time_resolution_sec,
+            cache_dict,
+            std_err
         )
-        self.plot_widget.addItem(chart)
-
-        # Create the sy bar charts
-        chart = pg.BarGraphItem(
-            x=self.x_axis + offset,
-            height=y_pr,
-            width=bar_width,
-            brush="b",
-            alpha=0.5,
-            name="σy",
-        )
-        self.plot_widget.addItem(chart)
-
-        # Create the sz bar charts if needed
-        if self.processor.is_3d:
-            chart = pg.BarGraphItem(
-                x=self.x_axis + 2 * offset,
-                height=z_pr,
-                width=bar_width,
-                brush="k",
-                alpha=0.5,
-                name="σz",
-            )
-            self.plot_widget.addItem(chart)
-
-        # Update the plot
-        self.plot_widget.setXRange(self.x_axis[0], self.x_axis[-1])
-        self.plot_widget.setYRange(0.0, n_max)
-        self.plot_widget.setLabel("left", text="Localization precision (nm) per min")
+        
+        # Update cache references
+        self.localization_precision_per_unit_time_cache_x = cache_dict['x']
+        self.localization_precision_per_unit_time_cache_y = cache_dict['y']
+        self.localization_precision_per_unit_time_cache_z = cache_dict['z']
+        self.localization_precision_stderr_per_unit_time_cache_x = cache_dict['x_stderr']
+        self.localization_precision_stderr_per_unit_time_cache_y = cache_dict['y_stderr']
+        self.localization_precision_stderr_per_unit_time_cache_z = cache_dict['z_stderr']
+        self.x_axis = cache_dict['x_axis']
 
     @staticmethod
     def _change_region_label_font(region_label):

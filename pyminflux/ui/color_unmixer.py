@@ -29,6 +29,7 @@ from pyminflux.ui.colors import Colors
 from pyminflux.ui.fluorophore_naming_widget import FluorophoreNamingWidget
 from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.state import State
+from pyminflux.ui.time_plotter import TimePlotter
 from pyminflux.ui.ui_color_unmixer import Ui_ColorUnmixer
 
 
@@ -58,6 +59,17 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.pbManualAssign.setEnabled(False)
         self.ui.leManualThreshold.setValidator(QDoubleValidator(bottom=0.0))
         self.ui.leManualThreshold.setText(str(self.state.dcr_manual_threshold))
+        
+        # Time splitting plot caches (like TimeInspector)
+        self.time_resolution_sec = 60  # 1 minute bins
+        self.time_x_axis = None
+        self.localizations_per_unit_time_cache = None
+        self.localization_precision_per_unit_time_cache_x = None
+        self.localization_precision_per_unit_time_cache_y = None
+        self.localization_precision_per_unit_time_cache_z = None
+        self.localization_precision_stderr_per_unit_time_cache_x = None
+        self.localization_precision_stderr_per_unit_time_cache_y = None
+        self.localization_precision_stderr_per_unit_time_cache_z = None
 
         # Constants
         self.brush = pg.mkBrush(0, 0, 0, 255)
@@ -75,14 +87,23 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Keep track of the fluorophore ID assignments
         self.assigned_fluorophore_ids = None
 
-        # Create the plot elements
+        # Create the plot elements for DCR unmixing
         self.plot_widget = PlotWidget(parent=self, background="w", title="dcr")
 
         # Plot the dcr histogram
         self.plot_dcr_histogram()
 
-        # Add them to the UI
+        # Create the plot elements for time splitting
+        self.time_plot_widget = PlotWidget(parent=self, background="w", title="tid")
+        
+        # Time splitting state
+        self.time_split_regions = []  # List of LinearRegionItem objects
+        self.time_assigned_fluorophore_ids = None  # Assignments based on time ranges
+
+        # Add them to the UI (they will be shown/hidden based on active tab)
         self.ui.main_layout.addWidget(self.plot_widget, stretch=1)
+        self.ui.main_layout.addWidget(self.time_plot_widget, stretch=1)
+        self.time_plot_widget.hide()  # Initially hidden
         
         # Add fluorophore naming widget
         self.fluorophore_naming_widget = FluorophoreNamingWidget(
@@ -92,7 +113,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.fluorophore_naming_widget.setVisible(False)
         self.ui.main_layout.addWidget(self.fluorophore_naming_widget, stretch=0)
 
-        # Add connections
+        # Add connections for DCR unmixing
         self.ui.cbNumFluorophores.currentIndexChanged.connect(
             self.persist_num_fluorophores
         )
@@ -103,6 +124,23 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.pbAssign.clicked.connect(self.assign_fluorophores_ids)
         self.ui.pbPreview.clicked.connect(self.preview_manual_assignment)
         self.ui.pbManualAssign.clicked.connect(self.assign_fluorophores_ids)
+        
+        # Add connections for time splitting
+        self.ui.pbSplit.clicked.connect(self.split_by_time)
+        self.ui.pbTimeSplitAssign.clicked.connect(self.assign_time_split_fluorophores)
+        self.ui.pbTimeSplitAssign.setEnabled(False)
+        self.ui.pbTimePlot.clicked.connect(self.plot_time_selected)
+        
+        # Connect tab change to update plots
+        self.ui.twMainTabs.currentChanged.connect(self.main_tab_changed)
+
+    def showEvent(self, event):
+        """Override showEvent to update plots when dialog is shown."""
+        super().showEvent(event)
+        # Check which tab is active and update its plot
+        current_tab = self.ui.twMainTabs.currentIndex()
+        if current_tab == 1:  # Time splitting tab
+            self.plot_time_selected()
 
     @Slot(str)
     def persist_dcr_bin_size(self, text):
@@ -127,6 +165,18 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         except ValueError as _:
             return
         self.state.dcr_manual_threshold = float(dcr_manual_threshold)
+
+    @Slot(str)
+    def invalidate_time_cache(self):
+        """Invalidate the time plot cache."""
+        self.localizations_per_unit_time_cache = None
+        self.localization_precision_per_unit_time_cache_x = None
+        self.localization_precision_per_unit_time_cache_y = None
+        self.localization_precision_per_unit_time_cache_z = None
+        self.localization_precision_stderr_per_unit_time_cache_x = None
+        self.localization_precision_stderr_per_unit_time_cache_y = None
+        self.localization_precision_stderr_per_unit_time_cache_z = None
+        self.time_x_axis = None
 
     @Slot()
     def plot_dcr_histogram(self):
@@ -471,3 +521,350 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             ev.accept()
         else:
             ev.ignore()
+
+    @Slot(int)
+    def main_tab_changed(self, index):
+        """Handle main tab changes to show/hide appropriate plots."""
+        if index == 0:  # DCR unmixing tab
+            self.plot_widget.show()
+            self.time_plot_widget.hide()
+        elif index == 1:  # Time splitting tab
+            self.plot_widget.hide()
+            self.time_plot_widget.show()
+            self.plot_time_selected()
+
+    @Slot()
+    def plot_time_selected(self):
+        """Plot the selected time analysis."""
+        
+        # Do we have something to plot?
+        if (
+            self.processor is None
+            or self.processor.filtered_dataframe is None
+            or len(self.processor.filtered_dataframe.index) == 0
+        ):
+            return
+        
+        # Debug: Check what data we're working with
+        import tempfile
+        from pathlib import Path
+        debug_file = Path("/tmp/pyminflux_debug.txt")
+        with open(debug_file, "a") as f:
+            tim_data = self.processor.filtered_dataframe["tim"].to_numpy()
+            f.write(f"\n=== plot_time_selected called ===\n")
+            f.write(f"current_fluorophore_id = {self.processor.current_fluorophore_id}\n")
+            f.write(f"filtered_dataframe length = {len(self.processor.filtered_dataframe)}\n")
+            f.write(f"tim range = {tim_data.min()/60:.2f} to {tim_data.max()/60:.2f} minutes\n")
+            if "fluo" in self.processor.filtered_dataframe.columns:
+                unique_fluos = self.processor.filtered_dataframe["fluo"].unique()
+                f.write(f"unique fluo IDs in filtered data = {sorted(unique_fluos)}\n")
+        
+        # Always invalidate cache to ensure we're using current fluorophore selection
+        self.invalidate_time_cache()
+        
+        # Clear existing plot items
+        for item in self.time_plot_widget.allChildItems():
+            self.time_plot_widget.removeItem(item)
+        
+        # Get the requested plot
+        if self.ui.cbTimePlotType.currentIndex() == 0:
+            self.plot_localizations_per_unit_time()
+        elif self.ui.cbTimePlotType.currentIndex() == 1:
+            self.plot_localization_precision_per_unit_time(std_err=False)
+        elif self.ui.cbTimePlotType.currentIndex() == 2:
+            self.plot_localization_precision_per_unit_time(std_err=True)
+        else:
+            raise ValueError("Unexpected plotting request.")
+        
+        self.time_plot_widget.setLabel("bottom", text="time (min)")
+        self.time_plot_widget.showAxis("bottom")
+        self.time_plot_widget.showAxis("left")
+        self.time_plot_widget.setMouseEnabled(x=True, y=False)
+        self.time_plot_widget.setMenuEnabled(False)
+    
+    def plot_localizations_per_unit_time(self):
+        """Plot number of localizations per unit time."""
+        cache_dict = {
+            'data': self.localizations_per_unit_time_cache,
+            'x_axis': self.time_x_axis
+        }
+        
+        TimePlotter.plot_localizations_per_unit_time(
+            self.time_plot_widget,
+            self.processor,
+            self.time_resolution_sec,
+            cache_dict,
+            self.brush
+        )
+        
+        # Update cache references
+        self.localizations_per_unit_time_cache = cache_dict['data']
+        self.time_x_axis = cache_dict['x_axis']
+    
+    def plot_localization_precision_per_unit_time(self, std_err: bool = False):
+        """Plot localization precision as a function of time.
+        
+        Parameters
+        ----------
+        std_err: bool
+            Set to True to plot the standard error instead of the standard deviation.
+        """
+        cache_dict = {
+            'x': self.localization_precision_per_unit_time_cache_x,
+            'y': self.localization_precision_per_unit_time_cache_y,
+            'z': self.localization_precision_per_unit_time_cache_z,
+            'x_stderr': self.localization_precision_stderr_per_unit_time_cache_x,
+            'y_stderr': self.localization_precision_stderr_per_unit_time_cache_y,
+            'z_stderr': self.localization_precision_stderr_per_unit_time_cache_z,
+            'x_axis': self.time_x_axis
+        }
+        
+        TimePlotter.plot_localization_precision_per_unit_time(
+            self.time_plot_widget,
+            self.processor,
+            self.time_resolution_sec,
+            cache_dict,
+            std_err
+        )
+        
+        # Update cache references
+        self.localization_precision_per_unit_time_cache_x = cache_dict['x']
+        self.localization_precision_per_unit_time_cache_y = cache_dict['y']
+        self.localization_precision_per_unit_time_cache_z = cache_dict['z']
+        self.localization_precision_stderr_per_unit_time_cache_x = cache_dict['x_stderr']
+        self.localization_precision_stderr_per_unit_time_cache_y = cache_dict['y_stderr']
+        self.localization_precision_stderr_per_unit_time_cache_z = cache_dict['z_stderr']
+        self.time_x_axis = cache_dict['x_axis']
+
+    def _constrain_region_to_non_overlapping(self, changed_region):
+        """Constrain a region to not overlap with other regions."""
+        start, end = changed_region.getRegion()
+        
+        # Find the index of the changed region
+        try:
+            region_idx = self.time_split_regions.index(changed_region)
+        except ValueError:
+            return
+        
+        # Check against previous region (if exists)
+        if region_idx > 0:
+            prev_region = self.time_split_regions[region_idx - 1]
+            prev_start, prev_end = prev_region.getRegion()
+            
+            # If start overlaps with previous region, push it to the right
+            if start < prev_end:
+                start = prev_end
+                # Ensure minimum size
+                if end <= start:
+                    end = start + 1
+                changed_region.setRegion([start, end])
+                return
+        
+        # Check against next region (if exists)
+        if region_idx < len(self.time_split_regions) - 1:
+            next_region = self.time_split_regions[region_idx + 1]
+            next_start, next_end = next_region.getRegion()
+            
+            # If end overlaps with next region, push it to the left
+            if end > next_start:
+                end = next_start
+                # Ensure minimum size
+                if start >= end:
+                    start = end - 1
+                changed_region.setRegion([start, end])
+    
+    @Slot()
+    def split_by_time(self):
+        """Split the data into equal time ranges."""
+        
+        if self.processor is None or self.processor.filtered_dataframe is None:
+            return
+
+        # Get time data in seconds and convert to minutes
+        tim_data_sec = self.processor.filtered_dataframe["tim"].to_numpy()
+        if len(tim_data_sec) == 0:
+            return
+        
+        tim_data = tim_data_sec / 60.0  # Convert to minutes
+
+        # Get number of splits
+        num_splits = self.ui.sbNumSplits.value()
+        
+        # Calculate the time range in minutes
+        tim_min = tim_data.min()
+        tim_max = tim_data.max()
+        tim_range = tim_max - tim_min
+        
+        # Calculate split size with small gaps (2% of range per gap)
+        gap_fraction = 0.02
+        total_gap = gap_fraction * tim_range * (num_splits - 1)
+        usable_range = tim_range - total_gap
+        split_size = usable_range / num_splits
+        gap_size = gap_fraction * tim_range
+        
+        # Remove existing regions and disconnect signals
+        for region in self.time_split_regions:
+            try:
+                region.sigRegionChanged.disconnect()
+            except:
+                pass
+            self.time_plot_widget.removeItem(region)
+        self.time_split_regions.clear()
+        
+        # Create new regions
+        unique_cluster_ids = list(range(1, num_splits + 1))
+        final_id_mapping = self._calculate_final_fluo_id_mapping(unique_cluster_ids)
+        
+        for i in range(num_splits):
+            # Calculate start and end for this split (in minutes)
+            start = tim_min + i * (split_size + gap_size)
+            end = start + split_size
+            
+            # Get the final fluorophore ID for coloring
+            final_fluo_id = final_id_mapping[i + 1]
+            color_rgb = Colors()._get_fid_color(final_fluo_id, as_float=False)
+            
+            # Create the linear region
+            region = pg.LinearRegionItem(
+                values=[start, end],
+                pen={'color': (int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2])), 'width': 3},
+                brush=pg.mkBrush(int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2]), 50),
+                movable=True,
+            )
+            
+            # Store cluster ID as attribute for later retrieval
+            region.cluster_id = i + 1
+            
+            # Connect signal to prevent overlaps
+            region.sigRegionChanged.connect(lambda r=region: self._constrain_region_to_non_overlapping(r))
+            
+            self.time_plot_widget.addItem(region)
+            self.time_split_regions.append(region)
+        
+        # Calculate initial assignments and show naming widget
+        self._update_time_split_assignments()
+        
+    def _update_time_split_assignments(self):
+        """Update fluorophore ID assignments based on current time region positions."""
+        
+        if self.processor is None or self.processor.filtered_dataframe is None:
+            return
+        
+        if len(self.time_split_regions) == 0:
+            return
+        
+        # Get time data in minutes
+        tim_data_sec = self.processor.filtered_dataframe["tim"].to_numpy()
+        tim_data = tim_data_sec / 60.0  # Convert to minutes
+        
+        # Initialize all as unassigned (0)
+        fluo_ids = np.zeros(len(tim_data), dtype=np.uint8)
+        
+        # Assign based on regions (which are in minutes)
+        for region in self.time_split_regions:
+            start, end = region.getRegion()
+            mask = (tim_data >= start) & (tim_data <= end)
+            fluo_ids[mask] = region.cluster_id
+        
+        # Store assignments
+        self.time_assigned_fluorophore_ids = fluo_ids
+        
+        # Calculate final fluorophore IDs
+        unique_cluster_ids = sorted([r.cluster_id for r in self.time_split_regions])
+        final_id_mapping = self._calculate_final_fluo_id_mapping(unique_cluster_ids)
+        
+        # Show the FINAL fluorophore IDs in the naming widget
+        final_fluo_ids = sorted(final_id_mapping.values())
+        self.fluorophore_naming_widget.set_fluorophores(
+            final_fluo_ids,
+            self.processor.fluorophore_names
+        )
+        self.fluorophore_naming_widget.setVisible(True)
+        
+        # Enable assign button
+        self.ui.pbTimeSplitAssign.setEnabled(True)
+
+    @Slot()
+    def assign_time_split_fluorophores(self):
+        """Assign fluorophore IDs based on time splitting."""
+        
+        if len(self.time_split_regions) == 0:
+            return
+        
+        # Get time data in minutes
+        tim_data_sec = self.processor.filtered_dataframe["tim"].to_numpy()
+        tim_data = tim_data_sec / 60.0  # Convert to minutes
+        
+        # Get unique cluster IDs
+        unique_cluster_ids = sorted([r.cluster_id for r in self.time_split_regions])
+        
+        # Calculate the final fluorophore ID mapping
+        new_fluo_id_mapping = self._calculate_final_fluo_id_mapping(unique_cluster_ids)
+        
+        # Get fluorophore names from the widget
+        fluorophore_names = self.fluorophore_naming_widget.get_names()
+        
+        # Build time ranges and apply filtering BEFORE assigning IDs
+        # This ensures we only assign IDs to data within regions (no fluo_id=0)
+        sorted_regions = sorted(self.time_split_regions, key=lambda r: r.getRegion()[0])
+        
+        time_ranges_to_keep = []
+        for region in sorted_regions:
+            start_min, end_min = region.getRegion()
+            start_sec = start_min * 60.0
+            end_sec = end_min * 60.0
+            time_ranges_to_keep.append((start_sec, end_sec))
+        
+        first_start = time_ranges_to_keep[0][0]
+        last_end = time_ranges_to_keep[-1][1]
+        
+        # Apply filters BEFORE assigning IDs (first pass)
+        self.processor.filter_by_1d_range("tim", (first_start, last_end))
+        
+        for i in range(len(time_ranges_to_keep) - 1):
+            gap_start = time_ranges_to_keep[i][1]
+            gap_end = time_ranges_to_keep[i + 1][0]
+            if gap_end > gap_start:
+                self.processor.filter_by_1d_range_complement("tim", (gap_start, gap_end))
+        
+        # Now get filtered time data - only contains data within regions
+        tim_data_sec = self.processor.filtered_dataframe["tim"].to_numpy()
+        tim_data = tim_data_sec / 60.0  # Convert to minutes
+        
+        # Build fluorophore ID assignments (all will be non-zero)
+        fluo_ids = np.zeros(len(tim_data), dtype=np.uint8)
+        
+        for region in self.time_split_regions:
+            start, end = region.getRegion()  # These are in minutes
+            mask = (tim_data >= start) & (tim_data <= end)
+            fluo_ids[mask] = new_fluo_id_mapping[region.cluster_id]
+        
+        # Assign the fluorophore IDs (this will reset filters via _init_selected_rows_dict)
+        self.processor.set_fluorophore_ids(fluo_ids)
+        
+        # Set the fluorophore names
+        if fluorophore_names:
+            self.processor.set_fluorophore_names(fluorophore_names)
+        
+        # Re-apply filters AFTER set_fluorophore_ids() (second pass - necessary!)
+        # set_fluorophore_ids() calls _init_selected_rows_dict() which clears filters
+        self.processor.filter_by_1d_range("tim", (first_start, last_end))
+        
+        for i in range(len(time_ranges_to_keep) - 1):
+            gap_start = time_ranges_to_keep[i][1]
+            gap_end = time_ranges_to_keep[i + 1][0]
+            if gap_end > gap_start:
+                self.processor.filter_by_1d_range_complement("tim", (gap_start, gap_end))
+        
+        # Reset to "All" fluorophores
+        self.processor.current_fluorophore_id = 0
+        
+        # Inform that the fluorophore IDs have been assigned
+        unique_final_fluo_ids = sorted(new_fluo_id_mapping.values())
+        self.fluorophore_ids_assigned.emit(len(unique_final_fluo_ids))
+        
+        # Disable the button until new split is performed
+        self.ui.pbTimeSplitAssign.setEnabled(False)
+        
+        # Close the dialog
+        self.close()
