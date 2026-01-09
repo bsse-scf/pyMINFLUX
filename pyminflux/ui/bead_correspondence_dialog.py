@@ -38,6 +38,7 @@ from PySide6.QtWidgets import (
 
 # Import the Kabsch alignment function
 from pyminflux.correct._bead_alignment import _kabsch, RigidTransform, TranslationTransform
+from pyminflux.ui.colors import Colors
 from pyminflux.ui.fluorophore_naming_widget import FluorophoreNamingWidget
 
 
@@ -373,7 +374,17 @@ class BeadCorrespondenceDialog(QDialog):
         current_added_to_legend = False
         new_added_to_legend = False
         
-        # Plot current dataset beads (red circles)
+        # Get colors for existing and new fluorophore IDs
+        # For current dataset, use the lowest fluorophore ID (first dataset loaded has lowest IDs)
+        if self.existing_fluo_ids:
+            current_color = Colors()._get_fid_color(min(self.existing_fluo_ids), as_float=False).tolist()
+        else:
+            current_color = [255, 0, 0]  # Default to red
+        
+        # For new dataset, use the next fluorophore ID color
+        new_color = Colors()._get_fid_color(self.next_fluo_id, as_float=False).tolist()
+        
+        # Plot current dataset beads (using existing fluo ID color)
         for bead_name, pos in self.current_beads.items():
             # pos is [z, y, x]
             x_val = pos[self.x_axis_idx]
@@ -383,8 +394,8 @@ class BeadCorrespondenceDialog(QDialog):
                 [x_val],
                 [y_val],
                 size=10,
-                pen=pg.mkPen(color='r', width=2),
-                brush=pg.mkBrush(255, 100, 100, 150),
+                pen=pg.mkPen(color=current_color, width=2),
+                brush=pg.mkBrush(*current_color, 150),
                 symbol='o',
                 name='Current dataset' if not current_added_to_legend else None
             )
@@ -395,12 +406,12 @@ class BeadCorrespondenceDialog(QDialog):
             current_added_to_legend = True
             
             # Add text label
-            text = pg.TextItem(text=bead_name, color=(200, 0, 0), anchor=(0.5, 1.5))
+            text = pg.TextItem(text=bead_name, color=tuple(current_color), anchor=(0.5, 1.5))
             text.setPos(x_val, y_val)
             self.plot_widget.addItem(text)
             self.text_items.append(text)
         
-        # Plot new dataset beads (blue squares)
+        # Plot new dataset beads (using next fluo ID color)
         for bead_name, pos in self.new_beads.items():
             # pos is [z, y, x]
             # If transformation is available and checkbox is checked, transform the position
@@ -416,8 +427,8 @@ class BeadCorrespondenceDialog(QDialog):
                 [x_val],
                 [y_val],
                 size=10,
-                pen=pg.mkPen(color='b', width=2),
-                brush=pg.mkBrush(100, 100, 255, 150),
+                pen=pg.mkPen(color=new_color, width=2),
+                brush=pg.mkBrush(*new_color, 150),
                 symbol='s',
                 name='New dataset' if not new_added_to_legend else None
             )
@@ -428,7 +439,7 @@ class BeadCorrespondenceDialog(QDialog):
             new_added_to_legend = True
             
             # Add text label
-            text = pg.TextItem(text=bead_name, color=(0, 0, 200), anchor=(0.5, -0.5))
+            text = pg.TextItem(text=bead_name, color=tuple(new_color), anchor=(0.5, -0.5))
             text.setPos(x_val, y_val)
             self.plot_widget.addItem(text)
             self.text_items.append(text)
@@ -472,24 +483,32 @@ class BeadCorrespondenceDialog(QDialog):
     
     def _highlight_bead(self, bead_name: str, is_current: bool, highlight: bool = True):
         """Highlight or unhighlight a bead in the plot."""
+        # Get colors for existing and new fluorophore IDs
+        if self.existing_fluo_ids:
+            current_color = Colors()._get_fid_color(min(self.existing_fluo_ids), as_float=False).tolist()
+        else:
+            current_color = [255, 0, 0]  # Default to red
+        
+        new_color = Colors()._get_fid_color(self.next_fluo_id, as_float=False).tolist()
+        
         if is_current:
             if bead_name in self.current_scatter_items:
                 scatter = self.current_scatter_items[bead_name]
                 if highlight:
                     scatter.setSize(20)
-                    scatter.setPen(pg.mkPen(color='r', width=4))
+                    scatter.setPen(pg.mkPen(color=current_color, width=4))
                 else:
                     scatter.setSize(10)
-                    scatter.setPen(pg.mkPen(color='r', width=2))
+                    scatter.setPen(pg.mkPen(color=current_color, width=2))
         else:
             if bead_name in self.new_scatter_items:
                 scatter = self.new_scatter_items[bead_name]
                 if highlight:
                     scatter.setSize(20)
-                    scatter.setPen(pg.mkPen(color='b', width=4))
+                    scatter.setPen(pg.mkPen(color=new_color, width=4))
                 else:
                     scatter.setSize(10)
-                    scatter.setPen(pg.mkPen(color='b', width=2))
+                    scatter.setPen(pg.mkPen(color=new_color, width=2))
     
     def _on_new_point_clicked(self, plot, points):
         """Handle click on a new dataset bead in the plot."""

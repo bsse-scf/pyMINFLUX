@@ -338,18 +338,18 @@ class Colors(metaclass=Singleton):
         
         # Additional distinct colors for fid >= 3
         # Use a color palette with good contrast
-        additional_colors = [
+        additional_colors = np.array([
             [255, 165, 0],    # Orange (for fid=3)
             [0, 255, 255],    # Cyan (for fid=4)
             [255, 255, 0],    # Yellow (for fid=5)
             [128, 0, 128],    # Purple (for fid=6)
             [255, 192, 203],  # Pink (for fid=7)
             [165, 42, 42],    # Brown (for fid=8)
-        ]
+        ], dtype=int)
         
         idx = (fid - len(self._unique_fid_colors) - 1) % len(additional_colors)
         color = additional_colors[idx]
-        return np.array(color) / 255.0 if as_float else color
+        return color / 255.0 if as_float else color
 
     def reset(self):
         """Reset the color caches"""

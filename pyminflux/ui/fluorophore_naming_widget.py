@@ -15,6 +15,7 @@
 """Reusable widget for naming fluorophores."""
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -24,6 +25,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QSizePolicy,
 )
+from pyminflux.ui.colors import Colors
 
 
 class FluorophoreNamingWidget(QWidget):
@@ -99,18 +101,22 @@ class FluorophoreNamingWidget(QWidget):
         
         # Populate table
         for row, fluo_id in enumerate(self._fluo_ids):
+            # Get the color for this fluorophore ID
+            color_rgb = Colors()._get_fid_color(fluo_id, as_float=False)
+            bg_color = QColor(int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2]), 80)  # Semi-transparent
+            
             # Fluo ID column (non-editable)
             id_item = QTableWidgetItem(str(fluo_id))
             id_item.setFlags(id_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             id_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            id_item.setBackground(bg_color)
             self.table.setItem(row, 0, id_item)
             
             # Name column (editable)
             default_name = existing_names.get(fluo_id, str(fluo_id))
             name_item = QTableWidgetItem(default_name)
             name_item.setData(Qt.ItemDataRole.UserRole, fluo_id)  # Store fluo_id for retrieval
-            # Add visual cue that this cell is editable (light background)
-            name_item.setBackground(Qt.GlobalColor.white)
+            name_item.setBackground(bg_color)
             name_item.setToolTip("Click to edit this fluorophore name")
             self.table.setItem(row, 1, name_item)
         

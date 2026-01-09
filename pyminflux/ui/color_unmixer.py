@@ -25,6 +25,7 @@ from pyminflux.analysis import (
     reassign_fluo_ids_by_majority_vote,
 )
 from pyminflux.processor import MinFluxProcessor
+from pyminflux.ui.colors import Colors
 from pyminflux.ui.fluorophore_naming_widget import FluorophoreNamingWidget
 from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.state import State
@@ -215,16 +216,17 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         for item in self.plot_widget.allChildItems():
             self.plot_widget.removeItem(item)
 
-        # Prepare some colors
-        brushes = ["g", "m", "b", "r", "c"]
+        # Calculate the final fluorophore IDs that will be assigned
+        unique_cluster_ids = sorted(np.unique(fluo_ids).tolist())
+        final_id_mapping = self._calculate_final_fluo_id_mapping(unique_cluster_ids)
 
         # Calculate the bar width as a function of the number of fluorophores
         bar_width = 0.9 / self.state.num_fluorophores
         offset = self.dcr_bin_width / self.state.num_fluorophores
 
-        # Create new histograms (always 2)
-        for f in range(1, 3):
-            data = dcr[fluo_ids == f]
+        # Create new histograms (always 2 for manual assignment)
+        for cluster_id in unique_cluster_ids:
+            data = dcr[fluo_ids == cluster_id]
             if len(data) == 0:
                 continue
 
@@ -234,13 +236,19 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             # Normalize by the total count
             n_dcr = n_dcr / n_total
 
+            # Get the final fluorophore ID that will be assigned to this cluster
+            final_fluo_id = final_id_mapping[cluster_id]
+            
+            # Get the color for this fluorophore ID
+            color_rgb = Colors()._get_fid_color(final_fluo_id, as_float=False)
+            brush = pg.mkBrush(int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2]), 127)
+
             # Create the bar chart
             chart = pg.BarGraphItem(
-                x=self.dcr_bin_centers + f * offset,
+                x=self.dcr_bin_centers + cluster_id * offset,
                 height=n_dcr,
                 width=bar_width * self.dcr_bin_width,
-                brush=brushes[f - 1],
-                alpha=0.5,
+                brush=brush,
             )
             self.plot_widget.addItem(chart)
 
@@ -337,8 +345,9 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         for item in self.plot_widget.allChildItems():
             self.plot_widget.removeItem(item)
 
-        # Prepare some colors
-        brushes = ["g", "m", "b", "r", "c"]
+        # Calculate the final fluorophore IDs that will be assigned
+        unique_cluster_ids = sorted(np.unique(fluo_ids).tolist())
+        final_id_mapping = self._calculate_final_fluo_id_mapping(unique_cluster_ids)
 
         # Calculate the bar width as a function of the number of fluorophores
         bar_width = 0.9 / self.state.num_fluorophores
@@ -348,8 +357,8 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         n_values = len(dcr)
 
         # Create new histograms
-        for f in range(1, self.state.num_fluorophores + 1):
-            data = dcr[fluo_ids == f]
+        for cluster_id in unique_cluster_ids:
+            data = dcr[fluo_ids == cluster_id]
             if len(data) == 0:
                 continue
 
@@ -359,13 +368,19 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             # Normalize by the total count
             n_dcr = n_dcr / n_values
 
+            # Get the final fluorophore ID that will be assigned to this cluster
+            final_fluo_id = final_id_mapping[cluster_id]
+            
+            # Get the color for this fluorophore ID
+            color_rgb = Colors()._get_fid_color(final_fluo_id, as_float=False)
+            brush = pg.mkBrush(int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2]), 127)
+
             # Create the bar chart
             chart = pg.BarGraphItem(
-                x=self.dcr_bin_centers + f * offset,
+                x=self.dcr_bin_centers + cluster_id * offset,
                 height=n_dcr,
                 width=bar_width * self.dcr_bin_width,
-                brush=brushes[f - 1],
-                alpha=0.5,
+                brush=brush,
             )
             self.plot_widget.addItem(chart)
 
@@ -418,25 +433,16 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         remapped_fluo_ids = np.array([new_fluo_id_mapping[fid] for fid in self.assigned_fluorophore_ids], dtype=np.uint8)
         
         # Get fluorophore names from the embedded widget
+        # Note: The widget was populated with final fluorophore IDs, so the returned
+        # dictionary already uses the correct final IDs as keys (no remapping needed)
         fluorophore_names = self.fluorophore_naming_widget.get_names()
-        
-        # Remap fluorophore names to use the new IDs
-        remapped_fluorophore_names = {}
-        for old_id, new_id in new_fluo_id_mapping.items():
-            # Ensure IDs are Python ints, not numpy ints, and >= 1
-            new_id_int = int(new_id)
-            if old_id in fluorophore_names and new_id_int >= 1:
-                remapped_fluorophore_names[new_id_int] = fluorophore_names[old_id]
-        
-        # Additional safety: filter out any invalid IDs
-        remapped_fluorophore_names = {int(k): v for k, v in remapped_fluorophore_names.items() if int(k) >= 1}
         
         # Assign the IDs via the processor
         self.processor.set_fluorophore_ids(remapped_fluo_ids)
         
-        # Set the fluorophore names (only if we have valid names to set)
-        if remapped_fluorophore_names:
-            self.processor.set_fluorophore_names(remapped_fluorophore_names)
+        # Set the fluorophore names (will update existing names, preserving others)
+        if fluorophore_names:
+            self.processor.set_fluorophore_names(fluorophore_names)
         
         # Reset to "All" fluorophores so the user can see all the newly created fluorophores
         # Otherwise, if we unmixed fluorophore 1 into [1, 2], and current_fluorophore_id is still 1,

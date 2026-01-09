@@ -238,6 +238,9 @@ class MinFluxProcessor:
     def set_fluorophore_names(self, names: dict):
         """Set fluorophore names from a dictionary mapping.
         
+        This method updates the fluorophore names dictionary, preserving
+        any existing names for fluorophore IDs not included in the names parameter.
+        
         Parameters
         ----------
         names: dict
@@ -250,7 +253,8 @@ class MinFluxProcessor:
                 raise ValueError(f"Fluorophore ID must be an integer >= 1, got {fluo_id}")
             if not isinstance(name, str):
                 raise ValueError(f"Fluorophore name must be a string, got {type(name)}")
-        self._fluorophore_names = names.copy()
+        # Update the dictionary instead of replacing it to preserve existing names
+        self._fluorophore_names.update(names)
 
     def get_fluorophore_name(self, fluo_id: int) -> str:
         """Get the name for a specific fluorophore ID.
