@@ -527,7 +527,11 @@ class MinFluxProcessor:
         self._apply_global_filters()
 
     def set_fluorophore_ids(self, fluorophore_ids: NDArray[np.uint8]):
-        """Assign the fluorophore IDs to current filtered dataset."""
+        """Assign the fluorophore IDs to current filtered dataset.
+        
+        This method assigns new fluorophore IDs only to the rows in the current
+        filtered dataset. All other rows remain unchanged.
+        """
         if self.filtered_dataframe is None:
             return
         if len(fluorophore_ids) != len(self.filtered_dataframe.index):
@@ -535,13 +539,12 @@ class MinFluxProcessor:
                 "The number of fluorophore IDs does not match the number of entries in the dataframe."
             )
 
-        # Extract the combination of all fluorophore filtered dataframes
-        combined_mask = np.zeros(len(self.processed_dataframe), dtype=bool)
-        for fluo_id, fluo_mask in self._selected_rows_dict.items():
-            combined_mask |= (self.processed_dataframe["fluo"] == fluo_id) & fluo_mask
+        # Get the actual indices from the filtered dataframe
+        filtered_indices = self.filtered_dataframe.index
         
-        self.processed_dataframe.loc[combined_mask, "fluo"] = fluorophore_ids.astype(np.uint8)
-        self.processed_dataframe.loc[~combined_mask, "fluo"] = np.uint8(0)
+        # Assign the new fluorophore IDs to those specific indices only
+        # All other rows remain unchanged (preserving other fluorophores)
+        self.processed_dataframe.loc[filtered_indices, "fluo"] = fluorophore_ids.astype(np.uint8)
 
         # Apply global filters
         self._init_selected_rows_dict()

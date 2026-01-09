@@ -1540,6 +1540,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Initialize and open the color unmixer."""
         if self.processor is None:
             return
+        
+        # Prevent opening unmixer if "All" is selected with multiple fluorophores
+        if self.processor.current_fluorophore_id == 0 and self.processor.num_fluorophores > 1:
+            QMessageBox.warning(
+                self,
+                "Invalid Selection",
+                "Please select a specific fluorophore (not 'All') for unmixing when multiple fluorophores exist."
+            )
+            return
+        
         if self.color_unmixer is None:
             self.color_unmixer = ColorUnmixer(self.processor)
             self.mediator.register_dialog("color_unmixer", self.color_unmixer)

@@ -129,19 +129,13 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
     @Slot()
     def plot_dcr_histogram(self):
-        """Plot the dcr histogram. This is always performed assuming all data belongs to one fluorophore."""
+        """Plot the dcr histogram for the currently selected fluorophore."""
 
         # Do we have something to plot?
         if self.processor is None or self.processor.filtered_dataframe is None:
             return
 
-        # Keep track of current fluorophore ID
-        current_fluo_id = self.processor.current_fluorophore_id
-
-        # Make sure to work on all (filtered) colors
-        self.processor.current_fluorophore_id = 0
-
-        # Retrieve the filtered data
+        # Retrieve the filtered data for current fluorophore
         if self.state.dcr_bin_size == 0:
             # Calculate the dcr histogram
             n_dcr, dcr_bin_edges, dcr_bin_centers, dcr_bin_width = prepare_histogram(
@@ -155,9 +149,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
                 auto_bins=False,
                 bin_size=self.state.dcr_bin_size,
             )
-
-        # Restore the previous fluorophore ID
-        self.processor.current_fluorophore_id = current_fluo_id
 
         # Remember the global histogram range and step
         self.n_dcr_max = n_dcr.max()
@@ -197,19 +188,10 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         if self.processor is None or self.processor.filtered_dataframe is None:
             return
 
-        # Keep track of current fluorophore ID
-        current_fluo_id = self.processor.current_fluorophore_id
-
-        # Make sure to work on all (filtered) colors
-        self.processor.current_fluorophore_id = 0
-
-        # Get the data
+        # Get the data for current fluorophore
         dcr = self.processor.filtered_dataframe["dcr"].to_numpy()
         if len(dcr) == 0:
             return
-
-        # Restore the previous fluorophore ID
-        self.processor.current_fluorophore_id = current_fluo_id
 
         # Get the threshold
         threshold = float(self.ui.leManualThreshold.text())
@@ -280,19 +262,10 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     def detect_fluorophores(self):
         """Detect fluorophores."""
 
-        # Keep track of current fluorophore ID
-        current_fluo_id = self.processor.current_fluorophore_id
-
-        # Make sure to work on all (filtered) colors
-        self.processor.current_fluorophore_id = 0
-
-        # Get the data
+        # Get the data for current fluorophore
         dcr = self.processor.filtered_dataframe["dcr"].to_numpy()
         if len(dcr) == 0:
             return
-
-        # Restore the previous fluorophore ID
-        self.processor.current_fluorophore_id = current_fluo_id
 
         # Fit the data to the requested number of clusters
         fluo_ids = assign_data_to_clusters(dcr, self.state.num_fluorophores, seed=42)
@@ -355,23 +328,81 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
     @Slot()
     def assign_fluorophores_ids(self):
-        """Assign the fluorophores ids."""
+        """Assign the fluorophores ids with smart ID allocation."""
 
         if self.assigned_fluorophore_ids is None:
             return
 
+        # Get the current fluorophore ID being unmixed
+        current_fluo_id = self.processor.current_fluorophore_id
+        
+        # When there's only one fluorophore, the GUI shows only "All" (current_fluorophore_id = 0)
+        # In this case, extract the actual fluorophore ID from the data
+        if current_fluo_id == 0:
+            filtered_df = self.processor.filtered_dataframe
+            if filtered_df is not None and len(filtered_df) > 0:
+                current_fluo_id = int(filtered_df['fluo'].iloc[0])
+            else:
+                # Fallback: shouldn't happen, but use 1 as default
+                current_fluo_id = 1
+        
+        # Get all existing fluorophore IDs from the full dataset (excluding 0 which is "unassigned")
+        all_existing_fluo_ids = set(np.unique(self.processor.processed_dataframe["fluo"].to_numpy()).astype(int))
+        all_existing_fluo_ids.discard(0)  # Remove 0 if present, as it's not a valid fluorophore ID
+        
+        # Get unique new cluster IDs from unmixing (e.g., [1, 2] for 2 clusters)
+        unique_unmixed_ids = sorted(np.unique(self.assigned_fluorophore_ids).astype(int).tolist())
+        n_clusters = len(unique_unmixed_ids)
+        
+        # Allocate new fluo IDs: use existing ID plus (n-1) new unused IDs
+        if n_clusters == 1:
+            # No change needed, keep the current fluorophore ID
+            new_fluo_id_mapping = {unique_unmixed_ids[0]: current_fluo_id}
+        else:
+            # Map first cluster to the existing ID
+            new_fluo_id_mapping = {unique_unmixed_ids[0]: current_fluo_id}
+            
+            # Find (n-1) unused fluorophore IDs
+            next_id = 1
+            for i in range(1, n_clusters):
+                # Find next available ID
+                while next_id in all_existing_fluo_ids or next_id in new_fluo_id_mapping.values():
+                    next_id += 1
+                new_fluo_id_mapping[unique_unmixed_ids[i]] = next_id
+                next_id += 1
+        
+        # Remap the assigned fluorophore IDs
+        remapped_fluo_ids = np.array([new_fluo_id_mapping[fid] for fid in self.assigned_fluorophore_ids], dtype=np.uint8)
+        
         # Get fluorophore names from the embedded widget
         fluorophore_names = self.fluorophore_naming_widget.get_names()
         
-        # Assign the IDs via the processor
-        self.processor.set_fluorophore_ids(self.assigned_fluorophore_ids)
+        # Remap fluorophore names to use the new IDs
+        remapped_fluorophore_names = {}
+        for old_id, new_id in new_fluo_id_mapping.items():
+            # Ensure IDs are Python ints, not numpy ints, and >= 1
+            new_id_int = int(new_id)
+            if old_id in fluorophore_names and new_id_int >= 1:
+                remapped_fluorophore_names[new_id_int] = fluorophore_names[old_id]
         
-        # Set the fluorophore names
-        self.processor.set_fluorophore_names(fluorophore_names)
+        # Additional safety: filter out any invalid IDs
+        remapped_fluorophore_names = {int(k): v for k, v in remapped_fluorophore_names.items() if int(k) >= 1}
+        
+        # Assign the IDs via the processor
+        self.processor.set_fluorophore_ids(remapped_fluo_ids)
+        
+        # Set the fluorophore names (only if we have valid names to set)
+        if remapped_fluorophore_names:
+            self.processor.set_fluorophore_names(remapped_fluorophore_names)
+        
+        # Reset to "All" fluorophores so the user can see all the newly created fluorophores
+        # Otherwise, if we unmixed fluorophore 1 into [1, 2], and current_fluorophore_id is still 1,
+        # only fluorophore 1 will be visible, making it seem like fluorophore 2 disappeared
+        self.processor.current_fluorophore_id = 0
 
         # Inform that the fluorophore IDs have been assigned
-        unique_fluo_ids = sorted(np.unique(self.assigned_fluorophore_ids).tolist())
-        self.fluorophore_ids_assigned.emit(len(unique_fluo_ids))
+        unique_final_fluo_ids = sorted(np.unique(remapped_fluo_ids).tolist())
+        self.fluorophore_ids_assigned.emit(len(unique_final_fluo_ids))
 
         # Disable the button until the new detection is run
         self.ui.pbAssign.setEnabled(False)
