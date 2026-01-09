@@ -247,16 +247,73 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Store the predictions (1-shifted)
         self.assigned_fluorophore_ids = fluo_ids
 
-        # Update fluorophore naming widget
+        # Check if only one cluster was detected
         unique_fluo_ids = sorted(np.unique(fluo_ids).tolist())
+        if len(unique_fluo_ids) == 1:
+            # Only one cluster detected - no unmixing will occur
+            self.fluorophore_naming_widget.setVisible(False)
+            self.ui.pbManualAssign.setEnabled(False)
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self,
+                "No Split Detected",
+                f"Only one cluster was detected with the current threshold."
+            )
+            return
+        
+        # Calculate the final fluorophore IDs that will be assigned
+        final_id_mapping = self._calculate_final_fluo_id_mapping(unique_fluo_ids)
+        
+        # Show the FINAL fluorophore IDs (not cluster IDs) in the naming widget
+        final_fluo_ids = sorted(final_id_mapping.values())
         self.fluorophore_naming_widget.set_fluorophores(
-            unique_fluo_ids,
+            final_fluo_ids,
             self.processor.fluorophore_names
         )
         self.fluorophore_naming_widget.setVisible(True)
 
         # Make sure to enable the assign button
         self.ui.pbManualAssign.setEnabled(True)
+
+    def _calculate_final_fluo_id_mapping(self, cluster_ids):
+        """Calculate the final fluorophore ID mapping for the given cluster IDs.
+        
+        Parameters
+        ----------
+        cluster_ids : list
+            List of cluster IDs (e.g., [1, 2] for 2 clusters)
+        
+        Returns
+        -------
+        dict
+            Mapping from cluster IDs to final fluorophore IDs
+        """
+        # Get the current fluorophore ID being unmixed
+        current_fluo_id = self.processor.current_fluorophore_id
+        
+        # When there's only one fluorophore, the GUI shows only "All" (current_fluorophore_id = 0)
+        # In this case, extract the actual fluorophore ID from the data
+        if current_fluo_id == 0:
+            filtered_df = self.processor.filtered_dataframe
+            if filtered_df is not None and len(filtered_df) > 0:
+                current_fluo_id = int(filtered_df['fluo'].iloc[0])
+            else:
+                current_fluo_id = 1
+        
+        # Get all existing fluorophore IDs from the full dataset
+        all_existing_fluo_ids = set(np.unique(self.processor.processed_dataframe["fluo"].to_numpy()).astype(int))
+        all_existing_fluo_ids.discard(0)  # Remove 0 if present
+        
+        # Build the mapping: first cluster keeps existing ID, others get new unused IDs
+        final_id_mapping = {cluster_ids[0]: current_fluo_id}
+        next_id = 1
+        for i in range(1, len(cluster_ids)):
+            while next_id in all_existing_fluo_ids or next_id in final_id_mapping.values():
+                next_id += 1
+            final_id_mapping[cluster_ids[i]] = next_id
+            next_id += 1
+        
+        return final_id_mapping
 
     @Slot()
     def detect_fluorophores(self):
@@ -315,10 +372,28 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Store the predictions (1-shifted)
         self.assigned_fluorophore_ids = fluo_ids
 
-        # Update fluorophore naming widget
+        # Check if only one cluster was detected
         unique_fluo_ids = sorted(np.unique(fluo_ids).tolist())
+        if len(unique_fluo_ids) == 1:
+            # Only one cluster detected - no unmixing will occur
+            self.fluorophore_naming_widget.setVisible(False)
+            self.ui.pbAssign.setEnabled(False)
+            # Show info message
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self,
+                "No Split Detected",
+                f"Only one cluster was detected. The data cannot be split further."
+            )
+            return
+        
+        # Calculate the final fluorophore IDs that will be assigned
+        final_id_mapping = self._calculate_final_fluo_id_mapping(unique_fluo_ids)
+        
+        # Show the FINAL fluorophore IDs (not cluster IDs) in the naming widget
+        final_fluo_ids = sorted(final_id_mapping.values())
         self.fluorophore_naming_widget.set_fluorophores(
-            unique_fluo_ids,
+            final_fluo_ids,
             self.processor.fluorophore_names
         )
         self.fluorophore_naming_widget.setVisible(True)
@@ -333,43 +408,11 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         if self.assigned_fluorophore_ids is None:
             return
 
-        # Get the current fluorophore ID being unmixed
-        current_fluo_id = self.processor.current_fluorophore_id
-        
-        # When there's only one fluorophore, the GUI shows only "All" (current_fluorophore_id = 0)
-        # In this case, extract the actual fluorophore ID from the data
-        if current_fluo_id == 0:
-            filtered_df = self.processor.filtered_dataframe
-            if filtered_df is not None and len(filtered_df) > 0:
-                current_fluo_id = int(filtered_df['fluo'].iloc[0])
-            else:
-                # Fallback: shouldn't happen, but use 1 as default
-                current_fluo_id = 1
-        
-        # Get all existing fluorophore IDs from the full dataset (excluding 0 which is "unassigned")
-        all_existing_fluo_ids = set(np.unique(self.processor.processed_dataframe["fluo"].to_numpy()).astype(int))
-        all_existing_fluo_ids.discard(0)  # Remove 0 if present, as it's not a valid fluorophore ID
-        
         # Get unique new cluster IDs from unmixing (e.g., [1, 2] for 2 clusters)
         unique_unmixed_ids = sorted(np.unique(self.assigned_fluorophore_ids).astype(int).tolist())
-        n_clusters = len(unique_unmixed_ids)
         
-        # Allocate new fluo IDs: use existing ID plus (n-1) new unused IDs
-        if n_clusters == 1:
-            # No change needed, keep the current fluorophore ID
-            new_fluo_id_mapping = {unique_unmixed_ids[0]: current_fluo_id}
-        else:
-            # Map first cluster to the existing ID
-            new_fluo_id_mapping = {unique_unmixed_ids[0]: current_fluo_id}
-            
-            # Find (n-1) unused fluorophore IDs
-            next_id = 1
-            for i in range(1, n_clusters):
-                # Find next available ID
-                while next_id in all_existing_fluo_ids or next_id in new_fluo_id_mapping.values():
-                    next_id += 1
-                new_fluo_id_mapping[unique_unmixed_ids[i]] = next_id
-                next_id += 1
+        # Calculate the final fluorophore ID mapping
+        new_fluo_id_mapping = self._calculate_final_fluo_id_mapping(unique_unmixed_ids)
         
         # Remap the assigned fluorophore IDs
         remapped_fluo_ids = np.array([new_fluo_id_mapping[fid] for fid in self.assigned_fluorophore_ids], dtype=np.uint8)

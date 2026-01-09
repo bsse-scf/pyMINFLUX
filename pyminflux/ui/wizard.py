@@ -345,10 +345,17 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             # Get color helper
             colors = Colors()
             
+            # Get the actual fluorophore IDs from the processor (they may not be sequential)
+            if self.processor is not None and self.processor.processed_dataframe is not None:
+                actual_fluo_ids = sorted(np.unique(self.processor.processed_dataframe["fluo"].to_numpy()).astype(int).tolist())
+                # Remove 0 if present (unassigned)
+                actual_fluo_ids = [fid for fid in actual_fluo_ids if fid > 0]
+            else:
+                # Fallback to sequential IDs if processor not available
+                actual_fluo_ids = list(range(1, num_fluorophores + 1))
+            
             # Add fluorophore items with color icons
-            for i in range(num_fluorophores):
-                fluo_id = i + 1
-                
+            for fluo_id in actual_fluo_ids:
                 # Get fluorophore name from processor if available
                 if self.processor is not None:
                     name = self.processor.get_fluorophore_name(fluo_id)

@@ -1550,9 +1550,14 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             return
         
-        if self.color_unmixer is None:
-            self.color_unmixer = ColorUnmixer(self.processor)
-            self.mediator.register_dialog("color_unmixer", self.color_unmixer)
+        # Always create a fresh dialog to avoid showing stale data from previous unmixing
+        if self.color_unmixer is not None:
+            self.mediator.unregister_dialog("color_unmixer")
+            self.color_unmixer.close()
+            self.color_unmixer.deleteLater()
+        
+        self.color_unmixer = ColorUnmixer(self.processor)
+        self.mediator.register_dialog("color_unmixer", self.color_unmixer)
         self.color_unmixer.show()
         self.color_unmixer.activateWindow()
 
