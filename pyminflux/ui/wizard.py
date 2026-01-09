@@ -342,9 +342,8 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             # Add "All" option first
             self.ui.cmActiveColor.addItem("All")
             
-            # Get fluorophore colors
+            # Get color helper
             colors = Colors()
-            fid_colors = colors.fid_colors
             
             # Add fluorophore items with color icons
             for i in range(num_fluorophores):
@@ -358,8 +357,8 @@ class WizardDialog(QDialog, Ui_WizardDialog):
                     text = str(fluo_id)
                 
                 # Create small color icon for this fluorophore with spacing
-                color_idx = (fluo_id - 1) % len(fid_colors)
-                rgb = fid_colors[color_idx]
+                # Get color from centralized method (same as used in plotting)
+                rgb = colors._get_fid_color(fluo_id, as_float=False)
                 # Create wider pixmap with transparent background for spacing
                 pixmap = QPixmap(16, 8)
                 pixmap.fill(Qt.GlobalColor.transparent)
