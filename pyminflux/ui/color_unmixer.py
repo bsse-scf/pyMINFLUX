@@ -545,20 +545,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         ):
             return
         
-        # Debug: Check what data we're working with
-        import tempfile
-        from pathlib import Path
-        debug_file = Path("/tmp/pyminflux_debug.txt")
-        with open(debug_file, "a") as f:
-            tim_data = self.processor.filtered_dataframe["tim"].to_numpy()
-            f.write(f"\n=== plot_time_selected called ===\n")
-            f.write(f"current_fluorophore_id = {self.processor.current_fluorophore_id}\n")
-            f.write(f"filtered_dataframe length = {len(self.processor.filtered_dataframe)}\n")
-            f.write(f"tim range = {tim_data.min()/60:.2f} to {tim_data.max()/60:.2f} minutes\n")
-            if "fluo" in self.processor.filtered_dataframe.columns:
-                unique_fluos = self.processor.filtered_dataframe["fluo"].unique()
-                f.write(f"unique fluo IDs in filtered data = {sorted(unique_fluos)}\n")
-        
         # Always invalidate cache to ensure we're using current fluorophore selection
         self.invalidate_time_cache()
         
