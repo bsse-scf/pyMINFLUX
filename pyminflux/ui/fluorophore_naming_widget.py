@@ -66,7 +66,7 @@ class FluorophoreNamingWidget(QWidget):
         # Create table
         self.table = QTableWidget()
         self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["Fluo ID", "Name (click to edit)"])
+        self.table.setHorizontalHeaderLabels(["Fluo ID", "Name (double click to edit)"])
         
         # Configure table
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -117,7 +117,7 @@ class FluorophoreNamingWidget(QWidget):
             name_item = QTableWidgetItem(default_name)
             name_item.setData(Qt.ItemDataRole.UserRole, fluo_id)  # Store fluo_id for retrieval
             name_item.setBackground(bg_color)
-            name_item.setToolTip("Click to edit this fluorophore name")
+            name_item.setToolTip("Double click to edit this fluorophore name")
             self.table.setItem(row, 1, name_item)
         
         # Resize table to fit content
