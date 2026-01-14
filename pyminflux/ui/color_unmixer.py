@@ -30,6 +30,7 @@ from pyminflux.ui.fluorophore_naming_widget import FluorophoreNamingWidget
 from pyminflux.ui.helpers import export_plot_interactive
 from pyminflux.ui.state import State
 from pyminflux.ui.time_plotter import TimePlotter
+from pyminflux.ui.time_split_region_boundaries import TimeSplitRegionBoundariesDialog
 from pyminflux.ui.ui_color_unmixer import Ui_ColorUnmixer
 
 
@@ -95,6 +96,11 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
         # Create the plot elements for time splitting
         self.time_plot_widget = PlotWidget(parent=self, background="w", title="tid")
+        
+        # Connect the time plot widget to the context menu callback
+        self.time_plot_widget.scene().sigMouseClicked.connect(
+            self.time_plot_raise_context_menu
+        )
         
         # Time splitting state
         self.time_split_regions = []  # List of LinearRegionItem objects
@@ -521,6 +527,97 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             ev.accept()
         else:
             ev.ignore()
+    
+    def time_plot_raise_context_menu(self, ev):
+        """Create a context menu on the time plot, specifically for region items."""
+        if ev.button() != Qt.MouseButton.RightButton:
+            ev.ignore()
+            return
+        
+        # Check if click is on a LinearRegionItem
+        clicked_region = None
+        scene_pos = ev.scenePos()
+        
+        # Get the view coordinates
+        view_pos = self.time_plot_widget.getPlotItem().getViewBox().mapSceneToView(scene_pos)
+        x_pos = view_pos.x()
+        
+        # Check which region was clicked
+        for region in self.time_split_regions:
+            start, end = region.getRegion()
+            if start <= x_pos <= end:
+                clicked_region = region
+                break
+        
+        if clicked_region is not None:
+            # Create context menu for the region
+            menu = QMenu()
+            set_boundaries_action = QAction("Set boundaries...")
+            set_boundaries_action.triggered.connect(
+                lambda: self.open_region_boundaries_dialog(clicked_region)
+            )
+            menu.addAction(set_boundaries_action)
+            
+            pos = ev.screenPos()
+            menu.exec(QPoint(int(pos.x()), int(pos.y())))
+            ev.accept()
+        else:
+            # Generic plot context menu
+            menu = QMenu()
+            export_action = QAction("Export plot")
+            export_action.triggered.connect(
+                lambda checked: export_plot_interactive(ev.currentItem)
+            )
+            menu.addAction(export_action)
+            pos = ev.screenPos()
+            menu.exec(QPoint(int(pos.x()), int(pos.y())))
+            ev.accept()
+    
+    def open_region_boundaries_dialog(self, region):
+        """Open dialog to set exact boundaries for a time split region.
+        
+        Parameters
+        ----------
+        region : pg.LinearRegionItem
+            The region to set boundaries for.
+        """
+        # Get current boundaries
+        start, end = region.getRegion()
+        
+        # Open dialog
+        dialog = TimeSplitRegionBoundariesDialog(start, end, parent=self)
+        if dialog.exec() == QDialog.Accepted:
+            # Get new values
+            new_values = dialog.get_values()
+            if new_values is not None:
+                new_start, new_end = new_values
+                
+                # Check for overlaps with neighboring regions
+                region_idx = self.time_split_regions.index(region)
+                
+                # Check against previous region
+                if region_idx > 0:
+                    prev_region = self.time_split_regions[region_idx - 1]
+                    prev_start, prev_end = prev_region.getRegion()
+                    if new_start < prev_end:
+                        # Show warning or adjust
+                        new_start = prev_end
+                
+                # Check against next region
+                if region_idx < len(self.time_split_regions) - 1:
+                    next_region = self.time_split_regions[region_idx + 1]
+                    next_start, next_end = next_region.getRegion()
+                    if new_end > next_start:
+                        # Show warning or adjust
+                        new_end = next_start
+                
+                # Ensure new_start < new_end after adjustments
+                if new_start < new_end:
+                    # Set the new boundaries
+                    region.setRegion([new_start, new_end])
+                    
+                    # Update assignments
+                    self._update_time_split_assignments()
 
     @Slot(int)
     def main_tab_changed(self, index):
