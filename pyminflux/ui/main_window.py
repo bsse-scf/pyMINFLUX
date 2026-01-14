@@ -842,6 +842,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         
         # Set color coding to BY_FLUO after merge to distinguish datasets
         self.state.color_code = ColorCode.BY_FLUO
+        # Update the dropdown UI to reflect the new color coding
+        self.plotter_toolbar.ui.cbColorCodeSelector.setCurrentIndex(ColorCode.BY_FLUO.value)
         print("Color coding set to BY_FLUO to distinguish merged datasets")
         
         return True
