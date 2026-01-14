@@ -521,7 +521,8 @@ class MinFluxProcessor:
         # Reset the mapping to the corresponding fluorophore
         self.processed_dataframe["fluo"] = 1
 
-        # Reset fluorophore names
+        # Reset fluorophore names (clear custom names first)
+        self._fluorophore_names = {}
         self._init_fluorophore_names()
 
         # Default fluorophore is 0 (no selection)
