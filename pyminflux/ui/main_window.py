@@ -46,10 +46,11 @@ from pyminflux.plugin import PluginManager
 from pyminflux.processor import (
     MinFluxProcessor,
     get_bead_positions_from_mbm,
-    merge_dataframes_with_alignment,
     load_zarr_for_beads,
     get_next_fluorophore_id,
 )
+from pyminflux.combiner import combine_datasets_with_bead_alignment
+from pyminflux.processor._dataset import MinFluxDataset
 from pyminflux.reader import (
     MinFluxReader,
     MinFluxReaderFactory,
@@ -63,7 +64,7 @@ from pyminflux.ui.bead_correspondence_dialog import BeadCorrespondenceDialog
 from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.colorbar import ColorBarWidget
 from pyminflux.ui.colors import ColorCode, reset_all_colors
-from pyminflux.ui.dataset_merge_dialog import DatasetMergeDialog
+from pyminflux.ui.dataset_combine_dialog import DatasetCombineDialog
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.fluorophore_naming_dialog import FluorophoreNamingDialog
@@ -126,7 +127,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Keep a reference to the MinFluxProcessor
         self.processor = None
 
-        # Keep track of the current dataset's Zarr path for merging
+        # Keep track of the current dataset's Zarr path for combining
         self.current_zarr_path = None
         self.current_filename = None
 
@@ -413,7 +414,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         
         # Wizard signals
         self.wizard.open_combiner_triggered.connect(self.open_combiner)
-        self.wizard.merge_filename_triggered.connect(self.merge_dropped_file)
+        self.wizard.combine_filename_triggered.connect(self.combine_dropped_file)
 
     def enable_ui_components(self, enabled: bool):
         """Enable/disable UI components."""
@@ -670,20 +671,20 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Now call the standard loading slot
         self.select_and_load_or_import_data_file(folder)
 
-    def _merge_datasets(
+    def _combine_datasets(
         self,
         new_filename: str,
         new_reader: MinFluxReader,
     ) -> bool:
         """
-        Merge a new dataset with the currently loaded one.
+        Combine a new dataset with the currently loaded one.
         
         Args:
             new_filename: Path to the new dataset file
             new_reader: Reader object for the new dataset
             
         Returns:
-            True if merge successful, False otherwise
+            True if combine successful, False otherwise
         """
         # Determine Zarr paths for both datasets
         new_ext = ".zarr" if Path(new_filename).is_dir() else Path(new_filename).suffix.lower()
@@ -705,7 +706,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 str(self.state.last_selected_path) if self.state.last_selected_path else ".",
             )
             if not ref_zarr_path:
-                print("Merge cancelled: No reference Zarr path selected.")
+                print("Combine cancelled: No reference Zarr path selected.")
                 return False
         
         # Get moving zarr path
@@ -725,10 +726,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 str(self.state.last_selected_path) if self.state.last_selected_path else ".",
             )
             if not mov_zarr_path:
-                print("Merge cancelled: No moving Zarr path selected.")
+                print("Combine cancelled: No moving Zarr path selected.")
                 return False
         
-        # Load MBM data from both Zarr files
+        # Load MBM data from both Zarr files to get bead positions for the dialog
         print(f"Loading bead data from reference: {ref_zarr_path}")
         ref_reader, ref_mbm_dict = load_zarr_for_beads(ref_zarr_path)
         if ref_reader is None or not ref_mbm_dict:
@@ -749,7 +750,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             return False
         
-        # Get bead positions
+        # Get bead positions for the correspondence dialog
         ref_bead_positions = get_bead_positions_from_mbm(ref_mbm_dict, n_points=3)
         mov_bead_positions = get_bead_positions_from_mbm(mov_mbm_dict, n_points=3)
         
@@ -774,7 +775,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             parent=self
         )
         if corr_dialog.exec() != QDialog.DialogCode.Accepted:
-            print("Merge cancelled: User cancelled bead correspondence.")
+            print("Combine cancelled: User cancelled bead correspondence.")
             return False
         
         bead_correspondence = corr_dialog.get_correspondence()
@@ -782,69 +783,68 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print(f"Bead correspondence: {bead_correspondence}")
         print(f"Fluorophore names: {fluorophore_names}")
         
-        # Perform alignment
-        print("Performing bead-based alignment...")
+        # Check if filters are applied and warn the user
+        if self.processor.has_filters_applied():
+            reply = QMessageBox.warning(
+                self,
+                "Filters Applied",
+                "You currently have filters applied to the data.\n\n"
+                "Combining datasets will reset all filters to ensure data consistency.\n\n"
+                "Do you want to continue?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                print("Combine cancelled: User chose not to proceed with filter reset.")
+                return False
         
-        transform_model = align_datasets_using_beads(
-            ref_mbm_dict,
-            mov_mbm_dict,
+        # Perform alignment and combine
+        print("Performing bead-based alignment and combining datasets...")
+        
+        # Create datasets from the current processor and new reader
+        # The datasets will contain the MBM data if available
+        reference_dataset = MinFluxDataset.from_reader(self.processor.reader)
+        moving_dataset = MinFluxDataset.from_reader(new_reader)
+        
+        # Get next fluorophore ID
+        next_fluo_id = get_next_fluorophore_id(reference_dataset.processed_dataframe)
+        print(f"Assigning fluorophore ID {next_fluo_id} to moving dataset")
+        
+        # Perform combine using the module-level function
+        # The MBM data is extracted from the datasets themselves
+        combined_dataset = combine_datasets_with_bead_alignment(
+            reference_dataset,
+            moving_dataset,
             bead_correspondence=bead_correspondence,
             transform_type='euclidean',
             n_points=3,
+            next_fluo_id=next_fluo_id,
         )
         
-        if transform_model is None:
+        if combined_dataset is None:
             QMessageBox.critical(
                 self,
                 "Error",
-                "Bead alignment failed. Cannot merge datasets.",
+                "Bead alignment failed. Cannot combine datasets.",
             )
             return False
         
-        print("Alignment successful. Merging datasets...")
+        print(f"Combined dataset has {len(combined_dataset.processed_dataframe)} localizations")
         
-        # Get current and new dataframes
-        df_reference = self.processor.reader.processed_dataframe
-        df_moving = new_reader.processed_dataframe
-        
-        # Get next fluorophore ID
-        next_fluo_id = get_next_fluorophore_id(df_reference)
-        print(f"Assigning fluorophore ID {next_fluo_id} to moving dataset")
-        
-        # Merge dataframes
-        df_merged = merge_dataframes_with_alignment(
-            df_reference,
-            df_moving,
-            transform_model,
-            next_fluo_id=next_fluo_id
-        )
-        
-        print(f"Merged dataset has {len(df_merged)} localizations")
-        
-        # Update the reader's dataframe
-        self.processor.reader._processed_dataframe = df_merged
-        
-        # Recreate the processor to update internal state
-        old_min_trace_length = self.processor.min_trace_length
-        old_use_weighted = self.processor.use_weighted_localizations
-        
-        self.processor = MinFluxProcessor(
-            self.processor.reader,
-            old_min_trace_length,
-        )
-        self.processor.use_weighted_localizations = old_use_weighted
+        # Replace the processor's dataset
+        self.processor.replace_dataset(combined_dataset)
         
         # Set fluorophore names from the dialog
         self.processor.set_fluorophore_names(fluorophore_names)
         
-        print(f"Merge completed. Dataset now has {self.processor.num_fluorophores} fluorophore(s)")
+        print(f"Combine completed. Dataset now has {self.processor.num_fluorophores} fluorophore(s)")
         print(f"Fluorophore names: {fluorophore_names}")
         
-        # Set color coding to BY_FLUO after merge to distinguish datasets
+        # Set color coding to BY_FLUO after combine to distinguish datasets
         self.state.color_code = ColorCode.BY_FLUO
         # Update the dropdown UI to reflect the new color coding
         self.plotter_toolbar.ui.cbColorCodeSelector.setCurrentIndex(ColorCode.BY_FLUO.value)
-        print("Color coding set to BY_FLUO to distinguish merged datasets")
+        print("Color coding set to BY_FLUO to distinguish combined datasets")
         
         return True
 
@@ -1003,7 +1003,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"{__APP_NAME__} v{__version__} - [{Path(filename).name}]"
             )
 
-            # Store current filename and Zarr path for potential merging
+            # Store current filename and Zarr path for potential combining
             self.current_filename = filename
             if ext == ".zarr":
                 self.current_zarr_path = filename
@@ -1359,16 +1359,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.analyzer.show()
         self.analyzer.activateWindow()
 
-    def _perform_merge_with_zarr(self, filename: str, source: str = "Combiner") -> bool:
+    def _perform_combine_with_zarr(self, filename: str, source: str = "Combiner") -> bool:
         """
-        Common merge workflow for both combiner and drag-and-drop operations.
+        Common combine workflow for both combiner and drag-and-drop operations.
         
         Args:
-            filename: Path to the Zarr folder to merge
-            source: Description of the merge source (for logging)
+            filename: Path to the Zarr folder to combine
+            source: Description of the combine source (for logging)
             
         Returns:
-            True if merge was successful, False otherwise
+            True if combine was successful, False otherwise
         """
         # Create reader for the new dataset
         try:
@@ -1384,41 +1384,27 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             return False
         
-        # Open the Importer for the new dataset
-        importer = Importer(
-            valid_cfr=reader.valid_cfr,
-            relocalizations=reader.relocalizations,
-            dwell_time=self.state.dwell_time,
-            is_tracking=self.state.is_tracking,
-            pool_dcr=self.state.pool_dcr,
-        )
-        if importer.exec_() != QDialog.Accepted:
-            print(f"{source} cancelled: Importer dialog cancelled.")
-            return False
+        # For combining, reader properties are taken from the reference dataset.
+        # The Importer dialog would not affect the combined dataset settings, so we skip it.
+        ref_reader = self.processor.reader
+        reader.set_tracking(ref_reader.is_tracking, process=False)
+        if hasattr(ref_reader, "_loc_index") and hasattr(ref_reader, "_cfr_index"):
+            reader.set_indices(ref_reader._loc_index, ref_reader._cfr_index, process=False)
+        reader.set_dwell_time(ref_reader.dwell_time, process=False)
+        reader.set_pool_dcr(ref_reader.is_pool_dcr, process=False)
         
-        # Retrieve the selected options from the Importer
-        selection = importer.get_selection()
-        
-        # Update the reader object
-        reader.set_tracking(selection["is_tracking"], process=False)
-        reader.set_indices(
-            selection["iteration"], selection["cfr_iteration"], process=False
-        )
-        reader.set_dwell_time(selection["dwell_time"], process=False)
-        reader.set_pool_dcr(selection["pool_dcr"], process=False)
-        
-        # Now attempt to merge - always show the correspondence dialog with auto-matching
-        success = self._merge_datasets(filename, reader)
+        # Now attempt to combine - always show the correspondence dialog with auto-matching
+        success = self._combine_datasets(filename, reader)
         
         if not success:
             QMessageBox.warning(
                 self,
-                "Merge Failed",
-                "Dataset merge failed. Please check that both datasets have bead data.",
+                "Combine Failed",
+                "Dataset combine failed. Please check that both datasets have bead data.",
             )
             return False
         
-        # Merge successful - update UI
+        # Combine successful - update UI
         self.setWindowTitle(
             f"{__APP_NAME__} v{__version__} - [{Path(self.current_filename).name} + {Path(filename).name}]"
         )
@@ -1436,7 +1422,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.analyzer.set_processor(self.processor)
             self.analyzer.plot()
         
-        print(f"Dataset merge completed successfully via {source}.")
+        print(f"Dataset combine completed successfully via {source}.")
         return True
 
     @Slot()
@@ -1456,7 +1442,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         
         filename = QFileDialog.getExistingDirectory(
             self,
-            "Select Zarr folder to merge",
+            "Select Zarr folder to combine",
             save_path,
         )
         
@@ -1464,39 +1450,39 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             print("Combiner cancelled: No Zarr folder selected.")
             return
         
-        # Perform the merge
-        self._perform_merge_with_zarr(filename, source="Combiner")
+        # Perform the combine
+        self._perform_combine_with_zarr(filename, source="Combiner")
 
     @Slot(str)
-    def merge_dropped_file(self, filename: str):
+    def combine_dropped_file(self, filename: str):
         """
-        Handle drag-and-drop merge operation (Shift + drop).
-        Merges the dropped Zarr dataset with the currently loaded one.
+        Handle drag-and-drop combine operation (Shift + drop).
+        Combines the dropped Zarr dataset with the currently loaded one.
         """
         if self.processor is None:
             QMessageBox.warning(
                 self,
                 "No Dataset Loaded",
-                "Please load a dataset first before merging.",
+                "Please load a dataset first before combining.",
             )
             return
         
         if not filename or not Path(filename).exists():
-            print("Merge cancelled: Invalid file path.")
+            print("Combine cancelled: Invalid file path.")
             return
         
-        # Only Zarr datasets are supported for merge
+        # Only Zarr datasets are supported for combining
         if not Path(filename).is_dir():
             QMessageBox.information(
                 self,
-                "Merge Requires Zarr",
-                "To merge datasets, please drag and drop a Zarr directory.\n"
+                "Combine Requires Zarr",
+                "To combine datasets, please drag and drop a Zarr directory.\n"
                 "Only Zarr datasets contain the bead measurement data needed for alignment.",
             )
             return
         
-        # Perform the merge
-        self._perform_merge_with_zarr(filename, source="drag-and-drop (Shift+drop)")
+        # Perform the combine
+        self._perform_combine_with_zarr(filename, source="drag-and-drop (Shift+drop)")
 
 
     def show_update_result_dialog(self, html):

@@ -80,6 +80,41 @@ class MockMinFluxReader:
         """This is a localization dataset and not a tracking one."""
         return False
 
+    @property
+    def filename(self):
+        """Mock filename."""
+        return Path("mock_file.npy")
+
+    @property
+    def is_3d(self):
+        """This is a 2D dataset."""
+        return False
+
+    @property
+    def is_aggregated(self):
+        """This is not aggregated."""
+        return False
+
+    @property
+    def z_scaling_factor(self):
+        """No z scaling."""
+        return 1.0
+
+    @property
+    def dwell_time(self):
+        """Default dwell time."""
+        return 1.0
+
+    @property
+    def is_pool_dcr(self):
+        """No DCR pooling."""
+        return False
+
+    @property
+    def version(self):
+        """Version 2."""
+        return 2
+
 
 @pytest.fixture(autouse=False)
 def extract_raw_npy_data_files(tmpdir):

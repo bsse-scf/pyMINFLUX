@@ -51,10 +51,15 @@ class MinFluxWriter:
             header_lines = []
             fluorophore_names = processor.fluorophore_names
             if fluorophore_names:
-                header_lines.append("# Fluorophore Names:")
-                for fluo_id in sorted(fluorophore_names.keys()):
-                    name = fluorophore_names[fluo_id]
-                    header_lines.append(f"# fluo_{fluo_id}={name}")
+                # Only include header comments when names are custom (not default "<id>")
+                has_custom_names = any(
+                    name != str(fluo_id) for fluo_id, name in fluorophore_names.items()
+                )
+                if has_custom_names:
+                    header_lines.append("# Fluorophore Names:")
+                    for fluo_id in sorted(fluorophore_names.keys()):
+                        name = fluorophore_names[fluo_id]
+                        header_lines.append(f"# fluo_{fluo_id}={name}")
             
             # Write header and data
             with open(file_name, 'w') as f:

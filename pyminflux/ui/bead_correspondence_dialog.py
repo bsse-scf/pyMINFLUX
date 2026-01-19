@@ -313,7 +313,7 @@ class BeadCorrespondenceDialog(QDialog):
         ok_button = button_box.button(QDialogButtonBox.StandardButton.Ok)
         if ok_button:
             ok_button.setToolTip(
-                "Apply the alignment and merge datasets. All localizations in the new dataset "
+                "Apply the alignment and combine datasets. All localizations in the new dataset "
                 "will be transformed to match the current dataset's coordinate system."
             )
         

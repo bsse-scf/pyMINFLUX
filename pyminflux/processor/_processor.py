@@ -21,6 +21,7 @@ from scipy.stats import mode
 
 from pyminflux.analysis import calculate_total_distance_traveled, calculate_trace_time
 from pyminflux.reader import MinFluxReader, MinFluxReaderV2
+from pyminflux.processor._dataset import MinFluxDataset
 
 
 class MinFluxProcessor:
@@ -32,7 +33,7 @@ class MinFluxProcessor:
 
     __slots__ = [
         "state",
-        "reader",
+        "dataset",
         "_current_fluorophore_id",
         "_filtered_stats_dataframe",
         "_fluorophore_names",
@@ -42,11 +43,12 @@ class MinFluxProcessor:
         "_weighted_localizations",
         "_weighted_localizations_to_be_recomputed",
         "_use_weighted_localizations",
+        "_has_dynamic_filters",
     ]
 
     def __init__(
         self,
-        reader: Union[MinFluxReader, MinFluxReaderV2],
+        source: Union[MinFluxReader, MinFluxReaderV2, MinFluxDataset],
         min_trace_length: int = 1,
     ):
         """Constructor.
@@ -54,15 +56,24 @@ class MinFluxProcessor:
         Parameters
         ----------
 
-        reader: MinFluxReader
-            MinFluxReader object.
+        source: Union[MinFluxReader, MinFluxReaderV2, MinFluxDataset]
+            Either a MinFluxReader object or a MinFluxDataset.
 
         min_trace_length: int (Default = 1)
             Minimum number of localizations for a trace to be kept. Shorter traces are dropped.
         """
 
-        # Store a reference to the MinFluxReader
-        self.reader: MinFluxReader = reader
+        # Convert reader-like sources to dataset if necessary (duck-typed)
+        if isinstance(source, MinFluxDataset):
+            self.dataset = source
+        elif isinstance(source, (MinFluxReader, MinFluxReaderV2)) or hasattr(
+            source, "processed_dataframe"
+        ):
+            self.dataset = MinFluxDataset.from_reader(source)
+        else:
+            raise TypeError(
+                f"source must be MinFluxReader, MinFluxReaderV2, MinFluxDataset, or reader-like; got {type(source)}"
+            )
 
         # Global options (to be applied after every operation)
         self._min_trace_length: int = min_trace_length
@@ -91,6 +102,9 @@ class MinFluxProcessor:
         # Whether to use weighted average for localizations
         self._use_weighted_localizations = False
 
+        # Track whether dynamic (user-applied) filters have been applied
+        self._has_dynamic_filters = False
+
         # Initialize fluorophore names mapping (fluo_id -> name)
         self._fluorophore_names = {}
         self._init_fluorophore_names()
@@ -115,6 +129,18 @@ class MinFluxProcessor:
         for fluo_id in unique_fluos:
             self._selected_rows_dict[int(fluo_id)] = keep_mask.copy()
 
+    def has_filters_applied(self) -> bool:
+        """Check if any dynamic (user-applied) filters have been applied to the data.
+        
+        This does not count global filters like min_trace_length which are always applied.
+        
+        Returns
+        -------
+        has_filters: bool
+            True if any dynamic filters are active, False otherwise.
+        """
+        return self._has_dynamic_filters
+
     def _init_fluorophore_names(self):
         """Initialize fluorophore names with default values (string representation of fluo ID)."""
         if self.processed_dataframe is None:
@@ -125,6 +151,15 @@ class MinFluxProcessor:
             fluo_id_int = int(fluo_id)
             if fluo_id_int not in self._fluorophore_names:
                 self._fluorophore_names[fluo_id_int] = str(fluo_id_int)
+
+    @property
+    def reader(self):
+        """Return a reader-like interface to the dataset for backwards compatibility.
+        
+        This property provides access to the underlying dataset using the
+        reader interface that existing code expects.
+        """
+        return self.dataset
 
     @property
     def is_tracking(self):
@@ -325,14 +360,62 @@ class MinFluxProcessor:
         processed_dataframe: Union[None, pd.DataFrame]
             A Pandas dataframe or None if no file was loaded.
         """
-        return self.reader.processed_dataframe
+        return self.dataset.processed_dataframe
 
     @property
     def filename(self) -> Union[Path, None]:
         """Return the filename if set."""
-        if self.reader is None:
-            return None
-        return self.reader.filename
+        return self.dataset.filename
+
+    def replace_dataset(self, new_dataset: MinFluxDataset):
+        """Replace the current dataset with a new one.
+        
+        This is useful when combining datasets - the processor's dataset
+        can be replaced with the combined dataset without losing filter state
+        or other settings.
+        
+        Parameters
+        ----------
+        new_dataset: MinFluxDataset
+            The new dataset to use.
+        """
+        # Store current settings
+        old_min_trace_length = self._min_trace_length
+        old_use_weighted = self._use_weighted_localizations
+        old_fluorophore_names = self._fluorophore_names.copy()
+        
+        # Replace the dataset
+        self.dataset = new_dataset
+        
+        # Re-initialize selection and filters
+        self._selected_rows_dict = None
+        self._init_selected_rows_dict()
+        
+        # Re-initialize fluorophore names (preserving custom names where IDs match)
+        self._fluorophore_names = {}
+        self._init_fluorophore_names()
+        
+        # Restore custom names for matching fluorophore IDs
+        for fluo_id, name in old_fluorophore_names.items():
+            if fluo_id in self._fluorophore_names:
+                self._fluorophore_names[fluo_id] = name
+        
+        # Restore settings
+        self._min_trace_length = old_min_trace_length
+        self._use_weighted_localizations = old_use_weighted
+        
+        # Reset current fluorophore to "all"
+        self._current_fluorophore_id = 0
+        
+        # Reset dynamic filters flag (dataset replacement clears all filters)
+        self._has_dynamic_filters = False
+        
+        # Apply global filters
+        self._apply_global_filters()
+        
+        # Flag derived data to be recomputed
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
 
     def _filtered_dataframe_all_fluorophores(self) -> Union[None, pd.DataFrame]:
         """Return joint dataframe for all fluorophores and with all filters applied.
@@ -527,6 +610,9 @@ class MinFluxProcessor:
 
         # Default fluorophore is 0 (no selection)
         self.current_fluorophore_id = 0
+
+        # Reset dynamic filters flag
+        self._has_dynamic_filters = False
 
         # Apply global filters
         self._apply_global_filters()
@@ -802,6 +888,9 @@ class MinFluxProcessor:
         # Make sure to always apply the global filters
         self._apply_global_filters()
 
+        # Mark that dynamic filters have been applied
+        self._has_dynamic_filters = True
+
         # Make sure to flag the derived data to be recomputed
         self._stats_to_be_recomputed = True
         self._weighted_localizations_to_be_recomputed = True
@@ -864,6 +953,9 @@ class MinFluxProcessor:
         # Apply the global filters
         self._apply_global_filters()
 
+        # Mark that dynamic filters have been applied
+        self._has_dynamic_filters = True
+
         # Make sure to flag the derived data to be recomputed
         self._stats_to_be_recomputed = True
         self._weighted_localizations_to_be_recomputed = True
@@ -908,6 +1000,9 @@ class MinFluxProcessor:
         # Apply the global filters
         self._apply_global_filters()
 
+        # Mark that dynamic filters have been applied
+        self._has_dynamic_filters = True
+
         # Make sure to flag the derived data to be recomputed
         self._stats_to_be_recomputed = True
         self._weighted_localizations_to_be_recomputed = True
@@ -950,6 +1045,9 @@ class MinFluxProcessor:
 
         # Apply the global filters
         self._apply_global_filters()
+
+        # Mark that dynamic filters have been applied
+        self._has_dynamic_filters = True
 
         # Make sure to flag the derived data to be recomputed
         self._stats_to_be_recomputed = True
@@ -1004,6 +1102,9 @@ class MinFluxProcessor:
 
         # Apply the global filters
         self._apply_global_filters()
+
+        # Mark that dynamic filters have been applied
+        self._has_dynamic_filters = True
 
         # Make sure to flag the derived data to be recomputed
         self._stats_to_be_recomputed = True

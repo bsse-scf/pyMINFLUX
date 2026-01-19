@@ -30,7 +30,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     load_data_triggered = Signal()
     load_zarr_triggered = Signal()
     load_filename_triggered = Signal(str)
-    merge_filename_triggered = Signal(str)
+    combine_filename_triggered = Signal(str)
     save_data_triggered = Signal()
     reset_filters_triggered = Signal()
     open_unmixer_triggered = Signal()
@@ -135,14 +135,14 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         except Exception as _:
             return
 
-        # Check if Shift key is held for merge operation
+        # Check if Shift key is held for combine operation
         modifiers = event.modifiers()
-        is_merge_operation = modifiers & Qt.ShiftModifier
+        is_combine_operation = modifiers & Qt.ShiftModifier
 
         if Path(filename).is_dir():
             # This *could* be a Zarr file, we will pass it on
-            if is_merge_operation:
-                self.merge_filename_triggered.emit(str(filename))
+            if is_combine_operation:
+                self.combine_filename_triggered.emit(str(filename))
             else:
                 self.load_filename_triggered.emit(str(filename))
         else:
@@ -152,12 +152,12 @@ class WizardDialog(QDialog, Ui_WizardDialog):
                 return
             ext = filename.lower()[-4:]
             if ext in [".pmx", ".npy", ".mat"]:
-                if is_merge_operation:
-                    # For merge, we need Zarr files with bead data
+                if is_combine_operation:
+                    # For combine, we need Zarr files with bead data
                     QMessageBox.information(
                         self,
-                        "Merge Requires Zarr",
-                        f"To merge datasets, please drag and drop a Zarr directory (not {ext} files).\n"
+                        "Combine Requires Zarr",
+                        f"To combine datasets, please drag and drop a Zarr directory (not {ext} files).\n"
                         f"Only Zarr datasets contain the bead measurement data needed for alignment.",
                     )
                 else:
