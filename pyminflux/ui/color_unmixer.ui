@@ -72,7 +72,7 @@
                   </sizepolicy>
                  </property>
                  <property name="text">
-                  <string>Number of fluorophores</string>
+                  <string>Number of channels</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignCenter</set>

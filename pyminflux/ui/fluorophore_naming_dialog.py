@@ -41,7 +41,7 @@ class FluorophoreNamingDialog(QDialog):
         super().__init__(parent)
         
         self.processor = processor
-        self.setWindowTitle("Set Fluorophore Names")
+        self.setWindowTitle("Set Channel Names")
         self.setModal(True)
         self.resize(500, 400)
         
@@ -53,8 +53,8 @@ class FluorophoreNamingDialog(QDialog):
         
         # Explanation text
         explanation = QLabel(
-            "Assign custom names to your fluorophores for easier identification.\n\n"
-            "These names will appear in the active fluorophore selector and will be "
+            "Assign custom names to your channels for easier identification.\n\n"
+            "These names will appear in the active channel selector and will be "
             "saved with your data in PMX files and as comments in CSV exports.\n\n"
             "Click on a name cell to edit it."
         )
@@ -72,7 +72,7 @@ class FluorophoreNamingDialog(QDialog):
         
         # Naming widget
         self.naming_widget = FluorophoreNamingWidget(
-            title="Fluorophore Names"
+            title="Channel Names"
         )
         if fluo_ids:
             self.naming_widget.set_fluorophores(fluo_ids, self.processor.fluorophore_names)

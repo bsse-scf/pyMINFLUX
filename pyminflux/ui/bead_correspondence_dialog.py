@@ -290,7 +290,7 @@ class BeadCorrespondenceDialog(QDialog):
         
         # Add fluorophore naming widget (with no stretch so it stays compact)
         self.fluorophore_naming_widget = FluorophoreNamingWidget(
-            title="Fluorophore Names for Combined Dataset"
+            title="Channel Names for Combined Dataset"
         )
         # Set up all fluorophore IDs (existing + new)
         all_fluo_ids = self.existing_fluo_ids + [self.next_fluo_id]

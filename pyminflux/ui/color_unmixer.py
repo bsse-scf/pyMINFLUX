@@ -113,7 +113,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         
         # Add fluorophore naming widget
         self.fluorophore_naming_widget = FluorophoreNamingWidget(
-            title="Fluorophore Names"
+            title="Channel Names"
         )
         # Initially hidden until fluorophores are detected
         self.fluorophore_naming_widget.setVisible(False)

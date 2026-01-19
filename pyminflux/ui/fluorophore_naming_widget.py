@@ -37,7 +37,7 @@ class FluorophoreNamingWidget(QWidget):
     - Name: Editable column for entering custom fluorophore names
     """
     
-    def __init__(self, title: str = "Fluorophore Names", parent=None):
+    def __init__(self, title: str = "Channel Names", parent=None):
         """
         Constructor.
         
@@ -74,7 +74,7 @@ class FluorophoreNamingWidget(QWidget):
         self.table.setAlternatingRowColors(True)
         
         # Set tooltip to clarify editability
-        self.table.setToolTip("Click on a Name cell to edit the fluorophore name")
+        self.table.setToolTip("Click on a Name cell to edit the channel name")
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.verticalHeader().setVisible(False)
         
@@ -117,7 +117,7 @@ class FluorophoreNamingWidget(QWidget):
             name_item = QTableWidgetItem(default_name)
             name_item.setData(Qt.ItemDataRole.UserRole, fluo_id)  # Store fluo_id for retrieval
             name_item.setBackground(bg_color)
-            name_item.setToolTip("Double click to edit this fluorophore name")
+            name_item.setToolTip("Double click to edit this channel name")
             self.table.setItem(row, 1, name_item)
         
         # Resize table to fit content

@@ -128,7 +128,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Active fluorophore</string>
+          <string>Active channel</string>
          </property>
         </widget>
        </item>

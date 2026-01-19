@@ -1534,7 +1534,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(
                 self,
                 "Invalid Selection",
-                "Please select a specific fluorophore (not 'All') for unmixing when multiple fluorophores exist."
+                "Please select a specific channel (not 'All') for unmixing when multiple channels exist."
             )
             return
         
@@ -1551,20 +1551,20 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     @Slot()
     def open_fluorophore_naming_dialog(self):
-        """Open dialog to set fluorophore names."""
+        """Open dialog to set channel names."""
         if self.processor is None:
             QMessageBox.information(
                 self,
                 "No Data Loaded",
-                "Please load a dataset before setting fluorophore names."
+                "Please load a dataset before setting channel names."
             )
             return
         
         if self.processor.num_fluorophores == 0:
             QMessageBox.information(
                 self,
-                "No Fluorophores",
-                "No fluorophores detected in the current dataset."
+                "No Channels",
+                "No channels detected in the current dataset."
             )
             return
         

@@ -247,7 +247,7 @@ class Ui_MainWindow(object):
             QCoreApplication.translate("MainWindow", "Unmixer", None)
         )
         self.actionSet_Fluorophore_Names.setText(
-            QCoreApplication.translate("MainWindow", "Fluo names", None)
+            QCoreApplication.translate("MainWindow", "Channel names", None)
         )
         self.actionTime_Inspector.setText(
             QCoreApplication.translate("MainWindow", "Time Inspector", None)
