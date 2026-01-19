@@ -62,6 +62,11 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.x_axis = None
         self.selection_range = None
 
+        # Track last active fluorophore to reset selection on change
+        self._last_fluorophore_id = (
+            processor.current_fluorophore_id if processor is not None else 0
+        )
+
         # Selection region
         self.selection_region = None
 
@@ -119,9 +124,23 @@ class TimeInspector(QDialog, Ui_TimeInspector):
         self.localization_precision_stderr_per_unit_time_cache_y = None
         self.localization_precision_stderr_per_unit_time_cache_z = None
 
+    def _reset_selection_on_fluorophore_change(self):
+        """Reset selection range when active fluorophore changes."""
+        if self.processor is None:
+            return
+
+        current_id = self.processor.current_fluorophore_id
+        if current_id != self._last_fluorophore_id:
+            self._last_fluorophore_id = current_id
+            self.selection_range = None
+            self.state.time_thresholds = None
+
     @Slot()
     def update(self):
         """Update the plots as response to data changes."""
+
+        # Reset selection if active channel changed
+        self._reset_selection_on_fluorophore_change()
 
         # Invalidate cache
         self.invalidate_cache()
@@ -135,6 +154,9 @@ class TimeInspector(QDialog, Ui_TimeInspector):
     @Slot()
     def plot_selected(self):
         """Perform and plot the results of the selected analysis."""
+
+        # Reset selection if active channel changed
+        self._reset_selection_on_fluorophore_change()
 
         # Do we have something to plot?
         if (

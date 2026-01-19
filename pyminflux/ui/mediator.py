@@ -309,6 +309,9 @@ class Mediator:
         self.dialogs["wizard"].wizard_filters_run.connect(
             self.dialogs["time_inspector"].update
         )
+        self.dialogs["wizard"].fluorophore_id_changed.connect(
+            self.dialogs["time_inspector"].update
+        )
         self.dialogs["main_window"].request_sync_external_tools.connect(
             self.dialogs["time_inspector"].update
         )
