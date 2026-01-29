@@ -15,7 +15,7 @@
 """Dataset combining utilities."""
 
 from pathlib import Path
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict, Tuple, List
 import numpy as np
 import pandas as pd
 
@@ -181,6 +181,16 @@ def combine_datasets_with_alignment(
 
     if iid_offset and "iid" in df_reference.columns and "iid" in df_moving.columns:
         df_moving["iid"] = df_moving["iid"] + iid_offset
+
+    # Ensure unique tid values by offsetting the moving dataset
+    tid_offset = 0
+    if reference_dataset.full_raw_dataframe is not None and "tid" in reference_dataset.full_raw_dataframe.columns:
+        tid_offset = int(reference_dataset.full_raw_dataframe["tid"].max()) + 1 if len(reference_dataset.full_raw_dataframe) > 0 else 0
+    elif "tid" in df_reference.columns:
+        tid_offset = int(df_reference["tid"].max()) + 1 if len(df_reference) > 0 else 0
+
+    if tid_offset and "tid" in df_moving.columns:
+        df_moving["tid"] = df_moving["tid"] + tid_offset
     
     # Determine next fluorophore ID
     if next_fluo_id is None:
@@ -217,6 +227,8 @@ def combine_datasets_with_alignment(
             )
             if iid_offset and "iid" in df_raw_moving.columns:
                 df_raw_moving["iid"] = df_raw_moving["iid"] + iid_offset
+            if tid_offset and "tid" in df_raw_moving.columns:
+                df_raw_moving["tid"] = df_raw_moving["tid"] + tid_offset
             df_raw_moving['fluo'] = next_fluo_id
             
             full_raw_combined = pd.concat(
@@ -227,6 +239,25 @@ def combine_datasets_with_alignment(
             # Only reference has raw dataframe
             full_raw_combined = reference_dataset.full_raw_dataframe
     
+    # Track TID offsets with the first iid they apply to
+    combined_tid_offsets: List[Tuple[int, int]] = list(reference_dataset.tid_offsets)
+    moving_tid_offsets = moving_dataset.tid_offsets
+    base_first_iid = None
+    if "iid" in df_moving.columns and len(df_moving) > 0:
+        base_first_iid = int(df_moving["iid"].min())
+    if moving_tid_offsets:
+        adjusted_offsets = []
+        for first_iid, offset in moving_tid_offsets:
+            adjusted_offsets.append((int(first_iid) + iid_offset, int(offset) + tid_offset))
+        combined_tid_offsets.extend(adjusted_offsets)
+        if tid_offset and base_first_iid is not None:
+            has_base = any(entry_first_iid == base_first_iid for entry_first_iid, _ in adjusted_offsets)
+            if not has_base:
+                combined_tid_offsets.append((base_first_iid, tid_offset))
+    else:
+        if tid_offset and base_first_iid is not None:
+            combined_tid_offsets.append((base_first_iid, tid_offset))
+
     # Create the combined dataset
     # Use properties from the reference dataset as the base
     combined_dataset = MinFluxDataset(
@@ -242,6 +273,7 @@ def combine_datasets_with_alignment(
         pool_dcr=reference_dataset.is_pool_dcr,
         version=reference_dataset.version,
         mbm_data=reference_dataset.mbm_data,  # Keep reference MBM data
+        tid_offsets=combined_tid_offsets,
     )
     
     return combined_dataset

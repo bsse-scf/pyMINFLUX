@@ -15,7 +15,7 @@
 """Dataset container for MINFLUX data."""
 
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, List, Tuple
 
 import pandas as pd
 import numpy as np
@@ -43,6 +43,7 @@ class MinFluxDataset:
         "_pool_dcr",
         "_version",
         "_mbm_data",
+        "_tid_offsets",
     ]
     
     def __init__(
@@ -60,6 +61,7 @@ class MinFluxDataset:
         pool_dcr: bool = False,
         version: int = 2,
         mbm_data: Optional[dict] = None,
+        tid_offsets: Optional[List[Tuple[int, int]]] = None,
     ):
         """Constructor.
         
@@ -91,6 +93,8 @@ class MinFluxDataset:
             Reader version (1 or 2).
         mbm_data: Optional[dict]
             Beamline monitoring (bead) data, if available.
+        tid_offsets: Optional[List[Tuple[int, int]]]
+            List of (first_iid, tid_offset) pairs applied when combining datasets.
         """
         self._processed_dataframe = processed_dataframe
         self._full_raw_dataframe = full_raw_dataframe
@@ -105,6 +109,7 @@ class MinFluxDataset:
         self._pool_dcr = pool_dcr
         self._version = version
         self._mbm_data = mbm_data
+        self._tid_offsets = list(tid_offsets) if tid_offsets else []
     
     @classmethod
     def from_reader(cls, reader):
@@ -144,6 +149,7 @@ class MinFluxDataset:
             pool_dcr=getattr(reader, "is_pool_dcr", False),
             version=getattr(reader, "version", 2),
             mbm_data=mbm_data,
+            tid_offsets=getattr(reader, "tid_offsets", None),
         )
     
     @property
@@ -215,6 +221,11 @@ class MinFluxDataset:
     def mbm_data(self) -> Optional[dict]:
         """Return the beamline monitoring data."""
         return self._mbm_data
+
+    @property
+    def tid_offsets(self) -> List[Tuple[int, int]]:
+        """Return list of (first_iid, tid_offset) pairs applied when combining datasets."""
+        return list(self._tid_offsets)
     
     @property
     def valid_full_raw_dataframe(self) -> Optional[pd.DataFrame]:
@@ -252,4 +263,5 @@ class MinFluxDataset:
             pool_dcr=self._pool_dcr,
             version=self._version,
             mbm_data=self._mbm_data,
+            tid_offsets=self._tid_offsets.copy(),
         )

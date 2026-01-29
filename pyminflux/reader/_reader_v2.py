@@ -125,6 +125,9 @@ class MinFluxReaderV2(MinFluxReader):
             print(f"File {self._filename} does not exist.")
             return False
 
+        # Reset stored TID offsets
+        self._tid_offsets = []
+
         raw_dataframe = pd.DataFrame(
             columns=[
                 "vld",
@@ -178,6 +181,7 @@ class MinFluxReaderV2(MinFluxReader):
                 raw_dataframe = self._load_json(raw_dataframe)
             elif file_ext == ".pmx":
                 raw_dataframe = self._load_pmx(raw_dataframe)
+                self._tid_offsets = PMXReader.get_tid_offsets(self._filename)
             else:
                 print(f"Unexpected file {self._filename}.")
                 return False

@@ -60,6 +60,12 @@ class MinFluxWriter:
                     for fluo_id in sorted(fluorophore_names.keys()):
                         name = fluorophore_names[fluo_id]
                         header_lines.append(f"# fluo_{fluo_id}={name}")
+
+            tid_offsets = getattr(processor.dataset, "tid_offsets", [])
+            if tid_offsets:
+                header_lines.append("# TID Offsets (first_iid -> tid_offset):")
+                for first_iid, tid_offset in sorted(tid_offsets, key=lambda x: x[0]):
+                    header_lines.append(f"# iid>={first_iid} : +{tid_offset}")
             
             # Write header and data
             with open(file_name, 'w') as f:
