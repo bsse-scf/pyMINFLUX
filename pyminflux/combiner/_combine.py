@@ -250,7 +250,7 @@ def combine_datasets_with_alignment(
 def combine_datasets_with_bead_alignment(
     reference_dataset: MinFluxDataset,
     moving_dataset: MinFluxDataset,
-    bead_correspondence: Dict[str, str],
+    bead_correspondence: Dict[str, str] = None,
     transform_type: str = 'euclidean',
     n_points: int = 3,
     next_fluo_id: Optional[int] = None,
