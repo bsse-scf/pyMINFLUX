@@ -1122,7 +1122,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Get current filename to build the suggestion output
         if self.processor.filename is None:
-            out_filename = str(f"{Path('.') / self.processor.filename.stem}.csv")
+            base_path = (
+                self.state.last_selected_path
+                if self.state.last_selected_path is not None
+                else Path(".").absolute()
+            )
+            out_filename = str(Path(base_path) / "combined.csv")
         else:
             out_filename = str(
                 self.processor.filename.parent / f"{self.processor.filename.stem}.csv"
@@ -1182,7 +1187,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Get current filename to build the suggestion output
         if self.processor.filename is None:
-            out_filename = str(f"{Path('.') / self.processor.filename.stem}.csv")
+            base_path = (
+                self.state.last_selected_path
+                if self.state.last_selected_path is not None
+                else Path(".").absolute()
+            )
+            out_filename = str(Path(base_path) / "combined_stats.csv")
         else:
             out_filename = str(
                 self.processor.filename.parent
