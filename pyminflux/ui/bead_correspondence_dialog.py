@@ -117,12 +117,12 @@ class BeadCorrespondenceDialog(QDialog):
         instructions = QLabel(
             "<b>Dataset Alignment Using Fiducial Beads</b><br>"
             "The bead positions shown below were extracted from beam monitoring (MBM) data. "
-            "Match corresponding beads between the current (red circles) and new (blue squares) datasets. "
+            "Match corresponding beads between the current (circles) and new (squares) datasets. "
             "When you click OK, all localizations in the new dataset will be transformed using the "
             "rigid transformation computed from the matched bead positions. The added localizations "
             "will be assigned a new \"fluo\" value.<br>"
             "<b>Note:</b> Reference beads are always from the <u>first dataset originally loaded</u>"
-            "<b>Tip:</b> Hold <b>Shift</b> and click a new bead (blue) to assign it to the currently selected current bead (red)."
+            "<b>Tip:</b> Hold <b>Shift</b> and click a new bead (squares) to assign it to the currently selected current bead (circles)."
         )
         instructions.setWordWrap(True)
         instructions.setStyleSheet("QLabel { color: #333; padding: 8px; background-color: #f8f8f8; border-radius: 4px; }")
