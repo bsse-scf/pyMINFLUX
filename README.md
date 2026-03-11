@@ -52,14 +52,16 @@ $ pyminflux
 
 pyMINFLUX can also be installed with [uv](https://uv.pypa.io/en/latest/). If not yet installed, installing uv requires one line in the terminal depending on your OS, see [uv installation guide](https://uv.pypa.io/en/latest/install/). After installing uv, pyMINFLUX can be installed as follows:
 
-1. For the latest stable release on PyPI:
+For the latest stable release on PyPI:
+
 ```sh
 $ uvx --refresh pyminflux
 ```
-2. For a development version on GitHub:
-  ```sh
-  $ uvx --refresh --from 'git+https://github.com/bsse-scf/pyMINFLUX@bead_alignment' pyminflux
-  ```
+
+For a development version on GitHub (supported for pyminflux versions > 0.6.0):
+```sh
+$ uvx --refresh --from 'git+https://github.com/bsse-scf/pyMINFLUX@bead_alignment' pyminflux
+```
 
 
 ## For developers and tinkerers
