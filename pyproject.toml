@@ -1,12 +1,13 @@
-[tool.poetry]
+[project]
 name = "pyminflux"
 version = "0.6.0"
 description = "Reader, processor, and viewer of MINFLUX raw data."
-authors = ["Aaron Ponti <aaron.ponti@bsse.ethz.ch>"]
-license = "Apache-2.0"
+authors = [
+    {name = "Aaron Ponti", email = "aaron.ponti@bsse.ethz.ch"}
+]
+license = {text = "Apache-2.0"}
 readme = "README.md"
-repository = "https://github.com/bsse-scf/pyMINFLUX"
-documentation = "https://github.com/bsse-scf/pyMINFLUX/wiki"
+requires-python = ">=3.10,<3.13"
 keywords = ["MINFLUX", "Visualization", "Filtering", "Analysis", "Python"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -19,11 +20,40 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering"
 ]
-include = [
-    "LICENSE.txt",
+dependencies = [
+    "numpy>=2.0.0,<3.0.0",
+    "pandas>=2.2.3,<3.0.0",
+    "pyarrow>=19.0.1,<20.0.0",
+    "pyside6<6.8.0",
+    "pyqtgraph>=0.13.7,<0.14.0",
+    "scipy>=1.14.0,<2.0.0",
+    "scikit-learn>=1.5.0,<2.0.0",
+    "requests>=2.32,<3.0",
+    "h5py>=3.11.0,<4.0.0",
+    "vispy>=0.14.3,<0.15.0",
+    "natsort>=8.4.0,<9.0.0",
+    "zarr<3.0",
 ]
 
-[tool.poetry.urls]
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0,<9.0.0",
+    "ordered-set>=4.1.0,<5.0.0",
+    "pytest-cov>=4.1.0,<5.0.0",
+    "pre-commit>=3.6.0,<4.0.0",
+    "pdoc3>=0.10.0,<0.11.0",
+    "nuitka<2.7.0",
+    "patchelf>=0.17.2.2,<0.18.0.0; sys_platform == 'linux'",
+    "zstandard>=0.23.0,<0.24.0",
+    "ruff>=0.4.10,<0.5.0",
+]
+
+[project.scripts]
+pyminflux = "pyminflux.main:main"
+
+[project.urls]
+Repository = "https://github.com/bsse-scf/pyMINFLUX"
+Documentation = "https://github.com/bsse-scf/pyMINFLUX/wiki"
 "Bug Tracker" = "https://github.com/bsse-scf/pyMINFLUX/issues"
 
 [tool.black]
@@ -54,35 +84,6 @@ known_third_party = ["PySide6", "h5py", "natsort", "numpy", "pandas", "paraview"
 
 [tool.ruff.lint]
 select = ["NPY201"]
-
-[tool.poetry.dependencies]
-python = ">=3.10,<3.13"
-numpy = "^2.0.0"
-pandas = "^2.2.3"
-pyarrow = "^19.0.1"
-pyside6 = "<6.8.0"
-pyqtgraph = "^0.13.7"
-scipy = "^1.14.0"
-scikit-learn = "^1.5.0"
-requests = "^2.32"
-h5py = "^3.11.0"
-vispy = "^0.14.3"
-natsort = "^8.4.0"
-zarr = "<3.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
-ordered-set = "^4.1.0"
-pytest-cov = "^4.1.0"
-pre-commit = "^3.6.0"
-pdoc3 = "^0.10.0"
-nuitka = "<2.7.0"
-patchelf = { version = "^0.17.2.2", markers = "sys_platform == 'linux'" }
-zstandard = "^0.23.0"
-ruff = "^0.4.10"
-
-[tool.poetry.scripts]
-pyminflux = "pyminflux.main:main"
 
 [build-system]
 requires = ["poetry-core"]
