@@ -48,6 +48,20 @@ pyMINFLUX can then easily be run from the command line:
 $ pyminflux
 ```
 
+### uv
+
+pyMINFLUX can also be installed with [uv](https://uv.pypa.io/en/latest/). If not yet installed, installing uv requires one line in the terminal depending on your OS, see [uv installation guide](https://uv.pypa.io/en/latest/install/). After installing uv, pyMINFLUX can be installed as follows:
+
+1. For the latest stable release on PyPI:
+```sh
+$ uvx --refresh pyminflux
+```
+2. For a development version on GitHub:
+  ```sh
+  $ uvx --refresh --from 'git+https://github.com/bsse-scf/pyMINFLUX@bead_alignment' pyminflux
+  ```
+
+
 ## For developers and tinkerers
 
 pyMINFLUX is compatible with and tested on Python 3.10, 3.11, and 3.12. For development, it is recommended to install pyMINFLUX in editable mode in a [conda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links) environment as follows:
