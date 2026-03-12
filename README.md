@@ -50,7 +50,7 @@ $ pyminflux
 
 ### uv
 
-pyMINFLUX can also be installed with [uv](https://docs.astral.sh/uv/). If not yet installed, installing uv requires one line in the terminal depending on your OS, see [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/). After installing uv, pyMINFLUX can be installed as follows:
+pyMINFLUX can also be installed with [uv](https://docs.astral.sh/uv/). If not yet installed, installing uv requires one line in the terminal depending on your OS, see [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/). After installing uv, pyMINFLUX can be run as follows (installation and execution are combined in one step):
 
 For the latest stable release on PyPI:
 
