@@ -61,16 +61,10 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.leManualThreshold.setValidator(QDoubleValidator(bottom=0.0))
         self.ui.leManualThreshold.setText(str(self.state.dcr_manual_threshold))
         
-        # Time splitting plot caches (like TimeInspector)
+        # Time splitting plot caches
         self.time_resolution_sec = 60  # 1 minute bins
         self.time_x_axis = None
         self.localizations_per_unit_time_cache = None
-        self.localization_precision_per_unit_time_cache_x = None
-        self.localization_precision_per_unit_time_cache_y = None
-        self.localization_precision_per_unit_time_cache_z = None
-        self.localization_precision_stderr_per_unit_time_cache_x = None
-        self.localization_precision_stderr_per_unit_time_cache_y = None
-        self.localization_precision_stderr_per_unit_time_cache_z = None
 
         # Constants
         self.brush = pg.mkBrush(0, 0, 0, 255)
@@ -135,7 +129,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.pbSplit.clicked.connect(self.split_by_time)
         self.ui.pbTimeSplitAssign.clicked.connect(self.assign_time_split_fluorophores)
         self.ui.pbTimeSplitAssign.setEnabled(False)
-        self.ui.pbTimePlot.clicked.connect(self.plot_time_selected)
         
         # Connect tab change to update plots
         self.ui.twMainTabs.currentChanged.connect(self.main_tab_changed)
@@ -146,7 +139,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Check which tab is active and update its plot
         current_tab = self.ui.twMainTabs.currentIndex()
         if current_tab == 1:  # Time splitting tab
-            self.plot_time_selected()
+            self.update_time_plot()
 
     @Slot(str)
     def persist_dcr_bin_size(self, text):
@@ -176,12 +169,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     def invalidate_time_cache(self):
         """Invalidate the time plot cache."""
         self.localizations_per_unit_time_cache = None
-        self.localization_precision_per_unit_time_cache_x = None
-        self.localization_precision_per_unit_time_cache_y = None
-        self.localization_precision_per_unit_time_cache_z = None
-        self.localization_precision_stderr_per_unit_time_cache_x = None
-        self.localization_precision_stderr_per_unit_time_cache_y = None
-        self.localization_precision_stderr_per_unit_time_cache_z = None
         self.time_x_axis = None
 
     @Slot()
@@ -628,11 +615,11 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         elif index == 1:  # Time splitting tab
             self.plot_widget.hide()
             self.time_plot_widget.show()
-            self.plot_time_selected()
+            self.update_time_plot()
 
     @Slot()
-    def plot_time_selected(self):
-        """Plot the selected time analysis."""
+    def update_time_plot(self):
+        """Update the time plot showing localizations per minute."""
         
         # Do we have something to plot?
         if (
@@ -642,22 +629,15 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         ):
             return
         
-        # Always invalidate cache to ensure we're using current fluorophore selection
+        # Invalidate cache to ensure we're using current fluorophore selection
         self.invalidate_time_cache()
         
         # Clear existing plot items
         for item in self.time_plot_widget.allChildItems():
             self.time_plot_widget.removeItem(item)
         
-        # Get the requested plot
-        if self.ui.cbTimePlotType.currentIndex() == 0:
-            self.plot_localizations_per_unit_time()
-        elif self.ui.cbTimePlotType.currentIndex() == 1:
-            self.plot_localization_precision_per_unit_time(std_err=False)
-        elif self.ui.cbTimePlotType.currentIndex() == 2:
-            self.plot_localization_precision_per_unit_time(std_err=True)
-        else:
-            raise ValueError("Unexpected plotting request.")
+        # Plot localizations per unit time
+        self.plot_localizations_per_unit_time()
         
         self.time_plot_widget.setLabel("bottom", text="time (min)")
         self.time_plot_widget.showAxis("bottom")
@@ -682,41 +662,6 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         
         # Update cache references
         self.localizations_per_unit_time_cache = cache_dict['data']
-        self.time_x_axis = cache_dict['x_axis']
-    
-    def plot_localization_precision_per_unit_time(self, std_err: bool = False):
-        """Plot localization precision as a function of time.
-        
-        Parameters
-        ----------
-        std_err: bool
-            Set to True to plot the standard error instead of the standard deviation.
-        """
-        cache_dict = {
-            'x': self.localization_precision_per_unit_time_cache_x,
-            'y': self.localization_precision_per_unit_time_cache_y,
-            'z': self.localization_precision_per_unit_time_cache_z,
-            'x_stderr': self.localization_precision_stderr_per_unit_time_cache_x,
-            'y_stderr': self.localization_precision_stderr_per_unit_time_cache_y,
-            'z_stderr': self.localization_precision_stderr_per_unit_time_cache_z,
-            'x_axis': self.time_x_axis
-        }
-        
-        TimePlotter.plot_localization_precision_per_unit_time(
-            self.time_plot_widget,
-            self.processor,
-            self.time_resolution_sec,
-            cache_dict,
-            std_err
-        )
-        
-        # Update cache references
-        self.localization_precision_per_unit_time_cache_x = cache_dict['x']
-        self.localization_precision_per_unit_time_cache_y = cache_dict['y']
-        self.localization_precision_per_unit_time_cache_z = cache_dict['z']
-        self.localization_precision_stderr_per_unit_time_cache_x = cache_dict['x_stderr']
-        self.localization_precision_stderr_per_unit_time_cache_y = cache_dict['y_stderr']
-        self.localization_precision_stderr_per_unit_time_cache_z = cache_dict['z_stderr']
         self.time_x_axis = cache_dict['x_axis']
 
     def _constrain_region_to_non_overlapping(self, changed_region):

@@ -221,39 +221,6 @@ class Ui_ColorUnmixer(object):
 
         self.verticalLayout_4.addLayout(self.horizontalLayout_5)
 
-        self.horizontalLayout_6 = QHBoxLayout()
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.horizontalSpacer_9 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_6.addItem(self.horizontalSpacer_9)
-
-        self.cbTimePlotType = QComboBox(self.tabTimeSplitting)
-        self.cbTimePlotType.addItem("")
-        self.cbTimePlotType.addItem("")
-        self.cbTimePlotType.addItem("")
-        self.cbTimePlotType.setObjectName(u"cbTimePlotType")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed)
-        sizePolicy4.setHorizontalStretch(0)
-        sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(self.cbTimePlotType.sizePolicy().hasHeightForWidth())
-        self.cbTimePlotType.setSizePolicy(sizePolicy4)
-
-        self.horizontalLayout_6.addWidget(self.cbTimePlotType)
-
-        self.pbTimePlot = QPushButton(self.tabTimeSplitting)
-        self.pbTimePlot.setObjectName(u"pbTimePlot")
-        sizePolicy2.setHeightForWidth(self.pbTimePlot.sizePolicy().hasHeightForWidth())
-        self.pbTimePlot.setSizePolicy(sizePolicy2)
-
-        self.horizontalLayout_6.addWidget(self.pbTimePlot)
-
-        self.horizontalSpacer_10 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_6.addItem(self.horizontalSpacer_10)
-
-
-        self.verticalLayout_4.addLayout(self.horizontalLayout_6)
-
         self.twMainTabs.addTab(self.tabTimeSplitting, "")
 
         self.commands_layout.addWidget(self.twMainTabs)
@@ -293,11 +260,6 @@ class Ui_ColorUnmixer(object):
         self.lbNumSplits.setText(QCoreApplication.translate("ColorUnmixer", u"Number of splits", None))
         self.pbSplit.setText(QCoreApplication.translate("ColorUnmixer", u"Show", None))
         self.pbTimeSplitAssign.setText(QCoreApplication.translate("ColorUnmixer", u"Assign", None))
-        self.cbTimePlotType.setItemText(0, QCoreApplication.translate("ColorUnmixer", u"Localization number per minute", None))
-        self.cbTimePlotType.setItemText(1, QCoreApplication.translate("ColorUnmixer", u"Localization precision per minute", None))
-        self.cbTimePlotType.setItemText(2, QCoreApplication.translate("ColorUnmixer", u"Localization precision per minute (std err)", None))
-
-        self.pbTimePlot.setText(QCoreApplication.translate("ColorUnmixer", u"Plot", None))
         self.twMainTabs.setTabText(self.twMainTabs.indexOf(self.tabTimeSplitting), QCoreApplication.translate("ColorUnmixer", u"Time splitting", None))
     # retranslateUi
 
