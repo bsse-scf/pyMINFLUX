@@ -291,7 +291,7 @@ class Ui_ColorUnmixer(object):
         self.twUnmixingOptions.setTabText(self.twUnmixingOptions.indexOf(self.tab_3), QCoreApplication.translate("ColorUnmixer", u"Histogram settings", None))
         self.twMainTabs.setTabText(self.twMainTabs.indexOf(self.tabDcrUnmixing), QCoreApplication.translate("ColorUnmixer", u"DCR unmixing", None))
         self.lbNumSplits.setText(QCoreApplication.translate("ColorUnmixer", u"Number of splits", None))
-        self.pbSplit.setText(QCoreApplication.translate("ColorUnmixer", u"Split", None))
+        self.pbSplit.setText(QCoreApplication.translate("ColorUnmixer", u"Show", None))
         self.pbTimeSplitAssign.setText(QCoreApplication.translate("ColorUnmixer", u"Assign", None))
         self.cbTimePlotType.setItemText(0, QCoreApplication.translate("ColorUnmixer", u"Localization number per minute", None))
         self.cbTimePlotType.setItemText(1, QCoreApplication.translate("ColorUnmixer", u"Localization precision per minute", None))
