@@ -137,7 +137,6 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_3.addItem(self.hshsEFOPeakAfter)
 
-        self.tabFilterOptions.addTab(self.tab_efo_thresholding, "")
         self.tab_cfr_thresholding = QWidget()
         self.tab_cfr_thresholding.setObjectName("tab_cfr_thresholding")
         sizePolicy1.setHeightForWidth(
@@ -215,7 +214,6 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout_4.addItem(self.hsCFRFilterAfter)
 
-        self.tabFilterOptions.addTab(self.tab_cfr_thresholding, "")
         self.tab_trlen_thresholding = QWidget()
         self.tab_trlen_thresholding.setObjectName("tab_trlen_thresholding")
         self.horizontalLayout = QHBoxLayout(self.tab_trlen_thresholding)
@@ -257,6 +255,8 @@ class Ui_Analyzer(object):
         self.horizontalLayout.addItem(self.hsTraceLenAfter)
 
         self.tabFilterOptions.addTab(self.tab_trlen_thresholding, "")
+        self.tabFilterOptions.addTab(self.tab_efo_thresholding, "")
+        self.tabFilterOptions.addTab(self.tab_cfr_thresholding, "")
 
         self.gridLayout.addWidget(self.tabFilterOptions, 0, 0, 1, 1)
 
@@ -299,10 +299,6 @@ class Ui_Analyzer(object):
         self.pbEFORunFilter.setText(
             QCoreApplication.translate("Analyzer", "Filter", None)
         )
-        self.tabFilterOptions.setTabText(
-            self.tabFilterOptions.indexOf(self.tab_efo_thresholding),
-            QCoreApplication.translate("Analyzer", "EFO thresholding", None),
-        )
         self.checkCFRLowerThreshold.setText(
             QCoreApplication.translate("Analyzer", "Lower bound", None)
         )
@@ -318,10 +314,6 @@ class Ui_Analyzer(object):
         self.pbCFRRunFilter.setText(
             QCoreApplication.translate("Analyzer", "Filter", None)
         )
-        self.tabFilterOptions.setTabText(
-            self.tabFilterOptions.indexOf(self.tab_cfr_thresholding),
-            QCoreApplication.translate("Analyzer", "CFR thresholding", None),
-        )
         self.lbTrLenPercentile.setText(
             QCoreApplication.translate("Analyzer", "Top percentile", None)
         )
@@ -334,6 +326,14 @@ class Ui_Analyzer(object):
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_trlen_thresholding),
             QCoreApplication.translate("Analyzer", "Trace length thresholding", None),
+        )
+        self.tabFilterOptions.setTabText(
+            self.tabFilterOptions.indexOf(self.tab_efo_thresholding),
+            QCoreApplication.translate("Analyzer", "EFO thresholding", None),
+        )
+        self.tabFilterOptions.setTabText(
+            self.tabFilterOptions.indexOf(self.tab_cfr_thresholding),
+            QCoreApplication.translate("Analyzer", "CFR thresholding", None),
         )
 
     # retranslateUi
