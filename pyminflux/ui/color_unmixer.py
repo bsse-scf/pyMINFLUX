@@ -858,9 +858,17 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         
         # Show the FINAL fluorophore IDs in the naming widget
         final_fluo_ids = sorted(final_id_mapping.values())
+        
+        # Preserve any names currently entered in the widget
+        current_names = self.fluorophore_naming_widget.get_names() if self.fluorophore_naming_widget.isVisible() else {}
+        
+        # Merge with processor names (current names take precedence)
+        names_to_use = self.processor.fluorophore_names.copy() if self.processor.fluorophore_names else {}
+        names_to_use.update(current_names)
+        
         self.fluorophore_naming_widget.set_fluorophores(
             final_fluo_ids,
-            self.processor.fluorophore_names
+            names_to_use
         )
         self.fluorophore_naming_widget.setVisible(True)
         
