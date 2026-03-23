@@ -268,6 +268,14 @@ def align_datasets_using_beads(
         print("Error: One or both datasets have no bead data.")
         return None
     
+    # Filter to only include beads marked as "used"
+    df_ref = df_ref[df_ref['used'] == True]
+    df_mov = df_mov[df_mov['used'] == True]
+    
+    if df_ref.empty or df_mov.empty:
+        print("Error: No beads marked as 'used' in one or both datasets.")
+        return None
+    
     # Identify beads to use for alignment
     if bead_correspondence is None:
         # Automatic: use beads with matching names
