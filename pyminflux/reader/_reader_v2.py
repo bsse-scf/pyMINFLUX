@@ -293,6 +293,10 @@ class MinFluxReaderV2(MinFluxReader):
 
         mbm_gri = grd_mbm.grp.points.attrs["points_by_gri"]
         mbm_neighbourhood = mbm.grp.attrs["neighbourhood"]
+        
+        # Get list of used beads from mbm attributes
+        # https://wiki.abberior.rocks/MINFLUX_Files_and_Data#MBM_Information
+        used_beads = mbm.grp.attrs.get("used", [])
 
         num_beads = 0
         num_used_beads = 0
@@ -300,7 +304,7 @@ class MinFluxReaderV2(MinFluxReader):
             bead_name = mbm_gri[key]["name"]
             pts = mbm_points[mbm_points["gri"] == int(key)]
             bead_data = {"bead_name": bead_name, "gri": key, "used": 0, "points": pts}
-            if mbm_gri[key]["times_failed_in_row"] < mbm_gri[key]["stickiness"]:
+            if bead_name in used_beads:
                 bead_data["used"] = 1
                 num_used_beads += 1
             mbm_data["mbm"][bead_name] = bead_data

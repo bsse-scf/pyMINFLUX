@@ -79,6 +79,12 @@ def get_bead_positions_from_mbm(mbm_dict: Dict, n_points: int = 3) -> Dict[str, 
     if df.empty:
         return {}
     
+    # Filter to only include beads marked as "used"
+    df = df[df['used'] == True]
+    
+    if df.empty:
+        return {}
+    
     bead_positions = {}
     for bead_name in df['bead_name'].unique():
         bead_data = df[df['bead_name'] == bead_name]
