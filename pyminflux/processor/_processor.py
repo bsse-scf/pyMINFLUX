@@ -125,6 +125,7 @@ class MinFluxProcessor:
 
         # Store the mask for each fluorophore present in the data
         unique_fluos = np.unique(self.processed_dataframe["fluo"].to_numpy())
+        unique_fluos = unique_fluos[unique_fluos > 0]
         self._selected_rows_dict = {}
         for fluo_id in unique_fluos:
             self._selected_rows_dict[int(fluo_id)] = keep_mask.copy()
@@ -147,6 +148,7 @@ class MinFluxProcessor:
             return
         
         unique_fluos = np.unique(self.processed_dataframe["fluo"].to_numpy())
+        unique_fluos = unique_fluos[unique_fluos > 0]
         for fluo_id in unique_fluos:
             fluo_id_int = int(fluo_id)
             if fluo_id_int not in self._fluorophore_names:
@@ -247,7 +249,8 @@ class MinFluxProcessor:
         """Return the number of fluorophores."""
         if self.processed_dataframe is None:
             return 0
-        return len(np.unique(self.processed_dataframe["fluo"].to_numpy()))
+        unique_fluos = np.unique(self.processed_dataframe["fluo"].to_numpy())
+        return len(unique_fluos[unique_fluos > 0])
 
     @property
     def fluorophore_names(self) -> dict:
@@ -454,18 +457,24 @@ class MinFluxProcessor:
 
         # Now extract the fluorophore assignments from self.processed_dataframe and
         # expand them onto the raw array
-        fluo_map = dict(
-            zip(
-                self.processed_dataframe["iid"],
-                self.processed_dataframe["fluo"].astype(np.uint8),
-            )
-        )
+        if "fluo" in raw_array.columns:
+            raw_fluo = raw_array["fluo"].fillna(0).astype(np.uint8).to_numpy(copy=True)
+        else:
+            raw_fluo = np.zeros(len(raw_array), dtype=np.uint8)
 
-        # Finally map the matching fluo values onto raw_array["fluo"]
-        raw_array["fluo"] = 1
-        fluo = raw_array["iid"].map(fluo_map).to_numpy()
-        fluo[np.isnan(fluo)] = 0
-        raw_array["fluo"] = fluo
+        if "iid" in raw_array.columns and "iid" in self.processed_dataframe.columns:
+            fluo_map = dict(
+                zip(
+                    self.processed_dataframe["iid"],
+                    self.processed_dataframe["fluo"].astype(np.uint8),
+                )
+            )
+            mapped_fluo = raw_array["iid"].map(fluo_map)
+            matched_mask = mapped_fluo.notna().to_numpy()
+            if matched_mask.any():
+                raw_fluo[matched_mask] = mapped_fluo.loc[matched_mask].astype(np.uint8).to_numpy()
+
+        raw_array["fluo"] = raw_fluo.astype(np.uint8)
 
         # Return the array with the assigned fluorophores
         return raw_array

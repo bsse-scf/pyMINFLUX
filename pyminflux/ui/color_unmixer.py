@@ -13,6 +13,9 @@
 #  limitations under the License.
 
 import numpy as np
+import pandas as pd
+from numpy.typing import NDArray
+
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget
 from PySide6.QtCore import QPoint, Signal, Slot
@@ -827,9 +830,28 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         if len(self.time_split_regions) == 0:
             return
         
-        # Get time data in minutes
-        tim_data_sec = self.processor.filtered_dataframe["tim"].to_numpy()
-        tim_data = tim_data_sec / 60.0  # Convert to minutes
+        def assign_fluorophore_ids_by_time_ranges(
+            dataframe: pd.DataFrame,
+            time_ranges: list[tuple[float, float]],
+            fluorophore_ids: list[int],
+            default_fluorophore_id: int = 0,
+        ) -> NDArray[np.uint8]:
+            """Assign fluorophore IDs to rows whose times fall in the given ranges."""
+            if "tim" not in dataframe.columns:
+                raise ValueError("The dataframe must contain a 'tim' column.")
+            if len(time_ranges) != len(fluorophore_ids):
+                raise ValueError("The number of time ranges must match the number of fluorophore IDs.")
+
+            assigned_fluorophore_ids = np.full(
+                len(dataframe), np.uint8(default_fluorophore_id), dtype=np.uint8
+            )
+            tim_data = dataframe["tim"].to_numpy()
+
+            for (start_time, end_time), fluorophore_id in zip(time_ranges, fluorophore_ids):
+                in_range_mask = (tim_data >= start_time) & (tim_data <= end_time)
+                assigned_fluorophore_ids[in_range_mask] = np.uint8(fluorophore_id)
+
+            return assigned_fluorophore_ids
         
         # Get unique cluster IDs
         unique_cluster_ids = sorted([r.cluster_id for r in self.time_split_regions])
@@ -840,57 +862,34 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Get fluorophore names from the widget
         fluorophore_names = self.fluorophore_naming_widget.get_names()
         
-        # Build time ranges and apply filtering BEFORE assigning IDs
-        # This ensures we only assign IDs to data within regions (no fluo_id=0)
         sorted_regions = sorted(self.time_split_regions, key=lambda r: r.getRegion()[0])
-        
-        time_ranges_to_keep = []
+        time_ranges_to_assign = []
+        fluorophore_ids_to_assign = []
         for region in sorted_regions:
             start_min, end_min = region.getRegion()
-            start_sec = start_min * 60.0
-            end_sec = end_min * 60.0
-            time_ranges_to_keep.append((start_sec, end_sec))
-        
-        first_start = time_ranges_to_keep[0][0]
-        last_end = time_ranges_to_keep[-1][1]
-        
-        # Apply filters BEFORE assigning IDs (first pass)
-        self.processor.filter_by_1d_range("tim", (first_start, last_end))
-        
-        for i in range(len(time_ranges_to_keep) - 1):
-            gap_start = time_ranges_to_keep[i][1]
-            gap_end = time_ranges_to_keep[i + 1][0]
-            if gap_end > gap_start:
-                self.processor.filter_by_1d_range_complement("tim", (gap_start, gap_end))
-        
-        # Now get filtered time data - only contains data within regions
-        tim_data_sec = self.processor.filtered_dataframe["tim"].to_numpy()
-        tim_data = tim_data_sec / 60.0  # Convert to minutes
-        
-        # Build fluorophore ID assignments (all will be non-zero)
-        fluo_ids = np.zeros(len(tim_data), dtype=np.uint8)
-        
-        for region in self.time_split_regions:
-            start, end = region.getRegion()  # These are in minutes
-            mask = (tim_data >= start) & (tim_data <= end)
-            fluo_ids[mask] = new_fluo_id_mapping[region.cluster_id]
-        
-        # Assign the fluorophore IDs (this will reset filters via _init_selected_rows_dict)
-        self.processor.set_fluorophore_ids(fluo_ids)
+            time_ranges_to_assign.append((start_min * 60.0, end_min * 60.0))
+            fluorophore_ids_to_assign.append(new_fluo_id_mapping[region.cluster_id])
+
+        processed_fluo_ids = assign_fluorophore_ids_by_time_ranges(
+            self.processor.processed_dataframe,
+            time_ranges_to_assign,
+            fluorophore_ids_to_assign,
+            default_fluorophore_id=0,
+        )
+        self.processor.set_full_fluorophore_ids(processed_fluo_ids)
+
+        if self.processor.dataset.full_raw_dataframe is not None:
+            raw_fluo_ids = assign_fluorophore_ids_by_time_ranges(
+                self.processor.dataset.full_raw_dataframe,
+                time_ranges_to_assign,
+                fluorophore_ids_to_assign,
+                default_fluorophore_id=0,
+            )
+            self.processor.dataset.full_raw_dataframe.loc[:, "fluo"] = raw_fluo_ids
         
         # Set the fluorophore names
         if fluorophore_names:
             self.processor.set_fluorophore_names(fluorophore_names)
-        
-        # Re-apply filters AFTER set_fluorophore_ids() (second pass - necessary!)
-        # set_fluorophore_ids() calls _init_selected_rows_dict() which clears filters
-        self.processor.filter_by_1d_range("tim", (first_start, last_end))
-        
-        for i in range(len(time_ranges_to_keep) - 1):
-            gap_start = time_ranges_to_keep[i][1]
-            gap_end = time_ranges_to_keep[i + 1][0]
-            if gap_end > gap_start:
-                self.processor.filter_by_1d_range_complement("tim", (gap_start, gap_end))
         
         # Reset to "All" fluorophores
         self.processor.current_fluorophore_id = 0

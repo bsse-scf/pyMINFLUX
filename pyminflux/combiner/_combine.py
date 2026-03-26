@@ -174,8 +174,13 @@ def combine_datasets_with_alignment(
         Combined dataset
     """
     # Get the dataframes
-    df_reference = reference_dataset.processed_dataframe
+    df_reference = reference_dataset.processed_dataframe.copy()
     df_moving = moving_dataset.processed_dataframe.copy()
+
+    if "fluo" in df_reference.columns:
+        df_reference["fluo"] = df_reference["fluo"].fillna(0).astype(np.uint8)
+    if "fluo" in df_moving.columns:
+        df_moving["fluo"] = df_moving["fluo"].fillna(0).astype(np.uint8)
 
     # Ensure unique iid values to prevent fluorophore mapping collisions
     # Use a single offset for both processed and raw dataframes to keep them aligned.
@@ -214,7 +219,7 @@ def combine_datasets_with_alignment(
     df_moving['x'] = positions_transformed[:, 2]
     
     # Assign new fluorophore ID
-    df_moving['fluo'] = next_fluo_id
+    df_moving['fluo'] = np.uint8(next_fluo_id)
     
     # Concatenate the dataframes
     df_combined = pd.concat([df_reference, df_moving], ignore_index=True)
@@ -222,29 +227,34 @@ def combine_datasets_with_alignment(
     # Handle full raw dataframe if version 2
     full_raw_combined = None
     if reference_dataset.version == 2 and reference_dataset.full_raw_dataframe is not None:
-        if moving_dataset.full_raw_dataframe is not None:
-            # Transform the raw dataframe positions with correct unit handling
-            df_raw_moving = _transform_raw_positions(
-                moving_dataset.full_raw_dataframe,
-                transform_model,
-                z_scaling_factor=moving_dataset.z_scaling_factor,
-                unit_scaling_factor=moving_dataset.unit_scaling_factor,
-                is_aggregated=moving_dataset.is_aggregated,
-            )
-            if iid_offset and "iid" in df_raw_moving.columns:
-                df_raw_moving["iid"] = df_raw_moving["iid"] + iid_offset
-            if tid_offset and "tid" in df_raw_moving.columns:
-                df_raw_moving["tid"] = df_raw_moving["tid"] + tid_offset
-            df_raw_moving['fluo'] = next_fluo_id
-            
-            full_raw_combined = pd.concat(
-                [reference_dataset.full_raw_dataframe, df_raw_moving],
-                ignore_index=True
-            )
-        else:
-            # Only reference has raw dataframe
-            full_raw_combined = reference_dataset.full_raw_dataframe
-    
+        # Reference raw already has correct fluo - use as-is
+        df_raw_reference = reference_dataset.full_raw_dataframe.copy()
+        
+        # Transform the raw dataframe positions with correct unit handling
+        df_raw_moving = _transform_raw_positions(
+            moving_dataset.full_raw_dataframe,
+            transform_model,
+            z_scaling_factor=moving_dataset.z_scaling_factor,
+            unit_scaling_factor=moving_dataset.unit_scaling_factor,
+            is_aggregated=moving_dataset.is_aggregated,
+        )
+        
+        # Apply offsets to moving raw
+        if iid_offset and "iid" in df_raw_moving.columns:
+            df_raw_moving["iid"] = df_raw_moving["iid"] + iid_offset
+        if tid_offset and "tid" in df_raw_moving.columns:
+            df_raw_moving["tid"] = df_raw_moving["tid"] + tid_offset
+        
+        # Set all moving raw rows to next_fluo_id
+        df_raw_moving["fluo"] = np.full(len(df_raw_moving), np.uint8(next_fluo_id), dtype=np.uint8)
+        
+        full_raw_combined = pd.concat(
+            [df_raw_reference, df_raw_moving],
+            ignore_index=True
+        )
+        # Ensure fluo column is uint8 (no fillna needed since both inputs are complete)
+        full_raw_combined["fluo"] = full_raw_combined["fluo"].astype(np.uint8)
+
     # Track TID offsets with the first iid they apply to
     combined_tid_offsets: List[Tuple[int, int]] = list(reference_dataset.tid_offsets)
     moving_tid_offsets = moving_dataset.tid_offsets
