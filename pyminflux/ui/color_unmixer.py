@@ -862,6 +862,9 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Get fluorophore names from the widget
         fluorophore_names = self.fluorophore_naming_widget.get_names()
         
+        # Get the current fluorophore being split (same logic as _calculate_final_fluo_id_mapping)
+        current_fluo_id = self.processor.current_fluorophore_id
+        
         sorted_regions = sorted(self.time_split_regions, key=lambda r: r.getRegion()[0])
         time_ranges_to_assign = []
         fluorophore_ids_to_assign = []
@@ -870,22 +873,48 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             time_ranges_to_assign.append((start_min * 60.0, end_min * 60.0))
             fluorophore_ids_to_assign.append(new_fluo_id_mapping[region.cluster_id])
 
-        processed_fluo_ids = assign_fluorophore_ids_by_time_ranges(
-            self.processor.processed_dataframe,
+        # Start with existing fluo IDs and only modify the current fluorophore
+        processed_fluo_ids = self.processor.processed_dataframe["fluo"].to_numpy().copy()
+        
+        # Only assign time-based IDs to rows currently belonging to the current fluorophore
+        current_fluo_mask = (processed_fluo_ids == current_fluo_id)
+        time_split_ids = assign_fluorophore_ids_by_time_ranges(
+            self.processor.processed_dataframe[current_fluo_mask],
             time_ranges_to_assign,
             fluorophore_ids_to_assign,
             default_fluorophore_id=0,
         )
+        processed_fluo_ids[current_fluo_mask] = time_split_ids
+        
         self.processor.set_full_fluorophore_ids(processed_fluo_ids)
 
         if self.processor.dataset.full_raw_dataframe is not None:
-            raw_fluo_ids = assign_fluorophore_ids_by_time_ranges(
-                self.processor.dataset.full_raw_dataframe,
+            raw_fluo_ids = self.processor.dataset.full_raw_dataframe["fluo"].to_numpy().copy()
+            
+            # Only modify raw rows belonging to the current fluorophore
+            current_fluo_raw_mask = (raw_fluo_ids == current_fluo_id)
+            raw_time_split_ids = assign_fluorophore_ids_by_time_ranges(
+                self.processor.dataset.full_raw_dataframe[current_fluo_raw_mask],
                 time_ranges_to_assign,
                 fluorophore_ids_to_assign,
                 default_fluorophore_id=0,
             )
+            raw_fluo_ids[current_fluo_raw_mask] = raw_time_split_ids
+            
             self.processor.dataset.full_raw_dataframe.loc[:, "fluo"] = raw_fluo_ids
+        
+        # Filter out the gaps (fluo=0) by applying time range filters
+        # First, get the overall time range (first start to last end)
+        first_start = time_ranges_to_assign[0][0]
+        last_end = time_ranges_to_assign[-1][1]
+        self.processor.filter_by_1d_range("tim", (first_start, last_end))
+        
+        # Then filter out each gap between consecutive time ranges
+        for i in range(len(time_ranges_to_assign) - 1):
+            gap_start = time_ranges_to_assign[i][1]
+            gap_end = time_ranges_to_assign[i + 1][0]
+            if gap_end > gap_start:
+                self.processor.filter_by_1d_range_complement("tim", (gap_start, gap_end))
         
         # Set the fluorophore names
         if fluorophore_names:
