@@ -1,6 +1,6 @@
 [project]
 name = "pyminflux"
-version = "0.6.0"
+version = "0.7.0"
 description = "Reader, processor, and viewer of MINFLUX raw data."
 authors = [
     {name = "Aaron Ponti", email = "aaron.ponti@bsse.ethz.ch"}
