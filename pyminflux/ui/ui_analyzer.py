@@ -325,15 +325,15 @@ class Ui_Analyzer(object):
         )
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_trlen_thresholding),
-            QCoreApplication.translate("Analyzer", "Trace length thresholding", None),
+            QCoreApplication.translate("Analyzer", "Trace length filtering", None),
         )
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_efo_thresholding),
-            QCoreApplication.translate("Analyzer", "EFO thresholding", None),
+            QCoreApplication.translate("Analyzer", "EFO filtering", None),
         )
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_cfr_thresholding),
-            QCoreApplication.translate("Analyzer", "CFR thresholding", None),
+            QCoreApplication.translate("Analyzer", "CFR filtering", None),
         )
 
     # retranslateUi

@@ -45,7 +45,7 @@
        </sizepolicy>
       </property>
       <attribute name="title">
-       <string>EFO thresholding</string>
+       <string>EFO filtering</string>
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
@@ -157,7 +157,7 @@
        </sizepolicy>
       </property>
       <attribute name="title">
-       <string>CFR thresholding</string>
+       <string>CFR filtering</string>
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
@@ -277,7 +277,7 @@
      </widget>
      <widget class="QWidget" name="tab_trlen_thresholding">
       <attribute name="title">
-       <string>Trace length thresholding</string>
+       <string>Trace length filtering</string>
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
