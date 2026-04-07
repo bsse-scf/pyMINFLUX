@@ -632,9 +632,18 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             filename = Path(filename)
             filename = filename.parent / f"{filename.stem}.pmx"
 
+        # Temporarily set fluorophore to "all" to ensure all data is saved
+        previous_fluorophore_id = self.processor.current_fluorophore_id
+        if previous_fluorophore_id != 0:
+            self.processor.current_fluorophore_id = 0
+
         # Write to disk
         writer = PMXWriter(self.processor)
         result = writer.write(filename)
+
+        # Restore previous fluorophore selection
+        if previous_fluorophore_id != 0:
+            self.processor.current_fluorophore_id = previous_fluorophore_id
 
         # Save
         if result:
@@ -1151,8 +1160,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 filename = Path(filename)
                 filename = filename.parent / f"{filename.stem}.csv"
 
+            # Temporarily set fluorophore to "all" to ensure all data is exported
+            previous_fluorophore_id = self.processor.current_fluorophore_id
+            if previous_fluorophore_id != 0:
+                self.processor.current_fluorophore_id = 0
+
             # Write to disk
             result = MinFluxWriter.write_csv(self.processor, filename)
+
+            # Restore previous fluorophore selection
+            if previous_fluorophore_id != 0:
+                self.processor.current_fluorophore_id = previous_fluorophore_id
 
         else:
             return
