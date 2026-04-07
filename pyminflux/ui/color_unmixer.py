@@ -136,6 +136,18 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         # Connect tab change to update plots
         self.ui.twMainTabs.currentChanged.connect(self.main_tab_changed)
 
+        # If "all" fluorophores is selected but only one fluo ID exists in the
+        # dataset, switch the active fluorophore to that single value so that
+        # ID assignment works correctly.
+        if (
+            self.processor is not None
+            and self.processor.current_fluorophore_id == 0
+            and self.processor.num_fluorophores == 1
+        ):
+            unique_fluos = np.unique(self.processor.processed_dataframe["fluo"].to_numpy())
+            only_fluo_id = int(unique_fluos[unique_fluos > 0][0])
+            self.processor.current_fluorophore_id = only_fluo_id
+
     def showEvent(self, event):
         """Override showEvent to update plots when dialog is shown."""
         super().showEvent(event)
