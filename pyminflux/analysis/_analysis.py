@@ -748,12 +748,13 @@ def assign_data_to_clusters(
     # If num_clusters is > 1, sort the indices by mean values of x,
     # from low to high (to match the assignment of the manual thresholding)
     if num_clusters > 1:
-        means = [np.mean(x[y_pred == f_id]) for f_id in np.unique(y_pred)]
+        unique_ids = np.unique(y_pred)
+        means = [np.mean(x[y_pred == f_id]) for f_id in unique_ids]
         sorted_f = np.argsort(means)
-        for f in range(num_clusters):
-            if np.isnan(means[f]):
+        for i, f in enumerate(unique_ids):
+            if np.isnan(means[i]):
                 continue
-            n = sorted_f[f] + num_clusters
+            n = sorted_f[i] + num_clusters
             y_pred[y_pred == f] = n
         y_pred -= num_clusters
 
