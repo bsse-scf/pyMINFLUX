@@ -35,20 +35,20 @@ IF ERRORLEVEL 1 exit /b %ERRORLEVEL%
 uv sync --locked --extra dev --python %PYTHON_VERSION% --managed-python --no-install-package zstandard
 IF ERRORLEVEL 1 exit /b %ERRORLEVEL%
 
-SET VENV_PYTHON=.venv\Scripts\python.exe
-IF NOT EXIST "%VENV_PYTHON%" (
-    ECHO Could not find the uv-managed Python environment at %VENV_PYTHON%.
-    exit /b 1
-)
-
-for /f "usebackq delims=" %%i in (`"%VENV_PYTHON%" -c "import pathlib, tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])"`) do set VERSION=%%i
+uv run python -c "import pathlib, tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])" > "%TEMP%\pyminflux_version.txt"
+IF ERRORLEVEL 1 exit /b %ERRORLEVEL%
+set /p VERSION=<"%TEMP%\pyminflux_version.txt"
+del "%TEMP%\pyminflux_version.txt"
 
 if "%VERSION%"=="" (
     echo Could not determine the project version
     exit /b 1
 )
 
-for /f "usebackq delims=" %%i in (`"%VENV_PYTHON%" -c "import os, vispy; print(os.path.join(os.path.dirname(vispy.__file__), 'glsl'))"`) do set VISPY_GLSL_DIR=%%i
+uv run python -c "import os, vispy; print(os.path.join(os.path.dirname(vispy.__file__), 'glsl'))" > "%TEMP%\pyminflux_vispy.txt"
+IF ERRORLEVEL 1 exit /b %ERRORLEVEL%
+set /p VISPY_GLSL_DIR=<"%TEMP%\pyminflux_vispy.txt"
+del "%TEMP%\pyminflux_vispy.txt"
 
 if "%VISPY_GLSL_DIR%"=="" (
     echo Could not determine vispy glsl directory
@@ -60,7 +60,7 @@ if exist dist rmdir /s /q dist
 
 REM Note: if `--mingw64 --clang` causes Windows Defender to give false positives,
 REM use `--msvc=latest` instead.
-"%VENV_PYTHON%" -m nuitka pyminflux/main.py -o pyMINFLUX ^
+uv run python -m nuitka pyminflux/main.py -o pyMINFLUX ^
 --mingw64 --clang ^
 --assume-yes-for-downloads ^
 --windows-console-mode=disable ^
