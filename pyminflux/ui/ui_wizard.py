@@ -289,11 +289,11 @@ class Ui_WizardDialog(object):
         self.lbEFOFiltering.setText(QCoreApplication.translate("WizardDialog", u"EFO filtering", None))
         self.lbEFOLowerBound.setText(QCoreApplication.translate("WizardDialog", u"Lower bound (Hz)", None))
         self.lbEFOUpperBound.setText(QCoreApplication.translate("WizardDialog", u"Upper bound (Hz)", None))
-        self.pbEFOFilter.setText(QCoreApplication.translate("WizardDialog", u"FIlter EFO", None))
+        self.pbEFOFilter.setText(QCoreApplication.translate("WizardDialog", u"Filter EFO", None))
         self.lbCFRFiltering.setText(QCoreApplication.translate("WizardDialog", u"CFR filtering", None))
         self.lbCFRLowerBound.setText(QCoreApplication.translate("WizardDialog", u"Lower bound", None))
         self.lbCFRUpperBound.setText(QCoreApplication.translate("WizardDialog", u"Upper bound", None))
-        self.pbCFRFilter.setText(QCoreApplication.translate("WizardDialog", u"FIlter CFR", None))
+        self.pbCFRFilter.setText(QCoreApplication.translate("WizardDialog", u"Filter CFR", None))
         self.pbSaveData.setText(QCoreApplication.translate("WizardDialog", u"Save", None))
         self.pbExportData.setText(QCoreApplication.translate("WizardDialog", u"Export", None))
     # retranslateUi

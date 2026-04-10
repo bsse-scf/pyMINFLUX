@@ -264,7 +264,7 @@
      <item>
       <widget class="QPushButton" name="pbEFOFilter">
        <property name="text">
-        <string>FIlter EFO</string>
+        <string>Filter EFO</string>
        </property>
       </widget>
      </item>
@@ -325,7 +325,7 @@
      <item>
       <widget class="QPushButton" name="pbCFRFilter">
        <property name="text">
-        <string>FIlter CFR</string>
+        <string>Filter CFR</string>
        </property>
       </widget>
      </item>
