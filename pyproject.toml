@@ -46,6 +46,7 @@ dev = [
     "patchelf>=0.17.2.2,<0.18.0.0; sys_platform == 'linux'",
     "zstandard>=0.23.0,<0.24.0",
     "ruff>=0.4.10,<0.5.0",
+    "hatchling>=1.27.0",
 ]
 
 [project.scripts]
@@ -86,5 +87,5 @@ known_third_party = ["PySide6", "h5py", "natsort", "numpy", "pandas", "paraview"
 select = ["NPY201"]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
