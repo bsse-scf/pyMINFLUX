@@ -15,13 +15,14 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
-from PySide6.QtGui import QDoubleValidator
+from PySide6.QtGui import QDoubleValidator, QIcon, QPixmap, QColor, QPainter
 from PySide6.QtWidgets import QDialog, QMessageBox
 
 from pyminflux.ui.state import State
 
 from ..analysis import prepare_histogram
 from ..utils import intersect_2d_ranges
+from .colors import Colors
 from .ui_wizard import Ui_WizardDialog
 
 
@@ -29,11 +30,13 @@ class WizardDialog(QDialog, Ui_WizardDialog):
     load_data_triggered = Signal()
     load_zarr_triggered = Signal()
     load_filename_triggered = Signal(str)
+    combine_filename_triggered = Signal(str)
     save_data_triggered = Signal()
     reset_filters_triggered = Signal()
     open_unmixer_triggered = Signal()
     open_time_inspector_triggered = Signal()
     open_analyzer_triggered = Signal()
+    open_combiner_triggered = Signal()
     fluorophore_id_changed = Signal(int)
     request_fluorophore_ids_reset = Signal()
     efo_bounds_modified = Signal()
@@ -132,9 +135,16 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         except Exception as _:
             return
 
+        # Check if Shift key is held for combine operation
+        modifiers = event.modifiers()
+        is_combine_operation = modifiers & Qt.ShiftModifier
+
         if Path(filename).is_dir():
             # This *could* be a Zarr file, we will pass it on
-            self.load_filename_triggered.emit(str(filename))
+            if is_combine_operation:
+                self.combine_filename_triggered.emit(str(filename))
+            else:
+                self.load_filename_triggered.emit(str(filename))
         else:
 
             # Make sure it is of the right format
@@ -142,7 +152,16 @@ class WizardDialog(QDialog, Ui_WizardDialog):
                 return
             ext = filename.lower()[-4:]
             if ext in [".pmx", ".npy", ".mat"]:
-                self.load_filename_triggered.emit(str(filename))
+                if is_combine_operation:
+                    # For combine, we need Zarr files with bead data
+                    QMessageBox.information(
+                        self,
+                        "Combine Requires Zarr",
+                        f"To combine datasets, please drag and drop a Zarr directory (not {ext} files).\n"
+                        f"Only Zarr datasets contain the bead measurement data needed for alignment.",
+                    )
+                else:
+                    self.load_filename_triggered.emit(str(filename))
             else:
                 QMessageBox.critical(
                     self,
@@ -161,7 +180,9 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.ui.pbLoadData.clicked.connect(lambda _: self.load_data_triggered.emit())
         self.ui.pbLoadZarr.clicked.connect(lambda _: self.load_zarr_triggered.emit())
         self.ui.pbReset.clicked.connect(self.reset_filters)
-        self.ui.pbSingleColor.clicked.connect(self.reset_fluorophores)
+        self.ui.pbSingleColor.clicked.connect(
+            lambda _: self.open_combiner_triggered.emit()
+        )
         self.ui.pbColorUnmixer.clicked.connect(
             lambda _: self.open_unmixer_triggered.emit()
         )
@@ -318,9 +339,44 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         if num_fluorophores == 1:
             self.ui.cmActiveColor.addItems(["All"])
         else:
-            self.ui.cmActiveColor.addItems(
-                ["All"] + list([str(i + 1) for i in range(num_fluorophores)])
-            )
+            # Add "All" option first
+            self.ui.cmActiveColor.addItem("All")
+            
+            # Get color helper
+            colors = Colors()
+            
+            # Get the actual fluorophore IDs from the processor (they may not be sequential)
+            if self.processor is not None and self.processor.processed_dataframe is not None:
+                actual_fluo_ids = sorted(np.unique(self.processor.processed_dataframe["fluo"].to_numpy()).astype(int).tolist())
+                # Remove 0 if present (unassigned)
+                actual_fluo_ids = [fid for fid in actual_fluo_ids if fid > 0]
+            else:
+                # Fallback to sequential IDs if processor not available
+                actual_fluo_ids = list(range(1, num_fluorophores + 1))
+            
+            # Add fluorophore items with color icons
+            for fluo_id in actual_fluo_ids:
+                # Get fluorophore name from processor if available
+                if self.processor is not None:
+                    name = self.processor.get_fluorophore_name(fluo_id)
+                    text = f"{fluo_id}: {name}"
+                else:
+                    text = str(fluo_id)
+                
+                # Create small color icon for this fluorophore with spacing
+                # Get color from centralized method (same as used in plotting)
+                rgb = colors._get_fid_color(fluo_id, as_float=False)
+                # Create wider pixmap with transparent background for spacing
+                pixmap = QPixmap(16, 8)
+                pixmap.fill(Qt.GlobalColor.transparent)
+                # Draw the colored square only on the left portion
+                painter = QPainter(pixmap)
+                painter.fillRect(0, 0, 8, 8, QColor(int(rgb[0]), int(rgb[1]), int(rgb[2])))
+                painter.end()
+                icon = QIcon(pixmap)
+                
+                # Add item with icon
+                self.ui.cmActiveColor.addItem(icon, text)
 
         # Release the blocker
         blocker.unblock()

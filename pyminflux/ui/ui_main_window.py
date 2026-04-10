@@ -98,6 +98,8 @@ class Ui_MainWindow(object):
         self.actionWhat_s_new.setObjectName("actionWhat_s_new")
         self.actionUnmixer = QAction(MainWindow)
         self.actionUnmixer.setObjectName("actionUnmixer")
+        self.actionSet_Fluorophore_Names = QAction(MainWindow)
+        self.actionSet_Fluorophore_Names.setObjectName("actionSet_Fluorophore_Names")
         self.actionTime_Inspector = QAction(MainWindow)
         self.actionTime_Inspector.setObjectName("actionTime_Inspector")
         self.actionAnalyzer = QAction(MainWindow)
@@ -168,6 +170,8 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionCheck_for_updates)
         self.menuHelp.addAction(self.actionAbout)
         self.menuAnalysis.addAction(self.actionUnmixer)
+        self.menuAnalysis.addAction(self.actionSet_Fluorophore_Names)
+        self.menuAnalysis.addSeparator()
         self.menuAnalysis.addAction(self.actionTime_Inspector)
         self.menuAnalysis.addAction(self.actionAnalyzer)
         self.menuAnalysis.addSeparator()
@@ -241,6 +245,9 @@ class Ui_MainWindow(object):
         )
         self.actionUnmixer.setText(
             QCoreApplication.translate("MainWindow", "Unmixer", None)
+        )
+        self.actionSet_Fluorophore_Names.setText(
+            QCoreApplication.translate("MainWindow", "Channel names", None)
         )
         self.actionTime_Inspector.setText(
             QCoreApplication.translate("MainWindow", "Time Inspector", None)

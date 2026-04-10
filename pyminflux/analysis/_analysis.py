@@ -285,12 +285,16 @@ def ideal_hist_bins(values: np.ndarray, scott: bool = False):
     if len(values) == 0:
         raise ValueError("No data.")
 
+    # Cast to float32 to avoid scipy 1.17.1 overflow issues with float16
+    # This ensures compatibility across scipy versions while maintaining precision
+    work_values = values.astype(np.float32, copy=False)
+
     # Pathological case, all values are the same
-    if np.all(np.diff(values[np.logical_not(np.isnan(values))]) == 0):
-        bin_edges = np.array([values[0] - 5e-7, values[0] + 5e-7])
+    if np.all(np.diff(work_values[np.logical_not(np.isnan(work_values))]) == 0):
+        bin_edges = np.array([work_values[0] - 5e-7, work_values[0] + 5e-7])
         bin_centers = np.array(
             [
-                values[0],
+                work_values[0],
             ]
         )
         bin_size = 1e-6
@@ -300,14 +304,14 @@ def ideal_hist_bins(values: np.ndarray, scott: bool = False):
     factor = 2.0
     if scott:
         factor = 2.59
-    iqr = stats.iqr(values, rng=(25, 75), scale=1.0, nan_policy="omit")
-    num_values = np.sum(np.logical_not(np.isnan(values)))
+    iqr = stats.iqr(work_values, rng=(25, 75), scale=1.0, nan_policy="omit")
+    num_values = np.sum(np.logical_not(np.isnan(work_values)))
     crn = np.power(num_values, 1 / 3)
     bin_size = (factor * iqr) / crn
 
     # Get min and max values
-    min_value = np.nanmin(values)
-    max_value = np.nanmax(values)
+    min_value = np.nanmin(work_values)
+    max_value = np.nanmax(work_values)
 
     # Pathological case where bin_size is 0.0
     if bin_size == 0.0:
@@ -744,12 +748,13 @@ def assign_data_to_clusters(
     # If num_clusters is > 1, sort the indices by mean values of x,
     # from low to high (to match the assignment of the manual thresholding)
     if num_clusters > 1:
-        means = [np.mean(x[y_pred == f_id]) for f_id in np.unique(y_pred)]
+        unique_ids = np.unique(y_pred)
+        means = [np.mean(x[y_pred == f_id]) for f_id in unique_ids]
         sorted_f = np.argsort(means)
-        for f in range(num_clusters):
-            if np.isnan(means[f]):
+        for i, f in enumerate(unique_ids):
+            if np.isnan(means[i]):
                 continue
-            n = sorted_f[f] + num_clusters
+            n = sorted_f[i] + num_clusters
             y_pred[y_pred == f] = n
         y_pred -= num_clusters
 

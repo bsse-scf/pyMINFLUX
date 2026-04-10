@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright (c) 2022 - 2025 D-BSSE, ETH Zurich.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,65 +13,61 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VERSION=0.6.0
-PYTHON_VERSION=3.12
+set -euo pipefail
 
-if [[ -z "$ANACONDA_HOME" ]]; then
-    echo "Please set environment variable ANACONDA_HOME." 1>&2
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}"
+
+PYTHON_VERSION="${PYMINFLUX_PYTHON_VERSION:-3.12}"
+
+if ! command -v uv >/dev/null 2>&1; then
+    echo "uv is required to build pyMINFLUX." 1>&2
     exit 1
 fi
 
-# Source conda.sh
-source $ANACONDA_HOME/etc/profile.d/conda.sh
+uv python install "${PYTHON_VERSION}"
+uv sync --locked --extra dev --python "${PYTHON_VERSION}" --managed-python
 
-# Create and activate a dedicated env
-conda create -n pyminflux-build python=$PYTHON_VERSION -y
-conda activate pyminflux-build
-
-# Install dependencies
-poetry install
-
-# Determine the path to the vispy glsl directory
-VISPY_GLSL_DIR=$(python -c "import vispy, os; print(os.path.join(os.path.dirname(vispy.__file__), 'glsl'))")
-
-# Check if the path was found
-if [ -z "$VISPY_GLSL_DIR" ]; then
-    echo "Could not determine vispy glsl directory"
+VENV_PYTHON=".venv/bin/python"
+if [[ ! -x "${VENV_PYTHON}" ]]; then
+    echo "Could not find the uv-managed Python environment at ${VENV_PYTHON}." 1>&2
     exit 1
 fi
 
-# Delete build and dist folders
-rm -fR build
-rm -fR dist
+VERSION="$(
+    "${VENV_PYTHON}" -c \
+        "import pathlib, tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])"
+)"
 
-# Build the app
-python -m nuitka pyminflux/main.py -o pyMINFLUX \
---clang \
---assume-yes-for-downloads \
---noinclude-default-mode=error \
---standalone \
---macos-create-app-bundle \
---macos-signed-app-name="ch.ethz.pyminflux" \
---macos-app-name="pyMINFLUX" \
---macos-app-version=$VERSION \
---macos-app-icon=pyminflux/ui/assets/Logo_v3.icns \
---include-module=scipy.special._special_ufuncs \
---include-module=vispy.app.backends._pyside6 \
---include-module=pydoc \
---include-data-dir="$VISPY_GLSL_DIR=vispy/glsl" \
---enable-plugin=pylint-warnings \
---enable-plugin=pyside6 \
---noinclude-default-mode=nofollow \
---output-dir=./dist
+VISPY_GLSL_DIR="$(
+    "${VENV_PYTHON}" -c \
+        "import os, vispy; print(os.path.join(os.path.dirname(vispy.__file__), 'glsl'))"
+)"
 
-# Rename the bundle
+if [[ -z "${VISPY_GLSL_DIR}" ]]; then
+    echo "Could not determine vispy glsl directory." 1>&2
+    exit 1
+fi
+
+rm -rf build dist
+
+"${VENV_PYTHON}" -m nuitka pyminflux/main.py -o pyMINFLUX \
+    --clang \
+    --assume-yes-for-downloads \
+    --standalone \
+    --macos-create-app-bundle \
+    --macos-signed-app-name="ch.ethz.pyminflux" \
+    --macos-app-name="pyMINFLUX" \
+    --macos-app-version="${VERSION}" \
+    --macos-app-icon=pyminflux/ui/assets/Logo_v3.icns \
+    --include-module=scipy.special._special_ufuncs \
+    --include-module=deprecated \
+    --include-module=vispy.app.backends._pyside6 \
+    --include-module=pydoc \
+    --include-data-dir="${VISPY_GLSL_DIR}=vispy/glsl" \
+    --enable-plugin=pylint-warnings \
+    --enable-plugin=pyside6 \
+    --noinclude-default-mode=nofollow \
+    --output-dir=./dist
+
 mv ./dist/main.app ./dist/pyMINFLUX.app
-
-# Zip the archive (this most be done here!)
-cd dist
-zip -r pyMINFLUX_${VERSION}_macos.zip pyMINFLUX.app
-cd ..
-
-# Remove the conda environment
-conda deactivate
-conda env remove -n pyminflux-build -y

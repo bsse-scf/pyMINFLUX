@@ -207,12 +207,12 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.histogram_raise_context_menu_with_filtering
         )
 
+        self.ui.parameters_layout.addWidget(self.tr_len_plot)
+        self.tr_len_plot.hide()
         self.ui.parameters_layout.addWidget(self.efo_plot)
         self.efo_plot.hide()
         self.ui.parameters_layout.addWidget(self.cfr_plot)
         self.cfr_plot.hide()
-        self.ui.parameters_layout.addWidget(self.tr_len_plot)
-        self.tr_len_plot.hide()
 
         # Localizations layout
         self.sx_plot = pg.PlotWidget(parent=self, background="w", title="σx")

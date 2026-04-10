@@ -12,22 +12,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-__doc__ = "Correction/restoration functions."
-__all__ = [
-    "drift_correction_time_windows_2d",
-    "drift_correction_time_windows_3d",
-    "point_registration",
-    "mbm_dict_to_dataframe",
-    "align_datasets_using_beads",
-    "RigidTransform",
-    "TranslationTransform",
-]
+"""Dataset combining utilities."""
 
-from ._correct import drift_correction_time_windows_2d, drift_correction_time_windows_3d
-from ._bead_alignment import (
-    point_registration,
-    mbm_dict_to_dataframe,
-    align_datasets_using_beads,
-    RigidTransform,
-    TranslationTransform,
+from ._combine import (
+    combine_datasets_with_bead_alignment,
+    get_bead_positions_from_mbm,
+    load_zarr_for_beads,
+    get_next_fluorophore_id,
 )
+
+__all__ = [
+    "combine_datasets_with_bead_alignment",
+    "get_bead_positions_from_mbm",
+    "load_zarr_for_beads",
+    "get_next_fluorophore_id",
+]

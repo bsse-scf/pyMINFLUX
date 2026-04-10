@@ -315,6 +315,9 @@ class Plotter3D(QWidget):
         # First translate to origin
         transform.translate((-x_center, -y_center, -z_center))
 
+        # Flip the y-axis to match imaging coordinate conventions
+        transform.scale((1, -1, 1))
+
         # Then rotate 90 degrees around the x-axis
         transform.rotate(90, (1, 0, 0))
 

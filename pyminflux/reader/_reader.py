@@ -55,6 +55,7 @@ class MinFluxReader:
         "_valid_entries",
         "_vld_index",
         "_z_scaling_factor",
+        "_tid_offsets",
     ]
 
     def __init__(
@@ -116,6 +117,7 @@ class MinFluxReader:
         self._full_raw_data_array = None
         self._processed_dataframe = None
         self._valid_entries = None
+        self._tid_offsets = []
 
         # Whether the acquisition is 2D or 3D
         self._is_3d: bool = False
@@ -195,6 +197,11 @@ class MinFluxReader:
     def dwell_time(self) -> float:
         """Returns the dwell time."""
         return self._dwell_time
+
+    @property
+    def tid_offsets(self) -> list:
+        """Return list of (first_iid, tid_offset) pairs applied when combining datasets."""
+        return list(self._tid_offsets)
 
     @property
     def num_valid_entries(self) -> int:
@@ -462,6 +469,9 @@ class MinFluxReader:
             print(f"File {self._filename} does not exist.")
             return False
 
+        # Reset stored TID offsets
+        self._tid_offsets = []
+
         # Call the specialized _load_*() function
         if self._filename.name.lower().endswith(".npy"):
             try:
@@ -493,6 +503,7 @@ class MinFluxReader:
             try:
                 # Read filtered dataframe
                 self._full_raw_data_array = PMXReader.get_array(self._filename)
+                self._tid_offsets = PMXReader.get_tid_offsets(self._filename)
 
                 if self._full_raw_data_array is None:
                     print(f"Could not open {self._filename}.")

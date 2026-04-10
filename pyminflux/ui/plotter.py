@@ -61,7 +61,9 @@ class Plotter(PlotWidget):
         self.setMenuEnabled(False)
 
         # Set aspect ratio to 1.0 locked
-        self.getPlotItem().getViewBox().setAspectLocked(lock=True, ratio=1.0)
+        view_box = self.getPlotItem().getViewBox()
+        view_box.setAspectLocked(lock=True, ratio=1.0)
+        view_box.invertY(True)
 
         # Keep a reference to the singleton State class
         self.state = State()

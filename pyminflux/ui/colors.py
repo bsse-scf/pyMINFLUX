@@ -313,6 +313,44 @@ class Colors(metaclass=Singleton):
     def fid_colors_float(self) -> np.ndarray:
         return self._unique_fid_colors_float
 
+    def _get_fid_color(self, fid: int, as_float: bool = False):
+        """Get the RGB color for a given fluorophore ID.
+        
+        This is the single source of truth for fluorophore color assignment,
+        used by all plotting and UI functions to ensure consistency.
+        
+        Parameters
+        ----------
+        fid: int
+            Fluorophore ID (1-based)
+        as_float: bool
+            If True, return colors in range [0.0, 1.0], otherwise [0, 255]
+            
+        Returns
+        -------
+        color: np.ndarray or list
+            RGB color array/list with 3 elements
+        """
+        # Use base colors for fid 1 and 2
+        if fid <= len(self._unique_fid_colors):
+            color = self._unique_fid_colors[fid - 1]
+            return color / 255.0 if as_float else color
+        
+        # Additional distinct colors for fid >= 3
+        # Use a color palette with good contrast
+        additional_colors = np.array([
+            [255, 165, 0],    # Orange (for fid=3)
+            [0, 255, 255],    # Cyan (for fid=4)
+            [255, 255, 0],    # Yellow (for fid=5)
+            [128, 0, 128],    # Purple (for fid=6)
+            [255, 192, 203],  # Pink (for fid=7)
+            [165, 42, 42],    # Brown (for fid=8)
+        ], dtype=int)
+        
+        idx = (fid - len(self._unique_fid_colors) - 1) % len(additional_colors)
+        color = additional_colors[idx]
+        return color / 255.0 if as_float else color
+
     def reset(self):
         """Reset the color caches"""
         self._unique_tid = None
@@ -477,11 +515,16 @@ class ColorsToBrushes(metaclass=Singleton):
         self._last_depth = None
         self._last_time = None
 
-        # Map each unique fid identifier to a unique QBrush
-        self._fid_to_brush_map = {
-            1: pg.mkBrush(Colors().unique_fid_colors[0]),
-            2: pg.mkBrush(Colors().unique_fid_colors[1]),
-        }
+        # Preserve existing fid brushes if they exist (to support 3+ fluorophores)
+        # Only reset to base two if the map was never populated
+        if self._fid_to_brush_map is None or len(self._fid_to_brush_map) < 2:
+            # Map each unique fid identifier to a unique QBrush
+            # Start with the base two colors; more will be added dynamically as needed
+            self._fid_to_brush_map = {
+                1: pg.mkBrush(Colors().unique_fid_colors[0]),
+                2: pg.mkBrush(Colors().unique_fid_colors[1]),
+            }
+        # If map already exists with 2+ entries, keep it to preserve dynamically added colors
 
     def _get_or_create_brush_by_tid(self, tid: pd.Series) -> list:
         """Create QBrush instances to be used in a ScatterPlotItem to prevent
@@ -566,6 +609,18 @@ class ColorsToBrushes(metaclass=Singleton):
         """
 
         assert type(fid) == pd.Series, "`fid` must be a pd.Series."
+
+        # Get the list of unique fid
+        current_unique_fid = np.unique(fid)
+        
+        # Check if we need to add more fluorophore colors
+        if not all(identifier in self._fid_to_brush_map for identifier in current_unique_fid):
+            # Generate colors for missing identifiers
+            for identifier in current_unique_fid:
+                if identifier not in self._fid_to_brush_map:
+                    # Get color from centralized method
+                    color = Colors()._get_fid_color(identifier, as_float=False)
+                    self._fid_to_brush_map[identifier] = pg.mkBrush(*color)
 
         # Map each identifier in the full array to its corresponding QBrush for fast lookup
         if (
@@ -900,6 +955,18 @@ class ColorsToRGB(metaclass=Singleton):
         """
 
         assert type(fid) == pd.Series, "`fid` must be a pd.Series."
+
+        # Get the list of unique fid
+        current_unique_fid = np.unique(fid)
+        
+        # Check if we need to add more fluorophore colors
+        if not all(identifier in self._fid_to_color_map for identifier in current_unique_fid):
+            # Generate colors for missing identifiers
+            for identifier in current_unique_fid:
+                if identifier not in self._fid_to_color_map:
+                    # Get color from centralized method
+                    color = Colors()._get_fid_color(identifier, as_float=True)
+                    self._fid_to_color_map[identifier] = color
 
         # Map each identifier in the full array to its corresponding QBrush for fast lookup
         if (

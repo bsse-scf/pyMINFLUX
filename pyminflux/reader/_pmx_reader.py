@@ -140,6 +140,71 @@ class PMXReader:
         return metadata
 
     @staticmethod
+    def get_fluorophore_names(filename: Union[Path, str]) -> dict:
+        """Read fluorophore names from `.pmx` files.
+        
+        Parameters
+        ----------
+        filename: Union[Path, str]
+            Full path to the `.pmx` file to scan.
+            
+        Returns
+        -------
+        fluorophore_names: dict
+            Dictionary mapping fluo_id (int) to name (str).
+            Returns empty dict if fluorophore names are not present (backwards compatibility).
+        """
+        try:
+            with h5py.File(filename, "r") as f:
+                # Try to read fluorophore names from parameters group
+                if "parameters" in f and "fluorophore_names" in f["parameters"].attrs:
+                    import json
+                    names_json = f["parameters"].attrs["fluorophore_names"]
+                    # Parse JSON and convert keys back to integers
+                    names_dict = json.loads(names_json)
+                    return {int(k): v for k, v in names_dict.items()}
+        except Exception:
+            pass
+        
+        # Return empty dict for backwards compatibility (will use default string representation)
+        return {}
+
+    @staticmethod
+    def get_tid_offsets(filename: Union[Path, str]) -> list:
+        """Read TID offset mapping from `.pmx` files.
+        
+        Returns
+        -------
+        tid_offsets: list
+            List of (first_iid, tid_offset) tuples. Returns empty list if not present.
+        """
+        try:
+            with h5py.File(filename, "r") as f:
+                if "parameters" in f and "tid_offsets" in f["parameters"].attrs:
+                    import json
+                    offsets_json = f["parameters"].attrs["tid_offsets"]
+                    if isinstance(offsets_json, bytes):
+                        offsets_json = offsets_json.decode("utf-8")
+                    offsets = json.loads(offsets_json)
+                    tid_offsets = []
+                    for entry in offsets:
+                        if isinstance(entry, dict):
+                            first_iid = int(entry.get("first_iid", 0))
+                            tid_offset = int(entry.get("tid_offset", 0))
+                        else:
+                            # Fallback for list/tuple format
+                            if len(entry) < 2:
+                                continue
+                            first_iid = int(entry[0])
+                            tid_offset = int(entry[1])
+                        tid_offsets.append((first_iid, tid_offset))
+                    return tid_offsets
+        except Exception:
+            pass
+        
+        return []
+
+    @staticmethod
     def get_dataframe(filename: Union[Path, str]):
         """Return the full dataframe.
 
