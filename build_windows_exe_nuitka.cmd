@@ -20,6 +20,46 @@ REM `--mingw64` flag from the `python -m nuitka` call.
 setlocal EnableExtensions
 cd /d "%~dp0"
 
+set "ORIGINAL_DIR=%CD%"
+set "SHORT_DRIVE="
+set "NUITKA_CACHE_DIR=%SystemDrive%\ncache"
+
+if not exist "%NUITKA_CACHE_DIR%" mkdir "%NUITKA_CACHE_DIR%"
+IF ERRORLEVEL 1 exit /b %ERRORLEVEL%
+
+call :try_map_drive P
+if not defined SHORT_DRIVE call :try_map_drive Q
+if not defined SHORT_DRIVE call :try_map_drive R
+if not defined SHORT_DRIVE call :try_map_drive S
+if not defined SHORT_DRIVE call :try_map_drive T
+if not defined SHORT_DRIVE call :try_map_drive U
+if not defined SHORT_DRIVE call :try_map_drive V
+if not defined SHORT_DRIVE call :try_map_drive W
+if not defined SHORT_DRIVE call :try_map_drive X
+if not defined SHORT_DRIVE call :try_map_drive Y
+if not defined SHORT_DRIVE call :try_map_drive Z
+
+IF not defined SHORT_DRIVE (
+    echo Could not create a short drive mapping for %ORIGINAL_DIR%.
+    exit /b 1
+)
+
+call :run_build
+set "BUILD_EXIT_CODE=%ERRORLEVEL%"
+
+cd /d "%ORIGINAL_DIR%"
+if defined SHORT_DRIVE subst %SHORT_DRIVE% /d >NUL 2>&1
+
+exit /b %BUILD_EXIT_CODE%
+
+:try_map_drive
+subst %~1: "%ORIGINAL_DIR%" >NUL 2>&1
+IF not ERRORLEVEL 1 set "SHORT_DRIVE=%~1:"
+exit /b 0
+
+:run_build
+cd /d %SHORT_DRIVE%
+
 SET PYTHON_VERSION=%PYMINFLUX_PYTHON_VERSION%
 IF "%PYTHON_VERSION%"=="" SET PYTHON_VERSION=3.12
 
@@ -58,6 +98,8 @@ if "%VISPY_GLSL_DIR%"=="" (
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
+REM Build from a substituted drive and a short cache root to avoid Windows
+REM path-length issues during the SCons link step.
 REM Note: if `--mingw64 --clang` causes Windows Defender to give false positives,
 REM use `--msvc=latest` instead.
 uv run python -m nuitka pyminflux/main.py -o pyMINFLUX ^
@@ -82,3 +124,5 @@ IF ERRORLEVEL 1 exit /b %ERRORLEVEL%
 
 move dist\main.dist dist\pyMINFLUX
 IF ERRORLEVEL 1 exit /b %ERRORLEVEL%
+
+exit /b 0
