@@ -13,9 +13,9 @@ REM WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 REM See the License for the specific language governing permissions and
 REM limitations under the License.
 
-REM If you prefer to use the C compiler from Visual Studio 2022, run this
-REM script from the "Developer Command Prompt for VS2022" and remove the
-REM `--mingw64` flag from the `python -m nuitka` call.
+REM The default backend is Visual Studio 2022 via `--msvc=latest`, because it
+REM is more reliable for large standalone Windows builds on CI. Set
+REM `PYMINFLUX_NUITKA_BACKEND=mingw-clang` to use the previous MinGW/clang path.
 
 setlocal EnableExtensions
 cd /d "%~dp0"
@@ -23,8 +23,30 @@ cd /d "%~dp0"
 set "ORIGINAL_DIR=%CD%"
 set "SHORT_DRIVE="
 set "NUITKA_CACHE_DIR=%SystemDrive%\ncache"
+set "UV_CACHE_DIR=%SystemDrive%\uc"
+set "UV_PYTHON_INSTALL_DIR=%SystemDrive%\up"
+set "UV_PROJECT_ENVIRONMENT=%SystemDrive%\nv\pyminflux"
+set "NUITKA_BACKEND=%PYMINFLUX_NUITKA_BACKEND%"
+
+if "%NUITKA_BACKEND%"=="" set "NUITKA_BACKEND=msvc"
+
+if /I "%NUITKA_BACKEND%"=="msvc" (
+    set "NUITKA_BACKEND_FLAGS=--msvc=latest"
+) else (
+    if /I "%NUITKA_BACKEND%"=="mingw-clang" (
+        set "NUITKA_BACKEND_FLAGS=--mingw64 --clang"
+    ) else (
+        echo Unsupported value for PYMINFLUX_NUITKA_BACKEND: %NUITKA_BACKEND%
+        echo Supported values: msvc, mingw-clang
+        exit /b 1
+    )
+)
 
 if not exist "%NUITKA_CACHE_DIR%" mkdir "%NUITKA_CACHE_DIR%"
+IF ERRORLEVEL 1 exit /b %ERRORLEVEL%
+if not exist "%UV_CACHE_DIR%" mkdir "%UV_CACHE_DIR%"
+IF ERRORLEVEL 1 exit /b %ERRORLEVEL%
+if not exist "%UV_PYTHON_INSTALL_DIR%" mkdir "%UV_PYTHON_INSTALL_DIR%"
 IF ERRORLEVEL 1 exit /b %ERRORLEVEL%
 
 call :try_map_drive P
@@ -98,12 +120,11 @@ if "%VISPY_GLSL_DIR%"=="" (
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
-REM Build from a substituted drive and a short cache root to avoid Windows
-REM path-length issues during the SCons link step.
-REM Note: if `--mingw64 --clang` causes Windows Defender to give false positives,
-REM use `--msvc=latest` instead.
+REM Build with short uv and Nuitka paths to keep compiler and linker command lines
+REM under Windows limits. MSVC is the default backend because large standalone
+REM builds can exceed MinGW/clang linker limits on GitHub Actions.
 uv run python -m nuitka pyminflux/main.py -o pyMINFLUX ^
---mingw64 --clang ^
+%NUITKA_BACKEND_FLAGS% ^
 --assume-yes-for-downloads ^
 --windows-console-mode=disable ^
 --noinclude-default-mode=error ^
