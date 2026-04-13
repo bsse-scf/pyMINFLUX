@@ -746,13 +746,26 @@ class BeadCorrespondenceDialog(QDialog):
         # Build correspondence mapping: new_name -> current_name
         # (Note: we store it inverted from the UI representation for backward compatibility)
         self.correspondence = {}
+        seen_new_beads = {}  # new_name -> first current_name that claimed it
+        duplicate_new_beads = set()
         for current_bead_name, combo in self.correspondence_combos.items():
             new_bead_name = combo.currentData()
             if new_bead_name is not None:
-                # Store as new_name -> current_name (inverted from UI)
-                self.correspondence[new_bead_name] = current_bead_name
+                if new_bead_name in seen_new_beads:
+                    duplicate_new_beads.add(new_bead_name)
+                else:
+                    seen_new_beads[new_bead_name] = current_bead_name
+                    # Store as new_name -> current_name (inverted from UI)
+                    self.correspondence[new_bead_name] = current_bead_name
         self._update_correspondence_lines()
-        self._update_status()
+        if duplicate_new_beads:
+            self.status_label.setText(
+                f"⚠️ New bead(s) assigned to multiple current beads: {', '.join(sorted(duplicate_new_beads))}. "
+                f"Each new bead may only be assigned once."
+            )
+            self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
+        else:
+            self._update_status()
         
         # Clear residuals when correspondence changes
         self.residuals = {}
@@ -764,6 +777,24 @@ class BeadCorrespondenceDialog(QDialog):
     
     def _calculate_alignment(self):
         """Calculate alignment using current correspondences and display residuals."""
+        # Check for duplicate new bead assignments before proceeding
+        seen_new_beads = {}
+        duplicate_new_beads = set()
+        for current_bead_name, combo in self.correspondence_combos.items():
+            new_bead_name = combo.currentData()
+            if new_bead_name is not None:
+                if new_bead_name in seen_new_beads:
+                    duplicate_new_beads.add(new_bead_name)
+                else:
+                    seen_new_beads[new_bead_name] = current_bead_name
+        if duplicate_new_beads:
+            self.status_label.setText(
+                f"⚠️ Cannot calculate alignment: new bead(s) assigned to multiple current beads: "
+                f"{', '.join(sorted(duplicate_new_beads))}. Each new bead may only be assigned once."
+            )
+            self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
+            return
+
         num_correspondences = len(self.correspondence)
         
         if num_correspondences < 1:
