@@ -19,3 +19,4 @@ __pycache__/
 /coverage.xml
 /.ruff_cache/
 /_playground
+examples/P*
