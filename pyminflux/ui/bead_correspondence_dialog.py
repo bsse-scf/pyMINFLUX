@@ -911,11 +911,11 @@ class BeadCorrespondenceDialog(QDialog):
                 residual_item.setText(f"{residual:.2f}")
                 
                 # Color code based on residual magnitude (darker colors for better readability)
-                if residual < 10:  # < 10 nm - good
+                if residual < 5:  # < 5 nm - good
                     residual_item.setForeground(pg.mkColor(0, 128, 0))  # Dark green
-                elif residual < 50:  # 10-50 nm - okay
+                elif residual < 10:  # 5-10 nm - okay
                     residual_item.setForeground(pg.mkColor(204, 102, 0))  # Dark orange
-                else:  # > 50 nm - potentially problematic
+                else:  # > 10 nm - potentially problematic
                     residual_item.setForeground(pg.mkColor(178, 34, 34))  # Dark red
             else:
                 residual_item.setText("")
@@ -927,9 +927,9 @@ class BeadCorrespondenceDialog(QDialog):
             self.mean_residual_label.setText(f"Mean residual: {mean_residual:.2f} nm")
             
             # Color code the mean residual (darker colors)
-            if mean_residual < 10:
+            if mean_residual < 5:
                 color = "#008000"  # Dark green
-            elif mean_residual < 50:
+            elif mean_residual < 10:
                 color = "#CC6600"  # Dark orange
             else:
                 color = "#B22222"  # Dark red (firebrick)
