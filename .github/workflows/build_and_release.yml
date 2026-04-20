@@ -11,10 +11,15 @@ permissions:
   contents: read
 
 jobs:
+  test:
+    uses: ./.github/workflows/run_tests.yml
+
   build:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
+    name: Build apps
+    needs: test
     strategy:
       fail-fast: false
       matrix:
