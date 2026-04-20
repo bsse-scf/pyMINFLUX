@@ -20,7 +20,7 @@ jobs:
             name: Linux
           - os: macos-latest
             name: macOS (Apple Silicon)
-          - os: macos-13
+          - os: macos-11
             name: macOS (Intel)
           - os: windows-latest
             name: Windows
