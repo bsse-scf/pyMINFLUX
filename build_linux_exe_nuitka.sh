@@ -70,7 +70,7 @@ rm -rf build dist
     --product-version="${VERSION}" \
     --remove-output \
     --follow-imports \
-    --static-libpython=yes \
+    --static-libpython=no \
     --output-dir=./dist
 
 mv dist/main.dist dist/pyMINFLUX
