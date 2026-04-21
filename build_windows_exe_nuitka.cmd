@@ -129,6 +129,7 @@ uv run python -m nuitka pyminflux/main.py -o pyMINFLUX ^
 --windows-console-mode=disable ^
 --noinclude-default-mode=error ^
 --standalone ^
+--include-module=deprecated ^
 --include-module=scipy.special._special_ufuncs ^
 --include-module=vispy.app.backends._pyside6 ^
 --include-module=pydoc ^

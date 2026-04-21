@@ -58,6 +58,7 @@ rm -rf build dist
     --noinclude-default-mode=error \
     --standalone \
     --include-module=pydoc \
+    --include-module=deprecated \
     --include-module=scipy.special._special_ufuncs \
     --include-module=vispy.app.backends._pyside6 \
     --include-module=pydoc \
