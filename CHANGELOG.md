@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file. Detailed information can be found in the [git log](https://github.com/bsse-scf/pyMINFLUX/commits/master/).
 
+## [0.7.0] - 2026-04-27
+
+### New features
+
+* Add **Combiner** tool to merge datasets into different channels using bead-alignment-based
+  registration.
+  * Uses beamline monitoring data loaded from `.zarr` files.
+  * Assigns bead pairs automatically based on bead names or nearest-neighbor search.
+  * An interactive interface allows manually correcting correspondences (Shift-click).
+  * The mean and pairwise residual alignment error are shown interactively.
+  * Applied transformation parameters and final residual errors are written to the console.
+  * More than two datasets can be merged by sequentially applying the Combiner to the output of a previous merge. In this case, the bead data from the first dataset is used as the reference for all subsequent merges.
+* Allow naming fluorophore IDs; names are stored in the processor, persisted as an attribute
+  in `.pmx` files, and included as a commented header in CSV exports.
+  A table widget for editing names is available in the Combiner, the Unmixer, and as a
+  standalone dialog accessible from the Analysis menu.
+* Add **Time Splitter** tab to the Unmixer, including a dialog for setting precise time-region boundaries manually. Resulting datasets are assigned different fluorophore IDs.
+* Make the Time Inspector and Analyzer operate on the currently active channel only ("All" available as an option).
+* Flip the y-axis in the 2D and 3D plotters for consistency with Imspector and standard
+  image-viewing convention.
+* Rename "Fluorophore" to "Channel" in all UI elements.
+* Rename "Thresholding" tabs to "Filtering" in the Analyser; reorder tabs to
+  Trace Length → EFO → CFR.
+* Standardize `pyproject.toml` to PEP 621 (Hatchling build backend) for compatibility with
+  `uv` and other modern Python tooling.
+* Activate automated builds for Windows, macOS, and Linux on GitHub Actions.
+
+### Bug fixes
+
+* Fix `assign_data_to_clusters` when DCR clustering collapses to fewer
+  components than requested.
+
 ## [0.6.0] - 2025-05-12
 
 ### New features
