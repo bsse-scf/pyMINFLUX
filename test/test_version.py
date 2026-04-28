@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import pyminflux
+import pytest
 from pyminflux.utils._utils import check_for_updates
 
 
@@ -23,6 +24,10 @@ def test_version():
     )
 
 
+@pytest.mark.skipif(
+    condition=__import__("os").getenv("CI") is not None,
+    reason="Skipping network-dependent test in CI",
+)
 def test_retrieve_version_from_server():
     """Try retrieving version information from the server."""
     code, version, error = check_for_updates()
