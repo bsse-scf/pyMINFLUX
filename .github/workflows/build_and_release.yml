@@ -120,12 +120,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" release-artifacts/*.zip --clobber
+          if gh release view "${GITHUB_REF_NAME}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" release-artifacts/*.zip --clobber --repo "${{ github.repository }}"
           else
             gh release create "${GITHUB_REF_NAME}" release-artifacts/*.zip \
               --generate-notes \
-              --title "${GITHUB_REF_NAME}"
+              --title "${GITHUB_REF_NAME}" \
+              --repo "${{ github.repository }}"
           fi
 
   publish-testpypi:
