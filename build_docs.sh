@@ -28,7 +28,7 @@ then
 fi
 
 # Build documentation
-pdoc3 pyminflux --html --force --output-dir "$1" --template-dir templates
+uv run pdoc3 pyminflux --html --force --output-dir "$1" --template-dir templates
 
 # Wrong references are added to the code -- unclear why
 find . -name "*.html" -exec sed -i 's/pyminflux.reader._reader.MinFluxReader/pyminflux.reader.MinFluxReader/g' {} \;
