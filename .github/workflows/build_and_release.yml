@@ -57,6 +57,13 @@ jobs:
           cache-python: true
           cache-dependency-glob: uv.lock
 
+      - name: Set archive name
+        shell: bash
+        run: |
+          SUFFIX="${{ matrix.artifact_name }}"
+          SUFFIX="${SUFFIX#pyMINFLUX-}"
+          echo "VERSIONED_ARCHIVE_NAME=pyMINFLUX-${GITHUB_REF_NAME}-${SUFFIX}.zip" >> $GITHUB_ENV
+
       - name: Build standalone app
         if: runner.os != 'Windows'
         shell: bash
@@ -74,23 +81,23 @@ jobs:
         shell: bash
         run: |
           cd dist
-          zip -r "${{ matrix.archive_name }}" pyMINFLUX
+          zip -r "${VERSIONED_ARCHIVE_NAME}" pyMINFLUX
 
       - name: Package standalone app
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path dist/pyMINFLUX -DestinationPath dist/${{ matrix.archive_name }} -Force
+        run: Compress-Archive -Path dist/pyMINFLUX -DestinationPath dist/${{ env.VERSIONED_ARCHIVE_NAME }} -Force
 
       - name: Package standalone app
         if: runner.os == 'macOS'
         shell: bash
-        run: ditto -c -k --sequesterRsrc --keepParent dist/pyMINFLUX.app dist/${{ matrix.archive_name }}
+        run: ditto -c -k --sequesterRsrc --keepParent dist/pyMINFLUX.app dist/${VERSIONED_ARCHIVE_NAME}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/${{ matrix.archive_name }}
+          path: dist/${{ env.VERSIONED_ARCHIVE_NAME }}
           if-no-files-found: error
           retention-days: 14
 
