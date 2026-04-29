@@ -20,3 +20,4 @@ __pycache__/
 /.ruff_cache/
 /_playground
 examples/P*
+/html
