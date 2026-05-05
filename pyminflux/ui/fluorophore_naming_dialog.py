@@ -15,12 +15,7 @@
 """Dialog for naming fluorophores."""
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QLabel,
-    QDialogButtonBox,
-)
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout
 
 from pyminflux.ui.fluorophore_naming_widget import FluorophoreNamingWidget
 
@@ -29,28 +24,28 @@ class FluorophoreNamingDialog(QDialog):
     """
     Dialog to assign names to fluorophore IDs.
     """
-    
+
     def __init__(self, processor, parent=None):
         """
         Constructor.
-        
+
         Args:
             processor: MinFluxProcessor instance with fluorophore data
             parent: Parent widget
         """
         super().__init__(parent)
-        
+
         self.processor = processor
         self.setWindowTitle("Set Channel Names")
         self.setModal(True)
         self.resize(500, 400)
-        
+
         self._setup_ui()
-    
+
     def _setup_ui(self):
         """Set up the user interface."""
         layout = QVBoxLayout()
-        
+
         # Explanation text
         explanation = QLabel(
             "Assign custom names to your channels for easier identification.\n\n"
@@ -59,25 +54,29 @@ class FluorophoreNamingDialog(QDialog):
             "Click on a name cell to edit it."
         )
         explanation.setWordWrap(True)
-        explanation.setStyleSheet("QLabel { padding: 10px; background-color: #f0f0f0; border-radius: 5px; }")
+        explanation.setStyleSheet(
+            "QLabel { padding: 10px; background-color: #f0f0f0; border-radius: 5px; }"
+        )
         layout.addWidget(explanation)
-        
+
         # Get fluorophore IDs from processor
         if self.processor.num_fluorophores > 0:
-            fluo_ids = sorted(self.processor.processed_dataframe["fluo"].unique().tolist())
+            fluo_ids = sorted(
+                self.processor.processed_dataframe["fluo"].unique().tolist()
+            )
             # Filter out fluorophore ID 0 (unassigned/placeholder)
             fluo_ids = [fid for fid in fluo_ids if fid > 0]
         else:
             fluo_ids = []
-        
+
         # Naming widget
-        self.naming_widget = FluorophoreNamingWidget(
-            title="Channel Names"
-        )
+        self.naming_widget = FluorophoreNamingWidget(title="Channel Names")
         if fluo_ids:
-            self.naming_widget.set_fluorophores(fluo_ids, self.processor.fluorophore_names)
+            self.naming_widget.set_fluorophores(
+                fluo_ids, self.processor.fluorophore_names
+            )
         layout.addWidget(self.naming_widget, stretch=1)
-        
+
         # Dialog buttons
         button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -85,13 +84,13 @@ class FluorophoreNamingDialog(QDialog):
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
-        
+
         self.setLayout(layout)
-    
+
     def get_names(self) -> dict:
         """
         Get the fluorophore names from the widget.
-        
+
         Returns:
             Dictionary mapping fluo_id (int) to name (str)
         """

@@ -18,13 +18,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from pyminflux.combiner._combine import combine_datasets_with_bead_alignment
 from pyminflux.correct import align_datasets_using_beads
 from pyminflux.correct._bead_alignment import RigidTransform, TranslationTransform
+
 # MinFluxDataset must be imported before combiner._combine to break the circular
 # import that arises because combiner._combine → processor._dataset → processor.__init__
 # → combiner._combine.
 from pyminflux.processor._dataset import MinFluxDataset
-from pyminflux.combiner._combine import combine_datasets_with_bead_alignment
 from pyminflux.reader import MinFluxReader
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -33,9 +34,9 @@ from pyminflux.reader import MinFluxReader
 
 # Three 2-D bead positions given as [z_nm, y_nm, x_nm] (z=0 for a 2-D dataset).
 _BEAD_POSITIONS_ZYX = [
-    [0.0,  100.0,  200.0],
-    [0.0,  500.0, 1000.0],
-    [0.0, 1500.0,  300.0],
+    [0.0, 100.0, 200.0],
+    [0.0, 500.0, 1000.0],
+    [0.0, 1500.0, 300.0],
 ]
 _BEAD_NAMES = ["bead_A", "bead_B", "bead_C"]
 
@@ -46,6 +47,7 @@ _OFFSET_ZYX_NM = np.array([0.0, 15.0, -10.0])
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _make_mbm_data(bead_positions_zyx_nm, bead_names=None, n_points=5, tim_start=0.0):
     """Return a ``{'mbm': {...}}`` dict with synthetic bead localizations.
@@ -119,6 +121,7 @@ def _make_dataset(npy_path, tim_offset=0.0, mbm_data=None):
 # Fixtures
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture(autouse=False)
 def npy_path():
     """Return path to the 2-D test .npy file, extracting it from ZIP if needed."""
@@ -134,6 +137,7 @@ def npy_path():
 # ─────────────────────────────────────────────────────────────────────────────
 # align_datasets_using_beads
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_align_datasets_using_beads_identity():
     """Identical bead sets: a RigidTransform is returned and residuals are sub-nm."""
@@ -165,9 +169,9 @@ def test_align_datasets_using_beads_known_translation():
 
     # Applying the model to the moving positions should recover the reference positions.
     transformed = model(mov_positions)
-    assert np.allclose(transformed, ref_positions, atol=1.0), (
-        "Transformed moving beads must match reference positions within 1 nm"
-    )
+    assert np.allclose(
+        transformed, ref_positions, atol=1.0
+    ), "Transformed moving beads must match reference positions within 1 nm"
 
 
 def test_align_datasets_using_beads_manual_correspondence():
@@ -183,7 +187,9 @@ def test_align_datasets_using_beads_manual_correspondence():
     ref_mbm = _make_mbm_data(ref_positions.tolist(), bead_names=ref_names)["mbm"]
     mov_mbm = _make_mbm_data(mov_positions.tolist(), bead_names=mov_names)["mbm"]
 
-    model = align_datasets_using_beads(ref_mbm, mov_mbm, bead_correspondence=correspondence)
+    model = align_datasets_using_beads(
+        ref_mbm, mov_mbm, bead_correspondence=correspondence
+    )
 
     assert model is not None
     transformed = model(mov_positions)
@@ -235,6 +241,7 @@ def test_align_datasets_using_beads_no_used_beads():
 # combine_datasets_with_bead_alignment
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_combine_datasets_with_bead_alignment(npy_path):
     """Combined dataset has all rows, non-overlapping tids, and distinct fluo IDs."""
     ref_positions = np.array(_BEAD_POSITIONS_ZYX, dtype=float)
@@ -255,9 +262,9 @@ def test_combine_datasets_with_bead_alignment(npy_path):
 
     ref_n = len(ref_ds.processed_dataframe)
     mov_n = len(mov_ds.processed_dataframe)
-    assert len(combined.processed_dataframe) == ref_n + mov_n, (
-        "Combined dataframe must contain every row from both input datasets"
-    )
+    assert (
+        len(combined.processed_dataframe) == ref_n + mov_n
+    ), "Combined dataframe must contain every row from both input datasets"
 
     # TIDs of the moving half in the combined dataframe must not overlap with
     # TIDs from the reference half.
@@ -265,17 +272,17 @@ def test_combine_datasets_with_bead_alignment(npy_path):
     mov_tids_in_combined = set(
         combined.processed_dataframe.iloc[ref_n:]["tid"].unique()
     )
-    assert ref_tids.isdisjoint(mov_tids_in_combined), (
-        "Moving dataset tids must be offset to avoid collisions with reference tids"
-    )
+    assert ref_tids.isdisjoint(
+        mov_tids_in_combined
+    ), "Moving dataset tids must be offset to avoid collisions with reference tids"
 
     # The reference and moving halves must carry distinct fluorophore IDs.
     ref_fluo = combined.processed_dataframe.iloc[:ref_n]["fluo"].unique()
     mov_fluo = combined.processed_dataframe.iloc[ref_n:]["fluo"].unique()
     assert len(ref_fluo) == 1 and len(mov_fluo) == 1
-    assert ref_fluo[0] != mov_fluo[0], (
-        "Reference and moving halves must be assigned distinct fluorophore IDs"
-    )
+    assert (
+        ref_fluo[0] != mov_fluo[0]
+    ), "Reference and moving halves must be assigned distinct fluorophore IDs"
 
 
 def test_combine_datasets_tim_ordering(npy_path):
@@ -291,9 +298,9 @@ def test_combine_datasets_tim_ordering(npy_path):
         npy_path, tim_offset=tim_offset_for_moving, mbm_data=mov_mbm_data
     )
 
-    assert mov_ds.processed_dataframe["tim"].min() > tim_max_ref, (
-        "Moving dataset must have tim values strictly greater than the reference maximum"
-    )
+    assert (
+        mov_ds.processed_dataframe["tim"].min() > tim_max_ref
+    ), "Moving dataset must have tim values strictly greater than the reference maximum"
 
     combined = combine_datasets_with_bead_alignment(ref_ds, mov_ds)
     assert combined is not None
@@ -301,9 +308,9 @@ def test_combine_datasets_tim_ordering(npy_path):
     ref_n = len(ref_ds.processed_dataframe)
     tim_ref_half = combined.processed_dataframe.iloc[:ref_n]["tim"]
     tim_mov_half = combined.processed_dataframe.iloc[ref_n:]["tim"]
-    assert tim_mov_half.min() > tim_ref_half.max(), (
-        "All moving tim values must remain above all reference tim values after combining"
-    )
+    assert (
+        tim_mov_half.min() > tim_ref_half.max()
+    ), "All moving tim values must remain above all reference tim values after combining"
 
 
 def test_combine_datasets_no_mbm_data_reference(npy_path):

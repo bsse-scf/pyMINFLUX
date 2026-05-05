@@ -177,6 +177,7 @@ class PMXWriter:
         if fluorophore_names:
             # Convert to JSON string for storage
             import json
+
             names_json = json.dumps({str(k): v for k, v in fluorophore_names.items()})
             group.attrs["fluorophore_names"] = names_json
 
@@ -184,6 +185,7 @@ class PMXWriter:
         tid_offsets = getattr(self.processor.dataset, "tid_offsets", [])
         if tid_offsets:
             import json
+
             offsets_payload = [
                 {"first_iid": int(first_iid), "tid_offset": int(tid_offset)}
                 for first_iid, tid_offset in tid_offsets

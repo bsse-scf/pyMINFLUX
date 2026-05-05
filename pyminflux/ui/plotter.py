@@ -39,6 +39,71 @@ from .custom_dialogs import TreeDialog
 from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
 
 
+def compute_measurement_geometry(points: np.ndarray):
+    """Compute PCA-based measurement geometry for a set of 2D points."""
+
+    if points is None or len(points) < 3:
+        return None
+
+    points = np.asarray(points, dtype=float)
+    center = points.mean(axis=0)
+    centered = points - center
+
+    _, _, vh = np.linalg.svd(centered, full_matrices=False)
+    axis = vh[0]
+    perp = np.array([-axis[1], axis[0]])
+
+    along = centered @ axis
+    orth = centered @ perp
+
+    along_min = float(np.min(along))
+    along_max = float(np.max(along))
+    orth_min = float(np.min(orth))
+    orth_max = float(np.max(orth))
+
+    abs_orth = np.abs(orth)
+    mean_thickness = float(2.0 * np.mean(abs_orth))
+    median_thickness = float(2.0 * np.median(abs_orth))
+    p95_thickness = float(2.0 * np.percentile(abs_orth, 95))
+
+    box_local = np.array(
+        [
+            [along_min, orth_min],
+            [along_max, orth_min],
+            [along_max, orth_max],
+            [along_min, orth_max],
+            [along_min, orth_min],
+        ],
+        dtype=float,
+    )
+    box_xy = center + box_local[:, 0:1] * axis + box_local[:, 1:2] * perp
+
+    mid_orth = 0.5 * (orth_min + orth_max)
+    line_local = np.array(
+        [[along_min, mid_orth], [along_max, mid_orth]],
+        dtype=float,
+    )
+    line_xy = center + line_local[:, 0:1] * axis + line_local[:, 1:2] * perp
+
+    return {
+        "points": points,
+        "center": center,
+        "axis": axis,
+        "perp": perp,
+        "along_min": along_min,
+        "along_max": along_max,
+        "orth_min": orth_min,
+        "orth_max": orth_max,
+        "mean_thickness": mean_thickness,
+        "median_thickness": median_thickness,
+        "p95_thickness": p95_thickness,
+        "max_negative_offset": float(-orth_min),
+        "max_positive_offset": float(orth_max),
+        "box_xy": box_xy,
+        "line_xy": line_xy,
+    }
+
+
 class Plotter(PlotWidget):
     # Signals
     locations_selected = Signal(list)
@@ -52,6 +117,24 @@ class Plotter(PlotWidget):
         self.setBackground("k")
         self.brush = pg.mkBrush(255, 255, 255, 128)
         self.pen = pg.mkPen(None)
+
+        # Initialize state used by remove_points() before the first reset call.
+        self._plot_x_data = None
+        self._plot_y_data = None
+        self._measurements = []
+        self._measurement_counter = 0
+        self._selected_measurement_id = None
+        self._measurement_roi = None
+        self._measurement_start_point = None
+        self._measurement_is_being_drawn = False
+        self.ROI = None
+        self.line = None
+        self.line_text = None
+        self._roi_start_point = None
+        self._roi_is_being_drawn = False
+        self._line_start_point = None
+        self._line_is_being_drawn = False
+
         self.remove_points()
         self.hideAxis("bottom")
         self.hideAxis("left")
@@ -77,15 +160,6 @@ class Plotter(PlotWidget):
         self.line_plot = None
         self.image_item = None
 
-        # ROI for localizations selection
-        self.ROI = None
-        self.line = None
-        self.line_text = None
-        self._roi_start_point = None
-        self._roi_is_being_drawn = False
-        self._line_start_point = None
-        self._line_is_being_drawn = False
-
         # Keep track of last plot
         self._last_x_param = None
         self._last_y_param = None
@@ -109,6 +183,39 @@ class Plotter(PlotWidget):
 
     def mousePressEvent(self, ev):
         """Override mouse press event."""
+
+        # Is the user trying to initiate drawing a measurement box?
+        if (
+            self.scatter_plot is not None
+            and ev.button() == Qt.MouseButton.LeftButton
+            and ev.modifiers() == QtCore.Qt.AltModifier
+            and self.state.x_param in ("x", "y", "z")
+            and self.state.y_param in ("x", "y", "z")
+            and self._plot_x_data is not None
+            and self._plot_y_data is not None
+        ):
+            if self._measurement_roi is not None:
+                self.removeItem(self._measurement_roi)
+                self._measurement_roi.deleteLater()
+                self._measurement_roi = None
+
+            self._measurement_is_being_drawn = True
+            self._measurement_start_point = (
+                self.getPlotItem().getViewBox().mapSceneToView(ev.position())
+            )
+            self._measurement_roi = ROI(
+                pos=self._measurement_start_point,
+                size=(0, 0),
+                resizable=False,
+                rotatable=False,
+                pen=mkPen(color=(0, 255, 255), width=2, style=Qt.PenStyle.DashLine),
+            )
+            self._measurement_roi.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+            self.addItem(self._measurement_roi)
+            self._measurement_roi.show()
+
+            ev.accept()
+            return
 
         # Is the user trying to initiate drawing an ROI?
         if (
@@ -180,6 +287,13 @@ class Plotter(PlotWidget):
             # Accept the event
             ev.accept()
 
+        elif self.scatter_plot is not None and ev.button() == Qt.MouseButton.LeftButton:
+            measurement = self._measurement_at_scene_pos(ev.position())
+            if measurement is not None:
+                self._select_measurement(measurement["id"])
+                ev.accept()
+                return
+
         else:
 
             # Is the user trying to open a context menu?
@@ -188,6 +302,16 @@ class Plotter(PlotWidget):
                 and ev.button() == Qt.MouseButton.RightButton
             ):
                 menu = QMenu()
+                measurement = self._measurement_at_scene_pos(ev.position())
+                if measurement is None:
+                    measurement = self._get_selected_measurement()
+                if measurement is not None:
+                    delete_measurement_action = QAction("Delete measurement")
+                    delete_measurement_action.triggered.connect(
+                        lambda _: self._delete_measurement(measurement["id"])
+                    )
+                    menu.addAction(delete_measurement_action)
+                    menu.addSeparator()
                 if self.ROI is not None:
                     crop_data_action = QAction("Crop data")
                     crop_data_action.triggered.connect(self.crop_data_by_roi_selection)
@@ -226,6 +350,19 @@ class Plotter(PlotWidget):
                 super().mousePressEvent(ev)
 
     def mouseMoveEvent(self, ev):
+        if (
+            self.scatter_plot is not None
+            and ev.buttons() == Qt.MouseButton.LeftButton
+            and self._measurement_roi is not None
+            and self._measurement_is_being_drawn
+        ):
+            current_point = (
+                self.getPlotItem().getViewBox().mapSceneToView(ev.position())
+            )
+            self._measurement_roi.setSize(current_point - self._measurement_start_point)
+            ev.accept()
+            return
+
         # Is the user drawing an ROI?
         if (
             self.scatter_plot is not None
@@ -268,6 +405,48 @@ class Plotter(PlotWidget):
 
     def mouseReleaseEvent(self, ev):
         if self.scatter_plot is not None and ev.button() == Qt.MouseButton.LeftButton:
+            if self._measurement_is_being_drawn:
+                self._measurement_is_being_drawn = False
+
+                if self._measurement_roi is None:
+                    ev.ignore()
+                    return
+
+                x_range, y_range = self._get_ranges_from_item(self._measurement_roi)
+                if x_range is None or y_range is None:
+                    self._remove_measurement_roi()
+                    ev.accept()
+                    return
+
+                x_min, x_max = min(x_range), max(x_range)
+                y_min, y_max = min(y_range), max(y_range)
+
+                mask = (
+                    (self._plot_x_data >= x_min)
+                    & (self._plot_x_data <= x_max)
+                    & (self._plot_y_data >= y_min)
+                    & (self._plot_y_data <= y_max)
+                )
+                points = np.column_stack(
+                    (self._plot_x_data[mask], self._plot_y_data[mask])
+                )
+
+                if points.shape[0] < 3:
+                    self._remove_measurement_roi()
+                    ev.accept()
+                    return
+
+                geometry = compute_measurement_geometry(points)
+                if geometry is None:
+                    self._remove_measurement_roi()
+                    ev.accept()
+                    return
+
+                self._create_measurement(geometry)
+                self._remove_measurement_roi()
+                ev.accept()
+                return
+
             if self._roi_is_being_drawn:
                 # Extract the ranges
                 x_range, y_range = self._get_ranges_from_roi()
@@ -380,6 +559,9 @@ class Plotter(PlotWidget):
         }
 
     def remove_points(self):
+        self._clear_measurements()
+        self._remove_measurement_roi()
+        self._clear_drawn_roi()
         self.setBackground("k")
         self.clear()
 
@@ -453,6 +635,23 @@ class Plotter(PlotWidget):
                 self.addItem(self.image_item)
 
         if self.state.show_localizations:
+
+            new_x = x.to_numpy(copy=True)
+            new_y = y.to_numpy(copy=True)
+            if (
+                self._plot_x_data is not None
+                and self._plot_y_data is not None
+                and (
+                    len(new_x) != len(self._plot_x_data)
+                    or len(new_y) != len(self._plot_y_data)
+                    or not np.array_equal(new_x, self._plot_x_data)
+                    or not np.array_equal(new_y, self._plot_y_data)
+                )
+            ):
+                self._clear_measurements()
+
+            self._plot_x_data = new_x
+            self._plot_y_data = new_y
 
             # Do we need to recreate the colors?
             if self._need_to_recreate_colors(
@@ -705,19 +904,208 @@ class Plotter(PlotWidget):
             self.removeItem(self.ROI)
             self.ROI = None
 
+    def keyPressEvent(self, ev):
+        if ev.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+            measurement = self._get_selected_measurement()
+            if measurement is not None:
+                self._delete_measurement(measurement["id"])
+                ev.accept()
+                return
+
+        super().keyPressEvent(ev)
+
     def _get_ranges_from_roi(self):
         """Calculate x and y ranges from ROI."""
+
+        return self._get_ranges_from_item(self.ROI)
+
+    def _get_ranges_from_item(self, roi):
+        """Calculate x and y ranges from a ROI-like item."""
 
         # Initialize x and y ranges to None
         x_range = None
         y_range = None
 
         # Extract x and y ranges
-        if self.ROI is not None:
-            x_range = (self.ROI.pos()[0], self.ROI.pos()[0] + self.ROI.size()[0])
-            y_range = (self.ROI.pos()[1], self.ROI.pos()[1] + self.ROI.size()[1])
+        if roi is not None:
+            x_range = (roi.pos()[0], roi.pos()[0] + roi.size()[0])
+            y_range = (roi.pos()[1], roi.pos()[1] + roi.size()[1])
 
         return x_range, y_range
+
+    def _get_selected_measurement(self):
+        for measurement in self._measurements:
+            if measurement["id"] == self._selected_measurement_id:
+                return measurement
+        return None
+
+    def _measurement_at_scene_pos(self, scene_pos):
+        if not self._measurements:
+            return None
+
+        view_pos = self.getPlotItem().getViewBox().mapSceneToView(scene_pos)
+        point = np.array([view_pos.x(), view_pos.y()], dtype=float)
+
+        for measurement in reversed(self._measurements):
+            geometry = measurement["geometry"]
+            delta = point - geometry["center"]
+            along = float(delta @ geometry["axis"])
+            orth = float(delta @ geometry["perp"])
+            margin = max(10.0, 0.1 * (geometry["along_max"] - geometry["along_min"]))
+            if (
+                geometry["along_min"] - margin
+                <= along
+                <= geometry["along_max"] + margin
+                and geometry["orth_min"] - margin
+                <= orth
+                <= geometry["orth_max"] + margin
+            ):
+                return measurement
+
+        return None
+
+    def _format_measurement_text(self, measurement):
+        geometry = measurement["geometry"]
+        return (
+            f"#{measurement['id'] + 1}: mean {geometry['mean_thickness']:.2f} nm\n"
+            f"median {geometry['median_thickness']:.2f} nm, p95 {geometry['p95_thickness']:.2f} nm\n"
+            f"side -{geometry['max_negative_offset']:.2f} / +{geometry['max_positive_offset']:.2f} nm"
+        )
+
+    def _create_measurement(self, geometry):
+        measurement_id = self._measurement_counter
+        self._measurement_counter += 1
+
+        box_pen = mkPen(color=(0, 255, 255), width=2)
+        line_pen = mkPen(color=(255, 255, 0), width=2)
+        point_brush = pg.mkBrush(0, 255, 255, 70)
+
+        box_item = PlotCurveItem(
+            x=geometry["box_xy"][:, 0],
+            y=geometry["box_xy"][:, 1],
+            pen=box_pen,
+        )
+        line_item = PlotCurveItem(
+            x=geometry["line_xy"][:, 0],
+            y=geometry["line_xy"][:, 1],
+            pen=line_pen,
+        )
+        points_item = pg.ScatterPlotItem(
+            x=geometry["points"][:, 0],
+            y=geometry["points"][:, 1],
+            size=7,
+            pen=None,
+            brush=point_brush,
+        )
+        label_item = TextItem(
+            text=self._format_measurement_text(
+                {"id": measurement_id, "geometry": geometry}
+            ),
+            color=(255, 255, 255),
+            anchor=(0, 1),
+        )
+        label_item.setPos(
+            float(geometry["box_xy"][0, 0]), float(geometry["box_xy"][0, 1])
+        )
+
+        for item in (box_item, line_item, points_item, label_item):
+            self.addItem(item)
+            if hasattr(item, "setAcceptedMouseButtons"):
+                item.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+
+        measurement = {
+            "id": measurement_id,
+            "geometry": geometry,
+            "box_item": box_item,
+            "line_item": line_item,
+            "points_item": points_item,
+            "label_item": label_item,
+        }
+        self._measurements.append(measurement)
+        self._select_measurement(measurement_id)
+
+    def _select_measurement(self, measurement_id):
+        self._selected_measurement_id = measurement_id
+
+        for measurement in self._measurements:
+            is_selected = measurement["id"] == measurement_id
+            measurement["box_item"].setPen(
+                mkPen(
+                    color=(0, 255, 255) if is_selected else (0, 180, 180),
+                    width=3 if is_selected else 1,
+                )
+            )
+            measurement["line_item"].setPen(
+                mkPen(
+                    color=(255, 255, 0) if is_selected else (180, 180, 0),
+                    width=3 if is_selected else 1,
+                )
+            )
+            measurement["points_item"].setBrush(
+                pg.mkBrush(0, 255, 255, 100 if is_selected else 50)
+            )
+            measurement["label_item"].setColor(
+                (255, 255, 255) if is_selected else (190, 190, 190)
+            )
+
+    def _delete_measurement(self, measurement_id):
+        remaining = []
+        for measurement in self._measurements:
+            if measurement["id"] == measurement_id:
+                for item in (
+                    measurement["box_item"],
+                    measurement["line_item"],
+                    measurement["points_item"],
+                    measurement["label_item"],
+                ):
+                    self.removeItem(item)
+                    item.deleteLater()
+            else:
+                remaining.append(measurement)
+
+        self._measurements = remaining
+        if self._selected_measurement_id == measurement_id:
+            self._selected_measurement_id = None
+            if self._measurements:
+                self._select_measurement(self._measurements[-1]["id"])
+
+    def _clear_measurements(self):
+        for measurement in self._measurements:
+            for item in (
+                measurement["box_item"],
+                measurement["line_item"],
+                measurement["points_item"],
+                measurement["label_item"],
+            ):
+                self.removeItem(item)
+                item.deleteLater()
+
+        self._measurements = []
+        self._selected_measurement_id = None
+
+    def _remove_measurement_roi(self):
+        if self._measurement_roi is not None:
+            self.removeItem(self._measurement_roi)
+            self._measurement_roi.deleteLater()
+            self._measurement_roi = None
+
+    def _clear_drawn_roi(self):
+        if self.ROI is not None:
+            self.removeItem(self.ROI)
+            self.ROI.deleteLater()
+            self.ROI = None
+        if self.line is not None:
+            self.removeItem(self.line)
+            self.line.deleteLater()
+            self.line = None
+        if self.line_text is not None:
+            self.removeItem(self.line_text)
+            self.line_text.deleteLater()
+            self.line_text = None
+        self._roi_start_point = None
+        self._roi_is_being_drawn = False
+        self._line_start_point = None
+        self._line_is_being_drawn = False
 
     def set_scalebar_size(self):
         """Ask the user to specify the size of the scalebar."""
