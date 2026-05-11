@@ -45,7 +45,6 @@ from pyminflux import __APP_NAME__, __version__
 from pyminflux.correct import align_datasets_using_beads
 from pyminflux.plugin import PluginManager
 from pyminflux.processor import (
-    MinFluxProcessor,
     get_bead_positions_from_mbm,
     load_zarr_for_beads,
     get_next_fluorophore_id,
@@ -82,7 +81,7 @@ from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.workflows import LocalizationWorkflow, TrackingWorkflow
 from pyminflux.utils import check_for_updates
-from pyminflux.writer import MinFluxWriter, PMXWriter
+from pyminflux.writer import PMXWriter
 
 # Version info
 __modifier__ = ""
@@ -206,6 +205,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         # Keep a reference to the MinFluxProcessor
         self.processor = None
+        self.dataset = None
 
         # Keep track of the current dataset's Zarr path for combining
         self.current_zarr_path = None
@@ -387,7 +387,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.workflow_panel = None
 
         self.workflow = workflow
-        self.workflow.set_processor(self.processor)
+        if self.workflow.dataset is None:
+            self.workflow.set_dataset(self.dataset)
+        self.processor = self.workflow.processor
         self.workflow_panel = self.workflow.create_panel(parent=self)
         self.workflow_body_layout.addWidget(self.workflow_panel)
 
@@ -413,10 +415,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     def apply_workflow_actions(self):
         """Apply common and workflow-provided action visibility/enabled state."""
+        dataframe = self.workflow.plot_dataframe() if self.workflow is not None else None
         has_data = (
-            self.processor is not None
-            and self.processor.filtered_dataframe is not None
-            and len(self.processor.filtered_dataframe.index) > 0
+            dataframe is not None
+            and len(dataframe.index) > 0
         )
 
         self.ui.actionSave.setEnabled(
@@ -653,8 +655,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.update_plotter_toolbar_from_workflow()
         self.plot_selected_parameters()
         self.data_viewer.clear()
-        if self.processor is not None and self.processor.filtered_dataframe is not None:
-            print(f"Retrieved {len(self.processor.filtered_dataframe.index)} events.")
+        dataframe = self.workflow.plot_dataframe() if self.workflow is not None else None
+        if dataframe is not None:
+            print(f"Retrieved {len(dataframe.index)} events.")
 
     def print_to_console(self, text):
         """
@@ -788,19 +791,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def save_native_file(self):
         """Save data to native pyMINFLUX `.pmx` file."""
         if (
-            self.processor is None
-            or self.processor.filtered_dataframe is None
-            or len(self.processor.filtered_dataframe.index) == 0
+            self.workflow is None
+            or not self.workflow.can_save()
+            or self.workflow.processor is None
         ):
             return
 
         # Get current filename to build the suggestion output
-        if self.processor.filename is None:
+        if self.workflow.filename is None:
             # Just use the path
             out_filename = str(self.state.last_selected_path)
         else:
             out_filename = str(
-                self.processor.filename.parent / f"{self.processor.filename.stem}.pmx"
+                self.workflow.filename.parent / f"{self.workflow.filename.stem}.pmx"
             )
 
         # Ask the user to pick a name (and format)
@@ -821,17 +824,18 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             filename = filename.parent / f"{filename.stem}.pmx"
 
         # Temporarily set fluorophore to "all" to ensure all data is saved
-        previous_fluorophore_id = self.processor.current_fluorophore_id
+        processor = self.workflow.processor
+        previous_fluorophore_id = processor.current_fluorophore_id
         if previous_fluorophore_id != 0:
-            self.processor.current_fluorophore_id = 0
+            processor.current_fluorophore_id = 0
 
         # Write to disk
-        writer = PMXWriter(self.processor)
+        writer = PMXWriter(processor)
         result = writer.write(filename)
 
         # Restore previous fluorophore selection
         if previous_fluorophore_id != 0:
-            self.processor.current_fluorophore_id = previous_fluorophore_id
+            processor.current_fluorophore_id = previous_fluorophore_id
 
         # Save
         if result:
@@ -1177,28 +1181,35 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Process the file
             self.state.last_selected_path = Path(filename).parent
 
-            # Add initialize the processor with the reader
-            self.processor = MinFluxProcessor(
-                reader,
-                self.state.min_trace_length,
-            )
+            # Create the neutral dataset and let the active workflow decide
+            # whether it needs the classic MinFluxProcessor.
+            self.dataset = MinFluxDataset.from_reader(reader)
 
             # Load fluorophore names from PMX file if available
             if ext == ".pmx":
                 fluorophore_names = PMXReader.get_fluorophore_names(filename)
+            else:
+                fluorophore_names = None
+
+            if self.state.is_tracking:
+                self.set_workflow(TrackingWorkflow(self.dataset))
+            else:
+                self.set_workflow(
+                    LocalizationWorkflow(
+                        self.dataset,
+                        self.state.min_trace_length,
+                    )
+                )
                 if fluorophore_names:
-                    self.processor.set_fluorophore_names(fluorophore_names)
+                    self.workflow.processor.set_fluorophore_names(fluorophore_names)
                     print(f"Loaded fluorophore names: {fluorophore_names}")
 
             # Make sure to set current value of use_weighted_localizations
-            self.processor.use_weighted_localizations = (
-                self.state.weigh_avg_localization_by_eco
-            )
-
-            if self.state.is_tracking:
-                self.set_workflow(TrackingWorkflow(self.processor))
-            else:
-                self.set_workflow(LocalizationWorkflow(self.processor))
+            if self.workflow.processor is not None:
+                self.workflow.processor.use_weighted_localizations = (
+                    self.state.weigh_avg_localization_by_eco
+                )
+            self.processor = self.workflow.processor
 
             # Show the filename on the main window
             self.setWindowTitle(
@@ -1282,7 +1293,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.enable_ui_components(True)
 
             # If the read sequence is not valid, disable the save button
-            if reader.is_last_valid:
+            if reader.is_last_valid and self.workflow.can_save():
                 self.ui.actionSave.setEnabled(True)
                 if self.wizard is not None:
                     self.wizard.enable_save_button(True)
@@ -1309,14 +1320,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def export_filtered_data(self):
         """Export filtered data as CSV file."""
         if (
-            self.processor is None
-            or self.processor.filtered_dataframe is None
-            or len(self.processor.filtered_dataframe.index) == 0
+            self.workflow is None
+            or not self.workflow.can_export_data()
         ):
             return
 
         # Get current filename to build the suggestion output
-        if self.processor.filename is None:
+        if self.workflow.filename is None:
             base_path = (
                 self.state.last_selected_path
                 if self.state.last_selected_path is not None
@@ -1325,7 +1335,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             out_filename = str(Path(base_path) / "combined.csv")
         else:
             out_filename = str(
-                self.processor.filename.parent / f"{self.processor.filename.stem}.csv"
+                self.workflow.filename.parent / f"{self.workflow.filename.stem}.csv"
             )
 
         # Ask the user to pick a name (and format)
@@ -1346,25 +1356,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 filename = Path(filename)
                 filename = filename.parent / f"{filename.stem}.csv"
 
-            # Temporarily set fluorophore to "all" to ensure all data is exported
-            previous_fluorophore_id = self.processor.current_fluorophore_id
-            if previous_fluorophore_id != 0:
-                self.processor.current_fluorophore_id = 0
-
-            # Write to disk
-            result = MinFluxWriter.write_csv(self.processor, filename)
-
-            # Restore previous fluorophore selection
-            if previous_fluorophore_id != 0:
-                self.processor.current_fluorophore_id = previous_fluorophore_id
+            result = self.workflow.export_data_to_csv(filename)
 
         else:
             return
 
         # Save
         if result:
+            dataframe = self.workflow.plot_dataframe()
             print(
-                f"Successfully exported {len(self.processor.filtered_dataframe.index)} localizations."
+                f"Successfully exported {len(dataframe.index)} localizations."
             )
         else:
             QMessageBox.critical(
@@ -1377,9 +1378,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def export_filtered_stats(self):
         """Export filtered, per-trace statistics as CSV file."""
         if (
-            self.processor is None
-            or self.processor.filtered_dataframe is None
-            or len(self.processor.filtered_dataframe.index) == 0
+            self.workflow is None
+            or self.workflow.stats_dataframe() is None
         ):
             # Inform and return
             QMessageBox.information(
@@ -1390,7 +1390,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             return
 
         # Get current filename to build the suggestion output
-        if self.processor.filename is None:
+        if self.workflow.filename is None:
             base_path = (
                 self.state.last_selected_path
                 if self.state.last_selected_path is not None
@@ -1399,8 +1399,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             out_filename = str(Path(base_path) / "combined_stats.csv")
         else:
             out_filename = str(
-                self.processor.filename.parent
-                / f"{self.processor.filename.stem}_stats.csv"
+                self.workflow.filename.parent
+                / f"{self.workflow.filename.stem}_stats.csv"
             )
 
         # Ask the user to pick a name
@@ -1424,7 +1424,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             filename = filename.parent / f"{filename.stem}.csv"
 
         # Collect stats
-        stats = self.processor.filtered_dataframe_stats
+        stats = self.workflow.stats_dataframe()
         if stats is None:
             return
 
@@ -2140,7 +2140,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         if dataframe is None:
             # Get the (potentially filtered) dataframe
-            dataframe = self.processor.filtered_dataframe
+            dataframe = self.workflow.plot_dataframe() if self.workflow is not None else None
 
         # Pass the dataframe to the pdDataViewer
         self.data_viewer.set_data(dataframe)
