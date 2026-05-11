@@ -187,6 +187,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Initialize the dialog
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.ui.actionRemove_Largest_Track = QAction(self)
+        self.ui.actionRemove_Largest_Track.setObjectName(
+            "actionRemove_Largest_Track"
+        )
+        self.ui.actionRemove_Largest_Track.setText("Remove largest track")
 
         # Main window title
         self.setWindowTitle(f"{__APP_NAME__} v{__version__}")
@@ -448,6 +453,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             "actionAnalyzer",
             "actionTrace_Stats_Viewer",
             "actionFRC_analyzer",
+            "actionRemove_Largest_Track",
         }
         active_action_names = (
             set(self.workflow.workflow_action_names()) if self.workflow is not None else set()
@@ -457,6 +463,48 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             is_active = action_name in active_action_names
             action.setVisible(is_active)
             action.setEnabled(has_data and is_active)
+
+        self.rebuild_workflow_menu(active_action_names, has_data)
+
+    def rebuild_workflow_menu(self, active_action_names: set[str], has_data: bool):
+        """Rebuild the workflow-specific menu from the active workflow."""
+        action_groups = [
+            [
+                "actionUnmixer",
+                "actionSet_Fluorophore_Names",
+            ],
+            [
+                "actionTime_Inspector",
+                "actionAnalyzer",
+            ],
+            [
+                "actionHistogram_Plotter",
+                "actionTrace_Stats_Viewer",
+                "actionFRC_analyzer",
+            ],
+            [
+                "actionRemove_Largest_Track",
+            ],
+        ]
+
+        self.ui.menuAnalysis.clear()
+        has_visible_actions = False
+        for action_group in action_groups:
+            visible_actions = [
+                getattr(self.ui, action_name)
+                for action_name in action_group
+                if action_name in active_action_names
+            ]
+            if not visible_actions:
+                continue
+            if has_visible_actions:
+                self.ui.menuAnalysis.addSeparator()
+            for action in visible_actions:
+                action.setEnabled(has_data)
+                self.ui.menuAnalysis.addAction(action)
+            has_visible_actions = True
+
+        self.ui.menuAnalysis.menuAction().setVisible(has_visible_actions)
 
     def update_plotter_toolbar_from_workflow(self):
         """Refresh plot controls from the active workflow's dataframe adapter."""
@@ -471,6 +519,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             else None
         )
         self.plotter_toolbar.set_plot_dataframe_schema(dataframe, color_codes)
+
+    def remove_largest_track(self):
+        """Run the active workflow's remove-largest-track action."""
+        if self.workflow is None or not hasattr(self.workflow, "remove_largest_track"):
+            return
+        self.workflow.remove_largest_track()
+        self.full_update_ui()
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -602,6 +657,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
         self.ui.actionTrace_Stats_Viewer.triggered.connect(self.open_trace_stats_viewer)
         self.ui.actionFRC_analyzer.triggered.connect(self.open_frc_tool)
+        self.ui.actionRemove_Largest_Track.triggered.connect(
+            self.remove_largest_track
+        )
         self.ui.actionManual.triggered.connect(
             lambda _: QDesktopServices.openUrl(
                 "https://github.com/bsse-scf/pyMINFLUX/wiki/pyMINFLUX-user-manual"
