@@ -200,7 +200,11 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         # Persist the selection
         self.state.y_param = self.plotting_parameters[index]
 
-    def set_plot_dataframe_schema(self, dataframe: pd.DataFrame | None):
+    def set_plot_dataframe_schema(
+        self,
+        dataframe: pd.DataFrame | None,
+        color_codes: list[ColorCode] | None = None,
+    ):
         """Populate plot controls from the active workflow's plot dataframe."""
         if dataframe is None:
             self.set_plotting_columns(MinFluxReader.processed_properties())
@@ -214,15 +218,16 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         ]
         self.set_plotting_columns(numeric_columns)
 
-        color_codes = [ColorCode.NONE]
-        if "tid" in dataframe.columns:
-            color_codes.append(ColorCode.BY_TID)
-        if "fluo" in dataframe.columns:
-            color_codes.append(ColorCode.BY_FLUO)
-        if "z" in dataframe.columns:
-            color_codes.append(ColorCode.BY_DEPTH)
-        if "tim" in dataframe.columns:
-            color_codes.append(ColorCode.BY_TIME)
+        if color_codes is None:
+            color_codes = [ColorCode.NONE]
+            if "tid" in dataframe.columns:
+                color_codes.append(ColorCode.BY_TID)
+            if "fluo" in dataframe.columns:
+                color_codes.append(ColorCode.BY_FLUO)
+            if "z" in dataframe.columns:
+                color_codes.append(ColorCode.BY_DEPTH)
+            if "tim" in dataframe.columns:
+                color_codes.append(ColorCode.BY_TIME)
         self.set_available_color_codes(color_codes)
 
     def set_plotting_columns(self, columns, preferred_x="x", preferred_y="y"):
@@ -266,6 +271,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
             ColorCode.BY_FLUO: "fluorophore",
             ColorCode.BY_DEPTH: "depth",
             ColorCode.BY_TIME: "time",
+            ColorCode.BY_LENGTH: "length",
         }
         color_codes = [ColorCode(code) for code in color_codes]
         if ColorCode.NONE not in color_codes:

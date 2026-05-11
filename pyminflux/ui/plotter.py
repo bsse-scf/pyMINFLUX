@@ -619,7 +619,7 @@ class Plotter(PlotWidget):
                     ):
                         recreate_brushes = True
 
-                elif color_code == ColorCode.BY_DEPTH:
+                elif color_code in (ColorCode.BY_DEPTH, ColorCode.BY_LENGTH):
                     if (
                         self.last_plot_parameters["depth"] is None
                         or len(depth) != len(self.last_plot_parameters["depth"])
