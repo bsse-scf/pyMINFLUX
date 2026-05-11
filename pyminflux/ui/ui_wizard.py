@@ -10,7 +10,7 @@
 
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
+    QTime, QUrl, Qt)
 from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
@@ -24,7 +24,7 @@ class Ui_WizardDialog(object):
         if not WizardDialog.objectName():
             WizardDialog.setObjectName(u"WizardDialog")
         WizardDialog.resize(357, 939)
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.MinimumExpanding)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(WizardDialog.sizePolicy().hasHeightForWidth())
@@ -33,30 +33,6 @@ class Ui_WizardDialog(object):
         self.gridLayout.setObjectName(u"gridLayout")
         self.mainLayout = QVBoxLayout()
         self.mainLayout.setObjectName(u"mainLayout")
-        self.loadLayout = QHBoxLayout()
-        self.loadLayout.setObjectName(u"loadLayout")
-        self.pbLoadData = QPushButton(WizardDialog)
-        self.pbLoadData.setObjectName(u"pbLoadData")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed)
-        sizePolicy1.setHorizontalStretch(1)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.pbLoadData.sizePolicy().hasHeightForWidth())
-        self.pbLoadData.setSizePolicy(sizePolicy1)
-        self.pbLoadData.setMinimumSize(QSize(160, 0))
-
-        self.loadLayout.addWidget(self.pbLoadData)
-
-        self.pbLoadZarr = QPushButton(WizardDialog)
-        self.pbLoadZarr.setObjectName(u"pbLoadZarr")
-        sizePolicy1.setHeightForWidth(self.pbLoadZarr.sizePolicy().hasHeightForWidth())
-        self.pbLoadZarr.setSizePolicy(sizePolicy1)
-        self.pbLoadZarr.setMinimumSize(QSize(160, 0))
-
-        self.loadLayout.addWidget(self.pbLoadZarr)
-
-
-        self.mainLayout.addLayout(self.loadLayout)
-
         self.pbReset = QPushButton(WizardDialog)
         self.pbReset.setObjectName(u"pbReset")
 
@@ -274,8 +250,6 @@ class Ui_WizardDialog(object):
 
     def retranslateUi(self, WizardDialog):
         WizardDialog.setWindowTitle(QCoreApplication.translate("WizardDialog", u"Dialog", None))
-        self.pbLoadData.setText(QCoreApplication.translate("WizardDialog", u"Load", None))
-        self.pbLoadZarr.setText(QCoreApplication.translate("WizardDialog", u"Load Zarr", None))
         self.pbReset.setText(QCoreApplication.translate("WizardDialog", u"Reset", None))
         self.lbMultiplexing.setText(QCoreApplication.translate("WizardDialog", u"Multiplexing", None))
         self.pbSingleColor.setText(QCoreApplication.translate("WizardDialog", u"Combiner", None))
@@ -297,4 +271,3 @@ class Ui_WizardDialog(object):
         self.pbSaveData.setText(QCoreApplication.translate("WizardDialog", u"Save", None))
         self.pbExportData.setText(QCoreApplication.translate("WizardDialog", u"Export", None))
     # retranslateUi
-
