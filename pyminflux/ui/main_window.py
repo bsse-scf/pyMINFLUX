@@ -64,7 +64,7 @@ from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.bead_correspondence_dialog import BeadCorrespondenceDialog
 from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.colorbar import ColorBarWidget
-from pyminflux.ui.colors import ColorCode, reset_all_colors
+from pyminflux.ui.colors import reset_all_colors
 from pyminflux.ui.dataset_combine_dialog import DatasetCombineDialog
 from pyminflux.ui.dataviewer import DataViewer
 from pyminflux.ui.frc_tool import FRCTool
@@ -513,12 +513,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         dataframe = (
             self.workflow.plot_dataframe() if self.workflow is not None else None
         )
-        color_codes = (
-            self.workflow.available_color_codes(dataframe)
+        color_columns = (
+            self.workflow.color_columns(dataframe)
             if self.workflow is not None
             else None
         )
-        self.plotter_toolbar.set_plot_dataframe_schema(dataframe, color_codes)
+        self.plotter_toolbar.set_plot_dataframe_schema(dataframe, color_columns)
 
     def remove_largest_track(self):
         """Run the active workflow's remove-largest-track action."""
@@ -1117,15 +1117,13 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print(f"Combine completed. Dataset now has {self.processor.num_fluorophores} fluorophore(s)")
         print(f"Fluorophore names: {fluorophore_names}")
         
-        # Set color coding to BY_FLUO after combine to distinguish datasets
-        self.state.color_code = ColorCode.BY_FLUO
+        # Color by fluorophore after combine to distinguish datasets.
+        self.state.color_column = "fluo"
         # Update the dropdown UI to reflect the new color coding
-        color_index = self.plotter_toolbar.ui.cbColorCodeSelector.findData(
-            ColorCode.BY_FLUO
-        )
+        color_index = self.plotter_toolbar.ui.cbColorCodeSelector.findData("fluo")
         if color_index >= 0:
             self.plotter_toolbar.ui.cbColorCodeSelector.setCurrentIndex(color_index)
-        print("Color coding set to BY_FLUO to distinguish combined datasets")
+        print("Color coding set to fluo to distinguish combined datasets")
         
         return True
 
@@ -2014,33 +2012,18 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self,
         colormap: str,
         data_range: Optional[tuple[float, float]] = None,
+        label: Optional[str] = None,
     ):
-        """Update the colorbar widget for the color-coding modes that require it."""
+        """Update the colorbar widget for continuous color columns."""
 
         # Make sure we have a valid colormap
-        if colormap not in [None, "jet", "plasma"]:
+        if colormap not in [None, "jet"]:
             raise ValueError(f"Unsupported colormap `{colormap}`.")
 
-        # Make sure we have a valid data range
-        if data_range is None:
-            data_range = (0.0, 1.0)
-
-        # Only show and update the colorbar for supported parameters and color coding option
-        if not (
-            self.state.color_code == ColorCode.BY_DEPTH
-            or self.state.color_code == ColorCode.BY_TIME
-            or self.state.color_code == ColorCode.BY_LENGTH
-        ):
+        if colormap is None or data_range is None or label is None:
             self.colorbar.hide()
             return
 
-        # Update the colorbar widget
-        if self.state.color_code == ColorCode.BY_DEPTH:
-            label = "Depth [nm]"
-        elif self.state.color_code == ColorCode.BY_LENGTH:
-            label = "Length [nm]"
-        else:
-            label = "Time [min]"
         self.colorbar.reset(colormap=colormap, data_range=data_range, label=label)
         self.colorbar.show()
 
@@ -2048,6 +2031,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Plot the localizations."""
 
         colormap = None
+        colorbar_range = None
+        colorbar_label = None
 
         if self.plotter is None:
             raise Exception("Plotter object not ready!")
@@ -2079,26 +2064,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             else pd.Series(range(len(dataframe.index)), index=dataframe.index)
         )
 
+        color_column = self.state.color_column
+        if color_column not in dataframe.columns:
+            color_column = None
+            self.state.color_column = None
+        color_values = dataframe[color_column] if color_column is not None else None
         if (
-            self.state.color_code == ColorCode.BY_FLUO
-            and "fluo" not in dataframe.columns
+            color_values is not None
+            and pd.api.types.is_numeric_dtype(color_values)
+            and not pd.api.types.is_integer_dtype(color_values)
         ):
-            self.state.color_code = ColorCode.NONE
-        elif (
-            self.state.color_code == ColorCode.BY_DEPTH
-            and "z" not in dataframe.columns
-        ):
-            self.state.color_code = ColorCode.NONE
-        elif (
-            self.state.color_code == ColorCode.BY_TIME
-            and "tim" not in dataframe.columns
-        ):
-            self.state.color_code = ColorCode.NONE
-        elif (
-            self.state.color_code == ColorCode.BY_LENGTH
-            and "length" not in dataframe.columns
-        ):
-            self.state.color_code = ColorCode.NONE
+            colormap = "jet"
+            colorbar_range = (color_values.min(), color_values.max())
+            colorbar_label = color_column
 
         if self.state.plot_3d and not {"x", "y", "z"}.issubset(dataframe.columns):
             self.state.plot_3d = False
@@ -2106,148 +2084,36 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.plotter_toolbar.ui.cbPlot3D.setChecked(False)
 
         if self.state.plot_3d:
-
-            # Extract identifiers
-            fid = None
-            depth = dataframe["z"]
-            time = None
-
-            # Extract necessary values for color-coding
-            if (
-                self.state.color_code == ColorCode.NONE
-                or self.state.color_code == ColorCode.BY_TID
-            ):
-                pass
-            elif self.state.color_code == ColorCode.BY_FLUO:
-                fid = dataframe["fluo"]
-            elif self.state.color_code == ColorCode.BY_DEPTH:
-                pass
-            elif self.state.color_code == ColorCode.BY_TIME:
-                time = dataframe["tim"] / 60.0  # Color-code by time in minutes
-            elif self.state.color_code == ColorCode.BY_LENGTH:
-                depth = dataframe["length"]
-            else:
-                raise ValueError("Unknown color code")
-
             # Plot localizations in 3D
-            self.plotter3d.plot(dataframe[["x", "y", "z"]], tid, fid, depth, time)
-
-            # Range for colorbar
-            if self.state.color_code == ColorCode.BY_DEPTH:
-
-                # Set colormap
-                colormap = "jet"
-
-                # Set data range
-                data_range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
-
-            elif self.state.color_code == ColorCode.BY_LENGTH:
-
-                # Set colormap
-                colormap = "jet"
-
-                # Set data range
-                data_range_for_colorbar = (
-                    dataframe["length"].min(),
-                    dataframe["length"].max(),
-                )
-
-            elif self.state.color_code == ColorCode.BY_TIME:
-
-                # Set colormap
-                colormap = "plasma"
-
-                # Set data range
-                data_range_for_colorbar = (
-                    dataframe["tim"].min()
-                    / 60.0,  # Data range for color-coding in minutes
-                    dataframe["tim"].max() / 60.0,
-                )
-            else:
-                data_range_for_colorbar = None
+            self.plotter3d.plot(dataframe[["x", "y", "z"]], color_values)
         else:
 
             # Remove the previous plots
             self.plotter.remove_points()
 
-            # Pre-define values
-            fid = None
-            depth = None
-            time = None
-
             # Extract values
             x = dataframe[self.state.x_param]
             y = dataframe[self.state.y_param]
-            if (
-                self.state.color_code == ColorCode.NONE
-                or self.state.color_code == ColorCode.BY_TID
-            ):
-                pass
-            elif self.state.color_code == ColorCode.BY_FLUO:
-                fid = dataframe["fluo"]
-            elif self.state.color_code == ColorCode.BY_DEPTH:
-                depth = dataframe["z"]
-            elif self.state.color_code == ColorCode.BY_TIME:
-                time = dataframe["tim"] / 60.0  # Color-code by time in minutes
-            elif self.state.color_code == ColorCode.BY_LENGTH:
-                depth = dataframe["length"]
-            else:
-                raise ValueError("Unknown color code")
 
             # Always plot the (x, y) coordinates in the 2D plotter
             self.plotter.plot_parameters(
                 x=x,
                 y=y,
-                color_code=self.state.color_code,
                 x_param=self.state.x_param,
                 y_param=self.state.y_param,
                 tid=tid,
-                fid=fid,
-                depth=depth,
-                time=time,
+                color_values=color_values,
+                color_column=color_column,
             )
-
-            # Range for colorbar
-            if self.state.color_code == ColorCode.BY_DEPTH:
-
-                # Set colormap
-                colormap = "jet"
-
-                # Set data range
-                data_range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
-
-            elif self.state.color_code == ColorCode.BY_LENGTH:
-
-                # Set colormap
-                colormap = "jet"
-
-                # Set data range
-                data_range_for_colorbar = (
-                    dataframe["length"].min(),
-                    dataframe["length"].max(),
-                )
-
-            elif self.state.color_code == ColorCode.BY_TIME:
-
-                # Set colormap
-                colormap = "plasma"
-
-                # Set data range for colorbar (in minutes)
-                data_range_for_colorbar = (
-                    dataframe["tim"].min()
-                    / 60.0,  # Data range for color-coding in minutes
-                    dataframe["tim"].max() / 60.0,
-                )
-            else:
-                colormap = None
-                data_range_for_colorbar = None
 
         # Bring the active plot forward
         self.toggle_plotter()
 
         # Update and show the colorbar for the color-coding mode that need it
         self.update_and_show_colorbar_widget_if_needed(
-            colormap=colormap, data_range=data_range_for_colorbar
+            colormap=colormap,
+            data_range=colorbar_range,
+            label=colorbar_label,
         )
 
     def show_processed_dataframe(self, dataframe=None):
@@ -2258,14 +2124,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.data_viewer is None:
             raise Exception("DataViewer object not ready!")
 
-        # Is there data to process?
-        if self.processor is None:
-            self.data_viewer.clear()
-            return
-
         if dataframe is None:
             # Get the (potentially filtered) dataframe
-            dataframe = self.workflow.plot_dataframe() if self.workflow is not None else None
+            dataframe = (
+                self.workflow.plot_dataframe() if self.workflow is not None else None
+            )
+
+        if dataframe is None:
+            self.data_viewer.clear()
+            return
 
         # Pass the dataframe to the pdDataViewer
         self.data_viewer.set_data(dataframe)

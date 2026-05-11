@@ -39,7 +39,6 @@ class ColorCode(IntEnum):
     BY_FLUO = 2
     BY_DEPTH = 3
     BY_TIME = 4
-    BY_LENGTH = 5
 
 
 class ColorMap:
@@ -486,10 +485,10 @@ class ColorsToBrushes(metaclass=Singleton):
                 raise ValueError("If mode is ColorCode.BY_FLUO, `fid` cannot be None.")
             return self._get_or_create_brush_by_fid(fid)
 
-        elif mode in (ColorCode.BY_DEPTH, ColorCode.BY_LENGTH):
+        elif mode == ColorCode.BY_DEPTH:
             if depth is None:
                 raise ValueError(
-                    f"If mode is {mode.name}, `depth` cannot be None."
+                    "If mode is ColorCode.BY_DEPTH, `depth` cannot be None."
                 )
             return self._get_or_create_brush_by_depth(depth)
 
@@ -500,6 +499,18 @@ class ColorsToBrushes(metaclass=Singleton):
 
         else:
             raise ValueError(f"Unknown color mode: {mode}")
+
+    def get_brushes_for_values(
+        self, values: Optional[pd.Series] = None
+    ) -> Union[QBrush, list[QBrush]]:
+        """Get brushes for a dataframe color column."""
+        if values is None:
+            return self._white_brush
+        if pd.api.types.is_integer_dtype(values) or not pd.api.types.is_numeric_dtype(
+            values
+        ):
+            return self._get_or_create_brush_by_tid(values)
+        return self._get_or_create_brush_by_depth(values)
 
     def reset(self):
         """Reset the color caches."""
@@ -859,10 +870,10 @@ class ColorsToRGB(metaclass=Singleton):
                 raise ValueError("If mode is ColorCode.BY_FLUO, `fid` cannot be None.")
             return self._get_or_create_rgb_by_fid(fid)
 
-        elif mode in (ColorCode.BY_DEPTH, ColorCode.BY_LENGTH):
+        elif mode == ColorCode.BY_DEPTH:
             if depth is None:
                 raise ValueError(
-                    f"If mode is {mode.name}, `depth` cannot be None."
+                    "If mode is ColorCode.BY_DEPTH, `depth` cannot be None."
                 )
             return self._get_or_create_rgb_by_depth(depth)
 
@@ -873,6 +884,16 @@ class ColorsToRGB(metaclass=Singleton):
 
         else:
             raise ValueError(f"Unknown color mode: {mode}")
+
+    def get_rgb_for_values(self, values: Optional[pd.Series] = None):
+        """Get RGB colors for a dataframe color column."""
+        if values is None:
+            return Colors().white_float
+        if pd.api.types.is_integer_dtype(values) or not pd.api.types.is_numeric_dtype(
+            values
+        ):
+            return self._get_or_create_rgb_by_tid(values)
+        return self._get_or_create_rgb_by_depth(values)
 
     def reset(self):
         """Reset the color caches."""
