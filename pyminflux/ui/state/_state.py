@@ -37,6 +37,7 @@ class State(metaclass=Singleton):
         "cfr_threshold_factor",
         "cfr_thresholds",
         "color_code",
+        "color_column",
         "dcr_bin_size",
         "dcr_manual_threshold",
         "dwell_time",
@@ -84,6 +85,7 @@ class State(metaclass=Singleton):
         # Plotting options
         self.plot_average_localisations: bool = False
         self.color_code: ColorCode = ColorCode.NONE
+        self.color_column: Union[None, str] = None
 
         # Minimum number of localizations to consider a trace
         self.min_trace_length: int = 1
@@ -187,6 +189,7 @@ class State(metaclass=Singleton):
             "cfr_threshold_factor": self.cfr_threshold_factor,
             "cfr_thresholds": self.cfr_thresholds,
             "color_code": str(ColorCode(self.color_code)),
+            "color_column": self.color_column,
             "dcr_bin_size": self.dcr_bin_size,
             "dcr_manual_threshold": self.dcr_manual_threshold,
             "dwell_time": self.dwell_time,
@@ -248,6 +251,7 @@ class State(metaclass=Singleton):
         self.cfr_threshold_factor = 2.0
         self.cfr_thresholds = None
         self.color_code: ColorCode = ColorCode.NONE
+        self.color_column = None
         self.dcr_bin_size = 0.0
         self.dcr_manual_threshold = 0.0
         self.dwell_time = 1.0

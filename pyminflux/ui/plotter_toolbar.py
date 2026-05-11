@@ -19,7 +19,6 @@ from PySide6.QtWidgets import QWidget
 from pyminflux.ui.state import State
 
 from ..reader import MinFluxReader
-from .colors import ColorCode
 from .ui_plotter_toolbar import Ui_PlotterToolbar
 
 
@@ -27,7 +26,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
     # Signals
     plot_requested_parameters = Signal()
-    color_code_locs_changed = Signal(int)
+    color_code_locs_changed = Signal()
     plot_average_positions_state_changed = Signal()
     plotter_changed = Signal()
     plotter_projection_changed = Signal()
@@ -60,15 +59,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         self.ui.pbPlot.clicked.connect(self.emit_plot_requested)
 
         # Color-code combo box
-        self.set_available_color_codes(
-            [
-                ColorCode.NONE,
-                ColorCode.BY_TID,
-                ColorCode.BY_FLUO,
-                ColorCode.BY_DEPTH,
-                ColorCode.BY_TIME,
-            ]
-        )
+        self.set_available_color_columns([])
         self.ui.cbColorCodeSelector.currentIndexChanged.connect(
             self.persist_color_code_and_broadcast
         )
@@ -173,14 +164,11 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
     @Slot(int)
     def persist_color_code_and_broadcast(self, index):
-        """Persist the selection of the color code and broadcast a change."""
-        color_code = self.ui.cbColorCodeSelector.itemData(index)
-        if color_code is None:
-            color_code = ColorCode.NONE
-        self.state.color_code = ColorCode(color_code)
+        """Persist the selected color column and broadcast a change."""
+        self.state.color_column = self.ui.cbColorCodeSelector.itemData(index)
 
         # Broadcast the change
-        self.color_code_locs_changed.emit(self.state.color_code.value)
+        self.color_code_locs_changed.emit()
 
     @Slot(int)
     def persist_first_param(self, index):
@@ -203,12 +191,12 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
     def set_plot_dataframe_schema(
         self,
         dataframe: pd.DataFrame | None,
-        color_codes: list[ColorCode] | None = None,
+        color_columns: list[str] | None = None,
     ):
         """Populate plot controls from the active workflow's plot dataframe."""
         if dataframe is None:
             self.set_plotting_columns(MinFluxReader.processed_properties())
-            self.set_available_color_codes([ColorCode.NONE])
+            self.set_available_color_columns([])
             return
 
         numeric_columns = [
@@ -218,17 +206,9 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         ]
         self.set_plotting_columns(numeric_columns)
 
-        if color_codes is None:
-            color_codes = [ColorCode.NONE]
-            if "tid" in dataframe.columns:
-                color_codes.append(ColorCode.BY_TID)
-            if "fluo" in dataframe.columns:
-                color_codes.append(ColorCode.BY_FLUO)
-            if "z" in dataframe.columns:
-                color_codes.append(ColorCode.BY_DEPTH)
-            if "tim" in dataframe.columns:
-                color_codes.append(ColorCode.BY_TIME)
-        self.set_available_color_codes(color_codes)
+        if color_columns is None:
+            color_columns = []
+        self.set_available_color_columns(color_columns)
 
     def set_plotting_columns(self, columns, preferred_x="x", preferred_y="y"):
         """Populate X/Y plotting parameter controls."""
@@ -263,35 +243,31 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         self.state.y_param = previous_y
         self.toggle_average_state(None)
 
-    def set_available_color_codes(self, color_codes):
-        """Populate semantic color-code controls from available dataframe columns."""
-        labels = {
-            ColorCode.NONE: "nothing",
-            ColorCode.BY_TID: "tid",
-            ColorCode.BY_FLUO: "fluorophore",
-            ColorCode.BY_DEPTH: "depth",
-            ColorCode.BY_TIME: "time",
-            ColorCode.BY_LENGTH: "length",
-        }
-        color_codes = [ColorCode(code) for code in color_codes]
-        if ColorCode.NONE not in color_codes:
-            color_codes.insert(0, ColorCode.NONE)
-
+    def set_available_color_columns(self, color_columns):
+        """Populate color controls from allowed dataframe columns."""
+        color_columns = [
+            column
+            for column in color_columns
+            if isinstance(column, str)
+        ]
         current = (
-            self.state.color_code
-            if self.state.color_code in color_codes
-            else ColorCode.NONE
+            self.state.color_column
+            if self.state.color_column in color_columns
+            else None
         )
 
         blocker = QSignalBlocker(self.ui.cbColorCodeSelector)
         blocker.reblock()
         self.ui.cbColorCodeSelector.clear()
-        for color_code in color_codes:
-            self.ui.cbColorCodeSelector.addItem(labels[color_code], color_code)
-        self.ui.cbColorCodeSelector.setCurrentIndex(color_codes.index(current))
+        self.ui.cbColorCodeSelector.addItem("nothing", None)
+        for column in color_columns:
+            self.ui.cbColorCodeSelector.addItem(column, column)
+        self.ui.cbColorCodeSelector.setCurrentIndex(
+            0 if current is None else color_columns.index(current) + 1
+        )
         blocker.unblock()
 
-        self.state.color_code = current
+        self.state.color_column = current
 
     @Slot()
     def emit_plot_requested(self):

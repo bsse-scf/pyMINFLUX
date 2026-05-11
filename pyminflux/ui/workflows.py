@@ -21,7 +21,6 @@ from PySide6.QtWidgets import QLabel, QPushButton, QSizePolicy, QVBoxLayout, QWi
 
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.processor._dataset import MinFluxDataset
-from pyminflux.ui.colors import ColorCode
 from pyminflux.ui.state import State
 from pyminflux.ui.wizard import WizardDialog
 
@@ -128,22 +127,22 @@ class BaseWorkflow:
         """Return QAction attribute names exposed by this workflow."""
         return []
 
-    def available_color_codes(self, dataframe: Optional[pd.DataFrame]) -> list[ColorCode]:
-        """Return semantic color modes supported by the plot dataframe."""
-        color_codes = [ColorCode.NONE]
+    def color_columns(self, dataframe: Optional[pd.DataFrame]) -> list[str]:
+        """Return dataframe columns that can be used for point coloring."""
         if dataframe is None:
-            return color_codes
+            return []
 
+        color_columns = []
         columns = set(dataframe.columns)
         if "tid" in columns:
-            color_codes.append(ColorCode.BY_TID)
+            color_columns.append("tid")
         if "fluo" in columns:
-            color_codes.append(ColorCode.BY_FLUO)
+            color_columns.append("fluo")
         if "z" in columns:
-            color_codes.append(ColorCode.BY_DEPTH)
+            color_columns.append("z")
         if "tim" in columns:
-            color_codes.append(ColorCode.BY_TIME)
-        return color_codes
+            color_columns.append("tim")
+        return color_columns
 
 
 class LocalizationWorkflow(BaseWorkflow):
@@ -419,9 +418,8 @@ class TrackingWorkflow(BaseWorkflow):
             "actionRemove_Largest_Track",
         ]
 
-    def available_color_codes(self, dataframe: Optional[pd.DataFrame]) -> list[ColorCode]:
-        """Tracking exposes only track-level length as an optional color mode."""
-        color_codes = [ColorCode.NONE]
+    def color_columns(self, dataframe: Optional[pd.DataFrame]) -> list[str]:
+        """Tracking exposes only track-level length as an optional color column."""
         if dataframe is not None and "length" in dataframe.columns:
-            color_codes.append(ColorCode.BY_LENGTH)
-        return color_codes
+            return ["length"]
+        return []
