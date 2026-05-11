@@ -39,6 +39,7 @@ class ColorCode(IntEnum):
     BY_FLUO = 2
     BY_DEPTH = 3
     BY_TIME = 4
+    BY_LENGTH = 5
 
 
 class ColorMap:
@@ -485,10 +486,10 @@ class ColorsToBrushes(metaclass=Singleton):
                 raise ValueError("If mode is ColorCode.BY_FLUO, `fid` cannot be None.")
             return self._get_or_create_brush_by_fid(fid)
 
-        elif mode == ColorCode.BY_DEPTH:
+        elif mode in (ColorCode.BY_DEPTH, ColorCode.BY_LENGTH):
             if depth is None:
                 raise ValueError(
-                    "If mode is ColorCode.BY_DEPTH, `depth` cannot be None."
+                    f"If mode is {mode.name}, `depth` cannot be None."
                 )
             return self._get_or_create_brush_by_depth(depth)
 
@@ -858,10 +859,10 @@ class ColorsToRGB(metaclass=Singleton):
                 raise ValueError("If mode is ColorCode.BY_FLUO, `fid` cannot be None.")
             return self._get_or_create_rgb_by_fid(fid)
 
-        elif mode == ColorCode.BY_DEPTH:
+        elif mode in (ColorCode.BY_DEPTH, ColorCode.BY_LENGTH):
             if depth is None:
                 raise ValueError(
-                    "If mode is ColorCode.BY_DEPTH, `depth` cannot be None."
+                    f"If mode is {mode.name}, `depth` cannot be None."
                 )
             return self._get_or_create_rgb_by_depth(depth)
 

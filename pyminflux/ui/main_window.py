@@ -19,6 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+import pandas as pd
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
 from PySide6.QtCore import QSize, Qt, Signal, Slot
@@ -409,13 +410,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.workflow_panel.export_data_triggered.connect(
                     self.export_filtered_data
                 )
+            if hasattr(self.workflow_panel, "calculate_lengths_triggered"):
+                self.workflow_panel.calculate_lengths_triggered.connect(
+                    self.full_update_ui
+                )
 
         self.apply_workflow_actions()
         self.update_plotter_toolbar_from_workflow()
 
     def apply_workflow_actions(self):
         """Apply common and workflow-provided action visibility/enabled state."""
-        dataframe = self.workflow.plot_dataframe() if self.workflow is not None else None
+        dataframe = (
+            self.workflow.plot_dataframe() if self.workflow is not None else None
+        )
         has_data = (
             dataframe is not None
             and len(dataframe.index) > 0
@@ -451,8 +458,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Refresh plot controls from the active workflow's dataframe adapter."""
         if getattr(self, "plotter_toolbar", None) is None:
             return
-        dataframe = self.workflow.plot_dataframe() if self.workflow is not None else None
-        self.plotter_toolbar.set_plot_dataframe_schema(dataframe)
+        dataframe = (
+            self.workflow.plot_dataframe() if self.workflow is not None else None
+        )
+        color_codes = (
+            self.workflow.available_color_codes(dataframe)
+            if self.workflow is not None
+            else None
+        )
+        self.plotter_toolbar.set_plot_dataframe_schema(dataframe, color_codes)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -1044,7 +1058,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Set color coding to BY_FLUO after combine to distinguish datasets
         self.state.color_code = ColorCode.BY_FLUO
         # Update the dropdown UI to reflect the new color coding
-        self.plotter_toolbar.ui.cbColorCodeSelector.setCurrentIndex(ColorCode.BY_FLUO.value)
+        color_index = self.plotter_toolbar.ui.cbColorCodeSelector.findData(
+            ColorCode.BY_FLUO
+        )
+        if color_index >= 0:
+            self.plotter_toolbar.ui.cbColorCodeSelector.setCurrentIndex(color_index)
         print("Color coding set to BY_FLUO to distinguish combined datasets")
         
         return True
@@ -1956,16 +1974,18 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if not (
             self.state.color_code == ColorCode.BY_DEPTH
             or self.state.color_code == ColorCode.BY_TIME
+            or self.state.color_code == ColorCode.BY_LENGTH
         ):
             self.colorbar.hide()
             return
 
         # Update the colorbar widget
-        label = (
-            "Depth [nm]"
-            if self.state.color_code == ColorCode.BY_DEPTH
-            else "Time [min]"
-        )
+        if self.state.color_code == ColorCode.BY_DEPTH:
+            label = "Depth [nm]"
+        elif self.state.color_code == ColorCode.BY_LENGTH:
+            label = "Length [nm]"
+        else:
+            label = "Time [min]"
         self.colorbar.reset(colormap=colormap, data_range=data_range, label=label)
         self.colorbar.show()
 
@@ -1980,27 +2000,59 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter3d is None:
             raise Exception("Plotter3D object not ready!")
 
-        # If there is nothing to plot, return here
-        if (
-            self.processor is None
-            or self.workflow is None
-            or self.workflow.plot_dataframe() is None
-            or len(self.workflow.plot_dataframe().index) == 0
-        ):
+        # If there is nothing to plot, return here. The active workflow
+        # dataframe is the plotting contract; processor-free workflows still
+        # need to be plottable.
+        dataframe = (
+            self.workflow.plot_dataframe() if self.workflow is not None else None
+        )
+        if dataframe is None or len(dataframe.index) == 0:
             print("No data to process.")
             return
 
+        if self.state.x_param not in dataframe.columns:
+            print(f"Cannot plot: missing x parameter '{self.state.x_param}'.")
+            return
+
+        if self.state.y_param not in dataframe.columns:
+            print(f"Cannot plot: missing y parameter '{self.state.y_param}'.")
+            return
+
+        tid = (
+            dataframe["tid"]
+            if "tid" in dataframe.columns
+            else pd.Series(range(len(dataframe.index)), index=dataframe.index)
+        )
+
+        if (
+            self.state.color_code == ColorCode.BY_FLUO
+            and "fluo" not in dataframe.columns
+        ):
+            self.state.color_code = ColorCode.NONE
+        elif (
+            self.state.color_code == ColorCode.BY_DEPTH
+            and "z" not in dataframe.columns
+        ):
+            self.state.color_code = ColorCode.NONE
+        elif (
+            self.state.color_code == ColorCode.BY_TIME
+            and "tim" not in dataframe.columns
+        ):
+            self.state.color_code = ColorCode.NONE
+        elif (
+            self.state.color_code == ColorCode.BY_LENGTH
+            and "length" not in dataframe.columns
+        ):
+            self.state.color_code = ColorCode.NONE
+
+        if self.state.plot_3d and not {"x", "y", "z"}.issubset(dataframe.columns):
+            self.state.plot_3d = False
+            if getattr(self, "plotter_toolbar", None) is not None:
+                self.plotter_toolbar.ui.cbPlot3D.setChecked(False)
+
         if self.state.plot_3d:
 
-            # Extract the active workflow's plot dataframe
-            dataframe = self.workflow.plot_dataframe()
-
-            # Do we have data to plot
-            if dataframe is None:
-                return
-
             # Extract identifiers
-            tid = dataframe["tid"]
             fid = None
             depth = dataframe["z"]
             time = None
@@ -2017,6 +2069,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 pass
             elif self.state.color_code == ColorCode.BY_TIME:
                 time = dataframe["tim"] / 60.0  # Color-code by time in minutes
+            elif self.state.color_code == ColorCode.BY_LENGTH:
+                depth = dataframe["length"]
             else:
                 raise ValueError("Unknown color code")
 
@@ -2031,6 +2085,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
                 # Set data range
                 data_range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
+
+            elif self.state.color_code == ColorCode.BY_LENGTH:
+
+                # Set colormap
+                colormap = "jet"
+
+                # Set data range
+                data_range_for_colorbar = (
+                    dataframe["length"].min(),
+                    dataframe["length"].max(),
+                )
 
             elif self.state.color_code == ColorCode.BY_TIME:
 
@@ -2050,15 +2115,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Remove the previous plots
             self.plotter.remove_points()
 
-            # Extract the active workflow's plot dataframe
-            dataframe = self.workflow.plot_dataframe()
-
-            # Do we have data to plot
-            if dataframe is None:
-                return
-
             # Pre-define values
-            tid = dataframe["tid"]
             fid = None
             depth = None
             time = None
@@ -2077,6 +2134,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 depth = dataframe["z"]
             elif self.state.color_code == ColorCode.BY_TIME:
                 time = dataframe["tim"] / 60.0  # Color-code by time in minutes
+            elif self.state.color_code == ColorCode.BY_LENGTH:
+                depth = dataframe["length"]
             else:
                 raise ValueError("Unknown color code")
 
@@ -2101,6 +2160,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
                 # Set data range
                 data_range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
+
+            elif self.state.color_code == ColorCode.BY_LENGTH:
+
+                # Set colormap
+                colormap = "jet"
+
+                # Set data range
+                data_range_for_colorbar = (
+                    dataframe["length"].min(),
+                    dataframe["length"].max(),
+                )
 
             elif self.state.color_code == ColorCode.BY_TIME:
 

@@ -14,6 +14,7 @@
 
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel, QPushButton, QSizePolicy, QVBoxLayout, QWidget
@@ -190,6 +191,7 @@ class TrackingWorkflowPanel(QWidget):
 
     save_data_triggered = Signal()
     export_data_triggered = Signal()
+    calculate_lengths_triggered = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -204,13 +206,18 @@ class TrackingWorkflowPanel(QWidget):
         layout.addWidget(title)
 
         self.pbSaveData = QPushButton("Save")
+        self.pbCalculateLengths = QPushButton("Calculate lengths")
         self.pbExportData = QPushButton("Export data")
         self.pbSaveData.clicked.connect(lambda _: self.save_data_triggered.emit())
+        self.pbCalculateLengths.clicked.connect(
+            lambda _: self.calculate_lengths_triggered.emit()
+        )
         self.pbExportData.clicked.connect(lambda _: self.export_data_triggered.emit())
         layout.addWidget(self.pbSaveData)
+        layout.addWidget(self.pbCalculateLengths)
         layout.addWidget(self.pbExportData)
 
-        placeholder = QLabel("Tracking-specific tools will appear here.")
+        placeholder = QLabel("Tracks are stored internally as lists of spots.")
         placeholder.setWordWrap(True)
         layout.addWidget(placeholder)
         layout.addStretch(1)
@@ -224,6 +231,7 @@ class TrackingWorkflowPanel(QWidget):
 
     def enable_controls(self, enabled: bool = False):
         self.pbSaveData.setVisible(False)
+        self.pbCalculateLengths.setVisible(enabled)
         self.pbExportData.setVisible(enabled)
 
 
@@ -236,11 +244,110 @@ class TrackingWorkflow(BaseWorkflow):
 
     name = "tracking"
 
+    def __init__(
+        self,
+        dataset: Optional[MinFluxDataset] = None,
+        min_trace_length: int = 1,
+    ):
+        super().__init__(dataset=dataset, min_trace_length=min_trace_length)
+        self.tracks = []
+        self._tracks_dataframe = None
+        self._build_tracks()
+
+    def set_dataset(self, dataset: Optional[MinFluxDataset]) -> None:
+        super().set_dataset(dataset)
+        self._build_tracks()
+
     def create_panel(self, parent=None) -> TrackingWorkflowPanel:
         self.panel = TrackingWorkflowPanel(parent)
+        self.panel.calculate_lengths_triggered.connect(self.calculate_track_lengths)
         if self.dataset is not None:
             self.panel.set_dataset(self.dataset)
         return self.panel
+
+    def _build_tracks(self):
+        """Build list-of-dicts track representation from the dataset dataframe."""
+        self.tracks = []
+        self._tracks_dataframe = None
+        if self.dataset is None or self.dataset.processed_dataframe is None:
+            return
+
+        dataframe = self.dataset.processed_dataframe
+        if "tid" not in dataframe.columns:
+            return
+
+        for tid, group in dataframe.groupby("tid", sort=False):
+            if "tim" in group.columns:
+                group = group.sort_values("tim")
+            spots = group.to_dict(orient="records")
+            for spot in spots:
+                spot["tid"] = tid
+            self.tracks.append(
+                {
+                    "spots": spots,
+                    "properties": {},
+                }
+            )
+
+    def calculate_track_lengths(self):
+        """Calculate total path length for each track and store it as a property."""
+        for track in self.tracks:
+            spots = track["spots"]
+            if len(spots) < 2:
+                track["properties"]["length"] = 0.0
+                continue
+
+            use_z = bool(self.dataset is not None and self.dataset.is_3d)
+            coords = [
+                [
+                    float(spot.get("x", np.nan)),
+                    float(spot.get("y", np.nan)),
+                    *([float(spot.get("z", np.nan))] if use_z else []),
+                ]
+                for spot in spots
+            ]
+            coords = np.asarray(coords, dtype=float)
+            diffs = np.diff(coords, axis=0)
+            track["properties"]["length"] = float(
+                np.nansum(np.linalg.norm(diffs, axis=1))
+            )
+
+        self._tracks_dataframe = None
+
+    def plot_dataframe(self) -> Optional[pd.DataFrame]:
+        return self._tracks_to_dataframe()
+
+    def export_data_to_csv(self, file_name) -> bool:
+        dataframe = self._tracks_to_dataframe()
+        if dataframe is None:
+            return False
+        try:
+            dataframe.to_csv(file_name, index=False)
+        except Exception as e:
+            print(f"Could not save {file_name}: {e}")
+            return False
+        return True
+
+    def _tracks_to_dataframe(self) -> Optional[pd.DataFrame]:
+        if self._tracks_dataframe is not None:
+            return self._tracks_dataframe
+
+        rows = []
+        for track_index, track in enumerate(self.tracks):
+            properties = track["properties"]
+            for spot_index, spot in enumerate(track["spots"]):
+                row = dict(spot)
+                row["track_index"] = track_index
+                row["spot_index"] = spot_index
+                for name, value in properties.items():
+                    row[name] = value
+                rows.append(row)
+
+        if not rows:
+            return None
+
+        self._tracks_dataframe = pd.DataFrame(rows)
+        return self._tracks_dataframe
 
     def stats_dataframe(self) -> Optional[pd.DataFrame]:
         dataframe = self.plot_dataframe()
@@ -252,3 +359,10 @@ class TrackingWorkflow(BaseWorkflow):
         return [
             "actionExport_stats",
         ]
+
+    def available_color_codes(self, dataframe: Optional[pd.DataFrame]) -> list[ColorCode]:
+        """Tracking exposes only track-level length as an optional color mode."""
+        color_codes = [ColorCode.NONE]
+        if dataframe is not None and "length" in dataframe.columns:
+            color_codes.append(ColorCode.BY_LENGTH)
+        return color_codes
