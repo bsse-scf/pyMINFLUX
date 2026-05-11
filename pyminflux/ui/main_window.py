@@ -414,6 +414,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.workflow_panel.calculate_lengths_triggered.connect(
                     self.full_update_ui
                 )
+            if hasattr(self.workflow_panel, "remove_largest_track_triggered"):
+                self.workflow_panel.remove_largest_track_triggered.connect(
+                    self.full_update_ui
+                )
 
         self.apply_workflow_actions()
         self.update_plotter_toolbar_from_workflow()
