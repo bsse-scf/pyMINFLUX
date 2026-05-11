@@ -91,6 +91,39 @@ class BaseWorkflow:
             return False
         return True
 
+    def select_by_index_labels(self, labels: list) -> Optional[pd.DataFrame]:
+        """Return plotted rows matching dataframe index labels."""
+        dataframe = self.plot_dataframe()
+        if dataframe is None:
+            return None
+        labels = [label for label in labels if label in dataframe.index]
+        if not labels:
+            return dataframe.iloc[[]]
+        return dataframe.loc[labels]
+
+    def select_by_2d_range(
+        self,
+        x_param: str,
+        y_param: str,
+        x_range: tuple[float, float],
+        y_range: tuple[float, float],
+    ) -> Optional[pd.DataFrame]:
+        """Return plotted rows inside the selected 2D range."""
+        dataframe = self.plot_dataframe()
+        if dataframe is None:
+            return None
+        if x_param not in dataframe.columns or y_param not in dataframe.columns:
+            return dataframe.iloc[[]]
+
+        x_min, x_max = sorted(x_range)
+        y_min, y_max = sorted(y_range)
+        return dataframe.loc[
+            (dataframe[x_param] >= x_min)
+            & (dataframe[x_param] < x_max)
+            & (dataframe[y_param] >= y_min)
+            & (dataframe[y_param] < y_max)
+        ]
+
     def workflow_action_names(self) -> list[str]:
         """Return QAction attribute names exposed by this workflow."""
         return []

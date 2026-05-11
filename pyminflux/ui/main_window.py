@@ -1919,28 +1919,22 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.data_viewer is None:
             raise Exception("DataViewer object not ready!")
 
-        if self.processor is None:
+        if self.workflow is None:
             return
 
-        # Extract the Pandas Series index loc of the rows corresponding to the selected points
-        indices = []
-        for p in points:
-            indices.append(p.data())
+        # Extract the dataframe index labels stored in the plotted points.
+        labels = sorted([point.data() for point in points])
 
-        # Sort the indices
-        indices = sorted(indices)
-
-        # Get the filtered dataframe subset corresponding to selected series ilocs
-        df = self.processor.select_by_series_iloc(
-            iloc=indices, from_weighted_locs=self.state.plot_average_localisations
-        )
+        # Resolve the selected labels against the active workflow dataframe.
+        df = self.workflow.select_by_index_labels(labels)
 
         # Update the dataviewer
         self.data_viewer.set_data(df)
 
         # Inform
-        point_str = "event" if len(indices) == 1 else "events"
-        print(f"Selected {len(indices)} {point_str}.")
+        num_selected = 0 if df is None else len(df.index)
+        point_str = "event" if num_selected == 1 else "events"
+        print(f"Selected {num_selected} {point_str}.")
 
     @Slot(tuple, tuple)
     def show_selected_points_by_range_in_dataviewer(
@@ -1951,16 +1945,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.data_viewer is None:
             raise Exception("DataViewer object not ready!")
 
-        if self.processor is None:
+        if self.workflow is None:
             return
 
-        # Get the filtered dataframe subset contained in the provided x and y ranges
-        df = self.processor.select_by_2d_range(
+        # Get the active workflow dataframe subset contained in the ranges.
+        df = self.workflow.select_by_2d_range(
             x_param,
             y_param,
             x_range,
             y_range,
-            from_weighted_locs=self.state.plot_average_localisations,
         )
 
         # Update the dataviewer
