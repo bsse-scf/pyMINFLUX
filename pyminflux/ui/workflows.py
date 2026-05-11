@@ -383,6 +383,7 @@ class TrackingWorkflow(BaseWorkflow):
     def workflow_action_names(self) -> list[str]:
         return [
             "actionExport_stats",
+            "actionRemove_Largest_Track",
         ]
 
     def available_color_codes(self, dataframe: Optional[pd.DataFrame]) -> list[ColorCode]:
