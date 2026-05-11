@@ -192,6 +192,7 @@ class TrackingWorkflowPanel(QWidget):
     save_data_triggered = Signal()
     export_data_triggered = Signal()
     calculate_lengths_triggered = Signal()
+    remove_largest_track_triggered = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -207,14 +208,19 @@ class TrackingWorkflowPanel(QWidget):
 
         self.pbSaveData = QPushButton("Save")
         self.pbCalculateLengths = QPushButton("Calculate lengths")
+        self.pbRemoveLargestTrack = QPushButton("Remove largest track")
         self.pbExportData = QPushButton("Export data")
         self.pbSaveData.clicked.connect(lambda _: self.save_data_triggered.emit())
         self.pbCalculateLengths.clicked.connect(
             lambda _: self.calculate_lengths_triggered.emit()
         )
+        self.pbRemoveLargestTrack.clicked.connect(
+            lambda _: self.remove_largest_track_triggered.emit()
+        )
         self.pbExportData.clicked.connect(lambda _: self.export_data_triggered.emit())
         layout.addWidget(self.pbSaveData)
         layout.addWidget(self.pbCalculateLengths)
+        layout.addWidget(self.pbRemoveLargestTrack)
         layout.addWidget(self.pbExportData)
 
         placeholder = QLabel("Tracks are stored internally as lists of spots.")
@@ -232,6 +238,7 @@ class TrackingWorkflowPanel(QWidget):
     def enable_controls(self, enabled: bool = False):
         self.pbSaveData.setVisible(False)
         self.pbCalculateLengths.setVisible(enabled)
+        self.pbRemoveLargestTrack.setVisible(enabled)
         self.pbExportData.setVisible(enabled)
 
 
@@ -261,6 +268,7 @@ class TrackingWorkflow(BaseWorkflow):
     def create_panel(self, parent=None) -> TrackingWorkflowPanel:
         self.panel = TrackingWorkflowPanel(parent)
         self.panel.calculate_lengths_triggered.connect(self.calculate_track_lengths)
+        self.panel.remove_largest_track_triggered.connect(self.remove_largest_track)
         if self.dataset is not None:
             self.panel.set_dataset(self.dataset)
         return self.panel
@@ -292,27 +300,44 @@ class TrackingWorkflow(BaseWorkflow):
     def calculate_track_lengths(self):
         """Calculate total path length for each track and store it as a property."""
         for track in self.tracks:
-            spots = track["spots"]
-            if len(spots) < 2:
-                track["properties"]["length"] = 0.0
-                continue
-
-            use_z = bool(self.dataset is not None and self.dataset.is_3d)
-            coords = [
-                [
-                    float(spot.get("x", np.nan)),
-                    float(spot.get("y", np.nan)),
-                    *([float(spot.get("z", np.nan))] if use_z else []),
-                ]
-                for spot in spots
-            ]
-            coords = np.asarray(coords, dtype=float)
-            diffs = np.diff(coords, axis=0)
-            track["properties"]["length"] = float(
-                np.nansum(np.linalg.norm(diffs, axis=1))
-            )
+            track["properties"]["length"] = self._calculate_track_length(track)
 
         self._tracks_dataframe = None
+
+    def remove_largest_track(self):
+        """Remove the track with the largest calculated path length."""
+        if not self.tracks:
+            return
+
+        lengths = [self._track_length(track) for track in self.tracks]
+        largest_track_index = int(np.nanargmax(lengths))
+        del self.tracks[largest_track_index]
+        self._tracks_dataframe = None
+
+    def _track_length(self, track) -> float:
+        length = track["properties"].get("length")
+        if length is None:
+            length = self._calculate_track_length(track)
+            track["properties"]["length"] = length
+        return length
+
+    def _calculate_track_length(self, track) -> float:
+        spots = track["spots"]
+        if len(spots) < 2:
+            return 0.0
+
+        use_z = bool(self.dataset is not None and self.dataset.is_3d)
+        coords = [
+            [
+                float(spot.get("x", np.nan)),
+                float(spot.get("y", np.nan)),
+                *([float(spot.get("z", np.nan))] if use_z else []),
+            ]
+            for spot in spots
+        ]
+        coords = np.asarray(coords, dtype=float)
+        diffs = np.diff(coords, axis=0)
+        return float(np.nansum(np.linalg.norm(diffs, axis=1)))
 
     def plot_dataframe(self) -> Optional[pd.DataFrame]:
         return self._tracks_to_dataframe()
