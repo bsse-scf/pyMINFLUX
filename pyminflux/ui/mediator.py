@@ -342,23 +342,21 @@ class Mediator:
                 "The Main Window must always be registered in the Mediator."
             )
 
-        if "wizard" not in self.dialogs:
-            raise Exception("The Wizard must always be registered in the Mediator.")
-
         self.dialogs["main_window"].request_sync_external_tools.connect(
             self.dialogs["trace_stats_viewer"].update
         )
-        self.dialogs["wizard"].request_fluorophore_ids_reset.connect(
-            self.dialogs["trace_stats_viewer"].update
-        )
-        self.dialogs["wizard"].wizard_filters_run.connect(
-            self.dialogs["trace_stats_viewer"].update
-        )
+        if "wizard" in self.dialogs:
+            self.dialogs["wizard"].request_fluorophore_ids_reset.connect(
+                self.dialogs["trace_stats_viewer"].update
+            )
+            self.dialogs["wizard"].wizard_filters_run.connect(
+                self.dialogs["trace_stats_viewer"].update
+            )
+            self.dialogs["wizard"].fluorophore_id_changed.connect(
+                self.dialogs["trace_stats_viewer"].update
+            )
         self.dialogs["trace_stats_viewer"].export_trace_stats_requested.connect(
             self.dialogs["main_window"].export_filtered_stats
-        )
-        self.dialogs["wizard"].fluorophore_id_changed.connect(
-            self.dialogs["trace_stats_viewer"].update
         )
 
         if "time_inspector" in self.dialogs:
@@ -391,12 +389,6 @@ class Mediator:
         if "wizard" not in self.dialogs:
             raise Exception("The Wizard must always be registered in the Mediator.")
 
-        self.dialogs["wizard"].load_data_triggered.connect(
-            self.dialogs["main_window"].select_and_load_or_import_data_file
-        )
-        self.dialogs["wizard"].load_zarr_triggered.connect(
-            self.dialogs["main_window"].select_and_load_zarr
-        )
         self.dialogs["wizard"].reset_filters_triggered.connect(
             self.dialogs["main_window"].reset_filters_and_broadcast
         )
@@ -423,9 +415,6 @@ class Mediator:
         )
         self.dialogs["wizard"].export_data_triggered.connect(
             self.dialogs["main_window"].export_filtered_data
-        )
-        self.dialogs["wizard"].load_filename_triggered.connect(
-            self.dialogs["main_window"].select_and_load_or_import_data_file
         )
 
     def remove_dialog_connections(self, dialog_name):

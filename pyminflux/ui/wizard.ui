@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="MinimumExpanding">
+   <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -22,48 +22,6 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
     <layout class="QVBoxLayout" name="mainLayout">
-     <item>
-      <layout class="QHBoxLayout" name="loadLayout">
-       <item>
-        <widget class="QPushButton" name="pbLoadData">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-           <horstretch>1</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>160</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Load</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pbLoadZarr">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-           <horstretch>1</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>160</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Load Zarr</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
      <item>
       <widget class="QPushButton" name="pbReset">
        <property name="text">
