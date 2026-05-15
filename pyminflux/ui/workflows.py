@@ -60,7 +60,6 @@ class BaseWorkflow:
         min_trace_length: int = 1,
     ):
         self.dataset = dataset
-        self.processor = None
         self.min_trace_length = min_trace_length
         self.panel = None
         self.state = State()
@@ -175,6 +174,7 @@ class LocalizationWorkflow(BaseWorkflow):
         min_trace_length: int = 1,
     ):
         super().__init__(dataset=dataset, min_trace_length=min_trace_length)
+        self.processor = None
         if dataset is not None:
             self.processor = MinFluxProcessor(dataset, min_trace_length)
 

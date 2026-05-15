@@ -206,8 +206,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Interval in seconds since last check for updates
         self._check_interval_in_seconds = 60 * 60 * 24 * 7
 
-        # Keep a reference to the MinFluxProcessor
-        self.processor = None
         self.dataset = None
 
         # Keep track of the current dataset's Zarr path for combining
@@ -376,8 +374,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.ui.menuPlugins.addAction(action)
 
     def execute_plugin(self, index):
-        result = self.plugin_manager.execute_plugin(index, self.processor)
+        result = self.plugin_manager.execute_plugin(index, self.localization_processor)
         print(f"Plugin result: {result}")
+
+    @property
+    def localization_processor(self):
+        """Return the active localization processor, if the workflow has one."""
+        if isinstance(self.workflow, LocalizationWorkflow):
+            return self.workflow.processor
+        return None
 
     def set_workflow(self, workflow):
         """Install a workflow-specific panel in the common workflow shell."""
@@ -392,7 +397,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.workflow = workflow
         if self.workflow.dataset is None:
             self.workflow.set_dataset(self.dataset)
-        self.processor = self.workflow.processor
         self.workflow_panel = self.workflow.create_panel(parent=self)
         self.workflow_body_layout.addWidget(self.workflow_panel)
 
@@ -836,11 +840,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def reset_filters_and_broadcast(self):
         """Reset all filters and broadcast changes."""
 
-        if self.processor is None:
+        if self.localization_processor is None:
             return
 
         # Reset filters and data
-        self.processor.reset()
+        self.localization_processor.reset()
         self.state.efo_thresholds = None
         self.state.cfr_thresholds = None
 
@@ -875,10 +879,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def save_native_file(self):
         """Save data to native pyMINFLUX `.pmx` file."""
+        processor = self.localization_processor
         if (
             self.workflow is None
             or not self.workflow.can_save()
-            or self.workflow.processor is None
+            or processor is None
         ):
             return
 
@@ -909,7 +914,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             filename = filename.parent / f"{filename.stem}.pmx"
 
         # Temporarily set fluorophore to "all" to ensure all data is saved
-        processor = self.workflow.processor
         previous_fluorophore_id = processor.current_fluorophore_id
         if previous_fluorophore_id != 0:
             processor.current_fluorophore_id = 0
@@ -1045,9 +1049,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         
         # Get fluorophore information for the dialog
         # Filter out fluorophore ID 0 (used for unassigned/placeholder data)
-        existing_fluo_ids = sorted([fid for fid in self.processor.processed_dataframe["fluo"].unique().tolist() if fid > 0])
-        next_fluo_id = get_next_fluorophore_id(self.processor.reader.processed_dataframe)
-        existing_names = self.processor.fluorophore_names
+        existing_fluo_ids = sorted([fid for fid in self.localization_processor.processed_dataframe["fluo"].unique().tolist() if fid > 0])
+        next_fluo_id = get_next_fluorophore_id(self.localization_processor.reader.processed_dataframe)
+        existing_names = self.localization_processor.fluorophore_names
         
         # Always show the correspondence dialog with auto-matching enabled
         # This allows users to verify the automatic matches and adjust if needed
@@ -1070,7 +1074,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print(f"Fluorophore names: {fluorophore_names}")
         
         # Check if filters are applied and warn the user
-        if self.processor.has_filters_applied():
+        if self.localization_processor.has_filters_applied():
             reply = QMessageBox.warning(
                 self,
                 "Filters Applied",
@@ -1089,7 +1093,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         
         # Create datasets from the current processor and new reader
         # The datasets will contain the MBM data if available
-        reference_dataset = MinFluxDataset.from_reader(self.processor.reader)
+        reference_dataset = MinFluxDataset.from_reader(self.localization_processor.reader)
         moving_dataset = MinFluxDataset.from_reader(new_reader)
         
         # Get next fluorophore ID
@@ -1118,12 +1122,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         print(f"Combined dataset has {len(combined_dataset.processed_dataframe)} localizations")
         
         # Replace the processor's dataset
-        self.processor.replace_dataset(combined_dataset)
+        self.localization_processor.replace_dataset(combined_dataset)
         
         # Set fluorophore names from the dialog
-        self.processor.set_fluorophore_names(fluorophore_names)
+        self.localization_processor.set_fluorophore_names(fluorophore_names)
         
-        print(f"Combine completed. Dataset now has {self.processor.num_fluorophores} fluorophore(s)")
+        print(f"Combine completed. Dataset now has {self.localization_processor.num_fluorophores} fluorophore(s)")
         print(f"Fluorophore names: {fluorophore_names}")
         
         # Color by fluorophore after combine to distinguish datasets.
@@ -1288,15 +1292,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                     )
                 )
                 if fluorophore_names:
-                    self.workflow.processor.set_fluorophore_names(fluorophore_names)
+                    self.localization_processor.set_fluorophore_names(fluorophore_names)
                     print(f"Loaded fluorophore names: {fluorophore_names}")
 
             # Make sure to set current value of use_weighted_localizations
-            if self.workflow.processor is not None:
-                self.workflow.processor.use_weighted_localizations = (
+            processor = self.localization_processor
+            if processor is not None:
+                processor.use_weighted_localizations = (
                     self.state.weigh_avg_localization_by_eco
                 )
-            self.processor = self.workflow.processor
 
             # Show the filename on the main window
             self.setWindowTitle(
@@ -1325,7 +1329,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plotter3d.reset()
 
             # Inject the Processor
-            self.plotter3d.set_processor(processor=self.processor)
+            self.plotter3d.set_processor(processor=processor)
 
             # Reset the plotter toolbar
             if self.plotter_toolbar is None:
@@ -1391,7 +1395,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
             # Update the Analyzer
             if self.analyzer is not None:
-                self.analyzer.set_processor(self.processor)
+                self.analyzer.set_processor(processor)
                 self.analyzer.plot()
 
             # Enable wizard
@@ -1400,7 +1404,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         else:
             # If nothing is loaded (even from earlier), disable wizard
-            if self.processor is None and self.wizard is not None:
+            if self.localization_processor is None and self.wizard is not None:
                 self.wizard.enable_controls(False)
 
     @Slot()
@@ -1651,10 +1655,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_analyzer(self):
         """Initialize and open the analyzer."""
-        if self.processor is None:
+        if self.localization_processor is None:
             return
         if self.analyzer is None:
-            self.analyzer = Analyzer(self.processor)
+            self.analyzer = Analyzer(self.localization_processor)
             self.mediator.register_dialog("analyzer", self.analyzer)
         self.analyzer.plot()
         self.analyzer.show()
@@ -1687,7 +1691,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         
         # For combining, reader properties are taken from the reference dataset.
         # The Importer dialog would not affect the combined dataset settings, so we skip it.
-        ref_reader = self.processor.reader
+        ref_reader = self.localization_processor.reader
         reader.set_tracking(ref_reader.is_tracking, process=False)
         if hasattr(ref_reader, "_loc_index") and hasattr(ref_reader, "_cfr_index"):
             reader.set_indices(ref_reader._loc_index, ref_reader._cfr_index, process=False)
@@ -1717,11 +1721,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         
         # Set processor before updating fluorophore list (needs processor to get names)
         if self.wizard is not None:
-            self.wizard.set_processor(self.processor)
-            self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
+            self.wizard.set_processor(self.localization_processor)
+            self.wizard.set_fluorophore_list(self.localization_processor.num_fluorophores)
         
         if self.analyzer is not None:
-            self.analyzer.set_processor(self.processor)
+            self.analyzer.set_processor(self.localization_processor)
             self.analyzer.plot()
         
         print(f"Dataset combine completed successfully via {source}.")
@@ -1730,7 +1734,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_combiner(self):
         """Initialize and open the dataset combiner dialog."""
-        if self.processor is None:
+        if self.localization_processor is None:
             QMessageBox.warning(
                 self,
                 "No Dataset Loaded",
@@ -1761,7 +1765,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         Handle drag-and-drop combine operation (Shift + drop).
         Combines the dropped Zarr dataset with the currently loaded one.
         """
-        if self.processor is None:
+        if self.localization_processor is None:
             QMessageBox.warning(
                 self,
                 "No Dataset Loaded",
@@ -1809,7 +1813,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_time_inspector(self):
         """Initialize and open the Time Inspector."""
         if self.time_inspector is None:
-            self.time_inspector = TimeInspector(self.processor)
+            self.time_inspector = TimeInspector(self.localization_processor)
             self.mediator.register_dialog("time_inspector", self.time_inspector)
         self.time_inspector.show()
         self.time_inspector.activateWindow()
@@ -1817,10 +1821,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_histogram_plotter(self):
         """Initialize and open the histogram plotter."""
-        if self.processor is None:
+        if self.localization_processor is None:
             return
         if self.histogram_plotter is None:
-            self.histogram_plotter = HistogramPlotter(self.processor)
+            self.histogram_plotter = HistogramPlotter(self.localization_processor)
             self.mediator.register_dialog("histogram_plotter", self.histogram_plotter)
         self.histogram_plotter.show()
         self.histogram_plotter.activateWindow()
@@ -1828,11 +1832,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_color_unmixer(self):
         """Initialize and open the color unmixer."""
-        if self.processor is None:
+        if self.localization_processor is None:
             return
         
         # Prevent opening unmixer if "All" is selected with multiple fluorophores
-        if self.processor.current_fluorophore_id == 0 and self.processor.num_fluorophores > 1:
+        if self.localization_processor.current_fluorophore_id == 0 and self.localization_processor.num_fluorophores > 1:
             QMessageBox.warning(
                 self,
                 "Invalid Selection",
@@ -1846,7 +1850,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.color_unmixer.close()
             self.color_unmixer.deleteLater()
         
-        self.color_unmixer = ColorUnmixer(self.processor)
+        self.color_unmixer = ColorUnmixer(self.localization_processor)
         self.mediator.register_dialog("color_unmixer", self.color_unmixer)
         self.color_unmixer.show()
         self.color_unmixer.activateWindow()
@@ -1854,7 +1858,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_fluorophore_naming_dialog(self):
         """Open dialog to set channel names."""
-        if self.processor is None:
+        if self.localization_processor is None:
             QMessageBox.information(
                 self,
                 "No Data Loaded",
@@ -1862,7 +1866,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             return
         
-        if self.processor.num_fluorophores == 0:
+        if self.localization_processor.num_fluorophores == 0:
             QMessageBox.information(
                 self,
                 "No Channels",
@@ -1870,16 +1874,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             )
             return
         
-        dialog = FluorophoreNamingDialog(self.processor, parent=self)
+        dialog = FluorophoreNamingDialog(self.localization_processor, parent=self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             # Get the names and update the processor
             names = dialog.get_names()
             for fluo_id, name in names.items():
-                self.processor.set_fluorophore_name(fluo_id, name)
+                self.localization_processor.set_fluorophore_name(fluo_id, name)
             
             # Update the wizard's fluorophore list to show new names
             if self.wizard is not None:
-                self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
+                self.wizard.set_fluorophore_list(self.localization_processor.num_fluorophores)
             
             print("Fluorophore names updated successfully.")
 
@@ -1894,16 +1898,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     @Slot()
     def update_min_trace_length(self):
-        if self.processor is not None:
-            self.processor.min_trace_length = self.state.min_trace_length
+        if self.localization_processor is not None:
+            self.localization_processor.min_trace_length = self.state.min_trace_length
 
     @Slot()
     def open_trace_stats_viewer(self):
         """Open the trace stats viewer."""
-        if self.processor is None:
+        if self.localization_processor is None:
             return
         if self.trace_stats_viewer is None:
-            self.trace_stats_viewer = TraceStatsViewer(self.processor)
+            self.trace_stats_viewer = TraceStatsViewer(self.localization_processor)
             self.mediator.register_dialog("trace_stats_viewer", self.trace_stats_viewer)
         self.trace_stats_viewer.show()
         self.trace_stats_viewer.activateWindow()
@@ -1911,10 +1915,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_frc_tool(self):
         """Open the FRC tool."""
-        if self.processor is None:
+        if self.localization_processor is None:
             return
         if self.frc_tool is None:
-            self.frc_tool = FRCTool(self.processor)
+            self.frc_tool = FRCTool(self.localization_processor)
             self.mediator.register_dialog("frc_tool", self.frc_tool)
         self.frc_tool.show()
         self.frc_tool.activateWindow()
@@ -1980,11 +1984,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter is None:
             raise Exception("Plotter object not ready!")
 
-        if self.processor is None:
+        if self.localization_processor is None:
             return
 
         # Filter the dataframe by the passed x and y ranges
-        self.processor.filter_by_2d_range(x_param, y_param, x_range, y_range)
+        self.localization_processor.filter_by_2d_range(x_param, y_param, x_range, y_range)
 
         # Update the Analyzer
         if self.analyzer is not None:
@@ -2011,8 +2015,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     def update_weighted_average_localization_option_and_plot(self):
         """Update the weighted average localization option in the Processor and re-plot."""
-        if self.processor is not None:
-            self.processor.use_weighted_localizations = (
+        if self.localization_processor is not None:
+            self.localization_processor.use_weighted_localizations = (
                 self.state.weigh_avg_localization_by_eco
             )
         self.plot_selected_parameters()
@@ -2150,11 +2154,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def update_fluorophore_id_in_processor_and_broadcast(self, index):
         """Update the fluorophore ID in the processor and broadcast the change to all parties."""
 
-        if self.processor is None:
+        if self.localization_processor is None:
             return
 
         # Update the processor
-        self.processor.current_fluorophore_id = index
+        self.localization_processor.current_fluorophore_id = index
 
         # Update all views
         self.full_update_ui()
@@ -2166,11 +2170,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def reset_fluorophore_ids(self):
         """Reset the fluorophore IDs."""
 
-        if self.processor is None:
+        if self.localization_processor is None:
             return
 
         # Reset
-        self.processor.reset()
+        self.localization_processor.reset()
 
         # Update UI
         self.update_fluorophore_id_in_processor_and_broadcast(0)
