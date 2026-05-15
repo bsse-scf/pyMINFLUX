@@ -54,7 +54,6 @@
     <addaction name="actionSave"/>
     <addaction name="separator"/>
     <addaction name="actionExport_data"/>
-    <addaction name="actionExport_stats"/>
     <addaction name="separator"/>
     <addaction name="actionOptions"/>
     <addaction name="separator"/>
@@ -84,16 +83,9 @@
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuAnalysis">
-    <property name="title">
-     <string>Analysis</string>
-    </property>
-    <addaction name="actionUnmixer"/>
-    <addaction name="actionTime_Inspector"/>
-    <addaction name="actionAnalyzer"/>
-    <addaction name="separator"/>
-    <addaction name="actionHistogram_Plotter"/>
-    <addaction name="actionTrace_Stats_Viewer"/>
-    <addaction name="actionFRC_analyzer"/>
+   <property name="title">
+    <string>Analysis</string>
+   </property>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -179,44 +171,14 @@
     <string>Mailing list</string>
    </property>
   </action>
-  <action name="actionExport_stats">
-   <property name="text">
-    <string>Export trace stats</string>
-   </property>
-  </action>
   <action name="actionCheck_for_updates">
    <property name="text">
     <string>Check for updates</string>
    </property>
   </action>
-  <action name="actionFRC_analyzer">
-   <property name="text">
-    <string>FRC Analyzer</string>
-   </property>
-  </action>
   <action name="actionWhat_s_new">
    <property name="text">
     <string>What's new?</string>
-   </property>
-  </action>
-  <action name="actionUnmixer">
-   <property name="text">
-    <string>Unmixer</string>
-   </property>
-  </action>
-  <action name="actionTime_Inspector">
-   <property name="text">
-    <string>Time Inspector</string>
-   </property>
-  </action>
-  <action name="actionAnalyzer">
-   <property name="text">
-    <string>Analyzer</string>
-   </property>
-  </action>
-  <action name="actionTrace_Stats_Viewer">
-   <property name="text">
-    <string>Trace Stats Viewer</string>
    </property>
   </action>
   <action name="actionLoad">
@@ -233,11 +195,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
-   </property>
-  </action>
-  <action name="actionHistogram_Plotter">
-   <property name="text">
-    <string>Histogram Plotter</string>
    </property>
   </action>
   <action name="actionLoad_Zarr">
