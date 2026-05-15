@@ -67,12 +67,12 @@
        <item>
         <widget class="QLabel" name="lbOptions">
          <property name="text">
-          <string>Color-code by:</string>
+          <string>Color by:</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="cbColorCodeSelector">
+        <widget class="QComboBox" name="cbColorColumnSelector">
          <item>
           <property name="text">
            <string>nothing</string>
