@@ -25,6 +25,8 @@ Usually override:
 
 `plot_dataframe()` is the main adapter boundary. Shared UI code should not assume a `MinFluxProcessor`.
 
+`BaseWorkflow` does not expose a processor. `LocalizationWorkflow` owns a `MinFluxProcessor` internally for the existing localization tools. New workflows should keep their own native model and expose data through the workflow contract.
+
 The dataframe should contain:
 
 - numeric columns for X/Y plot axes
