@@ -282,7 +282,7 @@ class Mediator:
             self.dialogs["main_window"].full_update_ui
         )
 
-        self.dialogs["plotter_toolbar"].color_code_locs_changed.connect(
+        self.dialogs["plotter_toolbar"].color_column_changed.connect(
             self.dialogs["main_window"].plot_selected_parameters
         )
         self.dialogs["plotter"].added_confocal_image.connect(

@@ -95,7 +95,7 @@ class Plotter(PlotWidget):
 
         # Remember previous parameters to avoid redrawing when not needed
         self.last_plot_parameters = {
-            "color_code": None,
+            "color_column": None,
             "tid": None,
             "fid": None,
             "depth": None,
@@ -371,7 +371,7 @@ class Plotter(PlotWidget):
 
         # Forget last plot parameters
         self.last_plot_parameters = {
-            "color_code": None,
+            "color_column": None,
             "tid": None,
             "fid": None,
             "depth": None,
@@ -546,16 +546,16 @@ class Plotter(PlotWidget):
             assert type(color_values) == pd.Series, "`color_values` must be a Pandas Series."
 
         recreate_brushes = False
-        if self.last_plot_parameters["color_code"] is None:
+        if self.last_plot_parameters["color_column"] is None:
 
             # Fist time
             recreate_brushes = True
         else:
 
             # There were plots already
-            if self.last_plot_parameters["color_code"] != color_column:
+            if self.last_plot_parameters["color_column"] != color_column:
 
-                # If the color code changed, be need to recreate the colors
+                # If the color column changed, we need to recreate the colors
                 recreate_brushes = True
 
             else:
@@ -583,7 +583,7 @@ class Plotter(PlotWidget):
                         recreate_brushes = True
 
         # Remember the new parameters
-        self.last_plot_parameters["color_code"] = color_column
+        self.last_plot_parameters["color_column"] = color_column
         self.last_plot_parameters["tid"] = tid
         self.last_plot_parameters["fid"] = None
         self.last_plot_parameters["depth"] = color_values

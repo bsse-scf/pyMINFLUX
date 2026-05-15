@@ -26,7 +26,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
     # Signals
     plot_requested_parameters = Signal()
-    color_code_locs_changed = Signal()
+    color_column_changed = Signal()
     plot_average_positions_state_changed = Signal()
     plotter_changed = Signal()
     plotter_projection_changed = Signal()
@@ -58,10 +58,10 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         # Plot
         self.ui.pbPlot.clicked.connect(self.emit_plot_requested)
 
-        # Color-code combo box
+        # Color column combo box
         self.set_available_color_columns([])
-        self.ui.cbColorCodeSelector.currentIndexChanged.connect(
-            self.persist_color_code_and_broadcast
+        self.ui.cbColorColumnSelector.currentIndexChanged.connect(
+            self.persist_color_column_and_broadcast
         )
 
         # Set the state of the 3D checkbox
@@ -163,12 +163,12 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
             self.ui.cbPlotAveragePos.setChecked(False)
 
     @Slot(int)
-    def persist_color_code_and_broadcast(self, index):
+    def persist_color_column_and_broadcast(self, index):
         """Persist the selected color column and broadcast a change."""
-        self.state.color_column = self.ui.cbColorCodeSelector.itemData(index)
+        self.state.color_column = self.ui.cbColorColumnSelector.itemData(index)
 
         # Broadcast the change
-        self.color_code_locs_changed.emit()
+        self.color_column_changed.emit()
 
     @Slot(int)
     def persist_first_param(self, index):
@@ -256,13 +256,13 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
             else None
         )
 
-        blocker = QSignalBlocker(self.ui.cbColorCodeSelector)
+        blocker = QSignalBlocker(self.ui.cbColorColumnSelector)
         blocker.reblock()
-        self.ui.cbColorCodeSelector.clear()
-        self.ui.cbColorCodeSelector.addItem("nothing", None)
+        self.ui.cbColorColumnSelector.clear()
+        self.ui.cbColorColumnSelector.addItem("nothing", None)
         for column in color_columns:
-            self.ui.cbColorCodeSelector.addItem(column, column)
-        self.ui.cbColorCodeSelector.setCurrentIndex(
+            self.ui.cbColorColumnSelector.addItem(column, column)
+        self.ui.cbColorColumnSelector.setCurrentIndex(
             0 if current is None else color_columns.index(current) + 1
         )
         blocker.unblock()

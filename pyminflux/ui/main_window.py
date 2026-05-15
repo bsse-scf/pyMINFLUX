@@ -1133,9 +1133,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Color by fluorophore after combine to distinguish datasets.
         self.state.color_column = "fluo"
         # Update the dropdown UI to reflect the new color coding
-        color_index = self.plotter_toolbar.ui.cbColorCodeSelector.findData("fluo")
+        color_index = self.plotter_toolbar.ui.cbColorColumnSelector.findData("fluo")
         if color_index >= 0:
-            self.plotter_toolbar.ui.cbColorCodeSelector.setCurrentIndex(color_index)
+            self.plotter_toolbar.ui.cbColorColumnSelector.setCurrentIndex(color_index)
         print("Color coding set to fluo to distinguish combined datasets")
         
         return True
