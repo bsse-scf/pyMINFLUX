@@ -141,6 +141,20 @@ class BaseWorkflow:
             & (dataframe[y_param] < y_max)
         ]
 
+    def crop_by_2d_range(
+        self,
+        x_param: str,
+        y_param: str,
+        x_range: tuple[float, float],
+        y_range: tuple[float, float],
+    ) -> bool:
+        """Crop workflow data by a 2D range.
+
+        The base workflow does not own mutable filtered data, so cropping is a
+        no-op by default. Workflows with native filtering should override this.
+        """
+        return False
+
     def workflow_actions(self) -> list[WorkflowAction]:
         """Return workflow-specific menu actions exposed by this workflow."""
         return []
@@ -213,6 +227,18 @@ class LocalizationWorkflow(BaseWorkflow):
         if self.processor is None:
             return None
         return self.processor.filtered_dataframe_stats
+
+    def crop_by_2d_range(
+        self,
+        x_param: str,
+        y_param: str,
+        x_range: tuple[float, float],
+        y_range: tuple[float, float],
+    ) -> bool:
+        if self.processor is None:
+            return False
+        self.processor.filter_by_2d_range(x_param, y_param, x_range, y_range)
+        return True
 
     def can_save(self) -> bool:
         return self.processor is not None
