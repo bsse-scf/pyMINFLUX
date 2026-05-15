@@ -14,6 +14,7 @@
 
 __ENABLE_PLUGINS__ = False
 
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -87,6 +88,9 @@ from pyminflux.writer import PMXWriter
 # Version info
 __modifier__ = ""
 __version__ = f"{__version__}{__modifier__}"
+__EXPERIMENTAL_TRACKING_WORKFLOW_ENV_VAR__ = (
+    "PYMINFLUX_EXPERIMENTAL_TRACKING_WORKFLOW"
+)
 
 
 class WorkflowShell(QWidget):
@@ -383,6 +387,32 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if isinstance(self.workflow, LocalizationWorkflow):
             return self.workflow.processor
         return None
+
+    @staticmethod
+    def _env_var_enabled(name: str) -> bool:
+        value = os.getenv(name)
+        if value is None:
+            return False
+        return value.strip().lower() not in {"", "0", "false", "no", "off"}
+
+    def experimental_tracking_workflow_enabled(self) -> bool:
+        """Return whether the opt-in tracking workflow is enabled."""
+        return self._env_var_enabled(__EXPERIMENTAL_TRACKING_WORKFLOW_ENV_VAR__)
+
+    def workflow_for_dataset(self, dataset: Optional[MinFluxDataset]):
+        """Choose the active workflow for a loaded dataset.
+
+        Tracking is a data property. The experimental tracking workflow is an
+        opt-in UI choice so that the default branch can keep the classic
+        processor-backed tracking behavior.
+        """
+        if (
+            dataset is not None
+            and dataset.is_tracking
+            and self.experimental_tracking_workflow_enabled()
+        ):
+            return TrackingWorkflow(dataset)
+        return LocalizationWorkflow(dataset, self.state.min_trace_length)
 
     def set_workflow(self, workflow):
         """Install a workflow-specific panel in the common workflow shell."""
@@ -1282,18 +1312,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             else:
                 fluorophore_names = None
 
-            if self.state.is_tracking:
-                self.set_workflow(TrackingWorkflow(self.dataset))
-            else:
-                self.set_workflow(
-                    LocalizationWorkflow(
-                        self.dataset,
-                        self.state.min_trace_length,
-                    )
-                )
-                if fluorophore_names:
-                    self.localization_processor.set_fluorophore_names(fluorophore_names)
-                    print(f"Loaded fluorophore names: {fluorophore_names}")
+            self.set_workflow(self.workflow_for_dataset(self.dataset))
+            if fluorophore_names and self.localization_processor is not None:
+                self.localization_processor.set_fluorophore_names(fluorophore_names)
+                print(f"Loaded fluorophore names: {fluorophore_names}")
 
             # Make sure to set current value of use_weighted_localizations
             processor = self.localization_processor
