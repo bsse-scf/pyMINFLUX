@@ -106,15 +106,15 @@ class Ui_PlotterToolbar(object):
 
         self.first_row_layout.addWidget(self.lbOptions)
 
-        self.cbColorCodeSelector = QComboBox(PlotterToolbar)
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.addItem("")
-        self.cbColorCodeSelector.setObjectName("cbColorCodeSelector")
+        self.cbColorColumnSelector = QComboBox(PlotterToolbar)
+        self.cbColorColumnSelector.addItem("")
+        self.cbColorColumnSelector.addItem("")
+        self.cbColorColumnSelector.addItem("")
+        self.cbColorColumnSelector.addItem("")
+        self.cbColorColumnSelector.addItem("")
+        self.cbColorColumnSelector.setObjectName("cbColorColumnSelector")
 
-        self.first_row_layout.addWidget(self.cbColorCodeSelector)
+        self.first_row_layout.addWidget(self.cbColorColumnSelector)
 
         self.cbPlotAveragePos = QCheckBox(PlotterToolbar)
         self.cbPlotAveragePos.setObjectName("cbPlotAveragePos")
@@ -213,21 +213,21 @@ class Ui_PlotterToolbar(object):
         )
 
         self.lbOptions.setText(
-            QCoreApplication.translate("PlotterToolbar", "Color-code by:", None)
+            QCoreApplication.translate("PlotterToolbar", "Color by:", None)
         )
-        self.cbColorCodeSelector.setItemText(
+        self.cbColorColumnSelector.setItemText(
             0, QCoreApplication.translate("PlotterToolbar", "nothing", None)
         )
-        self.cbColorCodeSelector.setItemText(
+        self.cbColorColumnSelector.setItemText(
             1, QCoreApplication.translate("PlotterToolbar", "tid", None)
         )
-        self.cbColorCodeSelector.setItemText(
+        self.cbColorColumnSelector.setItemText(
             2, QCoreApplication.translate("PlotterToolbar", "fluorophore", None)
         )
-        self.cbColorCodeSelector.setItemText(
+        self.cbColorColumnSelector.setItemText(
             3, QCoreApplication.translate("PlotterToolbar", "depth", None)
         )
-        self.cbColorCodeSelector.setItemText(
+        self.cbColorColumnSelector.setItemText(
             4, QCoreApplication.translate("PlotterToolbar", "time", None)
         )
 

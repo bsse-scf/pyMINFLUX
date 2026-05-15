@@ -87,6 +87,8 @@ Defaults:
 
 The default implementation selects rows from `plot_dataframe()`. Override these methods if selected plot points need to map back to a richer native model.
 
+Cropping is also workflow-owned through `crop_by_2d_range(...)`. The base implementation is a no-op. `LocalizationWorkflow` delegates to `MinFluxProcessor.filter_by_2d_range(...)`; tracking workflows can later implement track-aware cropping without changing `MainWindow`.
+
 ## Save And Export
 
 `can_save()` controls native Save. Localization supports this through `MinFluxProcessor`; tracking workflows usually should leave it disabled unless they define a native format.

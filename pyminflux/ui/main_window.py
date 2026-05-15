@@ -1984,11 +1984,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter is None:
             raise Exception("Plotter object not ready!")
 
-        if self.localization_processor is None:
+        if self.workflow is None:
             return
 
-        # Filter the dataframe by the passed x and y ranges
-        self.localization_processor.filter_by_2d_range(x_param, y_param, x_range, y_range)
+        if not self.workflow.crop_by_2d_range(x_param, y_param, x_range, y_range):
+            return
 
         # Update the Analyzer
         if self.analyzer is not None:
