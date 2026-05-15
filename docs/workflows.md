@@ -16,7 +16,7 @@ Usually override:
 
 - `set_dataset(dataset)`: initialize workflow-native data structures.
 - `color_columns(dataframe) -> list[str]`: return allowed dataframe columns for point coloring.
-- `workflow_action_names() -> list[str]`: expose workflow-specific main-window actions.
+- `workflow_actions() -> list[WorkflowAction]`: expose workflow-specific menu actions.
 - `stats_dataframe()`: provide exportable workflow statistics.
 - `export_data_to_csv(file_name)`: customize data export.
 - `select_by_index_labels(labels)` / `select_by_2d_range(...)`: customize plot selection behavior.
@@ -55,7 +55,7 @@ def color_columns(self, dataframe):
 
 The workflow panel is only the workflow-specific body of the left dock. `Load` and `Load Zarr` are shared shell controls.
 
-Panel buttons can mutate workflow state directly through signals. If the mutation changes plotted data, connect the panel signal to `MainWindow.full_update_ui()` or expose a workflow menu action that calls it after mutation.
+Panel buttons should emit workflow action IDs when they mutate workflow state. `MainWindow` dispatches those IDs through the same `WorkflowAction` path used by menus. Set `refresh_after=True` on actions that change plotted data.
 
 ## Menus
 
@@ -68,9 +68,11 @@ Common menu actions:
 - View/DataViewer/Console
 - Help/About links
 
-Workflow-specific menu actions are returned by `workflow_action_names()`. `MainWindow` rebuilds the Analysis menu from those action names when the active workflow changes.
+Workflow-specific menu actions are returned by `workflow_actions()`. `MainWindow` rebuilds workflow-owned menu entries from these action descriptors when the active workflow changes.
 
-If a new workflow needs a new menu action, add the `QAction` in `MainWindow`, connect it to a small method, and return its action name from the workflow.
+Each `WorkflowAction` declares a stable `id`, menu text, target handler, target owner (`"main_window"` or `"workflow"`), menu, group, and whether the UI should refresh after it runs. Use `menu=None` for panel-only actions. Do not use Qt `QAction` object names as workflow API.
+
+If a new workflow needs a menu action that mutates only workflow state, return a `WorkflowAction` whose `owner` is `"workflow"`. If it opens an existing shared tool, set `owner` to `"main_window"` and point `handler_name` at the small main-window method.
 
 ## Selection And DataViewer
 
@@ -99,7 +101,7 @@ Recommended shape:
 2. Build a minimal workflow panel with tracking-specific commands.
 3. Convert tracks to `plot_dataframe()` only at the UI boundary.
 4. Expose only meaningful plot axes and color columns.
-5. Keep workflow actions small: mutate model, clear cached dataframe, call `full_update_ui()`.
+5. Keep workflow actions small: mutate model, clear cached dataframe, and set `refresh_after=True` if the plotted dataframe changed.
 6. Override selection methods if plot rows are not one-to-one with native track objects.
 7. Avoid adding tracking concepts to localization classes or global enums.
 

@@ -187,11 +187,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Initialize the dialog
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.actionRemove_Largest_Track = QAction(self)
-        self.ui.actionRemove_Largest_Track.setObjectName(
-            "actionRemove_Largest_Track"
-        )
-        self.ui.actionRemove_Largest_Track.setText("Remove largest track")
+        self.workflow_action_specs = {}
+        self.workflow_qactions = {}
 
         # Main window title
         self.setWindowTitle(f"{__APP_NAME__} v{__version__}")
@@ -415,13 +412,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 self.workflow_panel.export_data_triggered.connect(
                     self.export_filtered_data
                 )
-            if hasattr(self.workflow_panel, "calculate_lengths_triggered"):
-                self.workflow_panel.calculate_lengths_triggered.connect(
-                    self.full_update_ui
-                )
-            if hasattr(self.workflow_panel, "remove_largest_track_triggered"):
-                self.workflow_panel.remove_largest_track_triggered.connect(
-                    self.full_update_ui
+            if hasattr(self.workflow_panel, "workflow_action_triggered"):
+                self.workflow_panel.workflow_action_triggered.connect(
+                    self.trigger_workflow_action
                 )
 
         self.apply_workflow_actions()
@@ -444,67 +437,94 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             has_data and self.workflow is not None and self.workflow.can_export_data()
         )
 
-        workflow_action_names = {
-            "actionExport_stats",
-            "actionHistogram_Plotter",
-            "actionUnmixer",
-            "actionSet_Fluorophore_Names",
-            "actionTime_Inspector",
-            "actionAnalyzer",
-            "actionTrace_Stats_Viewer",
-            "actionFRC_analyzer",
-            "actionRemove_Largest_Track",
-        }
-        active_action_names = (
-            set(self.workflow.workflow_action_names()) if self.workflow is not None else set()
+        workflow_actions = (
+            self.workflow.workflow_actions() if self.workflow is not None else []
         )
-        for action_name in workflow_action_names:
-            action = getattr(self.ui, action_name)
-            is_active = action_name in active_action_names
-            action.setVisible(is_active)
-            action.setEnabled(has_data and is_active)
+        self.workflow_action_specs = {
+            workflow_action.id: workflow_action for workflow_action in workflow_actions
+        }
+        for workflow_action in workflow_actions:
+            action = self.qaction_for_workflow_action(workflow_action)
+            action.setText(workflow_action.text)
+            action.setVisible(True)
+            action.setEnabled(has_data or not workflow_action.requires_data)
 
-        self.rebuild_workflow_menu(active_action_names, has_data)
+        for action_id, action in self.workflow_qactions.items():
+            if action_id not in self.workflow_action_specs:
+                action.setVisible(False)
+                action.setEnabled(False)
 
-    def rebuild_workflow_menu(self, active_action_names: set[str], has_data: bool):
+        self.rebuild_workflow_menu(workflow_actions, has_data)
+
+    def qaction_for_workflow_action(self, workflow_action):
+        """Return the QAction backing a workflow action descriptor."""
+        if workflow_action.id not in self.workflow_qactions:
+            action = QAction(workflow_action.text, self)
+            action.triggered.connect(
+                lambda checked=False, action_id=workflow_action.id: (
+                    self.trigger_workflow_action(action_id)
+                )
+            )
+            self.workflow_qactions[workflow_action.id] = action
+        return self.workflow_qactions[workflow_action.id]
+
+    def trigger_workflow_action(self, action_id: str):
+        """Dispatch a workflow action descriptor to its declared handler."""
+        workflow_action = self.workflow_action_specs.get(action_id)
+        if workflow_action is None:
+            return
+
+        owner = self if workflow_action.owner == "main_window" else self.workflow
+        handler = getattr(owner, workflow_action.handler_name, None)
+        if handler is None:
+            raise AttributeError(
+                f"Workflow action '{action_id}' has no handler "
+                f"'{workflow_action.handler_name}' on {workflow_action.owner}."
+            )
+
+        handler()
+        if workflow_action.refresh_after:
+            self.full_update_ui()
+
+    def rebuild_workflow_menu(self, workflow_actions: list, has_data: bool):
         """Rebuild the workflow-specific menu from the active workflow."""
-        action_groups = [
-            [
-                "actionUnmixer",
-                "actionSet_Fluorophore_Names",
-            ],
-            [
-                "actionTime_Inspector",
-                "actionAnalyzer",
-            ],
-            [
-                "actionHistogram_Plotter",
-                "actionTrace_Stats_Viewer",
-                "actionFRC_analyzer",
-            ],
-            [
-                "actionRemove_Largest_Track",
-            ],
-        ]
-
         self.ui.menuAnalysis.clear()
+        analysis_actions = [
+            workflow_action
+            for workflow_action in workflow_actions
+            if workflow_action.menu == "analysis"
+        ]
         has_visible_actions = False
-        for action_group in action_groups:
-            visible_actions = [
-                getattr(self.ui, action_name)
-                for action_name in action_group
-                if action_name in active_action_names
+        for group in dict.fromkeys(action.group for action in analysis_actions):
+            visible_workflow_actions = [
+                workflow_action
+                for workflow_action in analysis_actions
+                if workflow_action.group == group
             ]
-            if not visible_actions:
+            if not visible_workflow_actions:
                 continue
             if has_visible_actions:
                 self.ui.menuAnalysis.addSeparator()
-            for action in visible_actions:
-                action.setEnabled(has_data)
+            for workflow_action in visible_workflow_actions:
+                action = self.qaction_for_workflow_action(workflow_action)
+                action.setEnabled(has_data or not workflow_action.requires_data)
                 self.ui.menuAnalysis.addAction(action)
             has_visible_actions = True
 
         self.ui.menuAnalysis.menuAction().setVisible(has_visible_actions)
+
+        file_actions = [
+            workflow_action
+            for workflow_action in workflow_actions
+            if workflow_action.menu == "file"
+        ]
+        for workflow_action in file_actions:
+            action = self.qaction_for_workflow_action(workflow_action)
+            action.setEnabled(has_data or not workflow_action.requires_data)
+            if action not in self.ui.menuFile.actions():
+                actions = self.ui.menuFile.actions()
+                export_index = actions.index(self.ui.actionExport_data)
+                self.ui.menuFile.insertAction(actions[export_index + 1], action)
 
     def update_plotter_toolbar_from_workflow(self):
         """Refresh plot controls from the active workflow's dataframe adapter."""
@@ -644,22 +664,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.pbLoadZarr.clicked.connect(lambda _: self.select_and_load_zarr())
         self.ui.actionSave.triggered.connect(self.save_native_file)
         self.ui.actionExport_data.triggered.connect(self.export_filtered_data)
-        self.ui.actionExport_stats.triggered.connect(self.export_filtered_stats)
         self.ui.actionOptions.triggered.connect(self.open_options_dialog)
         self.ui.actionQuit.triggered.connect(self.quit_application)
         self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.actionState.triggered.connect(self.print_current_state)
-        self.ui.actionHistogram_Plotter.triggered.connect(self.open_histogram_plotter)
-        self.ui.actionUnmixer.triggered.connect(self.open_color_unmixer)
-        self.ui.actionSet_Fluorophore_Names.triggered.connect(self.open_fluorophore_naming_dialog)
-        self.ui.actionTime_Inspector.triggered.connect(self.open_time_inspector)
-        self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
-        self.ui.actionTrace_Stats_Viewer.triggered.connect(self.open_trace_stats_viewer)
-        self.ui.actionFRC_analyzer.triggered.connect(self.open_frc_tool)
-        self.ui.actionRemove_Largest_Track.triggered.connect(
-            self.remove_largest_track
-        )
         self.ui.actionManual.triggered.connect(
             lambda _: QDesktopServices.openUrl(
                 "https://github.com/bsse-scf/pyMINFLUX/wiki/pyMINFLUX-user-manual"

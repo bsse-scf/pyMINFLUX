@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -23,6 +24,24 @@ from pyminflux.processor import MinFluxProcessor
 from pyminflux.processor._dataset import MinFluxDataset
 from pyminflux.ui.state import State
 from pyminflux.ui.wizard import WizardDialog
+
+
+@dataclass(frozen=True)
+class WorkflowAction:
+    """Description of a workflow-owned menu action.
+
+    This is intentionally independent from Qt object names. MainWindow turns
+    these descriptors into QActions and dispatches them.
+    """
+
+    id: str
+    text: str
+    handler_name: str
+    owner: str = "main_window"
+    menu: str | None = "analysis"
+    group: str = "default"
+    requires_data: bool = True
+    refresh_after: bool = False
 
 
 class BaseWorkflow:
@@ -123,8 +142,8 @@ class BaseWorkflow:
             & (dataframe[y_param] < y_max)
         ]
 
-    def workflow_action_names(self) -> list[str]:
-        """Return QAction attribute names exposed by this workflow."""
+    def workflow_actions(self) -> list[WorkflowAction]:
+        """Return workflow-specific menu actions exposed by this workflow."""
         return []
 
     def color_columns(self, dataframe: Optional[pd.DataFrame]) -> list[str]:
@@ -205,26 +224,65 @@ class LocalizationWorkflow(BaseWorkflow):
             return False
         return MinFluxWriter.write_csv(self.processor, file_name)
 
-    def workflow_action_names(self) -> list[str]:
+    def workflow_actions(self) -> list[WorkflowAction]:
         return [
-            "actionExport_stats",
-            "actionHistogram_Plotter",
-            "actionUnmixer",
-            "actionSet_Fluorophore_Names",
-            "actionTime_Inspector",
-            "actionAnalyzer",
-            "actionTrace_Stats_Viewer",
-            "actionFRC_analyzer",
+            WorkflowAction(
+                id="export_stats",
+                text="Export stats",
+                handler_name="export_filtered_stats",
+                menu="file",
+            ),
+            WorkflowAction(
+                id="histogram_plotter",
+                text="Histogram Plotter",
+                handler_name="open_histogram_plotter",
+                group="plots",
+            ),
+            WorkflowAction(
+                id="unmixer",
+                text="Unmixer",
+                handler_name="open_color_unmixer",
+                group="fluorophores",
+            ),
+            WorkflowAction(
+                id="set_fluorophore_names",
+                text="Set Fluorophore Names",
+                handler_name="open_fluorophore_naming_dialog",
+                group="fluorophores",
+            ),
+            WorkflowAction(
+                id="time_inspector",
+                text="Time Inspector",
+                handler_name="open_time_inspector",
+                group="inspection",
+            ),
+            WorkflowAction(
+                id="analyzer",
+                text="Analyzer",
+                handler_name="open_analyzer",
+                group="inspection",
+            ),
+            WorkflowAction(
+                id="trace_stats_viewer",
+                text="Trace Stats Viewer",
+                handler_name="open_trace_stats_viewer",
+                group="plots",
+            ),
+            WorkflowAction(
+                id="frc_analyzer",
+                text="FRC analyzer",
+                handler_name="open_frc_tool",
+                group="plots",
+            ),
         ]
 
 
 class TrackingWorkflowPanel(QWidget):
     """Minimal workflow panel for tracking datasets."""
 
+    workflow_action_triggered = Signal(str)
     save_data_triggered = Signal()
     export_data_triggered = Signal()
-    calculate_lengths_triggered = Signal()
-    remove_largest_track_triggered = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -244,10 +302,10 @@ class TrackingWorkflowPanel(QWidget):
         self.pbExportData = QPushButton("Export data")
         self.pbSaveData.clicked.connect(lambda _: self.save_data_triggered.emit())
         self.pbCalculateLengths.clicked.connect(
-            lambda _: self.calculate_lengths_triggered.emit()
+            lambda _: self.workflow_action_triggered.emit("calculate_track_lengths")
         )
         self.pbRemoveLargestTrack.clicked.connect(
-            lambda _: self.remove_largest_track_triggered.emit()
+            lambda _: self.workflow_action_triggered.emit("remove_largest_track")
         )
         self.pbExportData.clicked.connect(lambda _: self.export_data_triggered.emit())
         layout.addWidget(self.pbSaveData)
@@ -299,8 +357,6 @@ class TrackingWorkflow(BaseWorkflow):
 
     def create_panel(self, parent=None) -> TrackingWorkflowPanel:
         self.panel = TrackingWorkflowPanel(parent)
-        self.panel.calculate_lengths_triggered.connect(self.calculate_track_lengths)
-        self.panel.remove_largest_track_triggered.connect(self.remove_largest_track)
         if self.dataset is not None:
             self.panel.set_dataset(self.dataset)
         return self.panel
@@ -412,10 +468,30 @@ class TrackingWorkflow(BaseWorkflow):
             return None
         return MinFluxProcessor.calculate_statistics_on(dataframe, is_tracking=True)
 
-    def workflow_action_names(self) -> list[str]:
+    def workflow_actions(self) -> list[WorkflowAction]:
         return [
-            "actionExport_stats",
-            "actionRemove_Largest_Track",
+            WorkflowAction(
+                id="export_stats",
+                text="Export stats",
+                handler_name="export_filtered_stats",
+                menu="file",
+            ),
+            WorkflowAction(
+                id="calculate_track_lengths",
+                text="Calculate lengths",
+                handler_name="calculate_track_lengths",
+                owner="workflow",
+                menu=None,
+                refresh_after=True,
+            ),
+            WorkflowAction(
+                id="remove_largest_track",
+                text="Remove largest track",
+                handler_name="remove_largest_track",
+                owner="workflow",
+                group="tracks",
+                refresh_after=True,
+            ),
         ]
 
     def color_columns(self, dataframe: Optional[pd.DataFrame]) -> list[str]:
