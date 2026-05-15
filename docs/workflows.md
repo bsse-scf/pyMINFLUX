@@ -1,4 +1,4 @@
-# UI Workflows
+# Workflows
 
 pyMINFLUX has a shared UI shell and workflow-specific panels/actions. The shell owns loading, plotting, the DataViewer, common file actions, and generic menu wiring. A workflow owns domain-specific state, tools, and the dataframe adapter used by shared plotting.
 
@@ -108,6 +108,16 @@ Recommended shape:
 5. Keep workflow actions small: mutate model, clear cached dataframe, and set `refresh_after=True` if the plotted dataframe changed.
 6. Override selection methods if plot rows are not one-to-one with native track objects.
 7. Avoid adding tracking concepts to localization classes or global enums.
+
+## Developing Behind A Flag
+
+Keep dataset semantics and UI selection separate.
+
+- `dataset.is_tracking` and `state.is_tracking` should continue to describe the loaded data.
+- Choose `TrackingWorkflow` only through one central gate in `MainWindow`, not by scattering `if is_tracking` checks across the UI.
+- Default to `LocalizationWorkflow` even for tracking datasets on `main`/`dev`, and opt in to the new workflow with `PYMINFLUX_EXPERIMENTAL_TRACKING_WORKFLOW=1`.
+
+That lets the existing processor-backed tracking behavior stay intact while developing the new workflow on the main branch.
 
 ## Current Examples
 
