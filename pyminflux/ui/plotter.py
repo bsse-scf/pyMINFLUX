@@ -291,8 +291,10 @@ class Plotter(PlotWidget):
             measurement = self._measurement_at_scene_pos(ev.position())
             if measurement is not None:
                 self._select_measurement(measurement["id"])
-                ev.accept()
-                return
+
+            ev.ignore()
+            super().mousePressEvent(ev)
+            return
 
         else:
             # Is the user trying to open a context menu?
