@@ -13,24 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ "$#" != "1" ]; then
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
     echo "Usage: ./build_docs.sh /path/to/docs/folder"
-    exit
+    exit 1
 fi
 
-if [ -d "$1" ]
-then
-    dir_name=$(basename "$1")
-    parent_path=$(dirname "$1")
-    current_date=$(date +%Y%m%d_%H%M%S)
-    mv "$1" "$parent_path/${dir_name}_$current_date"
-    echo "$1 renamed to $parent_path/${dir_name}_$current_date"
+output_dir="$1"
+current_docs_dir="$output_dir/pyminflux"
+
+if [ -d "$current_docs_dir" ]; then
+    rm -rf "$current_docs_dir"
 fi
 
 # Build documentation
-uv run pdoc3 pyminflux --html --force --output-dir "$1" --template-dir templates
+uv run pdoc3 pyminflux --html --force --output-dir "$output_dir" --template-dir templates
 
-# Wrong references are added to the code -- unclear why
-find . -name "*.html" -exec sed -i 's/pyminflux.reader._reader.MinFluxReader/pyminflux.reader.MinFluxReader/g' {} \;
-find . -name "*.html" -exec sed -i 's/pyminflux.processor._processor.MinFluxProcessor/pyminflux.processor.MinFluxProcessor/g' {} \;
+# pdoc adds these private module paths to the generated HTML for public classes.
+find "$current_docs_dir" -name "*.html" -exec perl -0pi -e 's/pyminflux\.reader\._reader\.MinFluxReader/pyminflux.reader.MinFluxReader/g; s/pyminflux\.processor\._processor\.MinFluxProcessor/pyminflux.processor.MinFluxProcessor/g' {} +
 
