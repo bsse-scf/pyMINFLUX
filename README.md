@@ -3,7 +3,7 @@
 Reader, analyzer, and viewer of MINFLUX raw data.
 
 <p align="center">
-  <img width="800" src="https://pyminflux.ethz.ch/img/pyminflux.png?v=2">
+  <img width="800" src="https://bsse-scf.github.io/pyMINFLUX/img/pyminflux.png">
 </p>
 
 ## Installation
