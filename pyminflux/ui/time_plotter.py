@@ -28,7 +28,7 @@ class TimePlotter:
         brush,
     ):
         """Plot number of localizations per unit time.
-        
+
         Parameters
         ----------
         plot_widget : PlotWidget
@@ -41,14 +41,14 @@ class TimePlotter:
             Dictionary with keys 'data' and 'x_axis' for caching
         brush : QBrush
             Brush for bar coloring
-        
+
         Returns
         -------
         bool
             True if plot was created, False otherwise
         """
         # Is the data cached?
-        if cache_dict['data'] is None:
+        if cache_dict["data"] is None:
             if len(processor.filtered_dataframe.index) == 0:
                 # No data to plot
                 return False
@@ -56,10 +56,10 @@ class TimePlotter:
             # Create `time_resolution_sec` bins starting from the minimum time
             tim_min = processor.filtered_dataframe["tim"].min()
             tim_max = processor.filtered_dataframe["tim"].max()
-            
+
             # Align the start to a bin boundary
             bin_start = np.floor(tim_min / time_resolution_sec) * time_resolution_sec
-            
+
             bin_edges = np.arange(
                 start=bin_start,
                 stop=tim_max + time_resolution_sec,
@@ -69,29 +69,29 @@ class TimePlotter:
             bin_width = time_resolution_sec
 
             # Calculate the histogram of localizations per unit time
-            cache_dict['data'], _ = np.histogram(
+            cache_dict["data"], _ = np.histogram(
                 processor.filtered_dataframe["tim"].to_numpy(),
                 bins=bin_edges,
                 density=False,
             )
 
             # Cache the x range
-            cache_dict['x_axis'] = (bin_centers - 0.5 * bin_width) / time_resolution_sec
+            cache_dict["x_axis"] = (bin_centers - 0.5 * bin_width) / time_resolution_sec
 
         # Plot the histogram
         chart = pg.BarGraphItem(
-            x=cache_dict['x_axis'],
-            height=cache_dict['data'],
-            width=0.9 * (cache_dict['x_axis'][1] - cache_dict['x_axis'][0]),
+            x=cache_dict["x_axis"],
+            height=cache_dict["data"],
+            width=0.9 * (cache_dict["x_axis"][1] - cache_dict["x_axis"][0]),
             brush=brush,
         )
 
         # Update the plot
-        plot_widget.setXRange(cache_dict['x_axis'][0], cache_dict['x_axis'][-1])
-        plot_widget.setYRange(0.0, cache_dict['data'].max())
+        plot_widget.setXRange(cache_dict["x_axis"][0], cache_dict["x_axis"][-1])
+        plot_widget.setYRange(0.0, cache_dict["data"].max())
         plot_widget.setLabel("left", text="Number of localizations per min")
         plot_widget.addItem(chart)
-        
+
         return True
 
     @staticmethod
@@ -116,7 +116,7 @@ class TimePlotter:
             Dictionary with keys 'x', 'y', 'z', 'x_stderr', 'y_stderr', 'z_stderr', 'x_axis'
         std_err : bool
             Set to True to plot the standard error instead of the standard deviation
-        
+
         Returns
         -------
         bool
@@ -127,19 +127,19 @@ class TimePlotter:
             plot_widget.plotItem.addLegend()
 
         # Determine which cache keys to use
-        cache_key_x = 'x_stderr' if std_err else 'x'
-        cache_key_y = 'y_stderr' if std_err else 'y'
-        cache_key_z = 'z_stderr' if std_err else 'z'
+        cache_key_x = "x_stderr" if std_err else "x"
+        cache_key_y = "y_stderr" if std_err else "y"
+        cache_key_z = "z_stderr" if std_err else "z"
 
         # Is the data cached?
         if cache_dict[cache_key_x] is None:
             # Create `time_resolution_sec` bins starting from the minimum time
             tim_min = processor.filtered_dataframe["tim"].min()
             tim_max = processor.filtered_dataframe["tim"].max()
-            
+
             # Align the start to a bin boundary
             bin_start = np.floor(tim_min / time_resolution_sec) * time_resolution_sec
-            
+
             bin_edges = np.arange(
                 start=bin_start,
                 stop=tim_max + time_resolution_sec,
@@ -178,7 +178,7 @@ class TimePlotter:
             cache_dict[cache_key_z] = z_pr
 
             # Cache the x range
-            cache_dict['x_axis'] = (bin_centers - 0.5 * bin_width) / time_resolution_sec
+            cache_dict["x_axis"] = (bin_centers - 0.5 * bin_width) / time_resolution_sec
 
         # Alias
         x_pr = cache_dict[cache_key_x]
@@ -197,7 +197,7 @@ class TimePlotter:
 
         # Create the sx bar charts
         chart = pg.BarGraphItem(
-            x=cache_dict['x_axis'],
+            x=cache_dict["x_axis"],
             height=x_pr,
             width=bar_width,
             brush="r",
@@ -208,7 +208,7 @@ class TimePlotter:
 
         # Create the sy bar charts
         chart = pg.BarGraphItem(
-            x=cache_dict['x_axis'] + offset,
+            x=cache_dict["x_axis"] + offset,
             height=y_pr,
             width=bar_width,
             brush="b",
@@ -220,7 +220,7 @@ class TimePlotter:
         # Create the sz bar charts if needed
         if processor.is_3d:
             chart = pg.BarGraphItem(
-                x=cache_dict['x_axis'] + 2 * offset,
+                x=cache_dict["x_axis"] + 2 * offset,
                 height=z_pr,
                 width=bar_width,
                 brush="k",
@@ -230,8 +230,8 @@ class TimePlotter:
             plot_widget.addItem(chart)
 
         # Update the plot
-        plot_widget.setXRange(cache_dict['x_axis'][0], cache_dict['x_axis'][-1])
+        plot_widget.setXRange(cache_dict["x_axis"][0], cache_dict["x_axis"][-1])
         plot_widget.setYRange(0.0, n_max)
         plot_widget.setLabel("left", text="Localization precision (nm) per min")
-        
+
         return True

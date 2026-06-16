@@ -14,9 +14,8 @@
 
 import numpy as np
 import pandas as pd
-from numpy.typing import NDArray
-
 import pyqtgraph as pg
+from numpy.typing import NDArray
 from pyqtgraph import PlotWidget
 from PySide6.QtCore import QPoint, Signal, Slot
 from PySide6.QtGui import QAction, QDoubleValidator, Qt
@@ -63,7 +62,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.pbManualAssign.setEnabled(False)
         self.ui.leManualThreshold.setValidator(QDoubleValidator(bottom=0.0))
         self.ui.leManualThreshold.setText(str(self.state.dcr_manual_threshold))
-        
+
         # Time splitting plot caches
         self.time_resolution_sec = 60  # 1 minute bins
         self.time_x_axis = None
@@ -93,12 +92,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
         # Create the plot elements for time splitting
         self.time_plot_widget = PlotWidget(parent=self, background="w", title="tid")
-        
+
         # Connect the time plot widget to the context menu callback
         self.time_plot_widget.scene().sigMouseClicked.connect(
             self.time_plot_raise_context_menu
         )
-        
+
         # Time splitting state
         self.time_split_regions = []  # List of LinearRegionItem objects
         self.time_assigned_fluorophore_ids = None  # Assignments based on time ranges
@@ -107,11 +106,9 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.main_layout.addWidget(self.plot_widget, stretch=1)
         self.ui.main_layout.addWidget(self.time_plot_widget, stretch=1)
         self.time_plot_widget.hide()  # Initially hidden
-        
+
         # Add fluorophore naming widget
-        self.fluorophore_naming_widget = FluorophoreNamingWidget(
-            title="Channel Names"
-        )
+        self.fluorophore_naming_widget = FluorophoreNamingWidget(title="Channel Names")
         # Initially hidden until fluorophores are detected
         self.fluorophore_naming_widget.setVisible(False)
         self.ui.main_layout.addWidget(self.fluorophore_naming_widget, stretch=0)
@@ -127,12 +124,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         self.ui.pbAssign.clicked.connect(self.assign_fluorophores_ids)
         self.ui.pbPreview.clicked.connect(self.preview_manual_assignment)
         self.ui.pbManualAssign.clicked.connect(self.assign_fluorophores_ids)
-        
+
         # Add connections for time splitting
         self.ui.pbSplit.clicked.connect(self.split_by_time)
         self.ui.pbTimeSplitAssign.clicked.connect(self.assign_time_split_fluorophores)
         self.ui.pbTimeSplitAssign.setEnabled(False)
-        
+
         # Connect tab change to update plots
         self.ui.twMainTabs.currentChanged.connect(self.main_tab_changed)
 
@@ -144,7 +141,9 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             and self.processor.current_fluorophore_id == 0
             and self.processor.num_fluorophores == 1
         ):
-            unique_fluos = np.unique(self.processor.processed_dataframe["fluo"].to_numpy())
+            unique_fluos = np.unique(
+                self.processor.processed_dataframe["fluo"].to_numpy()
+            )
             only_fluo_id = int(unique_fluos[unique_fluos > 0][0])
             self.processor.current_fluorophore_id = only_fluo_id
 
@@ -296,10 +295,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
             # Get the final fluorophore ID that will be assigned to this cluster
             final_fluo_id = final_id_mapping[cluster_id]
-            
+
             # Get the color for this fluorophore ID
             color_rgb = Colors()._get_fid_color(final_fluo_id, as_float=False)
-            brush = pg.mkBrush(int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2]), 127)
+            brush = pg.mkBrush(
+                int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2]), 127
+            )
 
             # Create the bar chart
             chart = pg.BarGraphItem(
@@ -320,21 +321,21 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.fluorophore_naming_widget.setVisible(False)
             self.ui.pbManualAssign.setEnabled(False)
             from PySide6.QtWidgets import QMessageBox
+
             QMessageBox.information(
                 self,
                 "No Split Detected",
-                f"Only one cluster was detected with the current threshold."
+                f"Only one cluster was detected with the current threshold.",
             )
             return
-        
+
         # Calculate the final fluorophore IDs that will be assigned
         final_id_mapping = self._calculate_final_fluo_id_mapping(unique_fluo_ids)
-        
+
         # Show the FINAL fluorophore IDs (not cluster IDs) in the naming widget
         final_fluo_ids = sorted(final_id_mapping.values())
         self.fluorophore_naming_widget.set_fluorophores(
-            final_fluo_ids,
-            self.processor.fluorophore_names
+            final_fluo_ids, self.processor.fluorophore_names
         )
         self.fluorophore_naming_widget.setVisible(True)
 
@@ -343,12 +344,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
     def _calculate_final_fluo_id_mapping(self, cluster_ids):
         """Calculate the final fluorophore ID mapping for the given cluster IDs.
-        
+
         Parameters
         ----------
         cluster_ids : list
             List of cluster IDs (e.g., [1, 2] for 2 clusters)
-        
+
         Returns
         -------
         dict
@@ -356,29 +357,33 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         """
         # Get the current fluorophore ID being unmixed
         current_fluo_id = self.processor.current_fluorophore_id
-        
+
         # When there's only one fluorophore, the GUI shows only "All" (current_fluorophore_id = 0)
         # In this case, extract the actual fluorophore ID from the data
         if current_fluo_id == 0:
             filtered_df = self.processor.filtered_dataframe
             if filtered_df is not None and len(filtered_df) > 0:
-                current_fluo_id = int(filtered_df['fluo'].iloc[0])
+                current_fluo_id = int(filtered_df["fluo"].iloc[0])
             else:
                 current_fluo_id = 1
-        
+
         # Get all existing fluorophore IDs from the full dataset
-        all_existing_fluo_ids = set(np.unique(self.processor.processed_dataframe["fluo"].to_numpy()).astype(int))
+        all_existing_fluo_ids = set(
+            np.unique(self.processor.processed_dataframe["fluo"].to_numpy()).astype(int)
+        )
         all_existing_fluo_ids.discard(0)  # Remove 0 if present
-        
+
         # Build the mapping: first cluster keeps existing ID, others get new unused IDs
         final_id_mapping = {cluster_ids[0]: current_fluo_id}
         next_id = 1
         for i in range(1, len(cluster_ids)):
-            while next_id in all_existing_fluo_ids or next_id in final_id_mapping.values():
+            while (
+                next_id in all_existing_fluo_ids or next_id in final_id_mapping.values()
+            ):
                 next_id += 1
             final_id_mapping[cluster_ids[i]] = next_id
             next_id += 1
-        
+
         return final_id_mapping
 
     @Slot()
@@ -428,10 +433,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
 
             # Get the final fluorophore ID that will be assigned to this cluster
             final_fluo_id = final_id_mapping[cluster_id]
-            
+
             # Get the color for this fluorophore ID
             color_rgb = Colors()._get_fid_color(final_fluo_id, as_float=False)
-            brush = pg.mkBrush(int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2]), 127)
+            brush = pg.mkBrush(
+                int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2]), 127
+            )
 
             # Create the bar chart
             chart = pg.BarGraphItem(
@@ -453,21 +460,21 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             self.ui.pbAssign.setEnabled(False)
             # Show info message
             from PySide6.QtWidgets import QMessageBox
+
             QMessageBox.information(
                 self,
                 "No Split Detected",
-                f"Only one cluster was detected. The data cannot be split further."
+                f"Only one cluster was detected. The data cannot be split further.",
             )
             return
-        
+
         # Calculate the final fluorophore IDs that will be assigned
         final_id_mapping = self._calculate_final_fluo_id_mapping(unique_fluo_ids)
-        
+
         # Show the FINAL fluorophore IDs (not cluster IDs) in the naming widget
         final_fluo_ids = sorted(final_id_mapping.values())
         self.fluorophore_naming_widget.set_fluorophores(
-            final_fluo_ids,
-            self.processor.fluorophore_names
+            final_fluo_ids, self.processor.fluorophore_names
         )
         self.fluorophore_naming_widget.setVisible(True)
 
@@ -482,26 +489,31 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             return
 
         # Get unique new cluster IDs from unmixing (e.g., [1, 2] for 2 clusters)
-        unique_unmixed_ids = sorted(np.unique(self.assigned_fluorophore_ids).astype(int).tolist())
-        
+        unique_unmixed_ids = sorted(
+            np.unique(self.assigned_fluorophore_ids).astype(int).tolist()
+        )
+
         # Calculate the final fluorophore ID mapping
         new_fluo_id_mapping = self._calculate_final_fluo_id_mapping(unique_unmixed_ids)
-        
+
         # Remap the assigned fluorophore IDs
-        remapped_fluo_ids = np.array([new_fluo_id_mapping[fid] for fid in self.assigned_fluorophore_ids], dtype=np.uint8)
-        
+        remapped_fluo_ids = np.array(
+            [new_fluo_id_mapping[fid] for fid in self.assigned_fluorophore_ids],
+            dtype=np.uint8,
+        )
+
         # Get fluorophore names from the embedded widget
         # Note: The widget was populated with final fluorophore IDs, so the returned
         # dictionary already uses the correct final IDs as keys (no remapping needed)
         fluorophore_names = self.fluorophore_naming_widget.get_names()
-        
+
         # Assign the IDs via the processor
         self.processor.set_fluorophore_ids(remapped_fluo_ids)
-        
+
         # Set the fluorophore names (will update existing names, preserving others)
         if fluorophore_names:
             self.processor.set_fluorophore_names(fluorophore_names)
-        
+
         # Reset to "All" fluorophores so the user can see all the newly created fluorophores
         # Otherwise, if we unmixed fluorophore 1 into [1, 2], and current_fluorophore_id is still 1,
         # only fluorophore 1 will be visible, making it seem like fluorophore 2 disappeared
@@ -529,28 +541,30 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             ev.accept()
         else:
             ev.ignore()
-    
+
     def time_plot_raise_context_menu(self, ev):
         """Create a context menu on the time plot, specifically for region items."""
         if ev.button() != Qt.MouseButton.RightButton:
             ev.ignore()
             return
-        
+
         # Check if click is on a LinearRegionItem
         clicked_region = None
         scene_pos = ev.scenePos()
-        
+
         # Get the view coordinates
-        view_pos = self.time_plot_widget.getPlotItem().getViewBox().mapSceneToView(scene_pos)
+        view_pos = (
+            self.time_plot_widget.getPlotItem().getViewBox().mapSceneToView(scene_pos)
+        )
         x_pos = view_pos.x()
-        
+
         # Check which region was clicked
         for region in self.time_split_regions:
             start, end = region.getRegion()
             if start <= x_pos <= end:
                 clicked_region = region
                 break
-        
+
         if clicked_region is not None:
             # Create context menu for the region
             menu = QMenu()
@@ -559,7 +573,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
                 lambda: self.open_region_boundaries_dialog(clicked_region)
             )
             menu.addAction(set_boundaries_action)
-            
+
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
             ev.accept()
@@ -574,10 +588,10 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             pos = ev.screenPos()
             menu.exec(QPoint(int(pos.x()), int(pos.y())))
             ev.accept()
-    
+
     def open_region_boundaries_dialog(self, region):
         """Open dialog to set exact boundaries for a time split region.
-        
+
         Parameters
         ----------
         region : pg.LinearRegionItem
@@ -585,7 +599,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         """
         # Get current boundaries
         start, end = region.getRegion()
-        
+
         # Open dialog
         dialog = TimeSplitRegionBoundariesDialog(start, end, parent=self)
         if dialog.exec() == QDialog.Accepted:
@@ -593,10 +607,10 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             new_values = dialog.get_values()
             if new_values is not None:
                 new_start, new_end = new_values
-                
+
                 # Check for overlaps with neighboring regions
                 region_idx = self.time_split_regions.index(region)
-                
+
                 # Check against previous region
                 if region_idx > 0:
                     prev_region = self.time_split_regions[region_idx - 1]
@@ -604,7 +618,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
                     if new_start < prev_end:
                         # Show warning or adjust
                         new_start = prev_end
-                
+
                 # Check against next region
                 if region_idx < len(self.time_split_regions) - 1:
                     next_region = self.time_split_regions[region_idx + 1]
@@ -612,12 +626,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
                     if new_end > next_start:
                         # Show warning or adjust
                         new_end = next_start
-                
+
                 # Ensure new_start < new_end after adjustments
                 if new_start < new_end:
                     # Set the new boundaries
                     region.setRegion([new_start, new_end])
-                    
+
                     # Update assignments
                     self._update_time_split_assignments()
 
@@ -635,7 +649,7 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
     @Slot()
     def update_time_plot(self):
         """Update the time plot showing localizations per minute."""
-        
+
         # Do we have something to plot?
         if (
             self.processor is None
@@ -643,57 +657,57 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             or len(self.processor.filtered_dataframe.index) == 0
         ):
             return
-        
+
         # Invalidate cache to ensure we're using current fluorophore selection
         self.invalidate_time_cache()
-        
+
         # Clear existing plot items
         for item in self.time_plot_widget.allChildItems():
             self.time_plot_widget.removeItem(item)
-        
+
         # Plot localizations per unit time
         self.plot_localizations_per_unit_time()
-        
+
         self.time_plot_widget.setLabel("bottom", text="time (min)")
         self.time_plot_widget.showAxis("bottom")
         self.time_plot_widget.showAxis("left")
         self.time_plot_widget.setMouseEnabled(x=True, y=False)
         self.time_plot_widget.setMenuEnabled(False)
-    
+
     def plot_localizations_per_unit_time(self):
         """Plot number of localizations per unit time."""
         cache_dict = {
-            'data': self.localizations_per_unit_time_cache,
-            'x_axis': self.time_x_axis
+            "data": self.localizations_per_unit_time_cache,
+            "x_axis": self.time_x_axis,
         }
-        
+
         TimePlotter.plot_localizations_per_unit_time(
             self.time_plot_widget,
             self.processor,
             self.time_resolution_sec,
             cache_dict,
-            self.brush
+            self.brush,
         )
-        
+
         # Update cache references
-        self.localizations_per_unit_time_cache = cache_dict['data']
-        self.time_x_axis = cache_dict['x_axis']
+        self.localizations_per_unit_time_cache = cache_dict["data"]
+        self.time_x_axis = cache_dict["x_axis"]
 
     def _constrain_region_to_non_overlapping(self, changed_region):
         """Constrain a region to not overlap with other regions."""
         start, end = changed_region.getRegion()
-        
+
         # Find the index of the changed region
         try:
             region_idx = self.time_split_regions.index(changed_region)
         except ValueError:
             return
-        
+
         # Check against previous region (if exists)
         if region_idx > 0:
             prev_region = self.time_split_regions[region_idx - 1]
             prev_start, prev_end = prev_region.getRegion()
-            
+
             # If start overlaps with previous region, push it to the right
             if start < prev_end:
                 start = prev_end
@@ -702,12 +716,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
                     end = start + 1
                 changed_region.setRegion([start, end])
                 return
-        
+
         # Check against next region (if exists)
         if region_idx < len(self.time_split_regions) - 1:
             next_region = self.time_split_regions[region_idx + 1]
             next_start, next_end = next_region.getRegion()
-            
+
             # If end overlaps with next region, push it to the left
             if end > next_start:
                 end = next_start
@@ -715,11 +729,11 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
                 if start >= end:
                     start = end - 1
                 changed_region.setRegion([start, end])
-    
+
     @Slot()
     def split_by_time(self):
         """Split the data into equal time ranges."""
-        
+
         if self.processor is None or self.processor.filtered_dataframe is None:
             return
 
@@ -727,24 +741,24 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
         tim_data_sec = self.processor.filtered_dataframe["tim"].to_numpy()
         if len(tim_data_sec) == 0:
             return
-        
+
         tim_data = tim_data_sec / 60.0  # Convert to minutes
 
         # Get number of splits
         num_splits = self.ui.sbNumSplits.value()
-        
+
         # Calculate the time range in minutes
         tim_min = tim_data.min()
         tim_max = tim_data.max()
         tim_range = tim_max - tim_min
-        
+
         # Calculate split size with small gaps (2% of range per gap)
         gap_fraction = 0.02
         total_gap = gap_fraction * tim_range * (num_splits - 1)
         usable_range = tim_range - total_gap
         split_size = usable_range / num_splits
         gap_size = gap_fraction * tim_range
-        
+
         # Remove existing regions and disconnect signals
         for region in self.time_split_regions:
             try:
@@ -753,95 +767,107 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
                 pass
             self.time_plot_widget.removeItem(region)
         self.time_split_regions.clear()
-        
+
         # Create new regions
         unique_cluster_ids = list(range(1, num_splits + 1))
         final_id_mapping = self._calculate_final_fluo_id_mapping(unique_cluster_ids)
-        
+
         for i in range(num_splits):
             # Calculate start and end for this split (in minutes)
             start = tim_min + i * (split_size + gap_size)
             end = start + split_size
-            
+
             # Get the final fluorophore ID for coloring
             final_fluo_id = final_id_mapping[i + 1]
             color_rgb = Colors()._get_fid_color(final_fluo_id, as_float=False)
-            
+
             # Create the linear region
             region = pg.LinearRegionItem(
                 values=[start, end],
-                pen={'color': (int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2])), 'width': 3},
-                brush=pg.mkBrush(int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2]), 50),
+                pen={
+                    "color": (int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2])),
+                    "width": 3,
+                },
+                brush=pg.mkBrush(
+                    int(color_rgb[0]), int(color_rgb[1]), int(color_rgb[2]), 50
+                ),
                 movable=True,
             )
-            
+
             # Store cluster ID as attribute for later retrieval
             region.cluster_id = i + 1
-            
+
             # Connect signal to prevent overlaps
-            region.sigRegionChanged.connect(lambda r=region: self._constrain_region_to_non_overlapping(r))
-            
+            region.sigRegionChanged.connect(
+                lambda r=region: self._constrain_region_to_non_overlapping(r)
+            )
+
             self.time_plot_widget.addItem(region)
             self.time_split_regions.append(region)
-        
+
         # Calculate initial assignments and show naming widget
         self._update_time_split_assignments()
-        
+
     def _update_time_split_assignments(self):
         """Update fluorophore ID assignments based on current time region positions."""
-        
+
         if self.processor is None or self.processor.filtered_dataframe is None:
             return
-        
+
         if len(self.time_split_regions) == 0:
             return
-        
+
         # Get time data in minutes
         tim_data_sec = self.processor.filtered_dataframe["tim"].to_numpy()
         tim_data = tim_data_sec / 60.0  # Convert to minutes
-        
+
         # Initialize all as unassigned (0)
         fluo_ids = np.zeros(len(tim_data), dtype=np.uint8)
-        
+
         # Assign based on regions (which are in minutes)
         for region in self.time_split_regions:
             start, end = region.getRegion()
             mask = (tim_data >= start) & (tim_data <= end)
             fluo_ids[mask] = region.cluster_id
-        
+
         # Store assignments
         self.time_assigned_fluorophore_ids = fluo_ids
-        
+
         # Calculate final fluorophore IDs
         unique_cluster_ids = sorted([r.cluster_id for r in self.time_split_regions])
         final_id_mapping = self._calculate_final_fluo_id_mapping(unique_cluster_ids)
-        
+
         # Show the FINAL fluorophore IDs in the naming widget
         final_fluo_ids = sorted(final_id_mapping.values())
-        
+
         # Preserve any names currently entered in the widget
-        current_names = self.fluorophore_naming_widget.get_names() if self.fluorophore_naming_widget.isVisible() else {}
-        
-        # Merge with processor names (current names take precedence)
-        names_to_use = self.processor.fluorophore_names.copy() if self.processor.fluorophore_names else {}
-        names_to_use.update(current_names)
-        
-        self.fluorophore_naming_widget.set_fluorophores(
-            final_fluo_ids,
-            names_to_use
+        current_names = (
+            self.fluorophore_naming_widget.get_names()
+            if self.fluorophore_naming_widget.isVisible()
+            else {}
         )
+
+        # Merge with processor names (current names take precedence)
+        names_to_use = (
+            self.processor.fluorophore_names.copy()
+            if self.processor.fluorophore_names
+            else {}
+        )
+        names_to_use.update(current_names)
+
+        self.fluorophore_naming_widget.set_fluorophores(final_fluo_ids, names_to_use)
         self.fluorophore_naming_widget.setVisible(True)
-        
+
         # Enable assign button
         self.ui.pbTimeSplitAssign.setEnabled(True)
 
     @Slot()
     def assign_time_split_fluorophores(self):
         """Assign fluorophore IDs based on time splitting."""
-        
+
         if len(self.time_split_regions) == 0:
             return
-        
+
         def assign_fluorophore_ids_by_time_ranges(
             dataframe: pd.DataFrame,
             time_ranges: list[tuple[float, float]],
@@ -852,31 +878,35 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             if "tim" not in dataframe.columns:
                 raise ValueError("The dataframe must contain a 'tim' column.")
             if len(time_ranges) != len(fluorophore_ids):
-                raise ValueError("The number of time ranges must match the number of fluorophore IDs.")
+                raise ValueError(
+                    "The number of time ranges must match the number of fluorophore IDs."
+                )
 
             assigned_fluorophore_ids = np.full(
                 len(dataframe), np.uint8(default_fluorophore_id), dtype=np.uint8
             )
             tim_data = dataframe["tim"].to_numpy()
 
-            for (start_time, end_time), fluorophore_id in zip(time_ranges, fluorophore_ids):
+            for (start_time, end_time), fluorophore_id in zip(
+                time_ranges, fluorophore_ids
+            ):
                 in_range_mask = (tim_data >= start_time) & (tim_data <= end_time)
                 assigned_fluorophore_ids[in_range_mask] = np.uint8(fluorophore_id)
 
             return assigned_fluorophore_ids
-        
+
         # Get unique cluster IDs
         unique_cluster_ids = sorted([r.cluster_id for r in self.time_split_regions])
-        
+
         # Calculate the final fluorophore ID mapping
         new_fluo_id_mapping = self._calculate_final_fluo_id_mapping(unique_cluster_ids)
-        
+
         # Get fluorophore names from the widget
         fluorophore_names = self.fluorophore_naming_widget.get_names()
-        
+
         # Get the current fluorophore being split (same logic as _calculate_final_fluo_id_mapping)
         current_fluo_id = self.processor.current_fluorophore_id
-        
+
         sorted_regions = sorted(self.time_split_regions, key=lambda r: r.getRegion()[0])
         time_ranges_to_assign = []
         fluorophore_ids_to_assign = []
@@ -886,10 +916,12 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             fluorophore_ids_to_assign.append(new_fluo_id_mapping[region.cluster_id])
 
         # Start with existing fluo IDs and only modify the current fluorophore
-        processed_fluo_ids = self.processor.processed_dataframe["fluo"].to_numpy().copy()
-        
+        processed_fluo_ids = (
+            self.processor.processed_dataframe["fluo"].to_numpy().copy()
+        )
+
         # Only assign time-based IDs to rows currently belonging to the current fluorophore
-        current_fluo_mask = (processed_fluo_ids == current_fluo_id)
+        current_fluo_mask = processed_fluo_ids == current_fluo_id
         time_split_ids = assign_fluorophore_ids_by_time_ranges(
             self.processor.processed_dataframe[current_fluo_mask],
             time_ranges_to_assign,
@@ -897,14 +929,16 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
             default_fluorophore_id=0,
         )
         processed_fluo_ids[current_fluo_mask] = time_split_ids
-        
+
         self.processor.set_full_fluorophore_ids(processed_fluo_ids)
 
         if self.processor.dataset.full_raw_dataframe is not None:
-            raw_fluo_ids = self.processor.dataset.full_raw_dataframe["fluo"].to_numpy().copy()
-            
+            raw_fluo_ids = (
+                self.processor.dataset.full_raw_dataframe["fluo"].to_numpy().copy()
+            )
+
             # Only modify raw rows belonging to the current fluorophore
-            current_fluo_raw_mask = (raw_fluo_ids == current_fluo_id)
+            current_fluo_raw_mask = raw_fluo_ids == current_fluo_id
             raw_time_split_ids = assign_fluorophore_ids_by_time_ranges(
                 self.processor.dataset.full_raw_dataframe[current_fluo_raw_mask],
                 time_ranges_to_assign,
@@ -912,35 +946,37 @@ class ColorUnmixer(QDialog, Ui_ColorUnmixer):
                 default_fluorophore_id=0,
             )
             raw_fluo_ids[current_fluo_raw_mask] = raw_time_split_ids
-            
+
             self.processor.dataset.full_raw_dataframe.loc[:, "fluo"] = raw_fluo_ids
-        
+
         # Filter out the gaps (fluo=0) by applying time range filters
         # First, get the overall time range (first start to last end)
         first_start = time_ranges_to_assign[0][0]
         last_end = time_ranges_to_assign[-1][1]
         self.processor.filter_by_1d_range("tim", (first_start, last_end))
-        
+
         # Then filter out each gap between consecutive time ranges
         for i in range(len(time_ranges_to_assign) - 1):
             gap_start = time_ranges_to_assign[i][1]
             gap_end = time_ranges_to_assign[i + 1][0]
             if gap_end > gap_start:
-                self.processor.filter_by_1d_range_complement("tim", (gap_start, gap_end))
-        
+                self.processor.filter_by_1d_range_complement(
+                    "tim", (gap_start, gap_end)
+                )
+
         # Set the fluorophore names
         if fluorophore_names:
             self.processor.set_fluorophore_names(fluorophore_names)
-        
+
         # Reset to "All" fluorophores
         self.processor.current_fluorophore_id = 0
-        
+
         # Inform that the fluorophore IDs have been assigned
         unique_final_fluo_ids = sorted(new_fluo_id_mapping.values())
         self.fluorophore_ids_assigned.emit(len(unique_final_fluo_ids))
-        
+
         # Disable the button until new split is performed
         self.ui.pbTimeSplitAssign.setEnabled(False)
-        
+
         # Close the dialog
         self.close()

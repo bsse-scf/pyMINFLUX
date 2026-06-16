@@ -142,12 +142,12 @@ class PMXReader:
     @staticmethod
     def get_fluorophore_names(filename: Union[Path, str]) -> dict:
         """Read fluorophore names from `.pmx` files.
-        
+
         Parameters
         ----------
         filename: Union[Path, str]
             Full path to the `.pmx` file to scan.
-            
+
         Returns
         -------
         fluorophore_names: dict
@@ -159,20 +159,21 @@ class PMXReader:
                 # Try to read fluorophore names from parameters group
                 if "parameters" in f and "fluorophore_names" in f["parameters"].attrs:
                     import json
+
                     names_json = f["parameters"].attrs["fluorophore_names"]
                     # Parse JSON and convert keys back to integers
                     names_dict = json.loads(names_json)
                     return {int(k): v for k, v in names_dict.items()}
         except Exception:
             pass
-        
+
         # Return empty dict for backwards compatibility (will use default string representation)
         return {}
 
     @staticmethod
     def get_tid_offsets(filename: Union[Path, str]) -> list:
         """Read TID offset mapping from `.pmx` files.
-        
+
         Returns
         -------
         tid_offsets: list
@@ -182,6 +183,7 @@ class PMXReader:
             with h5py.File(filename, "r") as f:
                 if "parameters" in f and "tid_offsets" in f["parameters"].attrs:
                     import json
+
                     offsets_json = f["parameters"].attrs["tid_offsets"]
                     if isinstance(offsets_json, bytes):
                         offsets_json = offsets_json.decode("utf-8")
@@ -201,7 +203,7 @@ class PMXReader:
                     return tid_offsets
         except Exception:
             pass
-        
+
         return []
 
     @staticmethod
