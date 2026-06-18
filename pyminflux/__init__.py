@@ -15,7 +15,7 @@
 import pyqtgraph as pg
 
 __APP_NAME__ = "pyMINFLUX"
-__version__ = "0.7.0"
+__version__ = "0.7.0.dev"
 
 # PyQtGraph settings
 pg.setConfigOption("imageAxisOrder", "row-major")  # For best performance
