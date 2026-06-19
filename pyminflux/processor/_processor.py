@@ -20,8 +20,8 @@ from numpy.typing import NDArray
 from scipy.stats import mode
 
 from pyminflux.analysis import calculate_total_distance_traveled, calculate_trace_time
-from pyminflux.reader import MinFluxReader, MinFluxReaderV2
 from pyminflux.processor._dataset import MinFluxDataset
+from pyminflux.reader import MinFluxReader, MinFluxReaderV2
 
 
 class MinFluxProcessor:
@@ -132,9 +132,9 @@ class MinFluxProcessor:
 
     def has_filters_applied(self) -> bool:
         """Check if any dynamic (user-applied) filters have been applied to the data.
-        
+
         This does not count global filters like min_trace_length which are always applied.
-        
+
         Returns
         -------
         has_filters: bool
@@ -146,7 +146,7 @@ class MinFluxProcessor:
         """Initialize fluorophore names with default values (string representation of fluo ID)."""
         if self.processed_dataframe is None:
             return
-        
+
         unique_fluos = np.unique(self.processed_dataframe["fluo"].to_numpy())
         unique_fluos = unique_fluos[unique_fluos > 0]
         for fluo_id in unique_fluos:
@@ -157,7 +157,7 @@ class MinFluxProcessor:
     @property
     def reader(self):
         """Return a reader-like interface to the dataset for backwards compatibility.
-        
+
         This property provides access to the underlying dataset using the
         reader interface that existing code expects.
         """
@@ -227,8 +227,10 @@ class MinFluxProcessor:
 
         # Validate fluorophore ID: 0 for all, or 1 to num_fluorophores
         if fluorophore_id < 0:
-            raise ValueError(f"Fluorophore ID must be non-negative, got {fluorophore_id}.")
-        
+            raise ValueError(
+                f"Fluorophore ID must be non-negative, got {fluorophore_id}."
+            )
+
         if fluorophore_id > 0 and fluorophore_id > self.num_fluorophores:
             raise ValueError(
                 f"Fluorophore ID {fluorophore_id} is out of range. "
@@ -259,7 +261,7 @@ class MinFluxProcessor:
 
     def set_fluorophore_name(self, fluo_id: int, name: str):
         """Set the name for a specific fluorophore ID.
-        
+
         Parameters
         ----------
         fluo_id: int
@@ -275,10 +277,10 @@ class MinFluxProcessor:
 
     def set_fluorophore_names(self, names: dict):
         """Set fluorophore names from a dictionary mapping.
-        
+
         This method updates the fluorophore names dictionary, preserving
         any existing names for fluorophore IDs not included in the names parameter.
-        
+
         Parameters
         ----------
         names: dict
@@ -288,7 +290,9 @@ class MinFluxProcessor:
             raise ValueError(f"Names must be a dictionary, got {type(names)}")
         for fluo_id, name in names.items():
             if not isinstance(fluo_id, int) or fluo_id < 1:
-                raise ValueError(f"Fluorophore ID must be an integer >= 1, got {fluo_id}")
+                raise ValueError(
+                    f"Fluorophore ID must be an integer >= 1, got {fluo_id}"
+                )
             if not isinstance(name, str):
                 raise ValueError(f"Fluorophore name must be a string, got {type(name)}")
         # Update the dictionary instead of replacing it to preserve existing names
@@ -296,12 +300,12 @@ class MinFluxProcessor:
 
     def get_fluorophore_name(self, fluo_id: int) -> str:
         """Get the name for a specific fluorophore ID.
-        
+
         Parameters
         ----------
         fluo_id: int
             The fluorophore ID
-            
+
         Returns
         -------
         name: str
@@ -331,7 +335,7 @@ class MinFluxProcessor:
         combined_mask = np.zeros(len(self.processed_dataframe), dtype=bool)
         for fluo_id, fluo_mask in self._selected_rows_dict.items():
             combined_mask |= (self.processed_dataframe["fluo"] == fluo_id) & fluo_mask
-        
+
         return raw_array[combined_mask]
 
     @property
@@ -372,11 +376,11 @@ class MinFluxProcessor:
 
     def replace_dataset(self, new_dataset: MinFluxDataset):
         """Replace the current dataset with a new one.
-        
+
         This is useful when combining datasets - the processor's dataset
         can be replaced with the combined dataset without losing filter state
         or other settings.
-        
+
         Parameters
         ----------
         new_dataset: MinFluxDataset
@@ -386,36 +390,36 @@ class MinFluxProcessor:
         old_min_trace_length = self._min_trace_length
         old_use_weighted = self._use_weighted_localizations
         old_fluorophore_names = self._fluorophore_names.copy()
-        
+
         # Replace the dataset
         self.dataset = new_dataset
-        
+
         # Re-initialize selection and filters
         self._selected_rows_dict = None
         self._init_selected_rows_dict()
-        
+
         # Re-initialize fluorophore names (preserving custom names where IDs match)
         self._fluorophore_names = {}
         self._init_fluorophore_names()
-        
+
         # Restore custom names for matching fluorophore IDs
         for fluo_id, name in old_fluorophore_names.items():
             if fluo_id in self._fluorophore_names:
                 self._fluorophore_names[fluo_id] = name
-        
+
         # Restore settings
         self._min_trace_length = old_min_trace_length
         self._use_weighted_localizations = old_use_weighted
-        
+
         # Reset current fluorophore to "all"
         self._current_fluorophore_id = 0
-        
+
         # Reset dynamic filters flag (dataset replacement clears all filters)
         self._has_dynamic_filters = False
-        
+
         # Apply global filters
         self._apply_global_filters()
-        
+
         # Flag derived data to be recomputed
         self._stats_to_be_recomputed = True
         self._weighted_localizations_to_be_recomputed = True
@@ -436,7 +440,7 @@ class MinFluxProcessor:
         combined_mask = np.zeros(len(self.processed_dataframe), dtype=bool)
         for fluo_id, fluo_mask in self._selected_rows_dict.items():
             combined_mask |= (self.processed_dataframe["fluo"] == fluo_id) & fluo_mask
-        
+
         return self.processed_dataframe.loc[combined_mask]
 
     def _filtered_raw_dataframe_all_fluorophores(self) -> Union[None, pd.DataFrame]:
@@ -472,7 +476,9 @@ class MinFluxProcessor:
             mapped_fluo = raw_array["iid"].map(fluo_map)
             matched_mask = mapped_fluo.notna().to_numpy()
             if matched_mask.any():
-                raw_fluo[matched_mask] = mapped_fluo.loc[matched_mask].astype(np.uint8).to_numpy()
+                raw_fluo[matched_mask] = (
+                    mapped_fluo.loc[matched_mask].astype(np.uint8).to_numpy()
+                )
 
         raw_array["fluo"] = raw_fluo.astype(np.uint8)
 
@@ -628,7 +634,7 @@ class MinFluxProcessor:
 
     def set_fluorophore_ids(self, fluorophore_ids: NDArray[np.uint8]):
         """Assign the fluorophore IDs to current filtered dataset.
-        
+
         This method assigns new fluorophore IDs only to the rows in the current
         filtered dataset. All other rows remain unchanged.
         """
@@ -641,10 +647,12 @@ class MinFluxProcessor:
 
         # Get the actual indices from the filtered dataframe
         filtered_indices = self.filtered_dataframe.index
-        
+
         # Assign the new fluorophore IDs to those specific indices only
         # All other rows remain unchanged (preserving other fluorophores)
-        self.processed_dataframe.loc[filtered_indices, "fluo"] = fluorophore_ids.astype(np.uint8)
+        self.processed_dataframe.loc[filtered_indices, "fluo"] = fluorophore_ids.astype(
+            np.uint8
+        )
 
         # Apply global filters
         self._init_selected_rows_dict()
@@ -913,8 +921,8 @@ class MinFluxProcessor:
                 self._selected_rows_dict[fluo_id] = self._filter_by_tid_length(fluo_id)
         elif self.current_fluorophore_id in self._selected_rows_dict:
             # Apply to specific fluorophore
-            self._selected_rows_dict[self.current_fluorophore_id] = self._filter_by_tid_length(
-                self.current_fluorophore_id
+            self._selected_rows_dict[self.current_fluorophore_id] = (
+                self._filter_by_tid_length(self.current_fluorophore_id)
             )
 
         # Make sure to flag the derived data to be recomputed
@@ -940,24 +948,24 @@ class MinFluxProcessor:
             # Apply to all fluorophores
             for fluo_id in self._selected_rows_dict.keys():
                 if larger_than:
-                    self._selected_rows_dict[fluo_id] = self._selected_rows_dict[fluo_id] & (
-                        self.filtered_dataframe[prop] >= threshold
-                    )
+                    self._selected_rows_dict[fluo_id] = self._selected_rows_dict[
+                        fluo_id
+                    ] & (self.filtered_dataframe[prop] >= threshold)
                 else:
-                    self._selected_rows_dict[fluo_id] = self._selected_rows_dict[fluo_id] & (
-                        self.filtered_dataframe[prop] < threshold
-                    )
+                    self._selected_rows_dict[fluo_id] = self._selected_rows_dict[
+                        fluo_id
+                    ] & (self.filtered_dataframe[prop] < threshold)
         elif self.current_fluorophore_id in self._selected_rows_dict:
             # Apply to specific fluorophore
             fluo_id = self.current_fluorophore_id
             if larger_than:
-                self._selected_rows_dict[fluo_id] = self._selected_rows_dict[fluo_id] & (
-                    self.filtered_dataframe[prop] >= threshold
-                )
+                self._selected_rows_dict[fluo_id] = self._selected_rows_dict[
+                    fluo_id
+                ] & (self.filtered_dataframe[prop] >= threshold)
             else:
-                self._selected_rows_dict[fluo_id] = self._selected_rows_dict[fluo_id] & (
-                    self.filtered_dataframe[prop] < threshold
-                )
+                self._selected_rows_dict[fluo_id] = self._selected_rows_dict[
+                    fluo_id
+                ] & (self.filtered_dataframe[prop] < threshold)
 
         # Apply the global filters
         self._apply_global_filters()
@@ -1040,7 +1048,9 @@ class MinFluxProcessor:
         if self.current_fluorophore_id == 0:
             # Apply to all fluorophores
             for fluo_id in self._selected_rows_dict.keys():
-                self._selected_rows_dict[fluo_id] = self._selected_rows_dict[fluo_id] & (
+                self._selected_rows_dict[fluo_id] = self._selected_rows_dict[
+                    fluo_id
+                ] & (
                     (self.filtered_dataframe[prop] < x_min)
                     | (self.filtered_dataframe[prop] >= x_max)
                 )
@@ -1102,7 +1112,9 @@ class MinFluxProcessor:
         if self.current_fluorophore_id == 0:
             # Apply to all fluorophores
             for fluo_id in self._selected_rows_dict.keys():
-                self._selected_rows_dict[fluo_id] = self._selected_rows_dict[fluo_id] & rows_to_keep
+                self._selected_rows_dict[fluo_id] = (
+                    self._selected_rows_dict[fluo_id] & rows_to_keep
+                )
         elif self.current_fluorophore_id in self._selected_rows_dict:
             # Apply to specific fluorophore
             self._selected_rows_dict[self.current_fluorophore_id] = (

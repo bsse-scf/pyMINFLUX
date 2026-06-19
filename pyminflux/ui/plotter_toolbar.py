@@ -216,8 +216,12 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         if not columns:
             columns = ["x", "y"]
 
-        previous_x = self.state.x_param if self.state.x_param in columns else preferred_x
-        previous_y = self.state.y_param if self.state.y_param in columns else preferred_y
+        previous_x = (
+            self.state.x_param if self.state.x_param in columns else preferred_x
+        )
+        previous_y = (
+            self.state.y_param if self.state.y_param in columns else preferred_y
+        )
         if previous_x not in columns:
             previous_x = columns[0]
         if previous_y not in columns:
@@ -245,11 +249,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
     def set_available_color_columns(self, color_columns):
         """Populate color controls from allowed dataframe columns."""
-        color_columns = [
-            column
-            for column in color_columns
-            if isinstance(column, str)
-        ]
+        color_columns = [column for column in color_columns if isinstance(column, str)]
         current = (
             self.state.color_column
             if self.state.color_column in color_columns

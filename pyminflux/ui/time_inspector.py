@@ -241,21 +241,21 @@ class TimeInspector(QDialog, Ui_TimeInspector):
     def plot_localizations_per_unit_time(self):
         """Plot number of localizations per unit time."""
         cache_dict = {
-            'data': self.localizations_per_unit_time_cache,
-            'x_axis': self.x_axis
+            "data": self.localizations_per_unit_time_cache,
+            "x_axis": self.x_axis,
         }
-        
+
         TimePlotter.plot_localizations_per_unit_time(
             self.plot_widget,
             self.processor,
             self.time_resolution_sec,
             cache_dict,
-            self.brush
+            self.brush,
         )
-        
+
         # Update cache references
-        self.localizations_per_unit_time_cache = cache_dict['data']
-        self.x_axis = cache_dict['x_axis']
+        self.localizations_per_unit_time_cache = cache_dict["data"]
+        self.x_axis = cache_dict["x_axis"]
 
     def plot_localization_precision_per_unit_time(self, std_err: bool = False):
         """Plot localization precision as a function of time.
@@ -267,31 +267,37 @@ class TimeInspector(QDialog, Ui_TimeInspector):
             Set to True to plot the standard error instead of the standard deviation.
         """
         cache_dict = {
-            'x': self.localization_precision_per_unit_time_cache_x,
-            'y': self.localization_precision_per_unit_time_cache_y,
-            'z': self.localization_precision_per_unit_time_cache_z,
-            'x_stderr': self.localization_precision_stderr_per_unit_time_cache_x,
-            'y_stderr': self.localization_precision_stderr_per_unit_time_cache_y,
-            'z_stderr': self.localization_precision_stderr_per_unit_time_cache_z,
-            'x_axis': self.x_axis
+            "x": self.localization_precision_per_unit_time_cache_x,
+            "y": self.localization_precision_per_unit_time_cache_y,
+            "z": self.localization_precision_per_unit_time_cache_z,
+            "x_stderr": self.localization_precision_stderr_per_unit_time_cache_x,
+            "y_stderr": self.localization_precision_stderr_per_unit_time_cache_y,
+            "z_stderr": self.localization_precision_stderr_per_unit_time_cache_z,
+            "x_axis": self.x_axis,
         }
-        
+
         TimePlotter.plot_localization_precision_per_unit_time(
             self.plot_widget,
             self.processor,
             self.time_resolution_sec,
             cache_dict,
-            std_err
+            std_err,
         )
-        
+
         # Update cache references
-        self.localization_precision_per_unit_time_cache_x = cache_dict['x']
-        self.localization_precision_per_unit_time_cache_y = cache_dict['y']
-        self.localization_precision_per_unit_time_cache_z = cache_dict['z']
-        self.localization_precision_stderr_per_unit_time_cache_x = cache_dict['x_stderr']
-        self.localization_precision_stderr_per_unit_time_cache_y = cache_dict['y_stderr']
-        self.localization_precision_stderr_per_unit_time_cache_z = cache_dict['z_stderr']
-        self.x_axis = cache_dict['x_axis']
+        self.localization_precision_per_unit_time_cache_x = cache_dict["x"]
+        self.localization_precision_per_unit_time_cache_y = cache_dict["y"]
+        self.localization_precision_per_unit_time_cache_z = cache_dict["z"]
+        self.localization_precision_stderr_per_unit_time_cache_x = cache_dict[
+            "x_stderr"
+        ]
+        self.localization_precision_stderr_per_unit_time_cache_y = cache_dict[
+            "y_stderr"
+        ]
+        self.localization_precision_stderr_per_unit_time_cache_z = cache_dict[
+            "z_stderr"
+        ]
+        self.x_axis = cache_dict["x_axis"]
 
     @staticmethod
     def _change_region_label_font(region_label):

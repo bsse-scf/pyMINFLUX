@@ -12,8 +12,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import pyminflux
 import pytest
+
+import pyminflux
 from pyminflux.utils._utils import check_for_updates
 
 

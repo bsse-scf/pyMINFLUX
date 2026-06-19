@@ -422,7 +422,9 @@ class Plotter(PlotWidget):
         ), "`tid` must be a Pandas Series."
 
         if color_values is not None:
-            assert type(color_values) == pd.Series, "`color_values` must be a Pandas Series."
+            assert (
+                type(color_values) == pd.Series
+            ), "`color_values` must be a Pandas Series."
 
         # If we have an image, make sure to draw it first (but only if
         # x_param is "x" and y_param is "y"
@@ -543,7 +545,9 @@ class Plotter(PlotWidget):
 
         assert type(tid) == pd.Series, "`tid` must be a Pandas Series."
         if color_values is not None:
-            assert type(color_values) == pd.Series, "`color_values` must be a Pandas Series."
+            assert (
+                type(color_values) == pd.Series
+            ), "`color_values` must be a Pandas Series."
 
         recreate_brushes = False
         if self.last_plot_parameters["color_column"] is None:

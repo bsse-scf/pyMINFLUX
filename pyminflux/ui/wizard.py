@@ -13,7 +13,7 @@
 #  limitations under the License.
 import numpy as np
 from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
-from PySide6.QtGui import QDoubleValidator, QIcon, QPixmap, QColor, QPainter
+from PySide6.QtGui import QColor, QDoubleValidator, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QDialog
 
 from pyminflux.ui.state import State
@@ -262,19 +262,26 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         else:
             # Add "All" option first
             self.ui.cmActiveColor.addItem("All")
-            
+
             # Get color helper
             colors = Colors()
-            
+
             # Get the actual fluorophore IDs from the processor (they may not be sequential)
-            if self.processor is not None and self.processor.processed_dataframe is not None:
-                actual_fluo_ids = sorted(np.unique(self.processor.processed_dataframe["fluo"].to_numpy()).astype(int).tolist())
+            if (
+                self.processor is not None
+                and self.processor.processed_dataframe is not None
+            ):
+                actual_fluo_ids = sorted(
+                    np.unique(self.processor.processed_dataframe["fluo"].to_numpy())
+                    .astype(int)
+                    .tolist()
+                )
                 # Remove 0 if present (unassigned)
                 actual_fluo_ids = [fid for fid in actual_fluo_ids if fid > 0]
             else:
                 # Fallback to sequential IDs if processor not available
                 actual_fluo_ids = list(range(1, num_fluorophores + 1))
-            
+
             # Add fluorophore items with color icons
             for fluo_id in actual_fluo_ids:
                 # Get fluorophore name from processor if available
@@ -283,7 +290,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
                     text = f"{fluo_id}: {name}"
                 else:
                     text = str(fluo_id)
-                
+
                 # Create small color icon for this fluorophore with spacing
                 # Get color from centralized method (same as used in plotting)
                 rgb = colors._get_fid_color(fluo_id, as_float=False)
@@ -292,10 +299,12 @@ class WizardDialog(QDialog, Ui_WizardDialog):
                 pixmap.fill(Qt.GlobalColor.transparent)
                 # Draw the colored square only on the left portion
                 painter = QPainter(pixmap)
-                painter.fillRect(0, 0, 8, 8, QColor(int(rgb[0]), int(rgb[1]), int(rgb[2])))
+                painter.fillRect(
+                    0, 0, 8, 8, QColor(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+                )
                 painter.end()
                 icon = QIcon(pixmap)
-                
+
                 # Add item with icon
                 self.ui.cmActiveColor.addItem(icon, text)
 

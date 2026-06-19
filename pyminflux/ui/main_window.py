@@ -34,24 +34,24 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QStackedWidget,
     QTextBrowser,
     QTextEdit,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
 import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
+from pyminflux.combiner import combine_datasets_with_bead_alignment
 from pyminflux.correct import align_datasets_using_beads
 from pyminflux.plugin import PluginManager
 from pyminflux.processor import (
     get_bead_positions_from_mbm,
-    load_zarr_for_beads,
     get_next_fluorophore_id,
+    load_zarr_for_beads,
 )
-from pyminflux.combiner import combine_datasets_with_bead_alignment
 from pyminflux.processor._dataset import MinFluxDataset
 from pyminflux.reader import (
     MinFluxReader,
@@ -68,8 +68,8 @@ from pyminflux.ui.colorbar import ColorBarWidget
 from pyminflux.ui.colors import reset_all_colors
 from pyminflux.ui.dataset_combine_dialog import DatasetCombineDialog
 from pyminflux.ui.dataviewer import DataViewer
-from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.fluorophore_naming_dialog import FluorophoreNamingDialog
+from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.histogram_plotter import HistogramPlotter
 from pyminflux.ui.importer import Importer
 from pyminflux.ui.mediator import Mediator
@@ -88,9 +88,7 @@ from pyminflux.writer import PMXWriter
 # Version info
 __modifier__ = ""
 __version__ = f"{__version__}{__modifier__}"
-__EXPERIMENTAL_TRACKING_WORKFLOW_ENV_VAR__ = (
-    "PYMINFLUX_EXPERIMENTAL_TRACKING_WORKFLOW"
-)
+__EXPERIMENTAL_TRACKING_WORKFLOW_ENV_VAR__ = "PYMINFLUX_EXPERIMENTAL_TRACKING_WORKFLOW"
 __WORKFLOW_SHELL_MARGIN__ = 11
 __WORKFLOW_SHELL_SPACING__ = 6
 
@@ -474,10 +472,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         dataframe = (
             self.workflow.plot_dataframe() if self.workflow is not None else None
         )
-        has_data = (
-            dataframe is not None
-            and len(dataframe.index) > 0
-        )
+        has_data = dataframe is not None and len(dataframe.index) > 0
 
         self.ui.actionSave.setEnabled(
             has_data and self.workflow is not None and self.workflow.can_save()
@@ -746,7 +741,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         self.ui.actionCheck_for_updates.triggered.connect(self.check_remote_for_updates)
         self.ui.actionAbout.triggered.connect(self.about)
-        
+
     def enable_ui_components(self, enabled: bool):
         """Enable/disable UI components."""
 
@@ -789,7 +784,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.update_plotter_toolbar_from_workflow()
         self.plot_selected_parameters()
         self.data_viewer.clear()
-        dataframe = self.workflow.plot_dataframe() if self.workflow is not None else None
+        dataframe = (
+            self.workflow.plot_dataframe() if self.workflow is not None else None
+        )
         if dataframe is not None:
             print(f"Retrieved {len(dataframe.index)} events.")
 
@@ -925,11 +922,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def save_native_file(self):
         """Save data to native pyMINFLUX `.pmx` file."""
         processor = self.localization_processor
-        if (
-            self.workflow is None
-            or not self.workflow.can_save()
-            or processor is None
-        ):
+        if self.workflow is None or not self.workflow.can_save() or processor is None:
             return
 
         # Get current filename to build the suggestion output
@@ -1013,17 +1006,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     ) -> bool:
         """
         Combine a new dataset with the currently loaded one.
-        
+
         Args:
             new_filename: Path to the new dataset file
             new_reader: Reader object for the new dataset
-            
+
         Returns:
             True if combine successful, False otherwise
         """
         # Determine Zarr paths for both datasets
-        new_ext = ".zarr" if Path(new_filename).is_dir() else Path(new_filename).suffix.lower()
-        
+        new_ext = (
+            ".zarr"
+            if Path(new_filename).is_dir()
+            else Path(new_filename).suffix.lower()
+        )
+
         # Get reference zarr path
         if self.current_zarr_path is not None:
             ref_zarr_path = self.current_zarr_path
@@ -1038,12 +1035,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             ref_zarr_path = QFileDialog.getExistingDirectory(
                 self,
                 "Select Reference Zarr Folder",
-                str(self.state.last_selected_path) if self.state.last_selected_path else ".",
+                (
+                    str(self.state.last_selected_path)
+                    if self.state.last_selected_path
+                    else "."
+                ),
             )
             if not ref_zarr_path:
                 print("Combine cancelled: No reference Zarr path selected.")
                 return False
-        
+
         # Get moving zarr path
         if new_ext == ".zarr":
             mov_zarr_path = new_filename
@@ -1058,12 +1059,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             mov_zarr_path = QFileDialog.getExistingDirectory(
                 self,
                 "Select Moving Zarr Folder",
-                str(self.state.last_selected_path) if self.state.last_selected_path else ".",
+                (
+                    str(self.state.last_selected_path)
+                    if self.state.last_selected_path
+                    else "."
+                ),
             )
             if not mov_zarr_path:
                 print("Combine cancelled: No moving Zarr path selected.")
                 return False
-        
+
         # Load MBM data from both Zarr files to get bead positions for the dialog
         print(f"Loading bead data from reference: {ref_zarr_path}")
         ref_reader, ref_mbm_dict = load_zarr_for_beads(ref_zarr_path)
@@ -1074,7 +1079,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"Could not load bead data from reference Zarr file:\n{ref_zarr_path}",
             )
             return False
-        
+
         print(f"Loading bead data from moving: {mov_zarr_path}")
         mov_reader, mov_mbm_dict = load_zarr_for_beads(mov_zarr_path)
         if mov_reader is None or not mov_mbm_dict:
@@ -1084,20 +1089,30 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"Could not load bead data from moving Zarr file:\n{mov_zarr_path}",
             )
             return False
-        
+
         # Get bead positions for the correspondence dialog
         ref_bead_positions = get_bead_positions_from_mbm(ref_mbm_dict, n_points=3)
         mov_bead_positions = get_bead_positions_from_mbm(mov_mbm_dict, n_points=3)
-        
+
         print(f"Reference beads: {list(ref_bead_positions.keys())}")
         print(f"Moving beads: {list(mov_bead_positions.keys())}")
-        
+
         # Get fluorophore information for the dialog
         # Filter out fluorophore ID 0 (used for unassigned/placeholder data)
-        existing_fluo_ids = sorted([fid for fid in self.localization_processor.processed_dataframe["fluo"].unique().tolist() if fid > 0])
-        next_fluo_id = get_next_fluorophore_id(self.localization_processor.reader.processed_dataframe)
+        existing_fluo_ids = sorted(
+            [
+                fid
+                for fid in self.localization_processor.processed_dataframe["fluo"]
+                .unique()
+                .tolist()
+                if fid > 0
+            ]
+        )
+        next_fluo_id = get_next_fluorophore_id(
+            self.localization_processor.reader.processed_dataframe
+        )
         existing_names = self.localization_processor.fluorophore_names
-        
+
         # Always show the correspondence dialog with auto-matching enabled
         # This allows users to verify the automatic matches and adjust if needed
         corr_dialog = BeadCorrespondenceDialog(
@@ -1107,17 +1122,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             existing_fluo_ids=existing_fluo_ids,
             next_fluo_id=next_fluo_id,
             existing_names=existing_names,
-            parent=self
+            parent=self,
         )
         if corr_dialog.exec() != QDialog.DialogCode.Accepted:
             print("Combine cancelled: User cancelled bead correspondence.")
             return False
-        
+
         bead_correspondence = corr_dialog.get_correspondence()
         fluorophore_names = corr_dialog.get_fluorophore_names()
         print(f"Bead correspondence: {bead_correspondence}")
         print(f"Fluorophore names: {fluorophore_names}")
-        
+
         # Check if filters are applied and warn the user
         if self.localization_processor.has_filters_applied():
             reply = QMessageBox.warning(
@@ -1127,35 +1142,37 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Combining datasets will reset all filters to ensure data consistency.\n\n"
                 "Do you want to continue?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.No,
             )
             if reply != QMessageBox.StandardButton.Yes:
                 print("Combine cancelled: User chose not to proceed with filter reset.")
                 return False
-        
+
         # Perform alignment and combine
         print("Performing bead-based alignment and combining datasets...")
-        
+
         # Create datasets from the current processor and new reader
         # The datasets will contain the MBM data if available
-        reference_dataset = MinFluxDataset.from_reader(self.localization_processor.reader)
+        reference_dataset = MinFluxDataset.from_reader(
+            self.localization_processor.reader
+        )
         moving_dataset = MinFluxDataset.from_reader(new_reader)
-        
+
         # Get next fluorophore ID
         next_fluo_id = get_next_fluorophore_id(reference_dataset.processed_dataframe)
         print(f"Assigning fluorophore ID {next_fluo_id} to moving dataset")
-        
+
         # Perform combine using the module-level function
         # The MBM data is extracted from the datasets themselves
         combined_dataset = combine_datasets_with_bead_alignment(
             reference_dataset,
             moving_dataset,
             bead_correspondence=bead_correspondence,
-            transform_type='euclidean',
+            transform_type="euclidean",
             n_points=3,
             next_fluo_id=next_fluo_id,
         )
-        
+
         if combined_dataset is None:
             QMessageBox.critical(
                 self,
@@ -1163,18 +1180,22 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Bead alignment failed. Cannot combine datasets.",
             )
             return False
-        
-        print(f"Combined dataset has {len(combined_dataset.processed_dataframe)} localizations")
-        
+
+        print(
+            f"Combined dataset has {len(combined_dataset.processed_dataframe)} localizations"
+        )
+
         # Replace the processor's dataset
         self.localization_processor.replace_dataset(combined_dataset)
-        
+
         # Set fluorophore names from the dialog
         self.localization_processor.set_fluorophore_names(fluorophore_names)
-        
-        print(f"Combine completed. Dataset now has {self.localization_processor.num_fluorophores} fluorophore(s)")
+
+        print(
+            f"Combine completed. Dataset now has {self.localization_processor.num_fluorophores} fluorophore(s)"
+        )
         print(f"Fluorophore names: {fluorophore_names}")
-        
+
         # Color by fluorophore after combine to distinguish datasets.
         self.state.color_column = "fluo"
         # Update the dropdown UI to reflect the new color coding
@@ -1182,7 +1203,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if color_index >= 0:
             self.plotter_toolbar.ui.cbColorColumnSelector.setCurrentIndex(color_index)
         print("Color coding set to fluo to distinguish combined datasets")
-        
+
         return True
 
     @Slot()
@@ -1447,10 +1468,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def export_filtered_data(self):
         """Export filtered data as CSV file."""
-        if (
-            self.workflow is None
-            or not self.workflow.can_export_data()
-        ):
+        if self.workflow is None or not self.workflow.can_export_data():
             return
 
         # Get current filename to build the suggestion output
@@ -1492,9 +1510,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Save
         if result:
             dataframe = self.workflow.plot_dataframe()
-            print(
-                f"Successfully exported {len(dataframe.index)} localizations."
-            )
+            print(f"Successfully exported {len(dataframe.index)} localizations.")
         else:
             QMessageBox.critical(
                 self,
@@ -1505,10 +1521,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def export_filtered_stats(self):
         """Export filtered, per-trace statistics as CSV file."""
-        if (
-            self.workflow is None
-            or self.workflow.stats_dataframe() is None
-        ):
+        if self.workflow is None or self.workflow.stats_dataframe() is None:
             # Inform and return
             QMessageBox.information(
                 self,
@@ -1701,14 +1714,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.analyzer.show()
         self.analyzer.activateWindow()
 
-    def _perform_combine_with_zarr(self, filename: str, source: str = "Combiner") -> bool:
+    def _perform_combine_with_zarr(
+        self, filename: str, source: str = "Combiner"
+    ) -> bool:
         """
         Common combine workflow for both combiner and drag-and-drop operations.
-        
+
         Args:
             filename: Path to the Zarr folder to combine
             source: Description of the combine source (for logging)
-            
+
         Returns:
             True if combine was successful, False otherwise
         """
@@ -1725,19 +1740,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"Could not process file {filename}.",
             )
             return False
-        
+
         # For combining, reader properties are taken from the reference dataset.
         # The Importer dialog would not affect the combined dataset settings, so we skip it.
         ref_reader = self.localization_processor.reader
         reader.set_tracking(ref_reader.is_tracking, process=False)
         if hasattr(ref_reader, "_loc_index") and hasattr(ref_reader, "_cfr_index"):
-            reader.set_indices(ref_reader._loc_index, ref_reader._cfr_index, process=False)
+            reader.set_indices(
+                ref_reader._loc_index, ref_reader._cfr_index, process=False
+            )
         reader.set_dwell_time(ref_reader.dwell_time, process=False)
         reader.set_pool_dcr(ref_reader.is_pool_dcr, process=False)
-        
+
         # Now attempt to combine - always show the correspondence dialog with auto-matching
         success = self._combine_datasets(filename, reader)
-        
+
         if not success:
             QMessageBox.warning(
                 self,
@@ -1745,26 +1762,28 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Dataset combine failed. Please check that both datasets have bead data.",
             )
             return False
-        
+
         # Combine successful - update UI
         self.setWindowTitle(
             f"{__APP_NAME__} v{__version__} - [{Path(self.current_filename).name} + {Path(filename).name}]"
         )
-        
+
         self.state.last_selected_path = Path(filename).parent
-        
+
         self.full_update_ui()
         self.plotter.enableAutoRange(enable=True)
-        
+
         # Set processor before updating fluorophore list (needs processor to get names)
         if self.wizard is not None:
             self.wizard.set_processor(self.localization_processor)
-            self.wizard.set_fluorophore_list(self.localization_processor.num_fluorophores)
-        
+            self.wizard.set_fluorophore_list(
+                self.localization_processor.num_fluorophores
+            )
+
         if self.analyzer is not None:
             self.analyzer.set_processor(self.localization_processor)
             self.analyzer.plot()
-        
+
         print(f"Dataset combine completed successfully via {source}.")
         return True
 
@@ -1778,21 +1797,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Please load a dataset first before using the combiner.",
             )
             return
-        
+
         # Ask user to select the new Zarr dataset
         # Only Zarr datasets contain bead data needed for alignment
         save_path = str(self.state.last_selected_path)
-        
+
         filename = QFileDialog.getExistingDirectory(
             self,
             "Select Zarr folder to combine",
             save_path,
         )
-        
+
         if not filename or not Path(filename).exists():
             print("Combiner cancelled: No Zarr folder selected.")
             return
-        
+
         # Perform the combine
         self._perform_combine_with_zarr(filename, source="Combiner")
 
@@ -1809,11 +1828,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Please load a dataset first before combining.",
             )
             return
-        
+
         if not filename or not Path(filename).exists():
             print("Combine cancelled: Invalid file path.")
             return
-        
+
         # Only Zarr datasets are supported for combining
         if not Path(filename).is_dir():
             QMessageBox.information(
@@ -1823,10 +1842,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Only Zarr datasets contain the bead measurement data needed for alignment.",
             )
             return
-        
+
         # Perform the combine
         self._perform_combine_with_zarr(filename, source="drag-and-drop (Shift+drop)")
-
 
     def show_update_result_dialog(self, html):
         """Display the outcome of the update check in a dialog."""
@@ -1871,22 +1889,25 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Initialize and open the color unmixer."""
         if self.localization_processor is None:
             return
-        
+
         # Prevent opening unmixer if "All" is selected with multiple fluorophores
-        if self.localization_processor.current_fluorophore_id == 0 and self.localization_processor.num_fluorophores > 1:
+        if (
+            self.localization_processor.current_fluorophore_id == 0
+            and self.localization_processor.num_fluorophores > 1
+        ):
             QMessageBox.warning(
                 self,
                 "Invalid Selection",
-                "Please select a specific channel (not 'All') for unmixing when multiple channels exist."
+                "Please select a specific channel (not 'All') for unmixing when multiple channels exist.",
             )
             return
-        
+
         # Always create a fresh dialog to avoid showing stale data from previous unmixing
         if self.color_unmixer is not None:
             self.mediator.unregister_dialog("color_unmixer")
             self.color_unmixer.close()
             self.color_unmixer.deleteLater()
-        
+
         self.color_unmixer = ColorUnmixer(self.localization_processor)
         self.mediator.register_dialog("color_unmixer", self.color_unmixer)
         self.color_unmixer.show()
@@ -1899,29 +1920,29 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.information(
                 self,
                 "No Data Loaded",
-                "Please load a dataset before setting channel names."
+                "Please load a dataset before setting channel names.",
             )
             return
-        
+
         if self.localization_processor.num_fluorophores == 0:
             QMessageBox.information(
-                self,
-                "No Channels",
-                "No channels detected in the current dataset."
+                self, "No Channels", "No channels detected in the current dataset."
             )
             return
-        
+
         dialog = FluorophoreNamingDialog(self.localization_processor, parent=self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             # Get the names and update the processor
             names = dialog.get_names()
             for fluo_id, name in names.items():
                 self.localization_processor.set_fluorophore_name(fluo_id, name)
-            
+
             # Update the wizard's fluorophore list to show new names
             if self.wizard is not None:
-                self.wizard.set_fluorophore_list(self.localization_processor.num_fluorophores)
-            
+                self.wizard.set_fluorophore_list(
+                    self.localization_processor.num_fluorophores
+                )
+
             print("Fluorophore names updated successfully.")
 
     @Slot()

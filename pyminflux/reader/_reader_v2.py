@@ -293,7 +293,7 @@ class MinFluxReaderV2(MinFluxReader):
 
         mbm_gri = grd_mbm.grp.points.attrs["points_by_gri"]
         mbm_neighbourhood = mbm.grp.attrs["neighbourhood"]
-        
+
         # Get list of used beads from mbm attributes
         # https://wiki.abberior.rocks/MINFLUX_Files_and_Data#MBM_Information
         used_beads = mbm.grp.attrs.get("used", [])

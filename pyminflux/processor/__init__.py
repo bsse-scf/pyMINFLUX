@@ -22,11 +22,11 @@ __all__ = [
     "get_next_fluorophore_id",
 ]
 
-from ._processor import MinFluxProcessor
-from ._dataset import MinFluxDataset
 from ..combiner._combine import (
     combine_datasets_with_bead_alignment,
     get_bead_positions_from_mbm,
-    load_zarr_for_beads,
     get_next_fluorophore_id,
+    load_zarr_for_beads,
 )
+from ._dataset import MinFluxDataset
+from ._processor import MinFluxProcessor

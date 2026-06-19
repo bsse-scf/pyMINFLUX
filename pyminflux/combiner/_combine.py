@@ -15,13 +15,14 @@
 """Dataset combining utilities."""
 
 from pathlib import Path
-from typing import Optional, Dict, Tuple, List
+from typing import Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 
-from pyminflux.reader import MinFluxReaderV2
 from pyminflux.correct import align_datasets_using_beads, mbm_dict_to_dataframe
 from pyminflux.processor._dataset import MinFluxDataset
+from pyminflux.reader import MinFluxReaderV2
 
 
 def _transform_raw_positions(
@@ -63,48 +64,51 @@ def _transform_raw_positions(
     return df_raw
 
 
-def get_bead_positions_from_mbm(mbm_dict: Dict, n_points: int = 3) -> Dict[str, np.ndarray]:
+def get_bead_positions_from_mbm(
+    mbm_dict: Dict, n_points: int = 3
+) -> Dict[str, np.ndarray]:
     """
     Extract average bead positions from MBM dictionary.
-    
+
     Args:
         mbm_dict: MBM dictionary from MinFluxReaderV2
         n_points: Number of earliest points to average
-        
+
     Returns:
         Dictionary mapping bead names to positions [z, y, x] in nm
     """
     df = mbm_dict_to_dataframe(mbm_dict)
-    
+
     if df.empty:
         return {}
-    
+
     # Filter to only include beads marked as "used"
-    df = df[df['used'] == True]
-    
+    df = df[df["used"] == True]
+
     if df.empty:
         return {}
-    
+
     bead_positions = {}
-    for bead_name in df['bead_name'].unique():
-        bead_data = df[df['bead_name'] == bead_name]
+    for bead_name in df["bead_name"].unique():
+        bead_data = df[df["bead_name"] == bead_name]
         # Get earliest n_points
-        earliest = bead_data.nsmallest(n_points, 'tim')
+        earliest = bead_data.nsmallest(n_points, "tim")
         # Calculate mean position as [z, y, x]
-        pos = earliest[['z', 'y', 'x']].mean(axis=0).to_numpy()
+        pos = earliest[["z", "y", "x"]].mean(axis=0).to_numpy()
         bead_positions[bead_name] = pos
-    
+
     return bead_positions
 
 
-
-def load_zarr_for_beads(zarr_path: str) -> Tuple[Optional[MinFluxReaderV2], Optional[Dict]]:
+def load_zarr_for_beads(
+    zarr_path: str,
+) -> Tuple[Optional[MinFluxReaderV2], Optional[Dict]]:
     """
     Load a Zarr file and extract MBM (bead) data.
-    
+
     Args:
         zarr_path: Path to the Zarr file
-        
+
     Returns:
         Tuple of (reader, mbm_dict) or (None, None) if loading fails
     """
@@ -113,23 +117,23 @@ def load_zarr_for_beads(zarr_path: str) -> Tuple[Optional[MinFluxReaderV2], Opti
         if not zarr_path.exists():
             print(f"Error: Zarr path does not exist: {zarr_path}")
             return None, None
-        
+
         # Load the reader
         reader = MinFluxReaderV2(zarr_path)
-        
+
         # Check if MBM data is available
-        if not hasattr(reader, 'mbm_data') or reader.mbm_data is None:
+        if not hasattr(reader, "mbm_data") or reader.mbm_data is None:
             print(f"Error: No MBM (bead) data found in {zarr_path}")
             return None, None
-        
-        mbm_dict = reader.mbm_data.get('mbm', {})
-        
+
+        mbm_dict = reader.mbm_data.get("mbm", {})
+
         if not mbm_dict:
             print(f"Error: MBM dictionary is empty in {zarr_path}")
             return None, None
-        
+
         return reader, mbm_dict
-        
+
     except Exception as e:
         print(f"Error loading Zarr file {zarr_path}: {e}")
         return None, None
@@ -138,20 +142,20 @@ def load_zarr_for_beads(zarr_path: str) -> Tuple[Optional[MinFluxReaderV2], Opti
 def get_next_fluorophore_id(df: pd.DataFrame) -> int:
     """
     Get the next available fluorophore ID.
-    
+
     Args:
         df: DataFrame with 'fluo' column
-        
+
     Returns:
         Next available fluorophore ID
     """
-    if 'fluo' not in df.columns:
+    if "fluo" not in df.columns:
         return 1
-    
-    current_ids = df['fluo'].unique()
+
+    current_ids = df["fluo"].unique()
     if len(current_ids) == 0:
         return 1
-    
+
     return int(np.max(current_ids)) + 1
 
 
@@ -163,13 +167,13 @@ def combine_datasets_with_alignment(
 ) -> MinFluxDataset:
     """
     Combine two datasets by applying transformation to the moving dataset.
-    
+
     Args:
         reference_dataset: Reference dataset (unchanged)
         moving_dataset: Moving dataset (will be transformed and assigned new fluo ID)
         transform_model: Transformation model from align_datasets_using_beads
         next_fluo_id: Fluorophore ID to assign to the moving dataset (auto-assigned if None)
-        
+
     Returns:
         Combined dataset
     """
@@ -185,8 +189,15 @@ def combine_datasets_with_alignment(
     # Ensure unique iid values to prevent fluorophore mapping collisions
     # Use a single offset for both processed and raw dataframes to keep them aligned.
     iid_offset = 0
-    if reference_dataset.full_raw_dataframe is not None and "iid" in reference_dataset.full_raw_dataframe.columns:
-        iid_offset = int(reference_dataset.full_raw_dataframe["iid"].max()) if len(reference_dataset.full_raw_dataframe) > 0 else 0
+    if (
+        reference_dataset.full_raw_dataframe is not None
+        and "iid" in reference_dataset.full_raw_dataframe.columns
+    ):
+        iid_offset = (
+            int(reference_dataset.full_raw_dataframe["iid"].max())
+            if len(reference_dataset.full_raw_dataframe) > 0
+            else 0
+        )
     elif "iid" in df_reference.columns:
         iid_offset = int(df_reference["iid"].max()) if len(df_reference) > 0 else 0
 
@@ -195,41 +206,51 @@ def combine_datasets_with_alignment(
 
     # Ensure unique tid values by offsetting the moving dataset
     tid_offset = 0
-    if reference_dataset.full_raw_dataframe is not None and "tid" in reference_dataset.full_raw_dataframe.columns:
-        tid_offset = int(reference_dataset.full_raw_dataframe["tid"].max()) + 1 if len(reference_dataset.full_raw_dataframe) > 0 else 0
+    if (
+        reference_dataset.full_raw_dataframe is not None
+        and "tid" in reference_dataset.full_raw_dataframe.columns
+    ):
+        tid_offset = (
+            int(reference_dataset.full_raw_dataframe["tid"].max()) + 1
+            if len(reference_dataset.full_raw_dataframe) > 0
+            else 0
+        )
     elif "tid" in df_reference.columns:
         tid_offset = int(df_reference["tid"].max()) + 1 if len(df_reference) > 0 else 0
 
     if tid_offset and "tid" in df_moving.columns:
         df_moving["tid"] = df_moving["tid"] + tid_offset
-    
+
     # Determine next fluorophore ID
     if next_fluo_id is None:
         next_fluo_id = get_next_fluorophore_id(df_reference)
-    
+
     # Extract positions and transform them
-    positions = df_moving[['z', 'y', 'x']].to_numpy()
-    
+    positions = df_moving[["z", "y", "x"]].to_numpy()
+
     # Apply transformation
     positions_transformed = transform_model(positions)
-    
+
     # Update positions in the dataframe
-    df_moving['z'] = positions_transformed[:, 0]
-    df_moving['y'] = positions_transformed[:, 1]
-    df_moving['x'] = positions_transformed[:, 2]
-    
+    df_moving["z"] = positions_transformed[:, 0]
+    df_moving["y"] = positions_transformed[:, 1]
+    df_moving["x"] = positions_transformed[:, 2]
+
     # Assign new fluorophore ID
-    df_moving['fluo'] = np.uint8(next_fluo_id)
-    
+    df_moving["fluo"] = np.uint8(next_fluo_id)
+
     # Concatenate the dataframes
     df_combined = pd.concat([df_reference, df_moving], ignore_index=True)
-    
+
     # Handle full raw dataframe if version 2
     full_raw_combined = None
-    if reference_dataset.version == 2 and reference_dataset.full_raw_dataframe is not None:
+    if (
+        reference_dataset.version == 2
+        and reference_dataset.full_raw_dataframe is not None
+    ):
         # Reference raw already has correct fluo - use as-is
         df_raw_reference = reference_dataset.full_raw_dataframe.copy()
-        
+
         # Transform the raw dataframe positions with correct unit handling
         df_raw_moving = _transform_raw_positions(
             moving_dataset.full_raw_dataframe,
@@ -238,19 +259,20 @@ def combine_datasets_with_alignment(
             unit_scaling_factor=moving_dataset.unit_scaling_factor,
             is_aggregated=moving_dataset.is_aggregated,
         )
-        
+
         # Apply offsets to moving raw
         if iid_offset and "iid" in df_raw_moving.columns:
             df_raw_moving["iid"] = df_raw_moving["iid"] + iid_offset
         if tid_offset and "tid" in df_raw_moving.columns:
             df_raw_moving["tid"] = df_raw_moving["tid"] + tid_offset
-        
+
         # Set all moving raw rows to next_fluo_id
-        df_raw_moving["fluo"] = np.full(len(df_raw_moving), np.uint8(next_fluo_id), dtype=np.uint8)
-        
+        df_raw_moving["fluo"] = np.full(
+            len(df_raw_moving), np.uint8(next_fluo_id), dtype=np.uint8
+        )
+
         full_raw_combined = pd.concat(
-            [df_raw_reference, df_raw_moving],
-            ignore_index=True
+            [df_raw_reference, df_raw_moving], ignore_index=True
         )
         # Ensure fluo column is uint8 (no fillna needed since both inputs are complete)
         full_raw_combined["fluo"] = full_raw_combined["fluo"].astype(np.uint8)
@@ -264,10 +286,15 @@ def combine_datasets_with_alignment(
     if moving_tid_offsets:
         adjusted_offsets = []
         for first_iid, offset in moving_tid_offsets:
-            adjusted_offsets.append((int(first_iid) + iid_offset, int(offset) + tid_offset))
+            adjusted_offsets.append(
+                (int(first_iid) + iid_offset, int(offset) + tid_offset)
+            )
         combined_tid_offsets.extend(adjusted_offsets)
         if tid_offset and base_first_iid is not None:
-            has_base = any(entry_first_iid == base_first_iid for entry_first_iid, _ in adjusted_offsets)
+            has_base = any(
+                entry_first_iid == base_first_iid
+                for entry_first_iid, _ in adjusted_offsets
+            )
             if not has_base:
                 combined_tid_offsets.append((base_first_iid, tid_offset))
     else:
@@ -291,7 +318,7 @@ def combine_datasets_with_alignment(
         mbm_data=reference_dataset.mbm_data,  # Keep reference MBM data
         tid_offsets=combined_tid_offsets,
     )
-    
+
     return combined_dataset
 
 
@@ -299,15 +326,15 @@ def combine_datasets_with_bead_alignment(
     reference_dataset: MinFluxDataset,
     moving_dataset: MinFluxDataset,
     bead_correspondence: Dict[str, str] = None,
-    transform_type: str = 'euclidean',
+    transform_type: str = "euclidean",
     n_points: int = 3,
     next_fluo_id: Optional[int] = None,
 ) -> Optional[MinFluxDataset]:
     """
     Perform bead-based alignment and combine two datasets.
-    
+
     The MBM (bead) data is extracted from the datasets themselves.
-    
+
     Args:
         reference_dataset: Reference dataset (must contain mbm_data)
         moving_dataset: Moving dataset (must contain mbm_data)
@@ -315,7 +342,7 @@ def combine_datasets_with_bead_alignment(
         transform_type: Type of transformation ('euclidean', 'affine', etc.)
         n_points: Number of earliest points to use for bead position averaging
         next_fluo_id: Fluorophore ID to assign (auto-assigned if None)
-        
+
     Returns:
         Combined dataset, or None if alignment fails
     """
@@ -323,22 +350,22 @@ def combine_datasets_with_bead_alignment(
     if reference_dataset.mbm_data is None:
         print("Error: Reference dataset does not contain MBM (bead) data")
         return None
-    
+
     if moving_dataset.mbm_data is None:
         print("Error: Moving dataset does not contain MBM (bead) data")
         return None
-    
-    ref_mbm_dict = reference_dataset.mbm_data.get('mbm', {})
-    mov_mbm_dict = moving_dataset.mbm_data.get('mbm', {})
-    
+
+    ref_mbm_dict = reference_dataset.mbm_data.get("mbm", {})
+    mov_mbm_dict = moving_dataset.mbm_data.get("mbm", {})
+
     if not ref_mbm_dict:
         print("Error: Reference dataset MBM dictionary is empty")
         return None
-    
+
     if not mov_mbm_dict:
         print("Error: Moving dataset MBM dictionary is empty")
         return None
-    
+
     # Perform alignment
     transform_model = align_datasets_using_beads(
         ref_mbm_dict,
@@ -347,10 +374,10 @@ def combine_datasets_with_bead_alignment(
         transform_type=transform_type,
         n_points=n_points,
     )
-    
+
     if transform_model is None:
         return None
-    
+
     # Combine the datasets
     return combine_datasets_with_alignment(
         reference_dataset,
