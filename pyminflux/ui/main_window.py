@@ -91,6 +91,8 @@ __version__ = f"{__version__}{__modifier__}"
 __EXPERIMENTAL_TRACKING_WORKFLOW_ENV_VAR__ = (
     "PYMINFLUX_EXPERIMENTAL_TRACKING_WORKFLOW"
 )
+__WORKFLOW_SHELL_MARGIN__ = 11
+__WORKFLOW_SHELL_SPACING__ = 6
 
 
 class WorkflowShell(QWidget):
@@ -245,11 +247,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.wizard = None
         self.workflow_shell = WorkflowShell()
         self.workflow_shell_layout = QVBoxLayout()
-        self.workflow_shell_layout.setContentsMargins(0, 0, 0, 0)
-        self.workflow_shell_layout.setSpacing(0)
+        self.workflow_shell_layout.setContentsMargins(
+            __WORKFLOW_SHELL_MARGIN__,
+            __WORKFLOW_SHELL_MARGIN__,
+            __WORKFLOW_SHELL_MARGIN__,
+            __WORKFLOW_SHELL_MARGIN__,
+        )
+        self.workflow_shell_layout.setSpacing(__WORKFLOW_SHELL_SPACING__)
         self.workflow_load_widget = QWidget()
         self.workflow_load_layout = QHBoxLayout()
         self.workflow_load_layout.setContentsMargins(0, 0, 0, 0)
+        self.workflow_load_layout.setSpacing(__WORKFLOW_SHELL_SPACING__)
         self.pbLoadData = QPushButton("Load")
         self.pbLoadZarr = QPushButton("Load Zarr")
         load_button_policy = QSizePolicy(
@@ -414,6 +422,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             return TrackingWorkflow(dataset)
         return LocalizationWorkflow(dataset, self.state.min_trace_length)
 
+    @staticmethod
+    def _normalize_workflow_panel_layout(panel):
+        """Let the workflow shell own outer workflow panel positioning."""
+        if panel.layout() is not None:
+            panel.layout().setContentsMargins(0, 0, 0, 0)
+
     def set_workflow(self, workflow):
         """Install a workflow-specific panel in the common workflow shell."""
         if "wizard" in self.mediator.dialogs:
@@ -428,6 +442,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.workflow.dataset is None:
             self.workflow.set_dataset(self.dataset)
         self.workflow_panel = self.workflow.create_panel(parent=self)
+        self._normalize_workflow_panel_layout(self.workflow_panel)
         self.workflow_body_layout.addWidget(self.workflow_panel)
 
         # Keep the old name as a compatibility alias for localization-only

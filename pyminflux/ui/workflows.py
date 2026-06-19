@@ -315,7 +315,6 @@ class TrackingWorkflowPanel(QWidget):
         self.dataset = None
 
         layout = QVBoxLayout()
-        layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(8)
 
         title = QLabel("Tracking workflow")
