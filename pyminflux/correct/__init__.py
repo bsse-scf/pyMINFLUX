@@ -23,11 +23,11 @@ __all__ = [
     "TranslationTransform",
 ]
 
-from ._correct import drift_correction_time_windows_2d, drift_correction_time_windows_3d
 from ._bead_alignment import (
-    point_registration,
-    mbm_dict_to_dataframe,
-    align_datasets_using_beads,
     RigidTransform,
     TranslationTransform,
+    align_datasets_using_beads,
+    mbm_dict_to_dataframe,
+    point_registration,
 )
+from ._correct import drift_correction_time_windows_2d, drift_correction_time_windows_3d

@@ -11,12 +11,10 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from pathlib import Path
-
 import numpy as np
 from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
-from PySide6.QtGui import QDoubleValidator, QIcon, QPixmap, QColor, QPainter
-from PySide6.QtWidgets import QDialog, QMessageBox
+from PySide6.QtGui import QColor, QDoubleValidator, QIcon, QPainter, QPixmap
+from PySide6.QtWidgets import QDialog
 
 from pyminflux.ui.state import State
 
@@ -27,10 +25,6 @@ from .ui_wizard import Ui_WizardDialog
 
 
 class WizardDialog(QDialog, Ui_WizardDialog):
-    load_data_triggered = Signal()
-    load_zarr_triggered = Signal()
-    load_filename_triggered = Signal(str)
-    combine_filename_triggered = Signal(str)
     save_data_triggered = Signal()
     reset_filters_triggered = Signal()
     open_unmixer_triggered = Signal()
@@ -54,9 +48,6 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Initialize the dialog
         self.ui = Ui_WizardDialog()
         self.ui.setupUi(self)
-
-        # Accept drops
-        self.setAcceptDrops(True)
 
         # Keep a reference to the singleton State class
         self.state = State()
@@ -96,15 +87,6 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         # Set up connections
         self.setup_conn()
 
-    def dragEnterEvent(self, event):
-        """Process drag events. Ignore drag events that are not file paths."""
-
-        # Does the event contains URLs (file paths)?
-        if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
-
     def keyPressEvent(self, event):
         """Intercept key-press events."""
         if event.key() == Qt.Key_Escape:
@@ -112,62 +94,6 @@ class WizardDialog(QDialog, Ui_WizardDialog):
             event.ignore()
         else:
             super().keyPressEvent(event)
-
-    def dropEvent(self, event):
-
-        # Retrieve urls
-        urls = event.mimeData().urls()
-        if len(urls) == 0:
-            return
-
-        # Make sure that we have only one file
-        if len(urls) > 1:
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Cannot open multiple files.",
-            )
-            return
-
-        # Check the file
-        try:
-            filename = urls[0].toLocalFile()
-        except Exception as _:
-            return
-
-        # Check if Shift key is held for combine operation
-        modifiers = event.modifiers()
-        is_combine_operation = modifiers & Qt.ShiftModifier
-
-        if Path(filename).is_dir():
-            # This *could* be a Zarr file, we will pass it on
-            if is_combine_operation:
-                self.combine_filename_triggered.emit(str(filename))
-            else:
-                self.load_filename_triggered.emit(str(filename))
-        else:
-
-            # Make sure it is of the right format
-            if len(filename) < 5:
-                return
-            ext = filename.lower()[-4:]
-            if ext in [".pmx", ".npy", ".mat"]:
-                if is_combine_operation:
-                    # For combine, we need Zarr files with bead data
-                    QMessageBox.information(
-                        self,
-                        "Combine Requires Zarr",
-                        f"To combine datasets, please drag and drop a Zarr directory (not {ext} files).\n"
-                        f"Only Zarr datasets contain the bead measurement data needed for alignment.",
-                    )
-                else:
-                    self.load_filename_triggered.emit(str(filename))
-            else:
-                QMessageBox.critical(
-                    self,
-                    "Error",
-                    f"Unsupported file {filename}.",
-                )
 
     def set_processor(self, processor):
         """Store a reference to the processor."""
@@ -177,8 +103,6 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         self.prepare_filter_ranges()
 
     def setup_conn(self):
-        self.ui.pbLoadData.clicked.connect(lambda _: self.load_data_triggered.emit())
-        self.ui.pbLoadZarr.clicked.connect(lambda _: self.load_zarr_triggered.emit())
         self.ui.pbReset.clicked.connect(self.reset_filters)
         self.ui.pbSingleColor.clicked.connect(
             lambda _: self.open_combiner_triggered.emit()
@@ -269,9 +193,6 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         cfr_upper_bound_blocker.unblock()
 
     def enable_controls(self, enabled: bool = False):
-        # The Load data button is always visible
-        self.ui.pbLoadData.show()
-
         # Reset button
         self.ui.pbReset.setVisible(enabled)
 
@@ -341,19 +262,26 @@ class WizardDialog(QDialog, Ui_WizardDialog):
         else:
             # Add "All" option first
             self.ui.cmActiveColor.addItem("All")
-            
+
             # Get color helper
             colors = Colors()
-            
+
             # Get the actual fluorophore IDs from the processor (they may not be sequential)
-            if self.processor is not None and self.processor.processed_dataframe is not None:
-                actual_fluo_ids = sorted(np.unique(self.processor.processed_dataframe["fluo"].to_numpy()).astype(int).tolist())
+            if (
+                self.processor is not None
+                and self.processor.processed_dataframe is not None
+            ):
+                actual_fluo_ids = sorted(
+                    np.unique(self.processor.processed_dataframe["fluo"].to_numpy())
+                    .astype(int)
+                    .tolist()
+                )
                 # Remove 0 if present (unassigned)
                 actual_fluo_ids = [fid for fid in actual_fluo_ids if fid > 0]
             else:
                 # Fallback to sequential IDs if processor not available
                 actual_fluo_ids = list(range(1, num_fluorophores + 1))
-            
+
             # Add fluorophore items with color icons
             for fluo_id in actual_fluo_ids:
                 # Get fluorophore name from processor if available
@@ -362,7 +290,7 @@ class WizardDialog(QDialog, Ui_WizardDialog):
                     text = f"{fluo_id}: {name}"
                 else:
                     text = str(fluo_id)
-                
+
                 # Create small color icon for this fluorophore with spacing
                 # Get color from centralized method (same as used in plotting)
                 rgb = colors._get_fid_color(fluo_id, as_float=False)
@@ -371,10 +299,12 @@ class WizardDialog(QDialog, Ui_WizardDialog):
                 pixmap.fill(Qt.GlobalColor.transparent)
                 # Draw the colored square only on the left portion
                 painter = QPainter(pixmap)
-                painter.fillRect(0, 0, 8, 8, QColor(int(rgb[0]), int(rgb[1]), int(rgb[2])))
+                painter.fillRect(
+                    0, 0, 8, 8, QColor(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+                )
                 painter.end()
                 icon = QIcon(pixmap)
-                
+
                 # Add item with icon
                 self.ui.cmActiveColor.addItem(icon, text)
 

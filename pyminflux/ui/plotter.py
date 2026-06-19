@@ -34,7 +34,7 @@ from PySide6.QtWidgets import QDialog, QFileDialog, QInputDialog, QMenu
 from pyminflux.ui.state import State
 
 from ..reader import MSRReader
-from .colors import ColorCode, ColorsToBrushes
+from .colors import ColorsToBrushes
 from .custom_dialogs import TreeDialog
 from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
 
@@ -95,7 +95,7 @@ class Plotter(PlotWidget):
 
         # Remember previous parameters to avoid redrawing when not needed
         self.last_plot_parameters = {
-            "color_code": None,
+            "color_column": None,
             "tid": None,
             "fid": None,
             "depth": None,
@@ -327,7 +327,7 @@ class Plotter(PlotWidget):
                         pos = center + 1.0 * v_norm
                         clr = (
                             (255, 255, 0)
-                            if self.state.color_code == ColorCode.NONE
+                            if self.state.color_column is None
                             else (255, 255, 255)
                         )
                         self.line_text = TextItem(text=f"{length:.2f} nm", color=clr)
@@ -371,7 +371,7 @@ class Plotter(PlotWidget):
 
         # Forget last plot parameters
         self.last_plot_parameters = {
-            "color_code": None,
+            "color_column": None,
             "tid": None,
             "fid": None,
             "depth": None,
@@ -387,13 +387,11 @@ class Plotter(PlotWidget):
         self,
         x: pd.Series,
         y: pd.Series,
-        color_code: ColorCode,
         x_param: str,
         y_param: str,
         tid: pd.Series,
-        fid: Optional[pd.Series] = None,
-        depth: Optional[pd.Series] = None,
-        time: Optional[pd.Series] = None,
+        color_values: Optional[pd.Series] = None,
+        color_column: Optional[str] = None,
     ):
         """Plot localizations and other parameters in a 2D scatter plot.
 
@@ -404,23 +402,16 @@ class Plotter(PlotWidget):
             x coordinates to plot. x must be a Pandas Series.
         y: pd.Series
             y coordinates to plot. y must be a Pandas Series.
-        color_code: ColorCode
-            Requested color coding.
         x_param: str
             Name of the x parameter.
         y_param: str
             Name of the y parameter.
         tid: pd.Series
             Traces IDs for each of the (x, y) pairs. tid must be a Pandas Series.
-        fid: Optional[pd.Series] = None
-            Fluorophore IDs for each of the (x, y) pairs. fid can be omitted, otherwise it must
-            be a Pandas Series. If not None, it will be used to color-code the scatter plot points.
-        depth: Optional[pd.Series] = None
-            z value (depth) for each of the (x, y) pairs. depth can be omitted, otherwise it must
-            be a Pandas Series. If not None, it will be used to color-code the scatter plot points.
-        time: Optional[pd.Series]
-            time for each of the (x, y) pairs. time can be omitted, otherwise it must
-            be a Pandas Series. If not None, it will be used to color-code the scatter plot points.
+        color_values: Optional[pd.Series] = None
+            Values from the selected dataframe color column.
+        color_column: Optional[str] = None
+            Name of the selected dataframe color column.
         """
 
         # Make sure our inputs are Pandas Series
@@ -430,21 +421,10 @@ class Plotter(PlotWidget):
             tid is not None and type(tid) == pd.Series
         ), "`tid` must be a Pandas Series."
 
-        # Check consistency of arguments
-        if color_code == ColorCode.BY_DEPTH and depth is None:
-            raise ValueError("If color coding by depth, `depth` cannot be None!")
-
-        if color_code == ColorCode.BY_TIME and time is None:
-            raise ValueError("If color coding by time, `time` cannot be None!")
-
-        if color_code == ColorCode.BY_FLUO and fid is None:
-            raise ValueError("If color coding by fluorophore ID, `fid` cannot be None!")
-
-        num_flags = sum([v is not None for v in [fid, depth, time]])
-        if num_flags > 1:
-            raise ValueError(
-                "At most one of `fid`, `depth` and `time` can be not None."
-            )
+        if color_values is not None:
+            assert (
+                type(color_values) == pd.Series
+            ), "`color_values` must be a Pandas Series."
 
         # If we have an image, make sure to draw it first (but only if
         # x_param is "x" and y_param is "y"
@@ -456,12 +436,12 @@ class Plotter(PlotWidget):
 
             # Do we need to recreate the colors?
             if self._need_to_recreate_colors(
-                color_code, tid=tid, fid=fid, depth=depth, time=time
+                color_column=color_column,
+                color_values=color_values,
+                tid=tid,
             ):
                 # Recreate colors
-                brushes = ColorsToBrushes().get_brushes(
-                    color_code, tid=tid, fid=fid, depth=depth, time=time
-                )
+                brushes = ColorsToBrushes().get_brushes_for_values(color_values)
                 self.last_plot_parameters["brushes"] = brushes
             else:
                 brushes = self.last_plot_parameters["brushes"]
@@ -557,101 +537,61 @@ class Plotter(PlotWidget):
 
     def _need_to_recreate_colors(
         self,
-        color_code,
+        color_column: Optional[str],
+        color_values: Optional[pd.Series],
         tid: pd.Series,
-        fid: Optional[pd.Series] = None,
-        depth: Optional[pd.Series] = None,
-        time: Optional[pd.Series] = None,
     ):
         """Check if the colors need to be recreated (and store state)."""
 
         assert type(tid) == pd.Series, "`tid` must be a Pandas Series."
-        if fid is not None:
-            assert type(fid) == pd.Series, "`fid` must be a Pandas Series."
-        if depth is not None:
-            assert type(depth) == pd.Series, "`depth` must be a Pandas Series."
-        if time is not None:
-            assert type(time) == pd.Series, "`time` must be a Pandas Series."
+        if color_values is not None:
+            assert (
+                type(color_values) == pd.Series
+            ), "`color_values` must be a Pandas Series."
 
         recreate_brushes = False
-        if self.last_plot_parameters["color_code"] is None:
+        if self.last_plot_parameters["color_column"] is None:
 
             # Fist time
             recreate_brushes = True
         else:
 
             # There were plots already
-            if self.last_plot_parameters["color_code"] != color_code:
+            if self.last_plot_parameters["color_column"] != color_column:
 
-                # If the color code changed, be need to recreate the colors
+                # If the color column changed, we need to recreate the colors
                 recreate_brushes = True
 
             else:
-
-                # The color code is the same, we need to check if we can re-use the
-                # same colors
-                if color_code == ColorCode.NONE:
-
-                    # We can count the number of tids
+                if color_values is None:
                     if (
                         self.last_plot_parameters["tid"] is None
                         or len(tid) != len(self.last_plot_parameters["tid"])
                         or np.any(tid.index != self.last_plot_parameters["tid"].index)
                         or np.any(tid.values != self.last_plot_parameters["tid"].values)
-                    ):
-                        recreate_brushes = True
-
-                elif color_code == ColorCode.BY_TID:
-                    if (
-                        self.last_plot_parameters["tid"] is None
-                        or len(tid) != len(self.last_plot_parameters["tid"])
-                        or np.any(tid.index != self.last_plot_parameters["tid"].index)
-                        or np.any(tid.values != self.last_plot_parameters["tid"].values)
-                    ):
-                        recreate_brushes = True
-
-                elif color_code == ColorCode.BY_FLUO:
-                    if (
-                        self.last_plot_parameters["fid"] is None
-                        or len(fid) != len(self.last_plot_parameters["fid"])
-                        or np.any(fid.index != self.last_plot_parameters["fid"].index)
-                        or np.any(fid.values != self.last_plot_parameters["fid"].values)
-                    ):
-                        recreate_brushes = True
-
-                elif color_code == ColorCode.BY_DEPTH:
-                    if (
-                        self.last_plot_parameters["depth"] is None
-                        or len(depth) != len(self.last_plot_parameters["depth"])
-                        or np.any(
-                            depth.index != self.last_plot_parameters["depth"].index
-                        )
-                        or np.any(
-                            depth.values != self.last_plot_parameters["depth"].values
-                        )
-                    ):
-                        recreate_brushes = True
-
-                elif color_code == ColorCode.BY_TIME:
-                    if (
-                        self.last_plot_parameters["time"] is None
-                        or len(time) != len(self.last_plot_parameters["time"])
-                        or np.any(time.index != self.last_plot_parameters["time"].index)
-                        or np.any(
-                            time.values != self.last_plot_parameters["time"].values
-                        )
                     ):
                         recreate_brushes = True
                 else:
-                    # Unsupported case!
-                    raise ValueError("Unknown color code!")
+                    if (
+                        self.last_plot_parameters["depth"] is None
+                        or len(color_values) != len(self.last_plot_parameters["depth"])
+                        or np.any(
+                            color_values.index
+                            != self.last_plot_parameters["depth"].index
+                        )
+                        or np.any(
+                            color_values.values
+                            != self.last_plot_parameters["depth"].values
+                        )
+                    ):
+                        recreate_brushes = True
 
         # Remember the new parameters
-        self.last_plot_parameters["color_code"] = color_code
+        self.last_plot_parameters["color_column"] = color_column
         self.last_plot_parameters["tid"] = tid
-        self.last_plot_parameters["fid"] = fid
-        self.last_plot_parameters["depth"] = depth
-        self.last_plot_parameters["time"] = time
+        self.last_plot_parameters["fid"] = None
+        self.last_plot_parameters["depth"] = color_values
+        self.last_plot_parameters["time"] = None
 
         # Return
         return recreate_brushes

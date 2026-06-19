@@ -88,30 +88,14 @@ class Ui_MainWindow(object):
         self.actionIssues.setObjectName("actionIssues")
         self.actionMailing_list = QAction(MainWindow)
         self.actionMailing_list.setObjectName("actionMailing_list")
-        self.actionExport_stats = QAction(MainWindow)
-        self.actionExport_stats.setObjectName("actionExport_stats")
         self.actionCheck_for_updates = QAction(MainWindow)
         self.actionCheck_for_updates.setObjectName("actionCheck_for_updates")
-        self.actionFRC_analyzer = QAction(MainWindow)
-        self.actionFRC_analyzer.setObjectName("actionFRC_analyzer")
         self.actionWhat_s_new = QAction(MainWindow)
         self.actionWhat_s_new.setObjectName("actionWhat_s_new")
-        self.actionUnmixer = QAction(MainWindow)
-        self.actionUnmixer.setObjectName("actionUnmixer")
-        self.actionSet_Fluorophore_Names = QAction(MainWindow)
-        self.actionSet_Fluorophore_Names.setObjectName("actionSet_Fluorophore_Names")
-        self.actionTime_Inspector = QAction(MainWindow)
-        self.actionTime_Inspector.setObjectName("actionTime_Inspector")
-        self.actionAnalyzer = QAction(MainWindow)
-        self.actionAnalyzer.setObjectName("actionAnalyzer")
-        self.actionTrace_Stats_Viewer = QAction(MainWindow)
-        self.actionTrace_Stats_Viewer.setObjectName("actionTrace_Stats_Viewer")
         self.actionLoad = QAction(MainWindow)
         self.actionLoad.setObjectName("actionLoad")
         self.actionSave = QAction(MainWindow)
         self.actionSave.setObjectName("actionSave")
-        self.actionHistogram_Plotter = QAction(MainWindow)
-        self.actionHistogram_Plotter.setObjectName("actionHistogram_Plotter")
         self.actionLoad_Zarr = QAction(MainWindow)
         self.actionLoad_Zarr.setObjectName("actionLoad_Zarr")
         self.centralwidget = QWidget(MainWindow)
@@ -151,7 +135,6 @@ class Ui_MainWindow(object):
         self.menuFile.addAction(self.actionSave)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionExport_data)
-        self.menuFile.addAction(self.actionExport_stats)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionOptions)
         self.menuFile.addSeparator()
@@ -169,15 +152,6 @@ class Ui_MainWindow(object):
         self.menuHelp.addAction(self.actionWhat_s_new)
         self.menuHelp.addAction(self.actionCheck_for_updates)
         self.menuHelp.addAction(self.actionAbout)
-        self.menuAnalysis.addAction(self.actionUnmixer)
-        self.menuAnalysis.addAction(self.actionSet_Fluorophore_Names)
-        self.menuAnalysis.addSeparator()
-        self.menuAnalysis.addAction(self.actionTime_Inspector)
-        self.menuAnalysis.addAction(self.actionAnalyzer)
-        self.menuAnalysis.addSeparator()
-        self.menuAnalysis.addAction(self.actionHistogram_Plotter)
-        self.menuAnalysis.addAction(self.actionTrace_Stats_Viewer)
-        self.menuAnalysis.addAction(self.actionFRC_analyzer)
 
         self.retranslateUi(MainWindow)
 
@@ -231,32 +205,11 @@ class Ui_MainWindow(object):
         self.actionMailing_list.setText(
             QCoreApplication.translate("MainWindow", "Mailing list", None)
         )
-        self.actionExport_stats.setText(
-            QCoreApplication.translate("MainWindow", "Export trace stats", None)
-        )
         self.actionCheck_for_updates.setText(
             QCoreApplication.translate("MainWindow", "Check for updates", None)
         )
-        self.actionFRC_analyzer.setText(
-            QCoreApplication.translate("MainWindow", "FRC Analyzer", None)
-        )
         self.actionWhat_s_new.setText(
             QCoreApplication.translate("MainWindow", "What's new?", None)
-        )
-        self.actionUnmixer.setText(
-            QCoreApplication.translate("MainWindow", "Unmixer", None)
-        )
-        self.actionSet_Fluorophore_Names.setText(
-            QCoreApplication.translate("MainWindow", "Channel names", None)
-        )
-        self.actionTime_Inspector.setText(
-            QCoreApplication.translate("MainWindow", "Time Inspector", None)
-        )
-        self.actionAnalyzer.setText(
-            QCoreApplication.translate("MainWindow", "Analyzer", None)
-        )
-        self.actionTrace_Stats_Viewer.setText(
-            QCoreApplication.translate("MainWindow", "Trace Stats Viewer", None)
         )
         self.actionLoad.setText(QCoreApplication.translate("MainWindow", "Load", None))
         # if QT_CONFIG(shortcut)
@@ -270,9 +223,6 @@ class Ui_MainWindow(object):
             QCoreApplication.translate("MainWindow", "Ctrl+S", None)
         )
         # endif // QT_CONFIG(shortcut)
-        self.actionHistogram_Plotter.setText(
-            QCoreApplication.translate("MainWindow", "Histogram Plotter", None)
-        )
         self.actionLoad_Zarr.setText(
             QCoreApplication.translate("MainWindow", "Load Zarr", None)
         )

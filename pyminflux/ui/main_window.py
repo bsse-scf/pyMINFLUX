@@ -14,14 +14,16 @@
 
 __ENABLE_PLUGINS__ = False
 
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+import pandas as pd
 from pyqtgraph import ViewBox
 from PySide6 import QtGui
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QAction, QDesktopServices, QIcon
 from PySide6.QtWidgets import (
     QDialog,
@@ -32,6 +34,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QStackedWidget,
     QTextBrowser,
     QTextEdit,
@@ -41,15 +44,14 @@ from PySide6.QtWidgets import (
 
 import pyminflux.resources
 from pyminflux import __APP_NAME__, __version__
+from pyminflux.combiner import combine_datasets_with_bead_alignment
 from pyminflux.correct import align_datasets_using_beads
 from pyminflux.plugin import PluginManager
 from pyminflux.processor import (
-    MinFluxProcessor,
     get_bead_positions_from_mbm,
-    load_zarr_for_beads,
     get_next_fluorophore_id,
+    load_zarr_for_beads,
 )
-from pyminflux.combiner import combine_datasets_with_bead_alignment
 from pyminflux.processor._dataset import MinFluxDataset
 from pyminflux.reader import (
     MinFluxReader,
@@ -63,11 +65,11 @@ from pyminflux.ui.analyzer import Analyzer
 from pyminflux.ui.bead_correspondence_dialog import BeadCorrespondenceDialog
 from pyminflux.ui.color_unmixer import ColorUnmixer
 from pyminflux.ui.colorbar import ColorBarWidget
-from pyminflux.ui.colors import ColorCode, reset_all_colors
+from pyminflux.ui.colors import reset_all_colors
 from pyminflux.ui.dataset_combine_dialog import DatasetCombineDialog
 from pyminflux.ui.dataviewer import DataViewer
-from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.fluorophore_naming_dialog import FluorophoreNamingDialog
+from pyminflux.ui.frc_tool import FRCTool
 from pyminflux.ui.histogram_plotter import HistogramPlotter
 from pyminflux.ui.importer import Importer
 from pyminflux.ui.mediator import Mediator
@@ -79,13 +81,95 @@ from pyminflux.ui.state import State
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow
-from pyminflux.ui.wizard import WizardDialog
+from pyminflux.ui.workflows import LocalizationWorkflow, TrackingWorkflow
 from pyminflux.utils import check_for_updates
-from pyminflux.writer import MinFluxWriter, PMXWriter
+from pyminflux.writer import PMXWriter
 
 # Version info
 __modifier__ = ""
 __version__ = f"{__version__}{__modifier__}"
+__EXPERIMENTAL_TRACKING_WORKFLOW_ENV_VAR__ = "PYMINFLUX_EXPERIMENTAL_TRACKING_WORKFLOW"
+__WORKFLOW_SHELL_MARGIN__ = 11
+__WORKFLOW_SHELL_SPACING__ = 6
+
+
+class WorkflowShell(QWidget):
+    """Common workflow shell that owns app-level load/drop behavior."""
+
+    load_filename_triggered = Signal(str)
+    combine_filename_triggered = Signal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.combine_enabled = False
+        self.resize(357, 939)
+        size_policy = QSizePolicy(
+            QSizePolicy.Policy.Fixed,
+            QSizePolicy.Policy.MinimumExpanding,
+        )
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        self.setSizePolicy(size_policy)
+        self.setAcceptDrops(True)
+
+    def set_combine_enabled(self, enabled: bool):
+        self.combine_enabled = enabled
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        urls = event.mimeData().urls()
+        if len(urls) == 0:
+            return
+
+        if len(urls) > 1:
+            QMessageBox.critical(
+                self,
+                "Error",
+                "Cannot open multiple files.",
+            )
+            return
+
+        try:
+            filename = urls[0].toLocalFile()
+        except Exception:
+            return
+
+        is_combine_operation = bool(
+            self.combine_enabled and event.modifiers() & Qt.ShiftModifier
+        )
+
+        if Path(filename).is_dir():
+            if is_combine_operation:
+                self.combine_filename_triggered.emit(str(filename))
+            else:
+                self.load_filename_triggered.emit(str(filename))
+            return
+
+        if len(filename) < 5:
+            return
+
+        ext = filename.lower()[-4:]
+        if ext in [".pmx", ".npy", ".mat"]:
+            if is_combine_operation:
+                QMessageBox.information(
+                    self,
+                    "Combine Requires Zarr",
+                    f"To combine datasets, please drag and drop a Zarr directory (not {ext} files).\n"
+                    f"Only Zarr datasets contain the bead measurement data needed for alignment.",
+                )
+            else:
+                self.load_filename_triggered.emit(str(filename))
+        else:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Unsupported file {filename}.",
+            )
 
 
 class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
@@ -107,6 +191,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Initialize the dialog
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.workflow_action_specs = {}
+        self.workflow_qactions = {}
 
         # Main window title
         self.setWindowTitle(f"{__APP_NAME__} v{__version__}")
@@ -124,8 +210,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Interval in seconds since last check for updates
         self._check_interval_in_seconds = 60 * 60 * 24 * 7
 
-        # Keep a reference to the MinFluxProcessor
-        self.processor = None
+        self.dataset = None
 
         # Keep track of the current dataset's Zarr path for combining
         self.current_zarr_path = None
@@ -154,16 +239,61 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self.options = Options()
         self.mediator.register_dialog("options", self.options)
 
-        # Initialize widget and its dock
-        self.wizard = WizardDialog()
+        # Initialize workflow shell and its dock
+        self.workflow = None
+        self.workflow_panel = None
+        self.wizard = None
+        self.workflow_shell = WorkflowShell()
+        self.workflow_shell_layout = QVBoxLayout()
+        self.workflow_shell_layout.setContentsMargins(
+            __WORKFLOW_SHELL_MARGIN__,
+            __WORKFLOW_SHELL_MARGIN__,
+            __WORKFLOW_SHELL_MARGIN__,
+            __WORKFLOW_SHELL_MARGIN__,
+        )
+        self.workflow_shell_layout.setSpacing(__WORKFLOW_SHELL_SPACING__)
+        self.workflow_load_widget = QWidget()
+        self.workflow_load_layout = QHBoxLayout()
+        self.workflow_load_layout.setContentsMargins(0, 0, 0, 0)
+        self.workflow_load_layout.setSpacing(__WORKFLOW_SHELL_SPACING__)
+        self.pbLoadData = QPushButton("Load")
+        self.pbLoadZarr = QPushButton("Load Zarr")
+        load_button_policy = QSizePolicy(
+            QSizePolicy.Policy.MinimumExpanding,
+            QSizePolicy.Policy.Fixed,
+        )
+        load_button_policy.setHorizontalStretch(1)
+        load_button_policy.setVerticalStretch(0)
+        self.pbLoadData.setSizePolicy(load_button_policy)
+        self.pbLoadData.setMinimumSize(QSize(160, 0))
+        self.pbLoadZarr.setSizePolicy(load_button_policy)
+        self.pbLoadZarr.setMinimumSize(QSize(160, 0))
+        self.workflow_load_layout.addWidget(self.pbLoadData)
+        self.workflow_load_layout.addWidget(self.pbLoadZarr)
+        self.workflow_load_widget.setLayout(self.workflow_load_layout)
+        self.workflow_body = QWidget()
+        self.workflow_body_layout = QVBoxLayout()
+        self.workflow_body_layout.setContentsMargins(0, 0, 0, 0)
+        self.workflow_body_layout.setSpacing(0)
+        self.workflow_body.setLayout(self.workflow_body_layout)
+        self.workflow_shell_layout.addWidget(self.workflow_load_widget)
+        self.workflow_shell_layout.addWidget(self.workflow_body)
+        self.workflow_shell.setLayout(self.workflow_shell_layout)
+        self.workflow_shell.load_filename_triggered.connect(
+            self.select_and_load_or_import_data_file
+        )
+        self.workflow_shell.combine_filename_triggered.connect(
+            self.combine_dropped_file
+        )
+
         self.wizard_dock = QDockWidget("", self)
         self.wizard_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.wizard_dock.setFeatures(
             QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable
         )
-        self.wizard_dock.setWidget(self.wizard)
+        self.wizard_dock.setWidget(self.workflow_shell)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.wizard_dock)
-        self.mediator.register_dialog("wizard", self.wizard)
+        self.set_workflow(LocalizationWorkflow())
 
         # Initialize Plotter and DataViewer
         self.plotter = Plotter()
@@ -254,8 +384,212 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.ui.menuPlugins.addAction(action)
 
     def execute_plugin(self, index):
-        result = self.plugin_manager.execute_plugin(index, self.processor)
+        result = self.plugin_manager.execute_plugin(index, self.localization_processor)
         print(f"Plugin result: {result}")
+
+    @property
+    def localization_processor(self):
+        """Return the active localization processor, if the workflow has one."""
+        if isinstance(self.workflow, LocalizationWorkflow):
+            return self.workflow.processor
+        return None
+
+    @staticmethod
+    def _env_var_enabled(name: str) -> bool:
+        value = os.getenv(name)
+        if value is None:
+            return False
+        return value.strip().lower() not in {"", "0", "false", "no", "off"}
+
+    def experimental_tracking_workflow_enabled(self) -> bool:
+        """Return whether the opt-in tracking workflow is enabled."""
+        return self._env_var_enabled(__EXPERIMENTAL_TRACKING_WORKFLOW_ENV_VAR__)
+
+    def workflow_for_dataset(self, dataset: Optional[MinFluxDataset]):
+        """Choose the active workflow for a loaded dataset.
+
+        Tracking is a data property. The experimental tracking workflow is an
+        opt-in UI choice so that the default branch can keep the classic
+        processor-backed tracking behavior.
+        """
+        if (
+            dataset is not None
+            and dataset.is_tracking
+            and self.experimental_tracking_workflow_enabled()
+        ):
+            return TrackingWorkflow(dataset)
+        return LocalizationWorkflow(dataset, self.state.min_trace_length)
+
+    @staticmethod
+    def _normalize_workflow_panel_layout(panel):
+        """Let the workflow shell own outer workflow panel positioning."""
+        if panel.layout() is not None:
+            panel.layout().setContentsMargins(0, 0, 0, 0)
+
+    def set_workflow(self, workflow):
+        """Install a workflow-specific panel in the common workflow shell."""
+        if "wizard" in self.mediator.dialogs:
+            self.mediator.unregister_dialog("wizard")
+
+        if self.workflow_panel is not None:
+            self.workflow_body_layout.removeWidget(self.workflow_panel)
+            self.workflow_panel.deleteLater()
+            self.workflow_panel = None
+
+        self.workflow = workflow
+        if self.workflow.dataset is None:
+            self.workflow.set_dataset(self.dataset)
+        self.workflow_panel = self.workflow.create_panel(parent=self)
+        self._normalize_workflow_panel_layout(self.workflow_panel)
+        self.workflow_body_layout.addWidget(self.workflow_panel)
+
+        # Keep the old name as a compatibility alias for localization-only
+        # mediator wiring until all localization tools are workflow-native.
+        if isinstance(self.workflow, LocalizationWorkflow):
+            self.workflow_shell.set_combine_enabled(True)
+            self.wizard = self.workflow_panel
+            self.mediator.register_dialog("wizard", self.wizard)
+            self.wizard.open_combiner_triggered.connect(self.open_combiner)
+        else:
+            self.workflow_shell.set_combine_enabled(False)
+            self.wizard = None
+            if hasattr(self.workflow_panel, "save_data_triggered"):
+                self.workflow_panel.save_data_triggered.connect(self.save_native_file)
+            if hasattr(self.workflow_panel, "export_data_triggered"):
+                self.workflow_panel.export_data_triggered.connect(
+                    self.export_filtered_data
+                )
+            if hasattr(self.workflow_panel, "workflow_action_triggered"):
+                self.workflow_panel.workflow_action_triggered.connect(
+                    self.trigger_workflow_action
+                )
+
+        self.apply_workflow_actions()
+        self.update_plotter_toolbar_from_workflow()
+
+    def apply_workflow_actions(self):
+        """Apply common and workflow-provided action visibility/enabled state."""
+        dataframe = (
+            self.workflow.plot_dataframe() if self.workflow is not None else None
+        )
+        has_data = dataframe is not None and len(dataframe.index) > 0
+
+        self.ui.actionSave.setEnabled(
+            has_data and self.workflow is not None and self.workflow.can_save()
+        )
+        self.ui.actionExport_data.setEnabled(
+            has_data and self.workflow is not None and self.workflow.can_export_data()
+        )
+
+        workflow_actions = (
+            self.workflow.workflow_actions() if self.workflow is not None else []
+        )
+        self.workflow_action_specs = {
+            workflow_action.id: workflow_action for workflow_action in workflow_actions
+        }
+        for workflow_action in workflow_actions:
+            action = self.qaction_for_workflow_action(workflow_action)
+            action.setText(workflow_action.text)
+            action.setVisible(True)
+            action.setEnabled(has_data or not workflow_action.requires_data)
+
+        for action_id, action in self.workflow_qactions.items():
+            if action_id not in self.workflow_action_specs:
+                action.setVisible(False)
+                action.setEnabled(False)
+
+        self.rebuild_workflow_menu(workflow_actions, has_data)
+
+    def qaction_for_workflow_action(self, workflow_action):
+        """Return the QAction backing a workflow action descriptor."""
+        if workflow_action.id not in self.workflow_qactions:
+            action = QAction(workflow_action.text, self)
+            action.triggered.connect(
+                lambda checked=False, action_id=workflow_action.id: (
+                    self.trigger_workflow_action(action_id)
+                )
+            )
+            self.workflow_qactions[workflow_action.id] = action
+        return self.workflow_qactions[workflow_action.id]
+
+    def trigger_workflow_action(self, action_id: str):
+        """Dispatch a workflow action descriptor to its declared handler."""
+        workflow_action = self.workflow_action_specs.get(action_id)
+        if workflow_action is None:
+            return
+
+        owner = self if workflow_action.owner == "main_window" else self.workflow
+        handler = getattr(owner, workflow_action.handler_name, None)
+        if handler is None:
+            raise AttributeError(
+                f"Workflow action '{action_id}' has no handler "
+                f"'{workflow_action.handler_name}' on {workflow_action.owner}."
+            )
+
+        handler()
+        if workflow_action.refresh_after:
+            self.full_update_ui()
+
+    def rebuild_workflow_menu(self, workflow_actions: list, has_data: bool):
+        """Rebuild the workflow-specific menu from the active workflow."""
+        self.ui.menuAnalysis.clear()
+        analysis_actions = [
+            workflow_action
+            for workflow_action in workflow_actions
+            if workflow_action.menu == "analysis"
+        ]
+        has_visible_actions = False
+        for group in dict.fromkeys(action.group for action in analysis_actions):
+            visible_workflow_actions = [
+                workflow_action
+                for workflow_action in analysis_actions
+                if workflow_action.group == group
+            ]
+            if not visible_workflow_actions:
+                continue
+            if has_visible_actions:
+                self.ui.menuAnalysis.addSeparator()
+            for workflow_action in visible_workflow_actions:
+                action = self.qaction_for_workflow_action(workflow_action)
+                action.setEnabled(has_data or not workflow_action.requires_data)
+                self.ui.menuAnalysis.addAction(action)
+            has_visible_actions = True
+
+        self.ui.menuAnalysis.menuAction().setVisible(has_visible_actions)
+
+        file_actions = [
+            workflow_action
+            for workflow_action in workflow_actions
+            if workflow_action.menu == "file"
+        ]
+        for workflow_action in file_actions:
+            action = self.qaction_for_workflow_action(workflow_action)
+            action.setEnabled(has_data or not workflow_action.requires_data)
+            if action not in self.ui.menuFile.actions():
+                actions = self.ui.menuFile.actions()
+                export_index = actions.index(self.ui.actionExport_data)
+                self.ui.menuFile.insertAction(actions[export_index + 1], action)
+
+    def update_plotter_toolbar_from_workflow(self):
+        """Refresh plot controls from the active workflow's dataframe adapter."""
+        if getattr(self, "plotter_toolbar", None) is None:
+            return
+        dataframe = (
+            self.workflow.plot_dataframe() if self.workflow is not None else None
+        )
+        color_columns = (
+            self.workflow.color_columns(dataframe)
+            if self.workflow is not None
+            else None
+        )
+        self.plotter_toolbar.set_plot_dataframe_schema(dataframe, color_columns)
+
+    def remove_largest_track(self):
+        """Run the active workflow's remove-largest-track action."""
+        if self.workflow is None or not hasattr(self.workflow, "remove_largest_track"):
+            return
+        self.workflow.remove_largest_track()
+        self.full_update_ui()
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -368,21 +702,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         # Menu actions
         self.ui.actionLoad.triggered.connect(self.select_and_load_or_import_data_file)
         self.ui.actionLoad_Zarr.triggered.connect(self.select_and_load_zarr)
+        self.pbLoadData.clicked.connect(
+            lambda _: self.select_and_load_or_import_data_file()
+        )
+        self.pbLoadZarr.clicked.connect(lambda _: self.select_and_load_zarr())
         self.ui.actionSave.triggered.connect(self.save_native_file)
         self.ui.actionExport_data.triggered.connect(self.export_filtered_data)
-        self.ui.actionExport_stats.triggered.connect(self.export_filtered_stats)
         self.ui.actionOptions.triggered.connect(self.open_options_dialog)
         self.ui.actionQuit.triggered.connect(self.quit_application)
         self.ui.actionConsole.changed.connect(self.toggle_console_visibility)
         self.ui.actionData_viewer.changed.connect(self.toggle_dataviewer_visibility)
         self.ui.actionState.triggered.connect(self.print_current_state)
-        self.ui.actionHistogram_Plotter.triggered.connect(self.open_histogram_plotter)
-        self.ui.actionUnmixer.triggered.connect(self.open_color_unmixer)
-        self.ui.actionSet_Fluorophore_Names.triggered.connect(self.open_fluorophore_naming_dialog)
-        self.ui.actionTime_Inspector.triggered.connect(self.open_time_inspector)
-        self.ui.actionAnalyzer.triggered.connect(self.open_analyzer)
-        self.ui.actionTrace_Stats_Viewer.triggered.connect(self.open_trace_stats_viewer)
-        self.ui.actionFRC_analyzer.triggered.connect(self.open_frc_tool)
         self.ui.actionManual.triggered.connect(
             lambda _: QDesktopServices.openUrl(
                 "https://github.com/bsse-scf/pyMINFLUX/wiki/pyMINFLUX-user-manual"
@@ -411,10 +741,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         )
         self.ui.actionCheck_for_updates.triggered.connect(self.check_remote_for_updates)
         self.ui.actionAbout.triggered.connect(self.about)
-        
-        # Wizard signals
-        self.wizard.open_combiner_triggered.connect(self.open_combiner)
-        self.wizard.combine_filename_triggered.connect(self.combine_dropped_file)
 
     def enable_ui_components(self, enabled: bool):
         """Enable/disable UI components."""
@@ -435,16 +761,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plotter_toolbar.show()
         else:
             self.plotter_toolbar.hide()
-        self.ui.actionSave.setEnabled(enabled)
-        self.ui.actionExport_data.setEnabled(enabled)
-        self.ui.actionExport_stats.setEnabled(enabled)
-        self.ui.actionHistogram_Plotter.setEnabled(enabled)
-        self.ui.actionUnmixer.setEnabled(enabled)
-        self.ui.actionSet_Fluorophore_Names.setEnabled(enabled)
-        self.ui.actionTime_Inspector.setEnabled(enabled)
-        self.ui.actionAnalyzer.setEnabled(enabled)
-        self.ui.actionTrace_Stats_Viewer.setEnabled(enabled)
-        self.ui.actionFRC_analyzer.setEnabled(enabled)
+        self.apply_workflow_actions()
 
     def full_update_ui(self):
         """
@@ -463,10 +780,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         self.plotter.clear()
         self.plotter3d.clear()
+        self.apply_workflow_actions()
+        self.update_plotter_toolbar_from_workflow()
         self.plot_selected_parameters()
         self.data_viewer.clear()
-        if self.processor is not None and self.processor.filtered_dataframe is not None:
-            print(f"Retrieved {len(self.processor.filtered_dataframe.index)} events.")
+        dataframe = (
+            self.workflow.plot_dataframe() if self.workflow is not None else None
+        )
+        if dataframe is not None:
+            print(f"Retrieved {len(dataframe.index)} events.")
 
     def print_to_console(self, text):
         """
@@ -560,11 +882,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def reset_filters_and_broadcast(self):
         """Reset all filters and broadcast changes."""
 
-        if self.processor is None:
+        if self.localization_processor is None:
             return
 
         # Reset filters and data
-        self.processor.reset()
+        self.localization_processor.reset()
         self.state.efo_thresholds = None
         self.state.cfr_thresholds = None
 
@@ -599,20 +921,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def save_native_file(self):
         """Save data to native pyMINFLUX `.pmx` file."""
-        if (
-            self.processor is None
-            or self.processor.filtered_dataframe is None
-            or len(self.processor.filtered_dataframe.index) == 0
-        ):
+        processor = self.localization_processor
+        if self.workflow is None or not self.workflow.can_save() or processor is None:
             return
 
         # Get current filename to build the suggestion output
-        if self.processor.filename is None:
+        if self.workflow.filename is None:
             # Just use the path
             out_filename = str(self.state.last_selected_path)
         else:
             out_filename = str(
-                self.processor.filename.parent / f"{self.processor.filename.stem}.pmx"
+                self.workflow.filename.parent / f"{self.workflow.filename.stem}.pmx"
             )
 
         # Ask the user to pick a name (and format)
@@ -633,17 +952,17 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             filename = filename.parent / f"{filename.stem}.pmx"
 
         # Temporarily set fluorophore to "all" to ensure all data is saved
-        previous_fluorophore_id = self.processor.current_fluorophore_id
+        previous_fluorophore_id = processor.current_fluorophore_id
         if previous_fluorophore_id != 0:
-            self.processor.current_fluorophore_id = 0
+            processor.current_fluorophore_id = 0
 
         # Write to disk
-        writer = PMXWriter(self.processor)
+        writer = PMXWriter(processor)
         result = writer.write(filename)
 
         # Restore previous fluorophore selection
         if previous_fluorophore_id != 0:
-            self.processor.current_fluorophore_id = previous_fluorophore_id
+            processor.current_fluorophore_id = previous_fluorophore_id
 
         # Save
         if result:
@@ -687,17 +1006,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     ) -> bool:
         """
         Combine a new dataset with the currently loaded one.
-        
+
         Args:
             new_filename: Path to the new dataset file
             new_reader: Reader object for the new dataset
-            
+
         Returns:
             True if combine successful, False otherwise
         """
         # Determine Zarr paths for both datasets
-        new_ext = ".zarr" if Path(new_filename).is_dir() else Path(new_filename).suffix.lower()
-        
+        new_ext = (
+            ".zarr"
+            if Path(new_filename).is_dir()
+            else Path(new_filename).suffix.lower()
+        )
+
         # Get reference zarr path
         if self.current_zarr_path is not None:
             ref_zarr_path = self.current_zarr_path
@@ -712,12 +1035,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             ref_zarr_path = QFileDialog.getExistingDirectory(
                 self,
                 "Select Reference Zarr Folder",
-                str(self.state.last_selected_path) if self.state.last_selected_path else ".",
+                (
+                    str(self.state.last_selected_path)
+                    if self.state.last_selected_path
+                    else "."
+                ),
             )
             if not ref_zarr_path:
                 print("Combine cancelled: No reference Zarr path selected.")
                 return False
-        
+
         # Get moving zarr path
         if new_ext == ".zarr":
             mov_zarr_path = new_filename
@@ -732,12 +1059,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             mov_zarr_path = QFileDialog.getExistingDirectory(
                 self,
                 "Select Moving Zarr Folder",
-                str(self.state.last_selected_path) if self.state.last_selected_path else ".",
+                (
+                    str(self.state.last_selected_path)
+                    if self.state.last_selected_path
+                    else "."
+                ),
             )
             if not mov_zarr_path:
                 print("Combine cancelled: No moving Zarr path selected.")
                 return False
-        
+
         # Load MBM data from both Zarr files to get bead positions for the dialog
         print(f"Loading bead data from reference: {ref_zarr_path}")
         ref_reader, ref_mbm_dict = load_zarr_for_beads(ref_zarr_path)
@@ -748,7 +1079,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"Could not load bead data from reference Zarr file:\n{ref_zarr_path}",
             )
             return False
-        
+
         print(f"Loading bead data from moving: {mov_zarr_path}")
         mov_reader, mov_mbm_dict = load_zarr_for_beads(mov_zarr_path)
         if mov_reader is None or not mov_mbm_dict:
@@ -758,20 +1089,30 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"Could not load bead data from moving Zarr file:\n{mov_zarr_path}",
             )
             return False
-        
+
         # Get bead positions for the correspondence dialog
         ref_bead_positions = get_bead_positions_from_mbm(ref_mbm_dict, n_points=3)
         mov_bead_positions = get_bead_positions_from_mbm(mov_mbm_dict, n_points=3)
-        
+
         print(f"Reference beads: {list(ref_bead_positions.keys())}")
         print(f"Moving beads: {list(mov_bead_positions.keys())}")
-        
+
         # Get fluorophore information for the dialog
         # Filter out fluorophore ID 0 (used for unassigned/placeholder data)
-        existing_fluo_ids = sorted([fid for fid in self.processor.processed_dataframe["fluo"].unique().tolist() if fid > 0])
-        next_fluo_id = get_next_fluorophore_id(self.processor.reader.processed_dataframe)
-        existing_names = self.processor.fluorophore_names
-        
+        existing_fluo_ids = sorted(
+            [
+                fid
+                for fid in self.localization_processor.processed_dataframe["fluo"]
+                .unique()
+                .tolist()
+                if fid > 0
+            ]
+        )
+        next_fluo_id = get_next_fluorophore_id(
+            self.localization_processor.reader.processed_dataframe
+        )
+        existing_names = self.localization_processor.fluorophore_names
+
         # Always show the correspondence dialog with auto-matching enabled
         # This allows users to verify the automatic matches and adjust if needed
         corr_dialog = BeadCorrespondenceDialog(
@@ -781,19 +1122,19 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             existing_fluo_ids=existing_fluo_ids,
             next_fluo_id=next_fluo_id,
             existing_names=existing_names,
-            parent=self
+            parent=self,
         )
         if corr_dialog.exec() != QDialog.DialogCode.Accepted:
             print("Combine cancelled: User cancelled bead correspondence.")
             return False
-        
+
         bead_correspondence = corr_dialog.get_correspondence()
         fluorophore_names = corr_dialog.get_fluorophore_names()
         print(f"Bead correspondence: {bead_correspondence}")
         print(f"Fluorophore names: {fluorophore_names}")
-        
+
         # Check if filters are applied and warn the user
-        if self.processor.has_filters_applied():
+        if self.localization_processor.has_filters_applied():
             reply = QMessageBox.warning(
                 self,
                 "Filters Applied",
@@ -801,35 +1142,37 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Combining datasets will reset all filters to ensure data consistency.\n\n"
                 "Do you want to continue?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.No,
             )
             if reply != QMessageBox.StandardButton.Yes:
                 print("Combine cancelled: User chose not to proceed with filter reset.")
                 return False
-        
+
         # Perform alignment and combine
         print("Performing bead-based alignment and combining datasets...")
-        
+
         # Create datasets from the current processor and new reader
         # The datasets will contain the MBM data if available
-        reference_dataset = MinFluxDataset.from_reader(self.processor.reader)
+        reference_dataset = MinFluxDataset.from_reader(
+            self.localization_processor.reader
+        )
         moving_dataset = MinFluxDataset.from_reader(new_reader)
-        
+
         # Get next fluorophore ID
         next_fluo_id = get_next_fluorophore_id(reference_dataset.processed_dataframe)
         print(f"Assigning fluorophore ID {next_fluo_id} to moving dataset")
-        
+
         # Perform combine using the module-level function
         # The MBM data is extracted from the datasets themselves
         combined_dataset = combine_datasets_with_bead_alignment(
             reference_dataset,
             moving_dataset,
             bead_correspondence=bead_correspondence,
-            transform_type='euclidean',
+            transform_type="euclidean",
             n_points=3,
             next_fluo_id=next_fluo_id,
         )
-        
+
         if combined_dataset is None:
             QMessageBox.critical(
                 self,
@@ -837,24 +1180,30 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Bead alignment failed. Cannot combine datasets.",
             )
             return False
-        
-        print(f"Combined dataset has {len(combined_dataset.processed_dataframe)} localizations")
-        
+
+        print(
+            f"Combined dataset has {len(combined_dataset.processed_dataframe)} localizations"
+        )
+
         # Replace the processor's dataset
-        self.processor.replace_dataset(combined_dataset)
-        
+        self.localization_processor.replace_dataset(combined_dataset)
+
         # Set fluorophore names from the dialog
-        self.processor.set_fluorophore_names(fluorophore_names)
-        
-        print(f"Combine completed. Dataset now has {self.processor.num_fluorophores} fluorophore(s)")
+        self.localization_processor.set_fluorophore_names(fluorophore_names)
+
+        print(
+            f"Combine completed. Dataset now has {self.localization_processor.num_fluorophores} fluorophore(s)"
+        )
         print(f"Fluorophore names: {fluorophore_names}")
-        
-        # Set color coding to BY_FLUO after combine to distinguish datasets
-        self.state.color_code = ColorCode.BY_FLUO
+
+        # Color by fluorophore after combine to distinguish datasets.
+        self.state.color_column = "fluo"
         # Update the dropdown UI to reflect the new color coding
-        self.plotter_toolbar.ui.cbColorCodeSelector.setCurrentIndex(ColorCode.BY_FLUO.value)
-        print("Color coding set to BY_FLUO to distinguish combined datasets")
-        
+        color_index = self.plotter_toolbar.ui.cbColorColumnSelector.findData("fluo")
+        if color_index >= 0:
+            self.plotter_toolbar.ui.cbColorColumnSelector.setCurrentIndex(color_index)
+        print("Color coding set to fluo to distinguish combined datasets")
+
         return True
 
     @Slot()
@@ -989,23 +1338,27 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Process the file
             self.state.last_selected_path = Path(filename).parent
 
-            # Add initialize the processor with the reader
-            self.processor = MinFluxProcessor(
-                reader,
-                self.state.min_trace_length,
-            )
+            # Create the neutral dataset and let the active workflow decide
+            # whether it needs the classic MinFluxProcessor.
+            self.dataset = MinFluxDataset.from_reader(reader)
 
             # Load fluorophore names from PMX file if available
             if ext == ".pmx":
                 fluorophore_names = PMXReader.get_fluorophore_names(filename)
-                if fluorophore_names:
-                    self.processor.set_fluorophore_names(fluorophore_names)
-                    print(f"Loaded fluorophore names: {fluorophore_names}")
+            else:
+                fluorophore_names = None
+
+            self.set_workflow(self.workflow_for_dataset(self.dataset))
+            if fluorophore_names and self.localization_processor is not None:
+                self.localization_processor.set_fluorophore_names(fluorophore_names)
+                print(f"Loaded fluorophore names: {fluorophore_names}")
 
             # Make sure to set current value of use_weighted_localizations
-            self.processor.use_weighted_localizations = (
-                self.state.weigh_avg_localization_by_eco
-            )
+            processor = self.localization_processor
+            if processor is not None:
+                processor.use_weighted_localizations = (
+                    self.state.weigh_avg_localization_by_eco
+                )
 
             # Show the filename on the main window
             self.setWindowTitle(
@@ -1034,7 +1387,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             self.plotter3d.reset()
 
             # Inject the Processor
-            self.plotter3d.set_processor(processor=self.processor)
+            self.plotter3d.set_processor(processor=processor)
 
             # Reset the plotter toolbar
             if self.plotter_toolbar is None:
@@ -1083,54 +1436,43 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Make sure to autoupdate the axis on load
             self.plotter.enableAutoRange(enable=True)
 
-            # Attach the processor reference to the wizard
-            self.wizard.set_processor(self.processor)
-
-            # Reset the fluorophore list in the wizard (after processor is set)
-            self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
+            self.update_plotter_toolbar_from_workflow()
 
             # Enable selected ui components
             self.enable_ui_components(True)
 
             # If the read sequence is not valid, disable the save button
-            if reader.is_last_valid:
+            if reader.is_last_valid and self.workflow.can_save():
                 self.ui.actionSave.setEnabled(True)
-                self.wizard.enable_save_button(True)
+                if self.wizard is not None:
+                    self.wizard.enable_save_button(True)
             else:
                 self.ui.actionSave.setEnabled(False)
-                self.wizard.enable_save_button(False)
-
-            # If the acquisition is a tracking one, disable the FRC tool
-            if reader.is_tracking:
-                self.ui.actionFRC_analyzer.setEnabled(False)
-            else:
-                self.ui.actionFRC_analyzer.setEnabled(True)
+                if self.wizard is not None:
+                    self.wizard.enable_save_button(False)
 
             # Update the Analyzer
             if self.analyzer is not None:
-                self.analyzer.set_processor(self.processor)
+                self.analyzer.set_processor(processor)
                 self.analyzer.plot()
 
             # Enable wizard
-            self.wizard.enable_controls(True)
+            if self.wizard is not None:
+                self.wizard.enable_controls(True)
 
         else:
             # If nothing is loaded (even from earlier), disable wizard
-            if self.processor is None:
+            if self.localization_processor is None and self.wizard is not None:
                 self.wizard.enable_controls(False)
 
     @Slot()
     def export_filtered_data(self):
         """Export filtered data as CSV file."""
-        if (
-            self.processor is None
-            or self.processor.filtered_dataframe is None
-            or len(self.processor.filtered_dataframe.index) == 0
-        ):
+        if self.workflow is None or not self.workflow.can_export_data():
             return
 
         # Get current filename to build the suggestion output
-        if self.processor.filename is None:
+        if self.workflow.filename is None:
             base_path = (
                 self.state.last_selected_path
                 if self.state.last_selected_path is not None
@@ -1139,7 +1481,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             out_filename = str(Path(base_path) / "combined.csv")
         else:
             out_filename = str(
-                self.processor.filename.parent / f"{self.processor.filename.stem}.csv"
+                self.workflow.filename.parent / f"{self.workflow.filename.stem}.csv"
             )
 
         # Ask the user to pick a name (and format)
@@ -1160,26 +1502,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 filename = Path(filename)
                 filename = filename.parent / f"{filename.stem}.csv"
 
-            # Temporarily set fluorophore to "all" to ensure all data is exported
-            previous_fluorophore_id = self.processor.current_fluorophore_id
-            if previous_fluorophore_id != 0:
-                self.processor.current_fluorophore_id = 0
-
-            # Write to disk
-            result = MinFluxWriter.write_csv(self.processor, filename)
-
-            # Restore previous fluorophore selection
-            if previous_fluorophore_id != 0:
-                self.processor.current_fluorophore_id = previous_fluorophore_id
+            result = self.workflow.export_data_to_csv(filename)
 
         else:
             return
 
         # Save
         if result:
-            print(
-                f"Successfully exported {len(self.processor.filtered_dataframe.index)} localizations."
-            )
+            dataframe = self.workflow.plot_dataframe()
+            print(f"Successfully exported {len(dataframe.index)} localizations.")
         else:
             QMessageBox.critical(
                 self,
@@ -1190,11 +1521,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def export_filtered_stats(self):
         """Export filtered, per-trace statistics as CSV file."""
-        if (
-            self.processor is None
-            or self.processor.filtered_dataframe is None
-            or len(self.processor.filtered_dataframe.index) == 0
-        ):
+        if self.workflow is None or self.workflow.stats_dataframe() is None:
             # Inform and return
             QMessageBox.information(
                 self,
@@ -1204,7 +1531,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             return
 
         # Get current filename to build the suggestion output
-        if self.processor.filename is None:
+        if self.workflow.filename is None:
             base_path = (
                 self.state.last_selected_path
                 if self.state.last_selected_path is not None
@@ -1213,8 +1540,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             out_filename = str(Path(base_path) / "combined_stats.csv")
         else:
             out_filename = str(
-                self.processor.filename.parent
-                / f"{self.processor.filename.stem}_stats.csv"
+                self.workflow.filename.parent
+                / f"{self.workflow.filename.stem}_stats.csv"
             )
 
         # Ask the user to pick a name
@@ -1238,7 +1565,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             filename = filename.parent / f"{filename.stem}.csv"
 
         # Collect stats
-        stats = self.processor.filtered_dataframe_stats
+        stats = self.workflow.stats_dataframe()
         if stats is None:
             return
 
@@ -1378,23 +1705,25 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_analyzer(self):
         """Initialize and open the analyzer."""
-        if self.processor is None:
+        if self.localization_processor is None:
             return
         if self.analyzer is None:
-            self.analyzer = Analyzer(self.processor)
+            self.analyzer = Analyzer(self.localization_processor)
             self.mediator.register_dialog("analyzer", self.analyzer)
         self.analyzer.plot()
         self.analyzer.show()
         self.analyzer.activateWindow()
 
-    def _perform_combine_with_zarr(self, filename: str, source: str = "Combiner") -> bool:
+    def _perform_combine_with_zarr(
+        self, filename: str, source: str = "Combiner"
+    ) -> bool:
         """
         Common combine workflow for both combiner and drag-and-drop operations.
-        
+
         Args:
             filename: Path to the Zarr folder to combine
             source: Description of the combine source (for logging)
-            
+
         Returns:
             True if combine was successful, False otherwise
         """
@@ -1411,19 +1740,21 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 f"Could not process file {filename}.",
             )
             return False
-        
+
         # For combining, reader properties are taken from the reference dataset.
         # The Importer dialog would not affect the combined dataset settings, so we skip it.
-        ref_reader = self.processor.reader
+        ref_reader = self.localization_processor.reader
         reader.set_tracking(ref_reader.is_tracking, process=False)
         if hasattr(ref_reader, "_loc_index") and hasattr(ref_reader, "_cfr_index"):
-            reader.set_indices(ref_reader._loc_index, ref_reader._cfr_index, process=False)
+            reader.set_indices(
+                ref_reader._loc_index, ref_reader._cfr_index, process=False
+            )
         reader.set_dwell_time(ref_reader.dwell_time, process=False)
         reader.set_pool_dcr(ref_reader.is_pool_dcr, process=False)
-        
+
         # Now attempt to combine - always show the correspondence dialog with auto-matching
         success = self._combine_datasets(filename, reader)
-        
+
         if not success:
             QMessageBox.warning(
                 self,
@@ -1431,53 +1762,56 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Dataset combine failed. Please check that both datasets have bead data.",
             )
             return False
-        
+
         # Combine successful - update UI
         self.setWindowTitle(
             f"{__APP_NAME__} v{__version__} - [{Path(self.current_filename).name} + {Path(filename).name}]"
         )
-        
+
         self.state.last_selected_path = Path(filename).parent
-        
+
         self.full_update_ui()
         self.plotter.enableAutoRange(enable=True)
-        
+
         # Set processor before updating fluorophore list (needs processor to get names)
-        self.wizard.set_processor(self.processor)
-        self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
-        
+        if self.wizard is not None:
+            self.wizard.set_processor(self.localization_processor)
+            self.wizard.set_fluorophore_list(
+                self.localization_processor.num_fluorophores
+            )
+
         if self.analyzer is not None:
-            self.analyzer.set_processor(self.processor)
+            self.analyzer.set_processor(self.localization_processor)
             self.analyzer.plot()
-        
+
         print(f"Dataset combine completed successfully via {source}.")
         return True
 
     @Slot()
     def open_combiner(self):
         """Initialize and open the dataset combiner dialog."""
-        if self.processor is None:
+        if self.localization_processor is None:
             QMessageBox.warning(
                 self,
                 "No Dataset Loaded",
                 "Please load a dataset first before using the combiner.",
             )
             return
-        
+
         # Ask user to select the new Zarr dataset
         # Only Zarr datasets contain bead data needed for alignment
         save_path = str(self.state.last_selected_path)
-        
+
         filename = QFileDialog.getExistingDirectory(
             self,
             "Select Zarr folder to combine",
             save_path,
         )
-        
+
         if not filename or not Path(filename).exists():
             print("Combiner cancelled: No Zarr folder selected.")
             return
-        
+
         # Perform the combine
         self._perform_combine_with_zarr(filename, source="Combiner")
 
@@ -1487,18 +1821,18 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         Handle drag-and-drop combine operation (Shift + drop).
         Combines the dropped Zarr dataset with the currently loaded one.
         """
-        if self.processor is None:
+        if self.localization_processor is None:
             QMessageBox.warning(
                 self,
                 "No Dataset Loaded",
                 "Please load a dataset first before combining.",
             )
             return
-        
+
         if not filename or not Path(filename).exists():
             print("Combine cancelled: Invalid file path.")
             return
-        
+
         # Only Zarr datasets are supported for combining
         if not Path(filename).is_dir():
             QMessageBox.information(
@@ -1508,10 +1842,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 "Only Zarr datasets contain the bead measurement data needed for alignment.",
             )
             return
-        
+
         # Perform the combine
         self._perform_combine_with_zarr(filename, source="drag-and-drop (Shift+drop)")
-
 
     def show_update_result_dialog(self, html):
         """Display the outcome of the update check in a dialog."""
@@ -1535,7 +1868,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def open_time_inspector(self):
         """Initialize and open the Time Inspector."""
         if self.time_inspector is None:
-            self.time_inspector = TimeInspector(self.processor)
+            self.time_inspector = TimeInspector(self.localization_processor)
             self.mediator.register_dialog("time_inspector", self.time_inspector)
         self.time_inspector.show()
         self.time_inspector.activateWindow()
@@ -1543,10 +1876,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_histogram_plotter(self):
         """Initialize and open the histogram plotter."""
-        if self.processor is None:
+        if self.localization_processor is None:
             return
         if self.histogram_plotter is None:
-            self.histogram_plotter = HistogramPlotter(self.processor)
+            self.histogram_plotter = HistogramPlotter(self.localization_processor)
             self.mediator.register_dialog("histogram_plotter", self.histogram_plotter)
         self.histogram_plotter.show()
         self.histogram_plotter.activateWindow()
@@ -1554,25 +1887,28 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_color_unmixer(self):
         """Initialize and open the color unmixer."""
-        if self.processor is None:
+        if self.localization_processor is None:
             return
-        
+
         # Prevent opening unmixer if "All" is selected with multiple fluorophores
-        if self.processor.current_fluorophore_id == 0 and self.processor.num_fluorophores > 1:
+        if (
+            self.localization_processor.current_fluorophore_id == 0
+            and self.localization_processor.num_fluorophores > 1
+        ):
             QMessageBox.warning(
                 self,
                 "Invalid Selection",
-                "Please select a specific channel (not 'All') for unmixing when multiple channels exist."
+                "Please select a specific channel (not 'All') for unmixing when multiple channels exist.",
             )
             return
-        
+
         # Always create a fresh dialog to avoid showing stale data from previous unmixing
         if self.color_unmixer is not None:
             self.mediator.unregister_dialog("color_unmixer")
             self.color_unmixer.close()
             self.color_unmixer.deleteLater()
-        
-        self.color_unmixer = ColorUnmixer(self.processor)
+
+        self.color_unmixer = ColorUnmixer(self.localization_processor)
         self.mediator.register_dialog("color_unmixer", self.color_unmixer)
         self.color_unmixer.show()
         self.color_unmixer.activateWindow()
@@ -1580,32 +1916,33 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_fluorophore_naming_dialog(self):
         """Open dialog to set channel names."""
-        if self.processor is None:
+        if self.localization_processor is None:
             QMessageBox.information(
                 self,
                 "No Data Loaded",
-                "Please load a dataset before setting channel names."
+                "Please load a dataset before setting channel names.",
             )
             return
-        
-        if self.processor.num_fluorophores == 0:
+
+        if self.localization_processor.num_fluorophores == 0:
             QMessageBox.information(
-                self,
-                "No Channels",
-                "No channels detected in the current dataset."
+                self, "No Channels", "No channels detected in the current dataset."
             )
             return
-        
-        dialog = FluorophoreNamingDialog(self.processor, parent=self)
+
+        dialog = FluorophoreNamingDialog(self.localization_processor, parent=self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             # Get the names and update the processor
             names = dialog.get_names()
             for fluo_id, name in names.items():
-                self.processor.set_fluorophore_name(fluo_id, name)
-            
+                self.localization_processor.set_fluorophore_name(fluo_id, name)
+
             # Update the wizard's fluorophore list to show new names
-            self.wizard.set_fluorophore_list(self.processor.num_fluorophores)
-            
+            if self.wizard is not None:
+                self.wizard.set_fluorophore_list(
+                    self.localization_processor.num_fluorophores
+                )
+
             print("Fluorophore names updated successfully.")
 
     @Slot()
@@ -1619,16 +1956,16 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     @Slot()
     def update_min_trace_length(self):
-        if self.processor is not None:
-            self.processor.min_trace_length = self.state.min_trace_length
+        if self.localization_processor is not None:
+            self.localization_processor.min_trace_length = self.state.min_trace_length
 
     @Slot()
     def open_trace_stats_viewer(self):
         """Open the trace stats viewer."""
-        if self.processor is None:
+        if self.localization_processor is None:
             return
         if self.trace_stats_viewer is None:
-            self.trace_stats_viewer = TraceStatsViewer(self.processor)
+            self.trace_stats_viewer = TraceStatsViewer(self.localization_processor)
             self.mediator.register_dialog("trace_stats_viewer", self.trace_stats_viewer)
         self.trace_stats_viewer.show()
         self.trace_stats_viewer.activateWindow()
@@ -1636,10 +1973,10 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     @Slot()
     def open_frc_tool(self):
         """Open the FRC tool."""
-        if self.processor is None:
+        if self.localization_processor is None:
             return
         if self.frc_tool is None:
-            self.frc_tool = FRCTool(self.processor)
+            self.frc_tool = FRCTool(self.localization_processor)
             self.mediator.register_dialog("frc_tool", self.frc_tool)
         self.frc_tool.show()
         self.frc_tool.activateWindow()
@@ -1651,28 +1988,22 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.data_viewer is None:
             raise Exception("DataViewer object not ready!")
 
-        if self.processor is None:
+        if self.workflow is None:
             return
 
-        # Extract the Pandas Series index loc of the rows corresponding to the selected points
-        indices = []
-        for p in points:
-            indices.append(p.data())
+        # Extract the dataframe index labels stored in the plotted points.
+        labels = sorted([point.data() for point in points])
 
-        # Sort the indices
-        indices = sorted(indices)
-
-        # Get the filtered dataframe subset corresponding to selected series ilocs
-        df = self.processor.select_by_series_iloc(
-            iloc=indices, from_weighted_locs=self.state.plot_average_localisations
-        )
+        # Resolve the selected labels against the active workflow dataframe.
+        df = self.workflow.select_by_index_labels(labels)
 
         # Update the dataviewer
         self.data_viewer.set_data(df)
 
         # Inform
-        point_str = "event" if len(indices) == 1 else "events"
-        print(f"Selected {len(indices)} {point_str}.")
+        num_selected = 0 if df is None else len(df.index)
+        point_str = "event" if num_selected == 1 else "events"
+        print(f"Selected {num_selected} {point_str}.")
 
     @Slot(tuple, tuple)
     def show_selected_points_by_range_in_dataviewer(
@@ -1683,16 +2014,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.data_viewer is None:
             raise Exception("DataViewer object not ready!")
 
-        if self.processor is None:
+        if self.workflow is None:
             return
 
-        # Get the filtered dataframe subset contained in the provided x and y ranges
-        df = self.processor.select_by_2d_range(
+        # Get the active workflow dataframe subset contained in the ranges.
+        df = self.workflow.select_by_2d_range(
             x_param,
             y_param,
             x_range,
             y_range,
-            from_weighted_locs=self.state.plot_average_localisations,
         )
 
         # Update the dataviewer
@@ -1712,11 +2042,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter is None:
             raise Exception("Plotter object not ready!")
 
-        if self.processor is None:
+        if self.workflow is None:
             return
 
-        # Filter the dataframe by the passed x and y ranges
-        self.processor.filter_by_2d_range(x_param, y_param, x_range, y_range)
+        if not self.workflow.crop_by_2d_range(x_param, y_param, x_range, y_range):
+            return
 
         # Update the Analyzer
         if self.analyzer is not None:
@@ -1743,8 +2073,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
     def update_weighted_average_localization_option_and_plot(self):
         """Update the weighted average localization option in the Processor and re-plot."""
-        if self.processor is not None:
-            self.processor.use_weighted_localizations = (
+        if self.localization_processor is not None:
+            self.localization_processor.use_weighted_localizations = (
                 self.state.weigh_avg_localization_by_eco
             )
         self.plot_selected_parameters()
@@ -1753,31 +2083,18 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         self,
         colormap: str,
         data_range: Optional[tuple[float, float]] = None,
+        label: Optional[str] = None,
     ):
-        """Update the colorbar widget for the color-coding modes that require it."""
+        """Update the colorbar widget for continuous color columns."""
 
         # Make sure we have a valid colormap
-        if colormap not in [None, "jet", "plasma"]:
+        if colormap not in [None, "jet"]:
             raise ValueError(f"Unsupported colormap `{colormap}`.")
 
-        # Make sure we have a valid data range
-        if data_range is None:
-            data_range = (0.0, 1.0)
-
-        # Only show and update the colorbar for supported parameters and color coding option
-        if not (
-            self.state.color_code == ColorCode.BY_DEPTH
-            or self.state.color_code == ColorCode.BY_TIME
-        ):
+        if colormap is None or data_range is None or label is None:
             self.colorbar.hide()
             return
 
-        # Update the colorbar widget
-        label = (
-            "Depth [nm]"
-            if self.state.color_code == ColorCode.BY_DEPTH
-            else "Time [min]"
-        )
         self.colorbar.reset(colormap=colormap, data_range=data_range, label=label)
         self.colorbar.show()
 
@@ -1785,6 +2102,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         """Plot the localizations."""
 
         colormap = None
+        colorbar_range = None
+        colorbar_label = None
 
         if self.plotter is None:
             raise Exception("Plotter object not ready!")
@@ -1792,168 +2111,80 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.plotter3d is None:
             raise Exception("Plotter3D object not ready!")
 
-        # If there is nothing to plot, return here
-        if (
-            self.processor is None
-            or self.processor.filtered_dataframe is None
-            or len(self.processor.filtered_dataframe.index) == 0
-        ):
+        # If there is nothing to plot, return here. The active workflow
+        # dataframe is the plotting contract; processor-free workflows still
+        # need to be plottable.
+        dataframe = (
+            self.workflow.plot_dataframe() if self.workflow is not None else None
+        )
+        if dataframe is None or len(dataframe.index) == 0:
             print("No data to process.")
             return
 
+        if self.state.x_param not in dataframe.columns:
+            print(f"Cannot plot: missing x parameter '{self.state.x_param}'.")
+            return
+
+        if self.state.y_param not in dataframe.columns:
+            print(f"Cannot plot: missing y parameter '{self.state.y_param}'.")
+            return
+
+        tid = (
+            dataframe["tid"]
+            if "tid" in dataframe.columns
+            else pd.Series(range(len(dataframe.index)), index=dataframe.index)
+        )
+
+        color_column = self.state.color_column
+        if color_column not in dataframe.columns:
+            color_column = None
+            self.state.color_column = None
+        color_values = dataframe[color_column] if color_column is not None else None
+        if (
+            color_values is not None
+            and pd.api.types.is_numeric_dtype(color_values)
+            and not pd.api.types.is_integer_dtype(color_values)
+        ):
+            colormap = "jet"
+            colorbar_range = (color_values.min(), color_values.max())
+            colorbar_label = color_column
+
+        if self.state.plot_3d and not {"x", "y", "z"}.issubset(dataframe.columns):
+            self.state.plot_3d = False
+            if getattr(self, "plotter_toolbar", None) is not None:
+                self.plotter_toolbar.ui.cbPlot3D.setChecked(False)
+
         if self.state.plot_3d:
-
-            # Extract filtered (and optionally averaged) localizations
-            if self.state.plot_average_localisations:
-                # Get the (potentially filtered) averaged dataframe
-                dataframe = self.processor.weighted_localizations
-            else:
-                # Get the (potentially filtered) full dataframe
-                dataframe = self.processor.filtered_dataframe
-
-            # Do we have data to plot
-            if dataframe is None:
-                return
-
-            # Extract identifiers
-            tid = dataframe["tid"]
-            fid = None
-            depth = dataframe["z"]
-            time = None
-
-            # Extract necessary values for color-coding
-            if (
-                self.state.color_code == ColorCode.NONE
-                or self.state.color_code == ColorCode.BY_TID
-            ):
-                pass
-            elif self.state.color_code == ColorCode.BY_FLUO:
-                fid = dataframe["fluo"]
-            elif self.state.color_code == ColorCode.BY_DEPTH:
-                pass
-            elif self.state.color_code == ColorCode.BY_TIME:
-                time = dataframe["tim"] / 60.0  # Color-code by time in minutes
-            else:
-                raise ValueError("Unknown color code")
-
             # Plot localizations in 3D
-            self.plotter3d.plot(dataframe[["x", "y", "z"]], tid, fid, depth, time)
-
-            # Range for colorbar
-            if self.state.color_code == ColorCode.BY_DEPTH:
-
-                # Set colormap
-                colormap = "jet"
-
-                # Set data range
-                data_range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
-
-            elif self.state.color_code == ColorCode.BY_TIME:
-
-                # Set colormap
-                colormap = "plasma"
-
-                # Set data range
-                data_range_for_colorbar = (
-                    dataframe["tim"].min()
-                    / 60.0,  # Data range for color-coding in minutes
-                    dataframe["tim"].max() / 60.0,
-                )
-            else:
-                data_range_for_colorbar = None
+            self.plotter3d.plot(dataframe[["x", "y", "z"]], color_values)
         else:
 
             # Remove the previous plots
             self.plotter.remove_points()
 
-            # If an only if the requested parameters are "x" and "y" (in any order),
-            # we consider the State.plot_average_localisations property.
-            if self.state.x_param in ["x", "y", "z"] and self.state.y_param in [
-                "x",
-                "y",
-                "z",
-            ]:
-                if self.state.plot_average_localisations:
-                    # Get the (potentially filtered) averaged dataframe
-                    dataframe = self.processor.weighted_localizations
-                else:
-                    # Get the (potentially filtered) full dataframe
-                    dataframe = self.processor.filtered_dataframe
-
-            else:
-                # Get the (potentially filtered) full dataframe
-                dataframe = self.processor.filtered_dataframe
-
-            # Do we have data to plot
-            if dataframe is None:
-                return
-
-            # Pre-define values
-            tid = dataframe["tid"]
-            fid = None
-            depth = None
-            time = None
-
             # Extract values
             x = dataframe[self.state.x_param]
             y = dataframe[self.state.y_param]
-            if (
-                self.state.color_code == ColorCode.NONE
-                or self.state.color_code == ColorCode.BY_TID
-            ):
-                pass
-            elif self.state.color_code == ColorCode.BY_FLUO:
-                fid = dataframe["fluo"]
-            elif self.state.color_code == ColorCode.BY_DEPTH:
-                depth = dataframe["z"]
-            elif self.state.color_code == ColorCode.BY_TIME:
-                time = dataframe["tim"] / 60.0  # Color-code by time in minutes
-            else:
-                raise ValueError("Unknown color code")
 
             # Always plot the (x, y) coordinates in the 2D plotter
             self.plotter.plot_parameters(
                 x=x,
                 y=y,
-                color_code=self.state.color_code,
                 x_param=self.state.x_param,
                 y_param=self.state.y_param,
                 tid=tid,
-                fid=fid,
-                depth=depth,
-                time=time,
+                color_values=color_values,
+                color_column=color_column,
             )
-
-            # Range for colorbar
-            if self.state.color_code == ColorCode.BY_DEPTH:
-
-                # Set colormap
-                colormap = "jet"
-
-                # Set data range
-                data_range_for_colorbar = (dataframe["z"].min(), dataframe["z"].max())
-
-            elif self.state.color_code == ColorCode.BY_TIME:
-
-                # Set colormap
-                colormap = "plasma"
-
-                # Set data range for colorbar (in minutes)
-                data_range_for_colorbar = (
-                    dataframe["tim"].min()
-                    / 60.0,  # Data range for color-coding in minutes
-                    dataframe["tim"].max() / 60.0,
-                )
-            else:
-                colormap = None
-                data_range_for_colorbar = None
 
         # Bring the active plot forward
         self.toggle_plotter()
 
         # Update and show the colorbar for the color-coding mode that need it
         self.update_and_show_colorbar_widget_if_needed(
-            colormap=colormap, data_range=data_range_for_colorbar
+            colormap=colormap,
+            data_range=colorbar_range,
+            label=colorbar_label,
         )
 
     def show_processed_dataframe(self, dataframe=None):
@@ -1964,14 +2195,15 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.data_viewer is None:
             raise Exception("DataViewer object not ready!")
 
-        # Is there data to process?
-        if self.processor is None:
-            self.data_viewer.clear()
-            return
-
         if dataframe is None:
             # Get the (potentially filtered) dataframe
-            dataframe = self.processor.filtered_dataframe
+            dataframe = (
+                self.workflow.plot_dataframe() if self.workflow is not None else None
+            )
+
+        if dataframe is None:
+            self.data_viewer.clear()
+            return
 
         # Pass the dataframe to the pdDataViewer
         self.data_viewer.set_data(dataframe)
@@ -1980,11 +2212,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def update_fluorophore_id_in_processor_and_broadcast(self, index):
         """Update the fluorophore ID in the processor and broadcast the change to all parties."""
 
-        if self.processor is None:
+        if self.localization_processor is None:
             return
 
         # Update the processor
-        self.processor.current_fluorophore_id = index
+        self.localization_processor.current_fluorophore_id = index
 
         # Update all views
         self.full_update_ui()
@@ -1996,11 +2228,11 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
     def reset_fluorophore_ids(self):
         """Reset the fluorophore IDs."""
 
-        if self.processor is None:
+        if self.localization_processor is None:
             return
 
         # Reset
-        self.processor.reset()
+        self.localization_processor.reset()
 
         # Update UI
         self.update_fluorophore_id_in_processor_and_broadcast(0)

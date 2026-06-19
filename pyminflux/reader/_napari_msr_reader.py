@@ -5,6 +5,7 @@ napari LayerData tuples for 2D image stacks contained in an MSR file.
 
 It does not modify or depend on the standalone pyMINFLUX GUI.
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Tuple, Union
@@ -12,7 +13,6 @@ from typing import Any, Dict, Iterable, List, Tuple, Union
 import numpy as np
 
 from ._msr_reader import MSRReader
-
 
 LayerData = Tuple[np.ndarray, Dict[str, Any], str]
 

@@ -29,7 +29,7 @@ class TimeSplitRegionBoundariesDialog(QDialog):
 
     def __init__(self, start_value: float, end_value: float, parent=None):
         """Constructor.
-        
+
         Parameters
         ----------
         start_value : float
@@ -40,52 +40,50 @@ class TimeSplitRegionBoundariesDialog(QDialog):
             Parent widget.
         """
         super().__init__(parent)
-        
+
         self.setWindowTitle("Set Region Boundaries")
         self.setModal(True)
-        
+
         # Store original values
         self.start_value = start_value
         self.end_value = end_value
-        
+
         # Create layout
         layout = QVBoxLayout(self)
-        
+
         # Add info label
         info_label = QLabel("Set exact boundaries for this time region (in minutes):")
         layout.addWidget(info_label)
-        
+
         # Create form layout for inputs
         form_layout = QFormLayout()
-        
+
         # Start value input
         self.start_input = QLineEdit()
         self.start_input.setValidator(QDoubleValidator(decimals=2))
         self.start_input.setText(f"{start_value:.2f}")
         form_layout.addRow("Start (min):", self.start_input)
-        
+
         # End value input
         self.end_input = QLineEdit()
         self.end_input.setValidator(QDoubleValidator(decimals=2))
         self.end_input.setText(f"{end_value:.2f}")
         form_layout.addRow("End (min):", self.end_input)
-        
+
         layout.addLayout(form_layout)
-        
+
         # Add button box
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        )
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
-        
+
         # Set minimum width
         self.setMinimumWidth(300)
-    
+
     def get_values(self):
         """Get the entered start and end values.
-        
+
         Returns
         -------
         tuple
@@ -94,11 +92,11 @@ class TimeSplitRegionBoundariesDialog(QDialog):
         try:
             start = float(self.start_input.text())
             end = float(self.end_input.text())
-            
+
             # Ensure start < end
             if start >= end:
                 return None
-            
+
             return (start, end)
         except ValueError:
             return None

@@ -15,13 +15,13 @@
 """Dialog for dataset combining options."""
 
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QDialog,
-    QVBoxLayout,
+    QDialogButtonBox,
+    QGroupBox,
     QLabel,
     QRadioButton,
-    QButtonGroup,
-    QGroupBox,
-    QDialogButtonBox,
+    QVBoxLayout,
 )
 
 

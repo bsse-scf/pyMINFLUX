@@ -315,17 +315,17 @@ class Colors(metaclass=Singleton):
 
     def _get_fid_color(self, fid: int, as_float: bool = False):
         """Get the RGB color for a given fluorophore ID.
-        
+
         This is the single source of truth for fluorophore color assignment,
         used by all plotting and UI functions to ensure consistency.
-        
+
         Parameters
         ----------
         fid: int
             Fluorophore ID (1-based)
         as_float: bool
             If True, return colors in range [0.0, 1.0], otherwise [0, 255]
-            
+
         Returns
         -------
         color: np.ndarray or list
@@ -335,18 +335,21 @@ class Colors(metaclass=Singleton):
         if fid <= len(self._unique_fid_colors):
             color = self._unique_fid_colors[fid - 1]
             return color / 255.0 if as_float else color
-        
+
         # Additional distinct colors for fid >= 3
         # Use a color palette with good contrast
-        additional_colors = np.array([
-            [255, 165, 0],    # Orange (for fid=3)
-            [0, 255, 255],    # Cyan (for fid=4)
-            [255, 255, 0],    # Yellow (for fid=5)
-            [128, 0, 128],    # Purple (for fid=6)
-            [255, 192, 203],  # Pink (for fid=7)
-            [165, 42, 42],    # Brown (for fid=8)
-        ], dtype=int)
-        
+        additional_colors = np.array(
+            [
+                [255, 165, 0],  # Orange (for fid=3)
+                [0, 255, 255],  # Cyan (for fid=4)
+                [255, 255, 0],  # Yellow (for fid=5)
+                [128, 0, 128],  # Purple (for fid=6)
+                [255, 192, 203],  # Pink (for fid=7)
+                [165, 42, 42],  # Brown (for fid=8)
+            ],
+            dtype=int,
+        )
+
         idx = (fid - len(self._unique_fid_colors) - 1) % len(additional_colors)
         color = additional_colors[idx]
         return color / 255.0 if as_float else color
@@ -500,6 +503,18 @@ class ColorsToBrushes(metaclass=Singleton):
         else:
             raise ValueError(f"Unknown color mode: {mode}")
 
+    def get_brushes_for_values(
+        self, values: Optional[pd.Series] = None
+    ) -> Union[QBrush, list[QBrush]]:
+        """Get brushes for a dataframe color column."""
+        if values is None:
+            return self._white_brush
+        if pd.api.types.is_integer_dtype(values) or not pd.api.types.is_numeric_dtype(
+            values
+        ):
+            return self._get_or_create_brush_by_tid(values)
+        return self._get_or_create_brush_by_depth(values)
+
     def reset(self):
         """Reset the color caches."""
         self._tid_brushes = None
@@ -612,9 +627,11 @@ class ColorsToBrushes(metaclass=Singleton):
 
         # Get the list of unique fid
         current_unique_fid = np.unique(fid)
-        
+
         # Check if we need to add more fluorophore colors
-        if not all(identifier in self._fid_to_brush_map for identifier in current_unique_fid):
+        if not all(
+            identifier in self._fid_to_brush_map for identifier in current_unique_fid
+        ):
             # Generate colors for missing identifiers
             for identifier in current_unique_fid:
                 if identifier not in self._fid_to_brush_map:
@@ -873,6 +890,16 @@ class ColorsToRGB(metaclass=Singleton):
         else:
             raise ValueError(f"Unknown color mode: {mode}")
 
+    def get_rgb_for_values(self, values: Optional[pd.Series] = None):
+        """Get RGB colors for a dataframe color column."""
+        if values is None:
+            return Colors().white_float
+        if pd.api.types.is_integer_dtype(values) or not pd.api.types.is_numeric_dtype(
+            values
+        ):
+            return self._get_or_create_rgb_by_tid(values)
+        return self._get_or_create_rgb_by_depth(values)
+
     def reset(self):
         """Reset the color caches."""
         self._tid_colors = None
@@ -958,9 +985,11 @@ class ColorsToRGB(metaclass=Singleton):
 
         # Get the list of unique fid
         current_unique_fid = np.unique(fid)
-        
+
         # Check if we need to add more fluorophore colors
-        if not all(identifier in self._fid_to_color_map for identifier in current_unique_fid):
+        if not all(
+            identifier in self._fid_to_color_map for identifier in current_unique_fid
+        ):
             # Generate colors for missing identifiers
             for identifier in current_unique_fid:
                 if identifier not in self._fid_to_color_map:

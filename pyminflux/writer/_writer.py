@@ -66,16 +66,16 @@ class MinFluxWriter:
                 header_lines.append("# TID Offsets (first_iid -> tid_offset):")
                 for first_iid, tid_offset in sorted(tid_offsets, key=lambda x: x[0]):
                     header_lines.append(f"# iid>={first_iid} : +{tid_offset}")
-            
+
             # Write header and data
-            with open(file_name, 'w') as f:
+            with open(file_name, "w") as f:
                 # Write header comments
                 if header_lines:
-                    f.write('\n'.join(header_lines) + '\n')
-                
+                    f.write("\n".join(header_lines) + "\n")
+
                 # Write the dataframe
                 processor.filtered_dataframe.to_csv(f, index=False)
-                
+
         except Exception as e:
             print(f"Could not save {file_name}: {e}")
             return False

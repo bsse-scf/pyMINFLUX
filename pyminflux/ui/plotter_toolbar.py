@@ -12,13 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from PySide6.QtCore import Qt, Signal, Slot
+import pandas as pd
+from PySide6.QtCore import QSignalBlocker, Qt, Signal, Slot
 from PySide6.QtWidgets import QWidget
 
 from pyminflux.ui.state import State
 
 from ..reader import MinFluxReader
-from .colors import ColorCode
 from .ui_plotter_toolbar import Ui_PlotterToolbar
 
 
@@ -26,7 +26,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
 
     # Signals
     plot_requested_parameters = Signal()
-    color_code_locs_changed = Signal(int)
+    color_column_changed = Signal()
     plot_average_positions_state_changed = Signal()
     plotter_changed = Signal()
     plotter_projection_changed = Signal()
@@ -48,10 +48,7 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         self.plotting_parameters = MinFluxReader.processed_properties()
 
         # Add the values to the plot properties combo boxes (without time)
-        self.ui.cbFirstParam.addItems(self.plotting_parameters)
-        self.ui.cbFirstParam.setCurrentIndex(self.plotting_parameters.index("x"))
-        self.ui.cbSecondParam.addItems(self.plotting_parameters)
-        self.ui.cbSecondParam.setCurrentIndex(self.plotting_parameters.index("y"))
+        self.set_plotting_columns(self.plotting_parameters)
 
         self.ui.cbFirstParam.currentIndexChanged.connect(self.persist_first_param)
         self.ui.cbFirstParam.currentIndexChanged.connect(self.toggle_average_state)
@@ -61,10 +58,10 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
         # Plot
         self.ui.pbPlot.clicked.connect(self.emit_plot_requested)
 
-        # Color-code combo box
-        self.ui.cbColorCodeSelector.setCurrentIndex(0)
-        self.ui.cbColorCodeSelector.currentIndexChanged.connect(
-            self.persist_color_code_and_broadcast
+        # Color column combo box
+        self.set_available_color_columns([])
+        self.ui.cbColorColumnSelector.currentIndexChanged.connect(
+            self.persist_color_column_and_broadcast
         )
 
         # Set the state of the 3D checkbox
@@ -166,16 +163,18 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
             self.ui.cbPlotAveragePos.setChecked(False)
 
     @Slot(int)
-    def persist_color_code_and_broadcast(self, index):
-        """Persist the selection of the color code and broadcast a change."""
-        self.state.color_code = ColorCode(index)
+    def persist_color_column_and_broadcast(self, index):
+        """Persist the selected color column and broadcast a change."""
+        self.state.color_column = self.ui.cbColorColumnSelector.itemData(index)
 
         # Broadcast the change
-        self.color_code_locs_changed.emit(self.state.color_code.value)
+        self.color_column_changed.emit()
 
     @Slot(int)
     def persist_first_param(self, index):
         """Persist the selection for the first parameter."""
+        if index < 0 or index >= len(self.plotting_parameters):
+            return
 
         # Persist the selection
         self.state.x_param = self.plotting_parameters[index]
@@ -183,9 +182,92 @@ class PlotterToolbar(QWidget, Ui_PlotterToolbar):
     @Slot(int)
     def persist_second_param(self, index):
         """Persist the selection for the second parameter."""
+        if index < 0 or index >= len(self.plotting_parameters):
+            return
 
         # Persist the selection
         self.state.y_param = self.plotting_parameters[index]
+
+    def set_plot_dataframe_schema(
+        self,
+        dataframe: pd.DataFrame | None,
+        color_columns: list[str] | None = None,
+    ):
+        """Populate plot controls from the active workflow's plot dataframe."""
+        if dataframe is None:
+            self.set_plotting_columns(MinFluxReader.processed_properties())
+            self.set_available_color_columns([])
+            return
+
+        numeric_columns = [
+            column
+            for column in dataframe.columns
+            if pd.api.types.is_numeric_dtype(dataframe[column])
+        ]
+        self.set_plotting_columns(numeric_columns)
+
+        if color_columns is None:
+            color_columns = []
+        self.set_available_color_columns(color_columns)
+
+    def set_plotting_columns(self, columns, preferred_x="x", preferred_y="y"):
+        """Populate X/Y plotting parameter controls."""
+        columns = list(columns)
+        if not columns:
+            columns = ["x", "y"]
+
+        previous_x = (
+            self.state.x_param if self.state.x_param in columns else preferred_x
+        )
+        previous_y = (
+            self.state.y_param if self.state.y_param in columns else preferred_y
+        )
+        if previous_x not in columns:
+            previous_x = columns[0]
+        if previous_y not in columns:
+            previous_y = columns[1] if len(columns) > 1 else columns[0]
+
+        first_blocker = QSignalBlocker(self.ui.cbFirstParam)
+        second_blocker = QSignalBlocker(self.ui.cbSecondParam)
+        first_blocker.reblock()
+        second_blocker.reblock()
+
+        self.plotting_parameters = columns
+        self.ui.cbFirstParam.clear()
+        self.ui.cbSecondParam.clear()
+        self.ui.cbFirstParam.addItems(columns)
+        self.ui.cbSecondParam.addItems(columns)
+        self.ui.cbFirstParam.setCurrentIndex(columns.index(previous_x))
+        self.ui.cbSecondParam.setCurrentIndex(columns.index(previous_y))
+
+        first_blocker.unblock()
+        second_blocker.unblock()
+
+        self.state.x_param = previous_x
+        self.state.y_param = previous_y
+        self.toggle_average_state(None)
+
+    def set_available_color_columns(self, color_columns):
+        """Populate color controls from allowed dataframe columns."""
+        color_columns = [column for column in color_columns if isinstance(column, str)]
+        current = (
+            self.state.color_column
+            if self.state.color_column in color_columns
+            else None
+        )
+
+        blocker = QSignalBlocker(self.ui.cbColorColumnSelector)
+        blocker.reblock()
+        self.ui.cbColorColumnSelector.clear()
+        self.ui.cbColorColumnSelector.addItem("nothing", None)
+        for column in color_columns:
+            self.ui.cbColorColumnSelector.addItem(column, column)
+        self.ui.cbColorColumnSelector.setCurrentIndex(
+            0 if current is None else color_columns.index(current) + 1
+        )
+        blocker.unblock()
+
+        self.state.color_column = current
 
     @Slot()
     def emit_plot_requested(self):

@@ -148,16 +148,14 @@ class Plotter3D(QWidget):
         self.view.camera.view_changed()
         self.canvas.update()
 
-    def plot(self, positions, tid, fid, depth, time):
+    def plot(self, positions, color_values=None):
         """Plot localizations in a 3D scatter plot."""
 
         # Make sure to have the correct datatype
         self.positions = positions.to_numpy().astype(np.float32)
 
         # Get the colors singleton
-        self.current_colors = ColorsToRGB().get_rgb(
-            self.state.color_code, tid, fid, depth, time
-        )
+        self.current_colors = ColorsToRGB().get_rgb_for_values(color_values)
 
         # If the average locations are plotted, set the diameter to fit the worst localization precision
         if self.state.plot_average_localisations:

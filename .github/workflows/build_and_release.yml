@@ -62,7 +62,9 @@ jobs:
         run: |
           SUFFIX="${{ matrix.artifact_name }}"
           SUFFIX="${SUFFIX#pyMINFLUX-}"
-          echo "VERSIONED_ARCHIVE_NAME=pyMINFLUX-${GITHUB_REF_NAME}-${SUFFIX}.zip" >> $GITHUB_ENV
+          REF_NAME="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          REF_NAME="${REF_NAME//\//-}"
+          echo "VERSIONED_ARCHIVE_NAME=pyMINFLUX-${REF_NAME}-${SUFFIX}.zip" >> "$GITHUB_ENV"
 
       - name: Build standalone app
         if: runner.os != 'Windows'
