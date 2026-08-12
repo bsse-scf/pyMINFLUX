@@ -5,4 +5,4 @@ pytest==8.3.2
 pytest-cov==4.1.0
 nuitka==2.4.11
 zstandard==0.23.0
-ruff==0.4.10
+ruff==0.16.2
