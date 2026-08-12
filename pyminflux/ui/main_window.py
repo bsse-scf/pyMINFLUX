@@ -47,7 +47,7 @@ from pyminflux import __APP_NAME__, __version__
 from pyminflux.combiner import combine_datasets_with_bead_alignment
 from pyminflux.correct import align_datasets_using_beads
 from pyminflux.plugin import PluginManager
-from pyminflux.processor import (
+from pyminflux.combiner import (
     get_bead_positions_from_mbm,
     get_next_fluorophore_id,
     load_zarr_for_beads,
