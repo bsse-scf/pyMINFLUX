@@ -31,7 +31,6 @@ class PMXReader:
 
         # Open the file
         with h5py.File(filename, "r") as f:
-
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
@@ -52,7 +51,6 @@ class PMXReader:
 
             # Version 1.0 parameters
             if version_int > 0:
-
                 try:
                     z_scaling_factor = float(f["parameters/z_scaling_factor"][()])
                 except KeyError:
@@ -218,7 +216,6 @@ class PMXReader:
         """
 
         with h5py.File(filename, "r") as f:
-
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
@@ -268,7 +265,6 @@ class PMXReader:
         """
 
         with h5py.File(filename, "r") as f:
-
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 
@@ -317,7 +313,6 @@ class PMXReader:
 
         # Open the file and read the data
         with h5py.File(filename, "r") as f:
-
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 

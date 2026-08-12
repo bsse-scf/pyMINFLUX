@@ -151,7 +151,6 @@ class pyMINFLUXReader(VTKPythonAlgorithmBase):
     def read_dataframe_from_pmx(self, filename):
         """Read the Pandas DataFrame from the `.pmx` file."""
         with h5py.File(filename, "r") as f:
-
             # Read the file_version attribute
             file_version = f.attrs["file_version"]
 

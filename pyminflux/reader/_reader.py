@@ -610,7 +610,6 @@ class MinFluxReader:
 
             # Pool DCR values?
             if self._pool_dcr and np.sum(self._relocalizations) > 1:
-
                 # Calculate ECO contributions
                 eco_all = itr[:, self._relocalizations]["eco"]
                 eco_sum = eco_all.sum(axis=1)
@@ -622,7 +621,6 @@ class MinFluxReader:
                 dcr = dcr.sum(axis=1)
 
             else:
-
                 # Extract DCR
                 dcr = itr[:, self._dcr_index]["dcr"]
 

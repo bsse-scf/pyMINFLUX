@@ -37,10 +37,8 @@ class PMXWriter:
     def write(self, file_name: Union[Path, str]) -> bool:
 
         try:
-
             # Create HDF5 file with the structure
             with h5py.File(file_name, "w") as f:
-
                 # Set file version attribute
                 f.attrs["file_version"] = "3.0"
 
@@ -86,7 +84,6 @@ class PMXWriter:
             return True
 
         except Exception as e:
-
             # Set the error message
             self._message = str(e)
 

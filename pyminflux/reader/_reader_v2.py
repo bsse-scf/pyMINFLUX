@@ -191,7 +191,6 @@ class MinFluxReaderV2(MinFluxReader):
 
         # Finalize the initialization for all imported file formats
         if file_ext in [".zarr", ".npy", ".mat", ".json"]:
-
             # Initialize the fluo field
             raw_dataframe.loc[:, "fluo"] = 1
 
@@ -766,7 +765,6 @@ class MinFluxReaderV2(MinFluxReader):
             # Pool DCR values?
             num_relocs = int(np.sum(self._relocalizations[: self._loc_index + 1]))
             if self._pool_dcr and num_relocs > 1:
-
                 # Calculate ECO contributions
                 eco_all = data_valid_df["eco"].to_numpy().reshape(-1, num_relocs)
                 eco_sum = eco_all.sum(axis=1)
@@ -778,7 +776,6 @@ class MinFluxReaderV2(MinFluxReader):
                 dcr = dcr.sum(axis=1)
 
             else:
-
                 # Extract DCR
                 dcr = data_valid_df["dcr"][itr == self._dcr_index].to_numpy()
 

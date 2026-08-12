@@ -23,7 +23,6 @@ from .ui_plotter_toolbar import Ui_PlotterToolbar
 
 
 class PlotterToolbar(QWidget, Ui_PlotterToolbar):
-
     # Signals
     plot_requested_parameters = Signal()
     color_column_changed = Signal()

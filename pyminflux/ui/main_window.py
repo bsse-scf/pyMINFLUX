@@ -1237,7 +1237,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         filename = str(filename)
 
         if filename != "" and Path(filename).exists():
-
             # Pick the right reader
             if Path(filename).is_dir():
                 ext = ".zarr"
@@ -2158,7 +2157,6 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             # Plot localizations in 3D
             self.plotter3d.plot(dataframe[["x", "y", "z"]], color_values)
         else:
-
             # Remove the previous plots
             self.plotter.remove_points()
 

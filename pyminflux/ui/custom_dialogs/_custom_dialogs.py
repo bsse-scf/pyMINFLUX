@@ -365,7 +365,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     if EXAMPLE == 1:
-
         # List of options to display in the combo box
         options = ["Option 1", "Option 2", "Option 3", "Option 4"]
 
@@ -380,7 +379,6 @@ if __name__ == "__main__":
             print("Dialog canceled.")
 
     else:
-
         # Define your options here
         options = {
             "Non-Selectable Node 1": [

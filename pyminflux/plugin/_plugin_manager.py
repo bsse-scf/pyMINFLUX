@@ -126,8 +126,10 @@ class PluginManager:
         sandbox_globals = {
             "__builtins__": {
                 **__builtins__,
-                "__import__": lambda name, globals=None, locals=None, fromlist=(), level=0: self._restricted_import(
-                    name, globals, locals, fromlist, level, package_name
+                "__import__": lambda name, globals=None, locals=None, fromlist=(), level=0: (
+                    self._restricted_import(
+                        name, globals, locals, fromlist, level, package_name
+                    )
                 ),
             },
             "__name__": package_name,
