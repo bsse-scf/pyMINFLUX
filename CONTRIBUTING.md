@@ -16,8 +16,7 @@ $ conda create -n pyminflux-env python=3.11  # or 3.10
 $ conda activate pyminflux-env
 $ git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
 $ cd /path/to/pyminflux
-$ python -m pip install -e .
-$ pip install -r dev-requirements.txt
+$ python -m pip install -e ".[dev]"
 ```
 2. Navigate to the repository directory and run `pre-commit install` to set up the git hook scripts.
 3. Now `pre-commit` will run automatically on `git commit` for files you've staged.

@@ -118,9 +118,9 @@ def test_fitting_points_to_plane_and_projecting():
     assert np.allclose(R, expected_R), "Unexpected transformation matrix."
     assert np.allclose(est_centroid, cm), "Unexpected origin."
     assert np.allclose(plane_eq_out, (A, B, C, D)), "Unexpected plane equation."
-    assert np.isclose(
-        np.max(aligned[:, 2]) - np.min(aligned[:, 2]), 0.0
-    ), "All points should be aligned with the z=0 plane."
+    assert np.isclose(np.max(aligned[:, 2]) - np.min(aligned[:, 2]), 0.0), (
+        "All points should be aligned with the z=0 plane."
+    )
 
     # Length of the original XZ stretch
     length_original_xz = np.sqrt(
@@ -133,7 +133,7 @@ def test_fitting_points_to_plane_and_projecting():
     )
 
     assert np.isclose(length_original_xz, length_projected_xz), (
-        "Range should be " "preserved by " "rotation."
+        "Range should be preserved by rotation."
     )
 
     # Project two new points onto the fitted plane
@@ -165,9 +165,9 @@ def test_fitting_points_to_plane_and_projecting():
         ]
     )
 
-    assert np.allclose(
-        aligned_points, expected_aligned_points
-    ), "Unexpected transformation."
+    assert np.allclose(aligned_points, expected_aligned_points), (
+        "Unexpected transformation."
+    )
     assert np.allclose(R_points, expected_R_points), "Unexpected transformation matrix."
 
     # Rest recentering

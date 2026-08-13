@@ -45,7 +45,7 @@ dev = [
     "nuitka>4.0.0",
     "patchelf>=0.17.2.2,<0.18.0.0; sys_platform == 'linux'",
     "zstandard>=0.25.0,<0.26.0",
-    "ruff>=0.15.0,<0.16.0",
+    "ruff>=0.16.2,<0.17.0",
     "hatchling>=1.29.0",
 ]
 

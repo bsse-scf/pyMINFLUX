@@ -169,9 +169,9 @@ def test_align_datasets_using_beads_known_translation():
 
     # Applying the model to the moving positions should recover the reference positions.
     transformed = model(mov_positions)
-    assert np.allclose(
-        transformed, ref_positions, atol=1.0
-    ), "Transformed moving beads must match reference positions within 1 nm"
+    assert np.allclose(transformed, ref_positions, atol=1.0), (
+        "Transformed moving beads must match reference positions within 1 nm"
+    )
 
 
 def test_align_datasets_using_beads_manual_correspondence():
@@ -262,9 +262,9 @@ def test_combine_datasets_with_bead_alignment(npy_path):
 
     ref_n = len(ref_ds.processed_dataframe)
     mov_n = len(mov_ds.processed_dataframe)
-    assert (
-        len(combined.processed_dataframe) == ref_n + mov_n
-    ), "Combined dataframe must contain every row from both input datasets"
+    assert len(combined.processed_dataframe) == ref_n + mov_n, (
+        "Combined dataframe must contain every row from both input datasets"
+    )
 
     # TIDs of the moving half in the combined dataframe must not overlap with
     # TIDs from the reference half.
@@ -272,17 +272,17 @@ def test_combine_datasets_with_bead_alignment(npy_path):
     mov_tids_in_combined = set(
         combined.processed_dataframe.iloc[ref_n:]["tid"].unique()
     )
-    assert ref_tids.isdisjoint(
-        mov_tids_in_combined
-    ), "Moving dataset tids must be offset to avoid collisions with reference tids"
+    assert ref_tids.isdisjoint(mov_tids_in_combined), (
+        "Moving dataset tids must be offset to avoid collisions with reference tids"
+    )
 
     # The reference and moving halves must carry distinct fluorophore IDs.
     ref_fluo = combined.processed_dataframe.iloc[:ref_n]["fluo"].unique()
     mov_fluo = combined.processed_dataframe.iloc[ref_n:]["fluo"].unique()
     assert len(ref_fluo) == 1 and len(mov_fluo) == 1
-    assert (
-        ref_fluo[0] != mov_fluo[0]
-    ), "Reference and moving halves must be assigned distinct fluorophore IDs"
+    assert ref_fluo[0] != mov_fluo[0], (
+        "Reference and moving halves must be assigned distinct fluorophore IDs"
+    )
 
 
 def test_combine_datasets_tim_ordering(npy_path):
@@ -298,9 +298,9 @@ def test_combine_datasets_tim_ordering(npy_path):
         npy_path, tim_offset=tim_offset_for_moving, mbm_data=mov_mbm_data
     )
 
-    assert (
-        mov_ds.processed_dataframe["tim"].min() > tim_max_ref
-    ), "Moving dataset must have tim values strictly greater than the reference maximum"
+    assert mov_ds.processed_dataframe["tim"].min() > tim_max_ref, (
+        "Moving dataset must have tim values strictly greater than the reference maximum"
+    )
 
     combined = combine_datasets_with_bead_alignment(ref_ds, mov_ds)
     assert combined is not None
@@ -308,9 +308,9 @@ def test_combine_datasets_tim_ordering(npy_path):
     ref_n = len(ref_ds.processed_dataframe)
     tim_ref_half = combined.processed_dataframe.iloc[:ref_n]["tim"]
     tim_mov_half = combined.processed_dataframe.iloc[ref_n:]["tim"]
-    assert (
-        tim_mov_half.min() > tim_ref_half.max()
-    ), "All moving tim values must remain above all reference tim values after combining"
+    assert tim_mov_half.min() > tim_ref_half.max(), (
+        "All moving tim values must remain above all reference tim values after combining"
+    )
 
 
 def test_combine_datasets_no_mbm_data_reference(npy_path):

@@ -340,9 +340,9 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     assert reader.num_valid_entries == 40, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 40, "Wrong number of processed entries"
-    assert (
-        len(processor.filtered_dataframe.index) == 40
-    ), "Wrong number of filtered entries"
+    assert len(processor.filtered_dataframe.index) == 40, (
+        "Wrong number of filtered entries"
+    )
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
@@ -360,9 +360,9 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     assert reader.num_valid_entries == 40, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 22, "Wrong number of processed entries"
-    assert (
-        len(processor.filtered_dataframe.index) == 22
-    ), "Wrong number of filtered entries"
+    assert len(processor.filtered_dataframe.index) == 22, (
+        "Wrong number of filtered entries"
+    )
 
     # Check that the extracted ID are the expected ones
     extracted_tids = np.unique(processor.filtered_dataframe["tid"])
@@ -382,9 +382,9 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     assert reader.num_valid_entries == 40, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 18, "Wrong number of processed entries"
-    assert (
-        len(processor.filtered_dataframe.index) == 18
-    ), "Wrong number of filtered entries"
+    assert len(processor.filtered_dataframe.index) == 18, (
+        "Wrong number of filtered entries"
+    )
 
     # Check that the extracted ID are the expected ones
     extracted_tids = np.unique(processor.filtered_dataframe["tid"])
@@ -410,9 +410,9 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     assert reader.num_valid_entries == 40, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 35, "Wrong number of processed entries"
-    assert (
-        len(processor.filtered_dataframe.index) == 35
-    ), "Wrong number of filtered entries"
+    assert len(processor.filtered_dataframe.index) == 35, (
+        "Wrong number of filtered entries"
+    )
 
     # Check that no traces are shorter than processor.min_trace_length
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
@@ -435,9 +435,9 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     assert reader.num_valid_entries == 40, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 21, "Wrong number of processed entries"
-    assert (
-        len(processor.filtered_dataframe.index) == 21
-    ), "Wrong number of filtered entries"
+    assert len(processor.filtered_dataframe.index) == 21, (
+        "Wrong number of filtered entries"
+    )
 
     # Check that the extracted ID are the expected ones
     extracted_tids = np.unique(processor.filtered_dataframe["tid"])
@@ -457,9 +457,9 @@ def test_process_by_fluorophore_id_with_mock_reader(tmpdir):
     assert reader.num_valid_entries == 40, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 14, "Wrong number of processed entries"
-    assert (
-        len(processor.filtered_dataframe.index) == 14
-    ), "Wrong number of filtered entries"
+    assert len(processor.filtered_dataframe.index) == 14, (
+        "Wrong number of filtered entries"
+    )
 
     # Check that the extracted ID are the expected ones
     extracted_tids = np.unique(processor.filtered_dataframe["tid"])
@@ -492,12 +492,12 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     assert np.all(
         stats["tid"].to_numpy() == np.array([51, 54, 70, 97, 102, 151, 171, 176])
     ), "Unexpected TID grouping."
-    assert np.all(
-        stats["n"].to_numpy() == np.array([1, 6, 5, 7, 1, 3, 9, 8])
-    ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].to_numpy()) == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected total number of entries in the stats dataframe."
+    assert np.all(stats["n"].to_numpy() == np.array([1, 6, 5, 7, 1, 3, 9, 8])), (
+        "Unexpected TID grouping."
+    )
+    assert np.sum(stats["n"].to_numpy()) == len(processor.filtered_dataframe.index), (
+        "Unexpected total number of entries in the stats dataframe."
+    )
 
     for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
@@ -551,12 +551,12 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     assert np.all(
         stats["tid"].to_numpy() == np.array([51, 54, 70, 97, 102, 151, 171, 176])
     ), "Unexpected TID grouping."
-    assert np.all(
-        stats["n"].to_numpy() == np.array([1, 6, 5, 7, 1, 3, 9, 8])
-    ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].to_numpy()) == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected total number of entries in the stats dataframe."
+    assert np.all(stats["n"].to_numpy() == np.array([1, 6, 5, 7, 1, 3, 9, 8])), (
+        "Unexpected TID grouping."
+    )
+    assert np.sum(stats["n"].to_numpy()) == len(processor.filtered_dataframe.index), (
+        "Unexpected total number of entries in the stats dataframe."
+    )
 
     for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
@@ -620,12 +620,12 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     assert np.all(
         stats["tid"].to_numpy() == np.array([51, 54, 70, 97, 102, 151, 171, 176])
     ), "Unexpected TID grouping."
-    assert np.all(
-        stats["n"].to_numpy() == np.array([1, 6, 5, 7, 1, 3, 9, 8])
-    ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].to_numpy()) == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected total number of entries in the stats dataframe."
+    assert np.all(stats["n"].to_numpy() == np.array([1, 6, 5, 7, 1, 3, 9, 8])), (
+        "Unexpected TID grouping."
+    )
+    assert np.sum(stats["n"].to_numpy()) == len(processor.filtered_dataframe.index), (
+        "Unexpected total number of entries in the stats dataframe."
+    )
 
     for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
@@ -673,15 +673,15 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Get statistics
     stats = processor.filtered_dataframe_stats
 
-    assert np.all(
-        stats["tid"].to_numpy() == np.array([51, 54, 97, 176])
-    ), "Unexpected TID grouping."
-    assert np.all(
-        stats["n"].to_numpy() == np.array([1, 6, 7, 8])
-    ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].to_numpy()) == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected total number of entries in the stats dataframe."
+    assert np.all(stats["tid"].to_numpy() == np.array([51, 54, 97, 176])), (
+        "Unexpected TID grouping."
+    )
+    assert np.all(stats["n"].to_numpy() == np.array([1, 6, 7, 8])), (
+        "Unexpected TID grouping."
+    )
+    assert np.sum(stats["n"].to_numpy()) == len(processor.filtered_dataframe.index), (
+        "Unexpected total number of entries in the stats dataframe."
+    )
 
     for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
@@ -741,15 +741,15 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Get statistics
     stats = processor.filtered_dataframe_stats
 
-    assert np.all(
-        stats["tid"].to_numpy() == np.array([70, 102, 151, 171])
-    ), "Unexpected TID grouping."
-    assert np.all(
-        stats["n"].to_numpy() == np.array([5, 1, 3, 9])
-    ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].to_numpy()) == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected total number of entries in the stats dataframe."
+    assert np.all(stats["tid"].to_numpy() == np.array([70, 102, 151, 171])), (
+        "Unexpected TID grouping."
+    )
+    assert np.all(stats["n"].to_numpy() == np.array([5, 1, 3, 9])), (
+        "Unexpected TID grouping."
+    )
+    assert np.sum(stats["n"].to_numpy()) == len(processor.filtered_dataframe.index), (
+        "Unexpected total number of entries in the stats dataframe."
+    )
 
     for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
@@ -814,9 +814,9 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     stats = processor.filtered_dataframe_stats
 
     # The dataframe should be empty
-    assert (
-        len(stats.index) == 4
-    ), "The stats dataframe should contain 4 rows (the ones for fluorophore 2)!"
+    assert len(stats.index) == 4, (
+        "The stats dataframe should contain 4 rows (the ones for fluorophore 2)!"
+    )
 
     # Set current fluorophore to 1
     processor.current_fluorophore_id = 1
@@ -873,15 +873,15 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Get statistics
     stats = processor.filtered_dataframe_stats
 
-    assert np.all(
-        stats["tid"].to_numpy() == np.array([54, 70, 97, 171, 176])
-    ), "Unexpected TID grouping."
-    assert np.all(
-        stats["n"].to_numpy() == np.array([6, 5, 7, 9, 8])
-    ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].to_numpy()) == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected total number of entries in the stats dataframe."
+    assert np.all(stats["tid"].to_numpy() == np.array([54, 70, 97, 171, 176])), (
+        "Unexpected TID grouping."
+    )
+    assert np.all(stats["n"].to_numpy() == np.array([6, 5, 7, 9, 8])), (
+        "Unexpected TID grouping."
+    )
+    assert np.sum(stats["n"].to_numpy()) == len(processor.filtered_dataframe.index), (
+        "Unexpected total number of entries in the stats dataframe."
+    )
 
     for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
@@ -927,15 +927,15 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Get statistics
     stats = processor.filtered_dataframe_stats
 
-    assert np.all(
-        stats["tid"].to_numpy() == np.array([54, 70, 97, 171, 176])
-    ), "Unexpected TID grouping."
-    assert np.all(
-        stats["n"].to_numpy() == np.array([6, 5, 7, 9, 8])
-    ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].to_numpy()) == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected total number of entries in the stats dataframe."
+    assert np.all(stats["tid"].to_numpy() == np.array([54, 70, 97, 171, 176])), (
+        "Unexpected TID grouping."
+    )
+    assert np.all(stats["n"].to_numpy() == np.array([6, 5, 7, 9, 8])), (
+        "Unexpected TID grouping."
+    )
+    assert np.sum(stats["n"].to_numpy()) == len(processor.filtered_dataframe.index), (
+        "Unexpected total number of entries in the stats dataframe."
+    )
 
     for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
@@ -996,15 +996,15 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Get statistics for fluorophore ID 0 (All)
     stats = processor.filtered_dataframe_stats
 
-    assert np.all(
-        stats["tid"].to_numpy() == np.array([54, 70, 97, 171, 176])
-    ), "Unexpected TID grouping."
-    assert np.all(
-        stats["n"].to_numpy() == np.array([6, 5, 7, 9, 8])
-    ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].to_numpy()) == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected total number of entries in the stats dataframe."
+    assert np.all(stats["tid"].to_numpy() == np.array([54, 70, 97, 171, 176])), (
+        "Unexpected TID grouping."
+    )
+    assert np.all(stats["n"].to_numpy() == np.array([6, 5, 7, 9, 8])), (
+        "Unexpected TID grouping."
+    )
+    assert np.sum(stats["n"].to_numpy()) == len(processor.filtered_dataframe.index), (
+        "Unexpected total number of entries in the stats dataframe."
+    )
 
     for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
@@ -1047,15 +1047,15 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Get statistics
     stats = processor.filtered_dataframe_stats
 
-    assert np.all(
-        stats["tid"].to_numpy() == np.array([54, 97, 176])
-    ), "Unexpected TID grouping."
-    assert np.all(
-        stats["n"].to_numpy() == np.array([6, 7, 8])
-    ), "Unexpected TID grouping."
-    assert np.sum(stats["n"].to_numpy()) == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected total number of entries in the stats dataframe."
+    assert np.all(stats["tid"].to_numpy() == np.array([54, 97, 176])), (
+        "Unexpected TID grouping."
+    )
+    assert np.all(stats["n"].to_numpy() == np.array([6, 7, 8])), (
+        "Unexpected TID grouping."
+    )
+    assert np.sum(stats["n"].to_numpy()) == len(processor.filtered_dataframe.index), (
+        "Unexpected total number of entries in the stats dataframe."
+    )
 
     for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
@@ -1110,13 +1110,13 @@ def test_statistics_by_fluorophore_id_with_mock_reader(tmpdir):
     # Get statistics
     stats = processor.filtered_dataframe_stats
 
-    assert np.all(
-        stats["tid"].to_numpy() == np.array([70, 171])
-    ), "Unexpected TID grouping."
+    assert np.all(stats["tid"].to_numpy() == np.array([70, 171])), (
+        "Unexpected TID grouping."
+    )
     assert np.all(stats["n"].to_numpy() == np.array([5, 9])), "Unexpected TID grouping."
-    assert np.sum(stats["n"].to_numpy()) == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected total number of entries in the stats dataframe."
+    assert np.sum(stats["n"].to_numpy()) == len(processor.filtered_dataframe.index), (
+        "Unexpected total number of entries in the stats dataframe."
+    )
 
     for tid in stats["tid"].to_numpy():
         rows = processor.filtered_dataframe.loc[
@@ -1277,9 +1277,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 0
-    ), "The selection should be empty!"
+    assert len(processor.filtered_dataframe.index) == 0, (
+        "The selection should be empty!"
+    )
 
     # If we now switch to fluorophore 2 and apply the same filter,
     # we should get the localizations of all fluorophores (since they
@@ -1294,9 +1294,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 17
-    ), "The selection should not be empty!"
+    assert len(processor.filtered_dataframe.index) == 17, (
+        "The selection should not be empty!"
+    )
 
     #
     # MockMinFluxReader
@@ -1322,9 +1322,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 0
-    ), "The selection should be empty!"
+    assert len(processor.filtered_dataframe.index) == 0, (
+        "The selection should be empty!"
+    )
 
     # If we now switch to fluorophore 2 and apply the same filter,
     # we should get the localizations of all fluorophores (since they
@@ -1339,9 +1339,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_2d_range("x", "y", x_range=x_range, y_range=y_range)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 13
-    ), "The selection should not be empty!"
+    assert len(processor.filtered_dataframe.index) == 13, (
+        "The selection should not be empty!"
+    )
 
     #
     # 1D filtering
@@ -1370,9 +1370,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_1d_range("x", x_range)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 0
-    ), "The selection should be empty!"
+    assert len(processor.filtered_dataframe.index) == 0, (
+        "The selection should be empty!"
+    )
 
     # If we now switch to fluorophore 2 and apply the same filter,
     # we should get the localizations of all fluorophores (since they
@@ -1386,9 +1386,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_1d_range("x", x_range)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 17
-    ), "The selection should not be empty!"
+    assert len(processor.filtered_dataframe.index) == 17, (
+        "The selection should not be empty!"
+    )
 
     #
     # MockMinFluxReader
@@ -1413,9 +1413,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_1d_range("x", x_range)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 0
-    ), "The selection should be empty!"
+    assert len(processor.filtered_dataframe.index) == 0, (
+        "The selection should be empty!"
+    )
 
     # If we now switch to fluorophore 2 and apply the same filter,
     # we should get the localizations of all fluorophores (since they
@@ -1429,9 +1429,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_1d_range("x", x_range)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 13
-    ), "The selection should not be empty!"
+    assert len(processor.filtered_dataframe.index) == 13, (
+        "The selection should not be empty!"
+    )
 
     #
     # 1D thresholding
@@ -1460,9 +1460,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_single_threshold("x", x_range[0], larger_than=True)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 0
-    ), "The selection should be empty!"
+    assert len(processor.filtered_dataframe.index) == 0, (
+        "The selection should be empty!"
+    )
 
     # If we now switch to fluorophore 2 and apply the same filter,
     # we should get the localizations of all fluorophores (since they
@@ -1476,9 +1476,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_single_threshold("x", x_range[0], larger_than=True)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 17
-    ), "The selection should not be empty!"
+    assert len(processor.filtered_dataframe.index) == 17, (
+        "The selection should not be empty!"
+    )
 
     #
     # MockMinFluxReader
@@ -1503,9 +1503,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_single_threshold("x", x_range[0], larger_than=True)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 0
-    ), "The selection should be empty!"
+    assert len(processor.filtered_dataframe.index) == 0, (
+        "The selection should be empty!"
+    )
 
     # If we now switch to fluorophore 2 and apply the same filter,
     # we should get the localizations of all fluorophores (since they
@@ -1519,9 +1519,9 @@ def test_1d_and_2d_filtering_by_fluorophore_id_with_mock_reader(
     processor.filter_by_single_threshold("x", x_range[0], larger_than=True)
 
     # The current selection should be empty
-    assert (
-        len(processor.filtered_dataframe.index) == 13
-    ), "The selection should not be empty!"
+    assert len(processor.filtered_dataframe.index) == 13, (
+        "The selection should not be empty!"
+    )
 
 
 def test_extract_filtered_fluorophore_ids():
@@ -1537,9 +1537,9 @@ def test_extract_filtered_fluorophore_ids():
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Check that the global filters have been applied (and nothing has been dropped)
-    assert (
-        len(processor.filtered_dataframe.index) == 40
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 40, (
+        "Unexpected number of entries."
+    )
 
     # Reassign the fluorophore IDs
     processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1548,17 +1548,17 @@ def test_extract_filtered_fluorophore_ids():
     assert processor.current_fluorophore_id == 0, "Default fluorophore ID must be 0."
 
     # Now, the data for all fluorophores will be returned
-    assert (
-        len(processor.filtered_dataframe.index) == 40
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 40, (
+        "Unexpected number of entries."
+    )
 
     # Change to fluorophore 1
     processor.current_fluorophore_id = 1
 
     # Now, the data for fluorophore 1 will be returned
-    assert (
-        len(processor.filtered_dataframe.index) == 22
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 22, (
+        "Unexpected number of entries."
+    )
 
     # We filter with a single threshold that should return just one ID 1 fluorophore.
     x_thresh = 20.0
@@ -1569,9 +1569,9 @@ def test_extract_filtered_fluorophore_ids():
 
     # Check
     assert len(processor.filtered_dataframe.index) == 1, "Expected 1 entry."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The number of fluorophore IDs must match the number of df entries."
+    assert len(processor.filtered_dataframe.index) == len(ids), (
+        "The number of fluorophore IDs must match the number of df entries."
+    )
     assert (ids == 1).sum() == 1, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
 
@@ -1579,9 +1579,9 @@ def test_extract_filtered_fluorophore_ids():
     processor.current_fluorophore_id = 2
 
     # Check that there are 18 entries
-    assert (
-        len(processor.filtered_dataframe.index) == 18
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 18, (
+        "Unexpected number of entries."
+    )
 
     # Same filter
     x_thresh = 20.0
@@ -1592,9 +1592,9 @@ def test_extract_filtered_fluorophore_ids():
 
     # Check
     assert len(processor.filtered_dataframe.index) == 18, "Expected 18 entries."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The number of fluorophore IDs must match the number of df entries."
+    assert len(processor.filtered_dataframe.index) == len(ids), (
+        "The number of fluorophore IDs must match the number of df entries."
+    )
     assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 18, "Unexpected number of ID 2 fluorophores."
 
@@ -1612,17 +1612,17 @@ def test_extract_filtered_fluorophore_ids():
     processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
 
     # Check that there are 35 entries
-    assert (
-        len(processor.filtered_dataframe.index) == 35
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 35, (
+        "Unexpected number of entries."
+    )
 
     # Change to fluorophore 1
     processor.current_fluorophore_id = 1
 
     # Check that there are 21 entries
-    assert (
-        len(processor.filtered_dataframe.index) == 21
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 21, (
+        "Unexpected number of entries."
+    )
 
     # Same filter
     x_thresh = 20.0
@@ -1633,9 +1633,9 @@ def test_extract_filtered_fluorophore_ids():
 
     # Check
     assert len(processor.filtered_dataframe.index) == 0, "Expected 0 entries."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The number of fluorophore IDs must match the number of df entries."
+    assert len(processor.filtered_dataframe.index) == len(ids), (
+        "The number of fluorophore IDs must match the number of df entries."
+    )
     assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
 
@@ -1643,9 +1643,9 @@ def test_extract_filtered_fluorophore_ids():
     processor.current_fluorophore_id = 2
 
     # Check that there are 14 entries
-    assert (
-        len(processor.filtered_dataframe.index) == 14
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 14, (
+        "Unexpected number of entries."
+    )
 
     # Same filter
     x_thresh = 20.0
@@ -1655,9 +1655,9 @@ def test_extract_filtered_fluorophore_ids():
     ids = processor.filtered_dataframe["fluo"]
 
     # Check
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The number of fluorophore IDs must match the number of df entries."
+    assert len(processor.filtered_dataframe.index) == len(ids), (
+        "The number of fluorophore IDs must match the number of df entries."
+    )
     assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 14, "Unexpected number of ID 2 fluorophores."
 
@@ -1679,17 +1679,17 @@ def test_assignment_by_increasing_dcr(tmpdir):
     processor.set_fluorophore_ids(reader.test_swapped_fluorophore_ids)
 
     # Check that the global filters have been applied (and nothing has been dropped)
-    assert (
-        len(processor.filtered_dataframe.index) == 40
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 40, (
+        "Unexpected number of entries."
+    )
 
     # Check that we have the default fluorophore (0)
     assert processor.current_fluorophore_id == 0, "Default fluorophore ID must be 0."
 
     # Now, the data for all fluorophores will be returned
-    assert (
-        len(processor.filtered_dataframe.index) == 40
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 40, (
+        "Unexpected number of entries."
+    )
 
     # Change to fluorophore 1
     processor.current_fluorophore_id = 1
@@ -1724,9 +1724,9 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
     assert len(reader.processed_dataframe.index) == len(reader.test_fluorophore_ids)
 
     # Check that the global filters have been applied (and nothing has been dropped)
-    assert (
-        len(processor.filtered_dataframe.index) == 17955
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 17955, (
+        "Unexpected number of entries."
+    )
 
     # Reassign the fluorophore IDs
     processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1738,26 +1738,26 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
     # Fluorophore ID = 1
     processor.current_fluorophore_id = 1
     ids = processor.filtered_dataframe["fluo"]
-    assert (
-        len(processor.filtered_dataframe.index) == 12884
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 12884, (
+        "Unexpected number of entries."
+    )
     assert len(ids) == 12884, "Unexpected number of entries."
-    assert (ids == 1).sum() == (
-        reader.test_fluorophore_ids == 1
-    ).sum(), "Unexpected number of ID 1 fluorophores."
+    assert (ids == 1).sum() == (reader.test_fluorophore_ids == 1).sum(), (
+        "Unexpected number of ID 1 fluorophores."
+    )
     assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
 
     # Fluorophore ID = 2
     processor.current_fluorophore_id = 2
     ids = processor.filtered_dataframe["fluo"]
-    assert (
-        len(processor.filtered_dataframe.index) == 5071
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 5071, (
+        "Unexpected number of entries."
+    )
     assert len(ids) == 5071, "Unexpected number of entries."
     assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
-    assert (ids == 2).sum() == (
-        reader.test_fluorophore_ids == 2
-    ).sum(), "Unexpected number of ID 2 fluorophores."
+    assert (ids == 2).sum() == (reader.test_fluorophore_ids == 2).sum(), (
+        "Unexpected number of ID 2 fluorophores."
+    )
 
     #
     # MockFromRealDataMinFluxReader
@@ -1773,9 +1773,9 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
     assert len(reader.processed_dataframe.index) == len(reader.test_fluorophore_ids)
 
     # Check that the global filters have been applied (and nothing has been dropped)
-    assert (
-        len(processor.filtered_dataframe.index) == 16281
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 16281, (
+        "Unexpected number of entries."
+    )
 
     # Reassign the fluorophore IDs
     processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1787,26 +1787,26 @@ def test_extract_filtered_fluorophore_ids_from_real_data(tmpdir):
     # Fluorophore ID = 1
     processor.current_fluorophore_id = 1
     ids = processor.filtered_dataframe["fluo"]
-    assert (
-        len(processor.filtered_dataframe.index) == 11544
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 11544, (
+        "Unexpected number of entries."
+    )
     assert len(ids) == 11544, "Unexpected number of entries."
-    assert (ids == 1).sum() == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected number of ID 1 fluorophores."
+    assert (ids == 1).sum() == len(processor.filtered_dataframe.index), (
+        "Unexpected number of ID 1 fluorophores."
+    )
     assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
 
     # Fluorophore ID = 2
     processor.current_fluorophore_id = 2
     ids = processor.filtered_dataframe["fluo"]
-    assert (
-        len(processor.filtered_dataframe.index) == 4737
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 4737, (
+        "Unexpected number of entries."
+    )
     assert len(ids) == 4737, "Unexpected number of entries."
     assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
-    assert (ids == 2).sum() == len(
-        processor.filtered_dataframe.index
-    ), "Unexpected number of ID 2 fluorophores."
+    assert (ids == 2).sum() == len(processor.filtered_dataframe.index), (
+        "Unexpected number of ID 2 fluorophores."
+    )
 
 
 def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
@@ -1823,9 +1823,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Check that the global filters have been applied (and nothing has been dropped)
-    assert (
-        len(processor.filtered_dataframe.index) == 40
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 40, (
+        "Unexpected number of entries."
+    )
 
     # Reassign the fluorophore IDs
     processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1837,9 +1837,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     processor.current_fluorophore_id = 1
 
     # Now, the data for fluorophore 1 will be returned
-    assert (
-        len(processor.filtered_dataframe.index) == 22
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 22, (
+        "Unexpected number of entries."
+    )
 
     # We filter with a single threshold that should return 10 ID 1 fluorophore.
     x_thresh = 10.0
@@ -1853,9 +1853,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
 
     # Check
     assert len(processor.filtered_dataframe.index) == 10, "Expected 10 entry."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The number of fluorophore IDs must match the number of df entries."
+    assert len(processor.filtered_dataframe.index) == len(ids), (
+        "The number of fluorophore IDs must match the number of df entries."
+    )
     assert (ids == 1).sum() == 10, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
 
@@ -1863,9 +1863,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     processor.current_fluorophore_id = 2
 
     # Check that there are 18 entries
-    assert (
-        len(processor.filtered_dataframe.index) == 18
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 18, (
+        "Unexpected number of entries."
+    )
 
     # We filter with a single threshold that should return 8 ID 2 fluorophore.
     x_thresh = 40.0
@@ -1876,9 +1876,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
 
     # Check
     assert len(processor.filtered_dataframe.index) == 8, "Expected 8 entries."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The number of fluorophore IDs must match the number of df entries."
+    assert len(processor.filtered_dataframe.index) == len(ids), (
+        "The number of fluorophore IDs must match the number of df entries."
+    )
     assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 8, "Unexpected number of ID 2 fluorophores."
 
@@ -1890,9 +1890,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     df_all = processor.filtered_dataframe
     df_join = pd.concat([df_1, df_2]).sort_index()
     # Make sure all entries are the same
-    assert (
-        (df_all == df_join).all().all()
-    ), "The selected and filtered set are not identical."
+    assert (df_all == df_join).all().all(), (
+        "The selected and filtered set are not identical."
+    )
 
     #
     # MockMinFluxReader
@@ -1905,9 +1905,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Check that the global filters have been applied (and nothing has been dropped)
-    assert (
-        len(processor.filtered_dataframe.index) == 35
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 35, (
+        "Unexpected number of entries."
+    )
 
     # Reassign the fluorophore IDs
     processor.set_full_fluorophore_ids(reader.test_fluorophore_ids)
@@ -1916,17 +1916,17 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     assert processor.current_fluorophore_id == 0, "Default fluorophore ID must be 0."
 
     # Now, the data for all fluorophores will be returned
-    assert (
-        len(processor.filtered_dataframe.index) == 35
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 35, (
+        "Unexpected number of entries."
+    )
 
     # Change to fluorophore 1
     processor.current_fluorophore_id = 1
 
     # Now, the data for fluorophore 1 will be returned
-    assert (
-        len(processor.filtered_dataframe.index) == 21
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 21, (
+        "Unexpected number of entries."
+    )
 
     # We filter with a single threshold that should return 10 ID 1 fluorophore.
     x_thresh = 10.0
@@ -1940,9 +1940,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
 
     # Check
     assert len(processor.filtered_dataframe.index) == 4, "Expected 10 entry."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The number of fluorophore IDs must match the number of df entries."
+    assert len(processor.filtered_dataframe.index) == len(ids), (
+        "The number of fluorophore IDs must match the number of df entries."
+    )
     assert (ids == 1).sum() == 4, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 0, "Unexpected number of ID 2 fluorophores."
 
@@ -1950,9 +1950,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     processor.current_fluorophore_id = 2
 
     # Check that there are 14 entries
-    assert (
-        len(processor.filtered_dataframe.index) == 14
-    ), "Unexpected number of entries."
+    assert len(processor.filtered_dataframe.index) == 14, (
+        "Unexpected number of entries."
+    )
 
     # We filter with a single threshold that should return 8 ID 2 fluorophore.
     x_thresh = 40.0
@@ -1963,9 +1963,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
 
     # Check
     assert len(processor.filtered_dataframe.index) == 4, "Expected 8 entries."
-    assert len(processor.filtered_dataframe.index) == len(
-        ids
-    ), "The number of fluorophore IDs must match the number of df entries."
+    assert len(processor.filtered_dataframe.index) == len(ids), (
+        "The number of fluorophore IDs must match the number of df entries."
+    )
     assert (ids == 1).sum() == 0, "Unexpected number of ID 1 fluorophores."
     assert (ids == 2).sum() == 4, "Unexpected number of ID 2 fluorophores."
 
@@ -1978,9 +1978,9 @@ def test_retrieving_dataframe_with_no_fluorophore_filtering(tmpdir):
     df_join = pd.concat([df_1, df_2]).sort_index()
 
     # Make sure all entries are the same
-    assert (
-        (df_all == df_join).all().all()
-    ), "The selected and filtered set are not identical."
+    assert (df_all == df_join).all().all(), (
+        "The selected and filtered set are not identical."
+    )
 
 
 def test_fluorophore_id_majority_vote(tmpdir):
@@ -1997,11 +1997,11 @@ def test_fluorophore_id_majority_vote(tmpdir):
     reassigned_fluo_ids = reassign_fluo_ids_by_majority_vote(fluo_ids, tids)
 
     # Check the results
-    assert np.all(
-        expected_fluo_ids == reassigned_fluo_ids
-    ), "Unexpected fluorophore ID reassignment result!"
+    assert np.all(expected_fluo_ids == reassigned_fluo_ids), (
+        "Unexpected fluorophore ID reassignment result!"
+    )
 
     # Check the number of reassigned localizations
-    assert (
-        np.sum(reassigned_fluo_ids != fluo_ids) == 112
-    ), "Unexpected number of fluorophore ID reassignments!"
+    assert np.sum(reassigned_fluo_ids != fluo_ids) == 112, (
+        "Unexpected number of fluorophore ID reassignments!"
+    )

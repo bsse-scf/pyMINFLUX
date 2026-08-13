@@ -181,7 +181,6 @@ class Plotter(PlotWidget):
             ev.accept()
 
         else:
-
             # Is the user trying to open a context menu?
             if (
                 self.scatter_plot is not None
@@ -220,7 +219,6 @@ class Plotter(PlotWidget):
                 menu.exec(QPoint(int(pos.x()), int(pos.y())))
                 ev.accept()
             else:
-
                 # Call the parent method
                 ev.ignore()
                 super().mousePressEvent(ev)
@@ -417,14 +415,14 @@ class Plotter(PlotWidget):
         # Make sure our inputs are Pandas Series
         assert x is not None and type(x) == pd.Series, "`x` must be a Pandas Series."
         assert y is not None and type(y) == pd.Series, "`y` must be a Pandas Series."
-        assert (
-            tid is not None and type(tid) == pd.Series
-        ), "`tid` must be a Pandas Series."
+        assert tid is not None and type(tid) == pd.Series, (
+            "`tid` must be a Pandas Series."
+        )
 
         if color_values is not None:
-            assert (
-                type(color_values) == pd.Series
-            ), "`color_values` must be a Pandas Series."
+            assert type(color_values) == pd.Series, (
+                "`color_values` must be a Pandas Series."
+            )
 
         # If we have an image, make sure to draw it first (but only if
         # x_param is "x" and y_param is "y"
@@ -433,7 +431,6 @@ class Plotter(PlotWidget):
                 self.addItem(self.image_item)
 
         if self.state.show_localizations:
-
             # Do we need to recreate the colors?
             if self._need_to_recreate_colors(
                 color_column=color_column,
@@ -467,7 +464,6 @@ class Plotter(PlotWidget):
             if self.state.is_tracking and (
                 x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]
             ):
-
                 # Add the line_plot within TIDs
                 line_indices = np.concatenate(
                     (np.diff(tid.to_numpy()) == 0, [1])
@@ -545,20 +541,17 @@ class Plotter(PlotWidget):
 
         assert type(tid) == pd.Series, "`tid` must be a Pandas Series."
         if color_values is not None:
-            assert (
-                type(color_values) == pd.Series
-            ), "`color_values` must be a Pandas Series."
+            assert type(color_values) == pd.Series, (
+                "`color_values` must be a Pandas Series."
+            )
 
         recreate_brushes = False
         if self.last_plot_parameters["color_column"] is None:
-
             # Fist time
             recreate_brushes = True
         else:
-
             # There were plots already
             if self.last_plot_parameters["color_column"] != color_column:
-
                 # If the color column changed, we need to recreate the colors
                 recreate_brushes = True
 
@@ -690,7 +683,7 @@ class Plotter(PlotWidget):
             self,
             "Load MSR file",
             load_path,
-            "All Supported Files (*.msr);;" "MSR file (*.pmx);;",
+            "All Supported Files (*.msr);;MSR file (*.pmx);;",
         )
         filename = res[0]
         if filename == "":
@@ -709,7 +702,6 @@ class Plotter(PlotWidget):
         options = {}
 
         for key in image_info:
-
             # Build the header
             header = f"{key} - {image_info[key]['metadata']}"
 

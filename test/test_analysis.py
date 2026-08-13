@@ -96,12 +96,12 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
     lower_bound, upper_bound = find_first_peak_bounds(
         n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5
     )
-    assert (
-        pytest.approx(lower_bound, 1e-4) == 13821.63722748869
-    ), "The lower bound is wrong!"
-    assert (
-        pytest.approx(upper_bound, 1e-4) == 48225.758832542466
-    ), "The upper bound is wrong!"
+    assert pytest.approx(lower_bound, 1e-4) == 13821.63722748869, (
+        "The lower bound is wrong!"
+    )
+    assert pytest.approx(upper_bound, 1e-4) == 48225.758832542466, (
+        "The upper bound is wrong!"
+    )
 
     #
     # 2D_only_cfr.npy
@@ -114,16 +114,16 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
 
     # Get robust thresholds
     upper_bound, lower_bound, med, mad = get_robust_threshold(cfr, factor=2.0)
-    assert (
-        pytest.approx(lower_bound, 1e-4) == -0.015163637960486809
-    ), "The lower bound is wrong!"
-    assert (
-        pytest.approx(upper_bound, 1e-4) == 0.2715112942104868
-    ), "The median value is wrong!"
+    assert pytest.approx(lower_bound, 1e-4) == -0.015163637960486809, (
+        "The lower bound is wrong!"
+    )
+    assert pytest.approx(upper_bound, 1e-4) == 0.2715112942104868, (
+        "The median value is wrong!"
+    )
     assert pytest.approx(med, 1e-4) == 0.128173828125, "The lower bound is wrong!"
-    assert (
-        pytest.approx(mad, 1e-4) == 0.0716687330427434
-    ), "The median absolute difference value is wrong!"
+    assert pytest.approx(mad, 1e-4) == 0.0716687330427434, (
+        "The median absolute difference value is wrong!"
+    )
 
     #
     # 3D_only_efo.npy
@@ -164,16 +164,16 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
 
     # Get robust thresholds
     upper_bound, lower_bound, med, mad = get_robust_threshold(cfr, factor=2.0)
-    assert (
-        pytest.approx(lower_bound, 1e-4) == -0.0006192938657819114
-    ), "The lower bound is wrong!"
-    assert (
-        pytest.approx(upper_bound, 1e-4) == 0.7052091376157819
-    ), "The median value is wrong!"
+    assert pytest.approx(lower_bound, 1e-4) == -0.0006192938657819114, (
+        "The lower bound is wrong!"
+    )
+    assert pytest.approx(upper_bound, 1e-4) == 0.7052091376157819, (
+        "The median value is wrong!"
+    )
     assert pytest.approx(med, 1e-4) == 0.352294921875, "The lower bound is wrong!"
-    assert (
-        pytest.approx(mad, 1e-4) == 0.17645710787039096
-    ), "The median absolute difference value is wrong!"
+    assert pytest.approx(mad, 1e-4) == 0.17645710787039096, (
+        "The median absolute difference value is wrong!"
+    )
 
     #
     # 3D_only_overlabeled_efo.npy
@@ -201,9 +201,9 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
         n_efo, b_efo, min_rel_prominence=0.01, med_filter_support=5
     )
     assert pytest.approx(lower_bound, 1e-4) == 11600, "The lower bound is wrong!"
-    assert (
-        pytest.approx(upper_bound, 1e-4) == 44760.60183679485
-    ), "The upper bound is wrong!"
+    assert pytest.approx(upper_bound, 1e-4) == 44760.60183679485, (
+        "The upper bound is wrong!"
+    )
 
     #
     # 3D_only_overlabeled_cfr.npy
@@ -216,13 +216,13 @@ def test_efo_cfr_bounds_extraction(extract_bounds_extraction_data_archive):
 
     # Get robust thresholds
     upper_bound, lower_bound, med, mad = get_robust_threshold(cfr, factor=2.0)
-    assert (
-        pytest.approx(lower_bound, 1e-4) == 0.45367502494940626
-    ), "The lower bound is wrong!"
-    assert (
-        pytest.approx(upper_bound, 1e-4) == 0.8646843500505937
-    ), "The median value is wrong!"
+    assert pytest.approx(lower_bound, 1e-4) == 0.45367502494940626, (
+        "The lower bound is wrong!"
+    )
+    assert pytest.approx(upper_bound, 1e-4) == 0.8646843500505937, (
+        "The median value is wrong!"
+    )
     assert pytest.approx(med, 1e-4) == 0.6591796875, "The lower bound is wrong!"
-    assert (
-        pytest.approx(mad, 1e-4) == 0.10275233127529688
-    ), "The median absolute difference value is wrong!"
+    assert pytest.approx(mad, 1e-4) == 0.10275233127529688, (
+        "The median absolute difference value is wrong!"
+    )

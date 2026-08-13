@@ -643,7 +643,6 @@ class Analyzer(QDialog, Ui_Analyzer):
         #
 
         if self.processor.is_tracking:
-
             #
             # Plot various statistics for tracking datasets
             #
@@ -746,7 +745,6 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.sz_plot.show()
 
         else:
-
             #
             # Plot various statistics for localization datasets
             #
@@ -1011,12 +1009,10 @@ class Analyzer(QDialog, Ui_Analyzer):
             "tr_len": self.tr_len_plot.getPlotItem().getViewBox(),
             self.sx_plot.getPlotItem()
             .getViewBox()
-            .data_label: self.sx_plot.getPlotItem()
-            .getViewBox(),
+            .data_label: self.sx_plot.getPlotItem().getViewBox(),
             self.sy_plot.getPlotItem()
             .getViewBox()
-            .data_label: self.sy_plot.getPlotItem()
-            .getViewBox(),
+            .data_label: self.sy_plot.getPlotItem().getViewBox(),
         }
         if self.processor.is_tracking or self.processor.is_3d:
             items[self.sz_plot.getPlotItem().getViewBox().data_label] = (

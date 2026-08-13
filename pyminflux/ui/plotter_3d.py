@@ -351,7 +351,6 @@ class CustomSceneCanvas(scene.SceneCanvas):
 
         # If the button is 2 (right-click), we open a context menu
         if event.button == 2:
-
             # Get the position of the cursor
             pos = event.pos
             qt_pos = QPoint(int(pos[0]), int(pos[1]))

@@ -334,7 +334,6 @@ def get_reader_version_for_pmx_file(file_path):
     """
     # Open the file and read the data
     with h5py.File(file_path, "r") as f:
-
         # Read the file_version attribute
         file_version = f.attrs["file_version"]
 

@@ -39,7 +39,7 @@ def deprecated(replacement=None, version=None):
 
             # Preserve metadata
             wrapped.__name__ = obj.__name__
-            wrapped.__doc__ = f"{obj.__doc__ or ''}\n\n" f"Deprecated: {message}"
+            wrapped.__doc__ = f"{obj.__doc__ or ''}\n\nDeprecated: {message}"
             return wrapped
 
         # Handle properties
@@ -103,7 +103,7 @@ def deprecated(replacement=None, version=None):
                     super().__init__(*args, **kwargs)
 
             Wrapped.__name__ = obj.__name__
-            Wrapped.__doc__ = f"{obj.__doc__ or ''}\n\n" f"Deprecated: {message}"
+            Wrapped.__doc__ = f"{obj.__doc__ or ''}\n\nDeprecated: {message}"
             return Wrapped
 
         # Unsupported types
