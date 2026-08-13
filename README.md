@@ -66,15 +66,14 @@ $ uvx --refresh --from 'git+https://github.com/bsse-scf/pyMINFLUX@bead_alignment
 
 ## For developers and tinkerers
 
-pyMINFLUX is compatible with and tested on Python 3.10, 3.11, and 3.12. For development, it is recommended to install pyMINFLUX in editable mode in a [conda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links) environment as follows:
+pyMINFLUX is compatible with and tested on Python 3.10, 3.11, and 3.12. For development, you can e.g. install pyMINFLUX in editable mode in a [conda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links) environment as follows:
 
 ```sh
 $ conda create -n pyminflux-env python=3.11  # or 3.10, 3.12
 $ conda activate pyminflux-env
 $ git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
 $ cd /path/to/pyminflux
-$ python -m pip install -e .
-$ pip install -r dev-requirements.txt
+$ python -m pip install -e ".[dev]"
 ```
 
 If you want to participate to the development of pyMINFLUX, please have a look at [how you can contribute](CONTRIBUTING.md) and at our [code of conduct](CODE_OF_CONDUCT.md).
@@ -112,6 +111,5 @@ We value the contribution of our community members, and to make sure that everyo
 If you use pyMINFLUX in your research, please cite this repository as follows:
 
 > Aaron Ponti, Javier Casares Arias, & Thomas Horn. (2023). pyMINFLUX. Zenodo. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7895501.svg)](https://doi.org/10.5281/zenodo.7895501)
-
 
 
