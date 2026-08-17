@@ -267,17 +267,17 @@ def test_render_xy(extract_raw_npy_data_files):
     )
 
     # Check the returned values
-    assert np.isclose(img.sum(), len(processor.filtered_dataframe["x"].to_numpy())), (
-        "Unexpected signal integral."
-    )
+    assert np.isclose(
+        img.sum(), len(processor.filtered_dataframe["x"].to_numpy())
+    ), "Unexpected signal integral."
     assert np.isclose(xi.min(), 1648.111058125942), "Unexpected x grid (min value)."
     assert np.isclose(xi.max(), 5677.111058125942), "Unexpected x grid (max) value)."
     assert np.isclose(yi.min(), -15658.73531581803), "Unexpected y grid (min value)."
     assert np.isclose(yi.max(), -11623.73531581803), "Unexpected y grid (max value)."
     assert m.sum() == 12580.0, "Unexpected number of considered elements."
-    assert m.sum() == len(processor.filtered_dataframe["x"].to_numpy()), (
-        "Unexpected number of considered elements."
-    )
+    assert m.sum() == len(
+        processor.filtered_dataframe["x"].to_numpy()
+    ), "Unexpected number of considered elements."
 
     # Render the 2D image as a Gaussian fit
     img, xi, yi, m = render_xy(
@@ -297,9 +297,9 @@ def test_render_xy(extract_raw_npy_data_files):
     assert np.isclose(yi.min(), -15658.73531581803), "Unexpected y grid (min value)."
     assert np.isclose(yi.max(), -11623.73531581803), "Unexpected y grid (max value)."
     assert m.sum() == 12566.0, "Unexpected number of considered elements."
-    assert m.sum() < len(processor.filtered_dataframe["x"].to_numpy()), (
-        "Unexpected number of considered elements."
-    )
+    assert m.sum() < len(
+        processor.filtered_dataframe["x"].to_numpy()
+    ), "Unexpected number of considered elements."
 
 
 def test_render_xyz(extract_raw_npy_data_files):
@@ -471,9 +471,9 @@ def test_fourier_ring_correlation_all_pos(extract_raw_npy_data_files):
         resolutions[r] = estimated_resolution
 
     # Test
-    assert np.allclose(resolutions, expected_resolutions), (
-        "Calculated resolutions do not match the expected ones."
-    )
+    assert np.allclose(
+        resolutions, expected_resolutions
+    ), "Calculated resolutions do not match the expected ones."
 
 
 def test_fourier_ring_correlation_all_pos_mat(extract_raw_npy_data_files):
@@ -528,9 +528,9 @@ def test_fourier_ring_correlation_all_pos_mat(extract_raw_npy_data_files):
         resolutions[r] = estimated_resolution
 
     # Test
-    assert np.allclose(resolutions, expected_resolutions), (
-        "Calculated resolutions do not match the expected ones."
-    )
+    assert np.allclose(
+        resolutions, expected_resolutions
+    ), "Calculated resolutions do not match the expected ones."
 
 
 def test_fourier_ring_correlation_per_tid(extract_raw_npy_data_files):
@@ -595,9 +595,9 @@ def test_fourier_ring_correlation_per_tid(extract_raw_npy_data_files):
         resolutions[r] = estimated_resolution
 
     # Test
-    assert np.allclose(resolutions, expected_resolutions), (
-        "Calculated resolutions do not match the expected ones."
-    )
+    assert np.allclose(
+        resolutions, expected_resolutions
+    ), "Calculated resolutions do not match the expected ones."
 
 
 def test_fourier_ring_correlation_per_tid_mat(extract_raw_npy_data_files):
@@ -662,9 +662,9 @@ def test_fourier_ring_correlation_per_tid_mat(extract_raw_npy_data_files):
         resolutions[r] = estimated_resolution
 
     # Test
-    assert np.allclose(resolutions, expected_resolutions), (
-        "Calculated resolutions do not match the expected ones."
-    )
+    assert np.allclose(
+        resolutions, expected_resolutions
+    ), "Calculated resolutions do not match the expected ones."
 
 
 def test_fourier_ring_correlation_per_tid_mat_2(extract_raw_npy_data_files):
@@ -729,9 +729,9 @@ def test_fourier_ring_correlation_per_tid_mat_2(extract_raw_npy_data_files):
         resolutions[r] = estimated_resolution
 
     # Test
-    assert np.allclose(resolutions, expected_resolutions), (
-        "Calculated resolutions do not match the expected ones."
-    )
+    assert np.allclose(
+        resolutions, expected_resolutions
+    ), "Calculated resolutions do not match the expected ones."
 
 
 def test_estimate_resolution(extract_raw_npy_data_files):
@@ -805,12 +805,12 @@ def test_estimate_resolution(extract_raw_npy_data_files):
 
     # Test
     assert np.isclose(resolution, expected_resolution), "Unexpected resolution."
-    assert np.allclose(resolutions, expected_resolutions), (
-        "Unexpected array of resolutions."
-    )
-    assert np.isclose(expected_resolutions.mean(), expected_resolution), (
-        "Unexpected resolution."
-    )
+    assert np.allclose(
+        resolutions, expected_resolutions
+    ), "Unexpected array of resolutions."
+    assert np.isclose(
+        expected_resolutions.mean(), expected_resolution
+    ), "Unexpected resolution."
     assert np.allclose(expected_qi, qi), "Unexpected array of qis."
     assert np.allclose(expected_ci_start, ci[:5]), "Unexpected beginning of ci."
     assert np.allclose(expected_ci_end, ci[-5:]), "Unexpected end of ci."

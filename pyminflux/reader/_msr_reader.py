@@ -120,7 +120,9 @@ class OBFStackMetadata(_BaseDataclass):
         0  # Length of the stack description in bytes (-> utf-8 -> xml)
     )
     reserved: uint64 = 0  # Do not touch
-    data_len_disk: uint64 = 0  # Length of data on disk; version 6: offset from the end of the header + description to the stack footer
+    data_len_disk: uint64 = (
+        0  # Length of data on disk; version 6: offset from the end of the header + description to the stack footer
+    )
     next_stack_pos: uint64 = (0,)
     stack_name: str = ""
     stack_description: str = ""
@@ -1156,9 +1158,9 @@ class MSRReader:
         current_size += 4
 
         # Internal check
-        assert current_size == _Constants.V1A_FOOTER_LENGTH, (
-            "Unexpected length of version 1/1A data."
-        )
+        assert (
+            current_size == _Constants.V1A_FOOTER_LENGTH
+        ), "Unexpected length of version 1/1A data."
 
         # Have we read enough for this version?
         if current_size > size_for_version:
@@ -1199,9 +1201,9 @@ class MSRReader:
         obf_stack_metadata.si_dimensions = dimensions
 
         # Internal check
-        assert current_size == _Constants.V2_FOOTER_LENGTH, (
-            "Unexpected length of version 2 data."
-        )
+        assert (
+            current_size == _Constants.V2_FOOTER_LENGTH
+        ), "Unexpected length of version 2 data."
 
         # Have we read enough for this version?
         if current_size > size_for_version:
@@ -1222,9 +1224,9 @@ class MSRReader:
         obf_stack_metadata.flush_block_size = flush_block_size
 
         # Internal check
-        assert current_size == _Constants.V3_FOOTER_LENGTH, (
-            "Unexpected length of version 3 data."
-        )
+        assert (
+            current_size == _Constants.V3_FOOTER_LENGTH
+        ), "Unexpected length of version 3 data."
 
         # Have we read enough for this version?
         if current_size > size_for_version:
@@ -1237,9 +1239,9 @@ class MSRReader:
         current_size += 8
 
         # Internal check
-        assert current_size == _Constants.V4_FOOTER_LENGTH, (
-            "Unexpected length of version 4 data."
-        )
+        assert (
+            current_size == _Constants.V4_FOOTER_LENGTH
+        ), "Unexpected length of version 4 data."
 
         # Have we read enough for this version?
         if current_size > size_for_version:
@@ -1262,9 +1264,9 @@ class MSRReader:
         current_size += 8
 
         # Internal check
-        assert current_size == _Constants.V5A_FOOTER_LENGTH, (
-            "Unexpected length of version 5/5A data."
-        )
+        assert (
+            current_size == _Constants.V5A_FOOTER_LENGTH
+        ), "Unexpected length of version 5/5A data."
 
         # Have we read enough for this version?
         if current_size > size_for_version:
@@ -1285,9 +1287,9 @@ class MSRReader:
         current_size += 8
 
         # Internal check
-        assert current_size == _Constants.V6_FOOTER_LENGTH, (
-            "Unexpected length of version 6 data."
-        )
+        assert (
+            current_size == _Constants.V6_FOOTER_LENGTH
+        ), "Unexpected length of version 6 data."
 
         # Have we read enough for this version?
         if current_size > size_for_version:

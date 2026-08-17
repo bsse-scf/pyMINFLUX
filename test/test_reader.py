@@ -87,15 +87,15 @@ def test_access(extract_multi_format_geometry_data_files):
     # Before accessing the processed_dataframe, most values are set, with the
     # exception if `is_last_valid` that returns None
     assert reader.is_3d is True, "The 3D information is extracted at load/scan."
-    assert reader.is_aggregated is False, (
-        "Whether the data is aggregated is extracted at load/scan."
-    )
-    assert reader.is_last_valid is None, (
-        "The last valid information is extracted when processing."
-    )
-    assert reader.is_tracking is True, (
-        "The tracking flag is passed as a parameter to the constructor."
-    )
+    assert (
+        reader.is_aggregated is False
+    ), "Whether the data is aggregated is extracted at load/scan."
+    assert (
+        reader.is_last_valid is None
+    ), "The last valid information is extracted when processing."
+    assert (
+        reader.is_tracking is True
+    ), "The tracking flag is passed as a parameter to the constructor."
     assert np.all(
         reader.valid_cfr
         == [False, False, True, False, False, False, True, False, False, False]
@@ -104,26 +104,26 @@ def test_access(extract_multi_format_geometry_data_files):
         reader.relocalizations
         == [False, False, False, False, False, False, True, True, True, True]
     ), "The relocalized iterations flag is extracted at load/scan."
-    assert reader.z_scaling_factor == 0.7, (
-        "The z scaling factor is passed as a parameter to the constructor."
-    )
-    assert reader.dwell_time == 0.05, (
-        "The dwell time is passed as a parameter to the constructor."
-    )
-    assert reader.is_pool_dcr is True, (
-        "The pool DCR flag is passed as a parameter to the constructor."
-    )
+    assert (
+        reader.z_scaling_factor == 0.7
+    ), "The z scaling factor is passed as a parameter to the constructor."
+    assert (
+        reader.dwell_time == 0.05
+    ), "The dwell time is passed as a parameter to the constructor."
+    assert (
+        reader.is_pool_dcr is True
+    ), "The pool DCR flag is passed as a parameter to the constructor."
 
     assert reader.is_3d is True, "The 3D information is extracted at load/scan."
-    assert reader.is_aggregated is False, (
-        "Whether the data is aggregated is extracted at load/scan."
-    )
-    assert reader.is_last_valid is None, (
-        "The last valid information is extracted when processing."
-    )
-    assert reader.is_tracking is True, (
-        "The tracking flag is passed as a parameter to the constructor."
-    )
+    assert (
+        reader.is_aggregated is False
+    ), "Whether the data is aggregated is extracted at load/scan."
+    assert (
+        reader.is_last_valid is None
+    ), "The last valid information is extracted when processing."
+    assert (
+        reader.is_tracking is True
+    ), "The tracking flag is passed as a parameter to the constructor."
     assert np.all(
         reader.valid_cfr
         == [False, False, True, False, False, False, True, False, False, False]
@@ -132,15 +132,15 @@ def test_access(extract_multi_format_geometry_data_files):
         reader.relocalizations
         == [False, False, False, False, False, False, True, True, True, True]
     ), "The relocalized iterations flag is extracted at load/scan."
-    assert reader.z_scaling_factor == 0.7, (
-        "The z scaling factor is passed as a parameter to the constructor."
-    )
-    assert reader.dwell_time == 0.05, (
-        "The dwell time is passed as a parameter to the constructor."
-    )
-    assert reader.is_pool_dcr is True, (
-        "The pool DCR flag is passed as a parameter to the constructor."
-    )
+    assert (
+        reader.z_scaling_factor == 0.7
+    ), "The z scaling factor is passed as a parameter to the constructor."
+    assert (
+        reader.dwell_time == 0.05
+    ), "The dwell time is passed as a parameter to the constructor."
+    assert (
+        reader.is_pool_dcr is True
+    ), "The pool DCR flag is passed as a parameter to the constructor."
 
     # Now access the processed_dataframe, that will force its creation and the update
     # of `is_last_valid`. All other properties do not change.
@@ -148,15 +148,15 @@ def test_access(extract_multi_format_geometry_data_files):
     assert df is not None, "The dataframe is generated at access."
 
     assert reader.is_3d is True, "The 3D information is extracted at load/scan."
-    assert reader.is_aggregated is False, (
-        "Whether the data is aggregated is extracted at load/scan."
-    )
-    assert reader.is_last_valid is True, (
-        "The last valid information is extracted when processing."
-    )
-    assert reader.is_tracking is True, (
-        "The tracking flag is passed as a parameter to the constructor."
-    )
+    assert (
+        reader.is_aggregated is False
+    ), "Whether the data is aggregated is extracted at load/scan."
+    assert (
+        reader.is_last_valid is True
+    ), "The last valid information is extracted when processing."
+    assert (
+        reader.is_tracking is True
+    ), "The tracking flag is passed as a parameter to the constructor."
     assert np.all(
         reader.valid_cfr
         == [False, False, True, False, False, False, True, False, False, False]
@@ -165,15 +165,15 @@ def test_access(extract_multi_format_geometry_data_files):
         reader.relocalizations
         == [False, False, False, False, False, False, True, True, True, True]
     ), "The relocalized iterations flag is extracted at load/scan."
-    assert reader.z_scaling_factor == 0.7, (
-        "The z scaling factor is passed as a parameter to the constructor."
-    )
-    assert reader.dwell_time == 0.05, (
-        "The dwell time is passed as a parameter to the constructor."
-    )
-    assert reader.is_pool_dcr is True, (
-        "The pool DCR flag is passed as a parameter to the constructor."
-    )
+    assert (
+        reader.z_scaling_factor == 0.7
+    ), "The z scaling factor is passed as a parameter to the constructor."
+    assert (
+        reader.dwell_time == 0.05
+    ), "The dwell time is passed as a parameter to the constructor."
+    assert (
+        reader.is_pool_dcr is True
+    ), "The pool DCR flag is passed as a parameter to the constructor."
 
     # Now change something - the `process` flag in the methods below allow to postpone the
     # processing of the NumPy array into the dataframe, but only if dataframe has not been
@@ -182,9 +182,9 @@ def test_access(extract_multi_format_geometry_data_files):
     assert reader.is_tracking is False, "The tracking flag is changed immediately."
 
     reader.set_indices(4, 4, process=False)
-    assert reader.is_last_valid is False, (
-        "The selected iteration is no longer the last valid."
-    )
+    assert (
+        reader.is_last_valid is False
+    ), "The selected iteration is no longer the last valid."
 
     reader.set_dwell_time(1.0, process=False)
     assert reader.dwell_time == 1.0, "The dwell time is changed immediately."
@@ -201,9 +201,9 @@ def test_reader_factory(extract_multi_format_geometry_data_files):
 
     assert reader is not None, "A reader must be returned for this file."
     assert status == "", "No error message expected."
-    assert reader.__name__ == "MinFluxReader", (
-        "A reader version 1 must be returned for this file."
-    )
+    assert (
+        reader.__name__ == "MinFluxReader"
+    ), "A reader version 1 must be returned for this file."
 
     # Get the reader for the MAT array
     mat_file_name = Path(__file__).parent / "data" / "230321-111601_minflux2D_3.mat"
@@ -211,6 +211,6 @@ def test_reader_factory(extract_multi_format_geometry_data_files):
 
     assert reader is not None, "A reader must be returned for this file."
     assert status == "", "No error message expected."
-    assert reader.__name__ == "MinFluxReader", (
-        "A reader version 1 must be returned for this file."
-    )
+    assert (
+        reader.__name__ == "MinFluxReader"
+    ), "A reader version 1 must be returned for this file."

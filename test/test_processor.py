@@ -166,47 +166,47 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Check counts for totally unfiltered data
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 687394, "Wrong number of invalid entries"
     assert processor.num_values == 12580, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 12580, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 12580
+    ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
     processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 11064, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 11064, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 11064
+    ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 2432, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 2432, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 2432
+    ), "Wrong number of filtered entries"
 
     # Reset all filters and confirm counts
     processor.reset()
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 687394, "Wrong number of invalid entries"
     assert processor.num_values == 12580, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 12580, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 12580
+    ), "Wrong number of filtered entries"
 
     #
     # 2D_All.npy
@@ -219,25 +219,25 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Check counts for totally unfiltered data
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 687394, "Wrong number of invalid entries"
     assert processor.num_values == 11903, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 11903, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 11903
+    ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
     processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 10385, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 10385, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 10385
+    ), "Wrong number of filtered entries"
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
@@ -245,13 +245,13 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 1678, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 1678, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 1678
+    ), "Wrong number of filtered entries"
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
@@ -259,15 +259,15 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Reset all filters and confirm counts
     processor.reset()
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 687394, "Wrong number of invalid entries"
     assert processor.num_values == 11903, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 11903, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 11903
+    ), "Wrong number of filtered entries"
 
     #
     # 2D_ValidOnly.npy
@@ -280,47 +280,47 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Check counts for totally unfiltered data
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 12580, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 12580, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 12580
+    ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
     processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 11064, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 11064, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 11064
+    ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 2432, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 2432, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 2432
+    ), "Wrong number of filtered entries"
 
     # Reset all filters and confirm counts
     processor.reset()
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 12580, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 12580, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 12580
+    ), "Wrong number of filtered entries"
 
     #
     # 2D_ValidOnly.npy
@@ -333,25 +333,25 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Check counts for totally unfiltered data
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 11903, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 11903, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 11903
+    ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
     processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 10385, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 10385, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 10385
+    ), "Wrong number of filtered entries"
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
@@ -359,13 +359,13 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 1678, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 1678, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 1678
+    ), "Wrong number of filtered entries"
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
@@ -373,15 +373,15 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Reset all filters and confirm counts
     processor.reset()
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 12580, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 11903, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 11903, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 11903
+    ), "Wrong number of filtered entries"
 
     #
     # 3D_ValidOnly.npy
@@ -394,47 +394,47 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     # Check counts for totally unfiltered data
-    assert len(reader.processed_dataframe.index) == 5812, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 5812, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 5812, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 5812, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 5812
+    ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
     processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
-    assert len(reader.processed_dataframe.index) == 5812, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert processor.num_values == 4654, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 4654, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 4654
+    ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
-    assert len(reader.processed_dataframe.index) == 5812, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert processor.num_values == 1589, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 1589, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 1589
+    ), "Wrong number of filtered entries"
 
     # Reset all filters and confirm counts
     processor.reset()
-    assert len(reader.processed_dataframe.index) == 5812, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 5812, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 5812, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 5812, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 5812
+    ), "Wrong number of filtered entries"
 
     #
     # 3D_ValidOnly.npy
@@ -447,25 +447,25 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=4)
 
     # Check counts for totally unfiltered data
-    assert len(reader.processed_dataframe.index) == 5812, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 5812, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 5492, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 5492, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 5492
+    ), "Wrong number of filtered entries"
 
     # Apply EFO filter and check counts
     processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
-    assert len(reader.processed_dataframe.index) == 5812, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert processor.num_values == 4334, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 4334, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 4334
+    ), "Wrong number of filtered entries"
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
@@ -473,13 +473,13 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
-    assert len(reader.processed_dataframe.index) == 5812, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert processor.num_values == 1280, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 1280, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 1280
+    ), "Wrong number of filtered entries"
 
     # Make sure the global filters were applied
     counts = processor.filtered_dataframe["tid"].value_counts(normalize=False)
@@ -487,15 +487,15 @@ def test_filter_raw_dataframes(extract_raw_npy_data_files):
 
     # Reset all filters and confirm counts
     processor.reset()
-    assert len(reader.processed_dataframe.index) == 5812, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 5812
+    ), "Wrong total number of entries"
     assert reader.num_valid_entries == 5812, "Wrong number of valid entries"
     assert reader.num_invalid_entries == 0, "Wrong number of invalid entries"
     assert processor.num_values == 5492, "Wrong number of processed entries"
-    assert len(processor.filtered_dataframe.index) == 5492, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 5492
+    ), "Wrong number of filtered entries"
 
 
 def test_eco_value_extraction(extract_raw_npy_data_files):
@@ -577,15 +577,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
         exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
-        assert pytest.approx(x_w, 1e-4) == exp_x_w, (
-            "The weighted x localization is wrong!"
-        )
-        assert pytest.approx(y_w, 1e-4) == exp_y_w, (
-            "The weighted y localization is wrong!"
-        )
-        assert pytest.approx(z_w, 1e-4) == exp_z_w, (
-            "The weighted z localization is wrong!"
-        )
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
     #
     #
@@ -613,15 +613,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
         exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
-        assert pytest.approx(x_w, 1e-4) == exp_x_w, (
-            "The weighted x localization is wrong!"
-        )
-        assert pytest.approx(y_w, 1e-4) == exp_y_w, (
-            "The weighted y localization is wrong!"
-        )
-        assert pytest.approx(z_w, 1e-4) == exp_z_w, (
-            "The weighted z localization is wrong!"
-        )
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
     #
     # 2D_ValidOnly.npy
@@ -656,15 +656,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
         exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
-        assert pytest.approx(x_w, 1e-4) == exp_x_w, (
-            "The weighted x localization is wrong!"
-        )
-        assert pytest.approx(y_w, 1e-4) == exp_y_w, (
-            "The weighted y localization is wrong!"
-        )
-        assert pytest.approx(z_w, 1e-4) == exp_z_w, (
-            "The weighted z localization is wrong!"
-        )
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
     #
     #
@@ -692,15 +692,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
         exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
-        assert pytest.approx(x_w, 1e-4) == exp_x_w, (
-            "The weighted x localization is wrong!"
-        )
-        assert pytest.approx(y_w, 1e-4) == exp_y_w, (
-            "The weighted y localization is wrong!"
-        )
-        assert pytest.approx(z_w, 1e-4) == exp_z_w, (
-            "The weighted z localization is wrong!"
-        )
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
     #
     # 3D_ValidOnly.npy
@@ -735,15 +735,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
         exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
-        assert pytest.approx(x_w, 1e-4) == exp_x_w, (
-            "The weighted x localization is wrong!"
-        )
-        assert pytest.approx(y_w, 1e-4) == exp_y_w, (
-            "The weighted y localization is wrong!"
-        )
-        assert pytest.approx(z_w, 1e-4) == exp_z_w, (
-            "The weighted z localization is wrong!"
-        )
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
     #
     #
@@ -771,15 +771,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
         exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
-        assert pytest.approx(x_w, 1e-4) == exp_x_w, (
-            "The weighted x localization is wrong!"
-        )
-        assert pytest.approx(y_w, 1e-4) == exp_y_w, (
-            "The weighted y localization is wrong!"
-        )
-        assert pytest.approx(z_w, 1e-4) == exp_z_w, (
-            "The weighted z localization is wrong!"
-        )
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
     #
     # 3D_ValidOnly.npy
@@ -814,15 +814,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
         exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
-        assert pytest.approx(x_w, 1e-4) == exp_x_w, (
-            "The weighted x localization is wrong!"
-        )
-        assert pytest.approx(y_w, 1e-4) == exp_y_w, (
-            "The weighted y localization is wrong!"
-        )
-        assert pytest.approx(z_w, 1e-4) == exp_z_w, (
-            "The weighted z localization is wrong!"
-        )
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
     #
     #
@@ -850,15 +850,15 @@ def test_weighted_localizations(extract_raw_npy_data_files):
         exp_x_w = float(df_loc[df_loc["tid"] == tid]["x"].to_numpy()[0])
         exp_y_w = float(df_loc[df_loc["tid"] == tid]["y"].to_numpy()[0])
         exp_z_w = float(df_loc[df_loc["tid"] == tid]["z"].to_numpy()[0])
-        assert pytest.approx(x_w, 1e-4) == exp_x_w, (
-            "The weighted x localization is wrong!"
-        )
-        assert pytest.approx(y_w, 1e-4) == exp_y_w, (
-            "The weighted y localization is wrong!"
-        )
-        assert pytest.approx(z_w, 1e-4) == exp_z_w, (
-            "The weighted z localization is wrong!"
-        )
+        assert (
+            pytest.approx(x_w, 1e-4) == exp_x_w
+        ), "The weighted x localization is wrong!"
+        assert (
+            pytest.approx(y_w, 1e-4) == exp_y_w
+        ), "The weighted y localization is wrong!"
+        assert (
+            pytest.approx(z_w, 1e-4) == exp_z_w
+        ), "The weighted z localization is wrong!"
 
 
 def test_apply_threshold(extract_raw_npy_data_files):
@@ -1012,9 +1012,9 @@ def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
 
     # Make sure all entries are the same
-    assert (df == processor.filtered_dataframe).all().all(), (
-        "The selected and filtered set are not identical."
-    )
+    assert (
+        (df == processor.filtered_dataframe).all().all()
+    ), "The selected and filtered set are not identical."
 
     #
     # 2D_ValidOnly.npy
@@ -1084,9 +1084,9 @@ def test_select_by_1d_range_and_get_stats(extract_raw_npy_data_files):
     processor.filter_by_1d_range("tim", (0.0, 60.0))
 
     # Make sure all entries are the same
-    assert df_stats.equals(processor.filtered_dataframe_stats), (
-        "The selected and filtered set are not identical."
-    )
+    assert df_stats.equals(
+        processor.filtered_dataframe_stats
+    ), "The selected and filtered set are not identical."
 
 
 def test_proper_application_of_global_filters():
@@ -1176,9 +1176,9 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
     # Select (that is, get a view) by range
     processor.filter_by_1d_range_complement("tim", x_range=(2000, 3000))
 
-    assert len(processor.filtered_dataframe.index) == 10600, (
-        "Wrong total number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 10600
+    ), "Wrong total number of filtered entries"
     selected = (
         (
             (processor.filtered_dataframe["tim"] >= 2000)
@@ -1189,9 +1189,9 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
     )
     assert selected == 0, "Failed filtering."
     assert (processor.filtered_dataframe["x"] < 2000).sum() == 1102, "Failed filtering."
-    assert (processor.filtered_dataframe["x"] >= 3000).sum() == 6237, (
-        "Failed filtering."
-    )
+    assert (
+        processor.filtered_dataframe["x"] >= 3000
+    ).sum() == 6237, "Failed filtering."
 
     #
     # 2D_ValidOnly.npy
@@ -1208,9 +1208,9 @@ def test_filter_1d_complement(extract_raw_npy_data_files):
     # Select (that is, get a view) by range
     processor.filter_by_1d_range_complement("tim", x_range=(2000, 3000))
 
-    assert len(processor.filtered_dataframe.index) == 10053, (
-        "Wrong total number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 10053
+    ), "Wrong total number of filtered entries"
     selected = (
         (
             (processor.filtered_dataframe["tim"] >= 2000)
@@ -1255,12 +1255,12 @@ def test_filter_by_1d_stats_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0, (
-        "No TIDs expected."
-    )
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0, (
-        "No TIDs expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0
+    ), "No TIDs expected."
 
     #
     # Filter that rejects nothing
@@ -1286,15 +1286,15 @@ def test_filter_by_1d_stats_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 2, (
-        "Two TIDs expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 2
+    ), "Two TIDs expected."
     assert np.all(
         np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([51, 54])
     ), "TIDs 51 and 54 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 2, (
-        "Two TIDs expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 2
+    ), "Two TIDs expected."
     assert np.all(
         np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
         == np.array([51, 54])
@@ -1320,15 +1320,15 @@ def test_filter_by_1d_stats_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1, (
-        "One TID expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1
+    ), "One TID expected."
     assert np.all(
         np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([51])
     ), "TID 51 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1, (
-        "Two TIDs expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1
+    ), "Two TIDs expected."
     assert np.all(
         np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
         == np.array([51])
@@ -1360,15 +1360,15 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     # Now call the filter_by_1d_stats() function
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 2, (
-        "Two TIDs expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 2
+    ), "Two TIDs expected."
     assert np.all(
         np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([51, 54])
     ), "TIDs 51 and 54 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 2, (
-        "Two TIDs expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 2
+    ), "Two TIDs expected."
     assert np.all(
         np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
         == np.array([51, 54])
@@ -1396,26 +1396,26 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0, (
-        "No TIDs expected."
-    )
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0, (
-        "No TIDs expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0
+    ), "No TIDs expected."
 
     # IF we change to fluorophore ID == 2, the TID 51 should still be there
     processor.current_fluorophore_id = 2
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1, (
-        "One TID expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1
+    ), "One TID expected."
     assert np.all(
         np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([51])
     ), "TID 51 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1, (
-        "One TID expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1
+    ), "One TID expected."
     assert np.all(
         np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
         == np.array([51])
@@ -1443,15 +1443,15 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1, (
-        "One TID expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1
+    ), "One TID expected."
     assert np.all(
         np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([51])
     ), "TID 51 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1, (
-        "One TID expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1
+    ), "One TID expected."
     assert np.all(
         np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
         == np.array([51])
@@ -1461,15 +1461,15 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     processor.current_fluorophore_id = 1
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1, (
-        "One TID expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1
+    ), "One TID expected."
     assert np.all(
         np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([54])
     ), "TID 51 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1, (
-        "One TID expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1
+    ), "One TID expected."
     assert np.all(
         np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
         == np.array([54])
@@ -1496,26 +1496,26 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     # Now call the filter_by_1d_stats() function
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0, (
-        "No TIDs expected."
-    )
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0, (
-        "No TIDs expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0
+    ), "No TIDs expected."
 
     # If we change to fluorophore ID == 1, the TID 54 should still be there
     processor.current_fluorophore_id = 1
 
     # Test
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1, (
-        "One TID expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 1
+    ), "One TID expected."
     assert np.all(
         np.unique(processor.filtered_dataframe["tid"].to_numpy()) == np.array([54])
     ), "TID 51 expected."
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1, (
-        "One TID expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 1
+    ), "One TID expected."
     assert np.all(
         np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())
         == np.array([54])
@@ -1524,12 +1524,12 @@ def test_filter_by_1d_stats_with_fluo_id_mock_reader():
     # If we now apply the filter again, also 54 should go.
     processor.filter_by_1d_stats(x_prop_stats="n", x_range=x_range)
 
-    assert len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0, (
-        "No TIDs expected."
-    )
-    assert len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0, (
-        "No TIDs expected."
-    )
+    assert (
+        len(np.unique(processor.filtered_dataframe["tid"].to_numpy())) == 0
+    ), "No TIDs expected."
+    assert (
+        len(np.unique(processor.filtered_dataframe_stats["tid"].to_numpy())) == 0
+    ), "No TIDs expected."
 
 
 def test_filter_by_1d_stats(extract_raw_npy_data_files):
@@ -1575,9 +1575,7 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
         np.sum((processor.filtered_dataframe_stats["n"] < x_range[0]).to_numpy())
         + np.sum((processor.filtered_dataframe_stats["n"] > x_range[1]).to_numpy())
         == 0
-    ), (
-        "The filtered stats dataframe has not been update or has been updated incorrectly"
-    )
+    ), "The filtered stats dataframe has not been update or has been updated incorrectly"
 
     # 2D_ValidOnly.npy
     #
@@ -1609,14 +1607,14 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
     rejected_tid_fluo_1 = tids_outside[tids_outside >= thresh]
 
     # Check the number of assigned fluorophores
-    assert int(np.sum(processor.filtered_dataframe["fluo"].to_numpy() == 0)) == 0, (
-        "All rows should be assigned to fluo 1 or 2."
-    )
+    assert (
+        int(np.sum(processor.filtered_dataframe["fluo"].to_numpy() == 0)) == 0
+    ), "All rows should be assigned to fluo 1 or 2."
     n_fluo_1 = int(np.sum(processor.filtered_dataframe["fluo"].to_numpy() == 1))
     n_fluo_2 = int(np.sum(processor.filtered_dataframe["fluo"].to_numpy() == 2))
-    assert n_fluo_1 + n_fluo_2 == len(processor.filtered_dataframe.index), (
-        "All rows should be assigned to fluo 1 or 2."
-    )
+    assert n_fluo_1 + n_fluo_2 == len(
+        processor.filtered_dataframe.index
+    ), "All rows should be assigned to fluo 1 or 2."
     assert n_fluo_1 == 6011, "Wrong number of rows assigned to fluorophore 1."
     assert n_fluo_2 == 6569, "Wrong number of rows assigned to fluorophore 2."
 
@@ -1628,13 +1626,13 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
 
     # Now check that only the TIDs that where associated to fluorophore 1 were filtered by x_range
     subset_fluo_1 = processor.filtered_dataframe_stats[["tid", "n"]]
-    assert np.all(subset_fluo_1["tid"].to_numpy() >= thresh), (
-        "Unexpected TIDs for fluorophore 1."
-    )
+    assert np.all(
+        subset_fluo_1["tid"].to_numpy() >= thresh
+    ), "Unexpected TIDs for fluorophore 1."
     tids_outside_fluo_1 = tids_outside[tids_outside >= thresh]
-    assert np.all(rejected_tid_fluo_1 == tids_outside_fluo_1), (
-        "Unexpected set of rejected TIDs."
-    )
+    assert np.all(
+        rejected_tid_fluo_1 == tids_outside_fluo_1
+    ), "Unexpected set of rejected TIDs."
 
     # Now set the active fluorophore to 2
     processor.current_fluorophore_id = 2
@@ -1644,10 +1642,10 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
 
     # Now check that only the TIDs that where associated to fluorophore 1 were filtered by x_range
     subset_fluo_2 = processor.filtered_dataframe_stats[["tid", "n"]]
-    assert np.all(subset_fluo_2["tid"].to_numpy() < thresh), (
-        "Unexpected TIDs for fluorophore 2."
-    )
+    assert np.all(
+        subset_fluo_2["tid"].to_numpy() < thresh
+    ), "Unexpected TIDs for fluorophore 2."
     tids_outside_fluo_2 = tids_outside[tids_outside < thresh]
-    assert np.all(rejected_tid_fluo_2 == tids_outside_fluo_2), (
-        "Unexpected set of rejected TIDs."
-    )
+    assert np.all(
+        rejected_tid_fluo_2 == tids_outside_fluo_2
+    ), "Unexpected set of rejected TIDs."

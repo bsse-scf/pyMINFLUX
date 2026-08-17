@@ -190,29 +190,29 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
         # Check that the datatypes of columns are preserved
         for col in processor.filtered_dataframe.columns:
-            assert processor.filtered_dataframe[col].dtype == df_read[col].dtype, (
-                f"Mismatch of column datatype {col}: {processor.filtered_dataframe[col].dtype} vs. {df_read[col].dtype}"
-            )
+            assert (
+                processor.filtered_dataframe[col].dtype == df_read[col].dtype
+            ), f"Mismatch of column datatype {col}: {processor.filtered_dataframe[col].dtype} vs. {df_read[col].dtype}"
 
         # Check that the index data type is the same
-        assert processor.filtered_dataframe.index.dtype == df_read.index.dtype, (
-            f"Index data types are different: {processor.filtered_dataframe.index.dtype} vs {df_read.index.dtype}"
-        )
+        assert (
+            processor.filtered_dataframe.index.dtype == df_read.index.dtype
+        ), f"Index data types are different: {processor.filtered_dataframe.index.dtype} vs {df_read.index.dtype}"
 
         # Check if there are NaN in different locations
-        assert (processor.filtered_dataframe.isna() == df_read.isna()).all().all(), (
-            "NaN locations are different"
-        )
+        assert (
+            (processor.filtered_dataframe.isna() == df_read.isna()).all().all()
+        ), "NaN locations are different"
 
         # Other attributes
-        assert processor.filtered_dataframe.index.name == df_read.index.name, (
-            "Index names are different"
-        )
+        assert (
+            processor.filtered_dataframe.index.name == df_read.index.name
+        ), "Index names are different"
 
         # Column names
-        assert processor.filtered_dataframe.columns.names == df_read.columns.names, (
-            "Column names are different"
-        )
+        assert (
+            processor.filtered_dataframe.columns.names == df_read.columns.names
+        ), "Column names are different"
 
         # Use pd.compare()
         differences = processor.filtered_dataframe.compare(df_read)
@@ -221,9 +221,9 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
         # Check that the dataframes in the HDF5 file is identical to the original file
         # It the following fails, use `dataframes_equal(processor.filtered_dataframe, df_read)` instead.
-        assert processor.filtered_dataframe.equals(df_read), (
-            "Mismatch between original dataframe and the copy read from the .pmx file!"
-        )
+        assert processor.filtered_dataframe.equals(
+            df_read
+        ), "Mismatch between original dataframe and the copy read from the .pmx file!"
 
         # Check that the file_version attribute exists and is correctly set
         with h5py.File(file_name, "r") as f:
@@ -235,12 +235,12 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             data_array = f["raw/npy"][:]
 
             # Check that the read NumPy array is identical to the original
-            assert data_array.shape == processor.reader.valid_raw_data_array.shape, (
-                "NumPy arrays' shape mismatch!"
-            )
-            assert data_array.dtype == processor.reader.valid_raw_data_array.dtype, (
-                "Mismatch in raw NumPy arrays' shape!"
-            )
+            assert (
+                data_array.shape == processor.reader.valid_raw_data_array.shape
+            ), "NumPy arrays' shape mismatch!"
+            assert (
+                data_array.dtype == processor.reader.valid_raw_data_array.dtype
+            ), "Mismatch in raw NumPy arrays' shape!"
 
             assert structured_arrays_equal(
                 data_array, processor.filtered_raw_data_array
@@ -248,28 +248,28 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
             # Test the parameters
             z_scaling_factor = f["parameters/z_scaling_factor"][()]
-            assert z_scaling_factor == processor.z_scaling_factor, (
-                "Unexpected value for z_scaling_factor!"
-            )
+            assert (
+                z_scaling_factor == processor.z_scaling_factor
+            ), "Unexpected value for z_scaling_factor!"
             min_trace_length = f["parameters/min_trace_length"][()]
-            assert min_trace_length == MIN_TRACE_LENGTH, (
-                "Unexpected value for min_trace_length!"
-            )
+            assert (
+                min_trace_length == MIN_TRACE_LENGTH
+            ), "Unexpected value for min_trace_length!"
             num_fluorophores = f["parameters/num_fluorophores"][()]
-            assert num_fluorophores == processor.num_fluorophores, (
-                "Unexpected value for num_fluorophores!"
-            )
+            assert (
+                num_fluorophores == processor.num_fluorophores
+            ), "Unexpected value for num_fluorophores!"
 
         # Read the array using the native reader
         data_array_native = PMXReader.get_array(file_name)
 
         # Check that the read NumPy array is identical to the original
-        assert data_array_native.shape == processor.filtered_raw_data_array.shape, (
-            "NumPy arrays' shape mismatch!"
-        )
-        assert data_array_native.dtype == processor.filtered_raw_data_array.dtype, (
-            "Mismatch in raw NumPy arrays' shape!"
-        )
+        assert (
+            data_array_native.shape == processor.filtered_raw_data_array.shape
+        ), "NumPy arrays' shape mismatch!"
+        assert (
+            data_array_native.dtype == processor.filtered_raw_data_array.dtype
+        ), "Mismatch in raw NumPy arrays' shape!"
 
         assert structured_arrays_equal(
             data_array_native, processor.filtered_raw_data_array
@@ -277,15 +277,15 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
         # Read the metadata via the PMXMetadataReader instead
         metadata = PMXReader.get_metadata(file_name)
-        assert metadata.z_scaling_factor == processor.z_scaling_factor, (
-            "Unexpected value for z_scaling_factor!"
-        )
-        assert metadata.min_trace_length == MIN_TRACE_LENGTH, (
-            "Unexpected value for min_trace_length!"
-        )
-        assert metadata.num_fluorophores == processor.num_fluorophores, (
-            "Unexpected value for num_fluorophores!"
-        )
+        assert (
+            metadata.z_scaling_factor == processor.z_scaling_factor
+        ), "Unexpected value for z_scaling_factor!"
+        assert (
+            metadata.min_trace_length == MIN_TRACE_LENGTH
+        ), "Unexpected value for min_trace_length!"
+        assert (
+            metadata.num_fluorophores == processor.num_fluorophores
+        ), "Unexpected value for num_fluorophores!"
         assert metadata.efo_thresholds is None, "Unexpected value for efo_thresholds!"
         assert metadata.cfr_thresholds is None, "Unexpected value for cfr_thresholds!"
 
@@ -345,35 +345,35 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
         df_read = PMXReader.get_filtered_dataframe(file_name)
 
         # Make sure the number of entries is the same
-        assert len(processor.filtered_dataframe.index) == len(df_read.index), (
-            "Mismatch in the number of entries!"
-        )
+        assert len(processor.filtered_dataframe.index) == len(
+            df_read.index
+        ), "Mismatch in the number of entries!"
 
         # Check that the datatypes of columns are preserved
         for col in processor.filtered_dataframe.columns:
-            assert processor.filtered_dataframe[col].dtype == df_read[col].dtype, (
-                f"Mismatch of column datatype {col}: {processor.filtered_dataframe[col].dtype} vs. {df_read[col].dtype}"
-            )
+            assert (
+                processor.filtered_dataframe[col].dtype == df_read[col].dtype
+            ), f"Mismatch of column datatype {col}: {processor.filtered_dataframe[col].dtype} vs. {df_read[col].dtype}"
 
         # Check that the index data type is the same
-        assert processor.filtered_dataframe.index.dtype == df_read.index.dtype, (
-            f"Index data types are different: {processor.filtered_dataframe.index.dtype} vs {df_read.index.dtype}"
-        )
+        assert (
+            processor.filtered_dataframe.index.dtype == df_read.index.dtype
+        ), f"Index data types are different: {processor.filtered_dataframe.index.dtype} vs {df_read.index.dtype}"
 
         # Check if there are NaN in different locations
-        assert (processor.filtered_dataframe.isna() == df_read.isna()).all().all(), (
-            "NaN locations are different"
-        )
+        assert (
+            (processor.filtered_dataframe.isna() == df_read.isna()).all().all()
+        ), "NaN locations are different"
 
         # Other attributes
-        assert processor.filtered_dataframe.index.name == df_read.index.name, (
-            "Index names are different"
-        )
+        assert (
+            processor.filtered_dataframe.index.name == df_read.index.name
+        ), "Index names are different"
 
         # Column names
-        assert processor.filtered_dataframe.columns.names == df_read.columns.names, (
-            "Column names are different"
-        )
+        assert (
+            processor.filtered_dataframe.columns.names == df_read.columns.names
+        ), "Column names are different"
 
         # Use pd.compare()
         differences = processor.filtered_dataframe.compare(df_read)
@@ -381,9 +381,9 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
         assert len(differences.index) == 0, "Found differences."
 
         # Check that the dataframes in the HDF5 file is identical to the original file
-        assert processor.filtered_dataframe.equals(df_read), (
-            "Mismatch between original dataframe and the copy read from the .pmx file!"
-        )
+        assert processor.filtered_dataframe.equals(
+            df_read
+        ), "Mismatch between original dataframe and the copy read from the .pmx file!"
 
         # Check that the file_version attribute exists and is correctly set
         with h5py.File(file_name, "r") as f:
@@ -395,12 +395,12 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
             data_array = f["raw/npy"][:]
 
             # Check that the read NumPy array is identical to the original
-            assert data_array.shape == processor.filtered_raw_data_array.shape, (
-                "NumPy arrays' shape mismatch!"
-            )
-            assert data_array.dtype == processor.filtered_raw_data_array.dtype, (
-                "Mismatch in raw NumPy arrays' shape!"
-            )
+            assert (
+                data_array.shape == processor.filtered_raw_data_array.shape
+            ), "NumPy arrays' shape mismatch!"
+            assert (
+                data_array.dtype == processor.filtered_raw_data_array.dtype
+            ), "Mismatch in raw NumPy arrays' shape!"
 
             assert structured_arrays_equal(
                 data_array, processor.filtered_raw_data_array
@@ -408,28 +408,28 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
             # Test the parameters
             z_scaling_factor = f["parameters/z_scaling_factor"][()]
-            assert z_scaling_factor == processor.z_scaling_factor, (
-                "Unexpected value for z_scaling_factor!"
-            )
+            assert (
+                z_scaling_factor == processor.z_scaling_factor
+            ), "Unexpected value for z_scaling_factor!"
             min_trace_length = f["parameters/min_trace_length"][()]
-            assert min_trace_length == MIN_TRACE_LENGTH, (
-                "Unexpected value for min_trace_length!"
-            )
+            assert (
+                min_trace_length == MIN_TRACE_LENGTH
+            ), "Unexpected value for min_trace_length!"
             num_fluorophores = f["parameters/num_fluorophores"][()]
-            assert num_fluorophores == processor.num_fluorophores, (
-                "Unexpected value for num_fluorophores!"
-            )
+            assert (
+                num_fluorophores == processor.num_fluorophores
+            ), "Unexpected value for num_fluorophores!"
 
         # Read the array using the native reader
         data_array_native = PMXReader.get_array(file_name)
 
         # Check that the read NumPy array is identical to the original
-        assert data_array_native.shape == processor.filtered_raw_data_array.shape, (
-            "NumPy arrays' shape mismatch!"
-        )
-        assert data_array_native.dtype == processor.filtered_raw_data_array.dtype, (
-            "Mismatch in raw NumPy arrays' shape!"
-        )
+        assert (
+            data_array_native.shape == processor.filtered_raw_data_array.shape
+        ), "NumPy arrays' shape mismatch!"
+        assert (
+            data_array_native.dtype == processor.filtered_raw_data_array.dtype
+        ), "Mismatch in raw NumPy arrays' shape!"
 
         assert structured_arrays_equal(
             data_array_native, processor.filtered_raw_data_array
@@ -437,15 +437,15 @@ def test_consistence_of_written_pmx_files(extract_raw_npy_data_files):
 
         # Read the metadata via the PMXMetadataReader instead
         metadata = PMXReader.get_metadata(file_name)
-        assert metadata.z_scaling_factor == processor.z_scaling_factor, (
-            "Unexpected value for z_scaling_factor!"
-        )
-        assert metadata.min_trace_length == MIN_TRACE_LENGTH, (
-            "Unexpected value for min_trace_length!"
-        )
-        assert metadata.num_fluorophores == processor.num_fluorophores, (
-            "Unexpected value for num_fluorophores!"
-        )
+        assert (
+            metadata.z_scaling_factor == processor.z_scaling_factor
+        ), "Unexpected value for z_scaling_factor!"
+        assert (
+            metadata.min_trace_length == MIN_TRACE_LENGTH
+        ), "Unexpected value for min_trace_length!"
+        assert (
+            metadata.num_fluorophores == processor.num_fluorophores
+        ), "Unexpected value for num_fluorophores!"
         assert metadata.efo_thresholds is None, "Unexpected value for efo_thresholds!"
         assert metadata.cfr_thresholds is None, "Unexpected value for cfr_thresholds!"
 
@@ -494,28 +494,28 @@ def test_consistence_of_pmx_versions(extract_pmx_various_versions):
     # Load V2 metadata
     metadata_v2 = PMXReader.get_metadata(v2_pmx)
     metadata_v2_properties = vars(metadata_v2).keys()
-    assert metadata_v2_properties == metadata_v1_properties, (
-        "Same keys must be present in metadata v2 and v1!"
-    )
+    assert (
+        metadata_v2_properties == metadata_v1_properties
+    ), "Same keys must be present in metadata v2 and v1!"
 
     # Load V3 metadata
     metadata_v3 = PMXReader.get_metadata(v2_pmx)
     metadata_v3_properties = vars(metadata_v3).keys()
-    assert metadata_v3_properties == metadata_v1_properties, (
-        "Same keys must be present in metadata v3 and v1!"
-    )
+    assert (
+        metadata_v3_properties == metadata_v1_properties
+    ), "Same keys must be present in metadata v3 and v1!"
 
     # Load V1 PMX file with the MinFluxReader
     reader_class_v1_pmx, status_str = MinFluxReaderFactory.get_reader(v1_pmx)
     assert status_str == "", f"Unexpected status string: {status_str}."
     assert reader_class_v1_pmx is MinFluxReader, "Expected V1 MinFluxReader class!"
     reader_v1_pmx = reader_class_v1_pmx(v1_pmx, z_scaling_factor=0.7)
-    assert len(reader_v1_pmx.processed_dataframe.index) == 1056, (
-        "Unexpected number of localizations in file."
-    )
-    assert len(reader_v1_pmx.processed_dataframe.columns) == 12, (
-        "Unexpected number of columns in processed dataframe."
-    )
+    assert (
+        len(reader_v1_pmx.processed_dataframe.index) == 1056
+    ), "Unexpected number of localizations in file."
+    assert (
+        len(reader_v1_pmx.processed_dataframe.columns) == 12
+    ), "Unexpected number of columns in processed dataframe."
     n_fluo1_v1 = np.sum(reader_v1_pmx.processed_dataframe["fluo"] == 1)
     n_fluo2_v1 = np.sum(reader_v1_pmx.processed_dataframe["fluo"] == 2)
     assert n_fluo1_v1 == 920, "Unexpected number of fluo IDs = 1"
@@ -527,12 +527,12 @@ def test_consistence_of_pmx_versions(extract_pmx_various_versions):
     assert status_str == "", f"Unexpected status string: {status_str}."
     assert reader_class_v2_pmx is MinFluxReader, "Expected V1 MinFluxReader class!"
     reader_v2_pmx = reader_class_v2_pmx(v2_pmx, z_scaling_factor=0.7)
-    assert len(reader_v2_pmx.processed_dataframe.index) == 1056, (
-        "Unexpected number of localizations in file."
-    )
-    assert len(reader_v2_pmx.processed_dataframe.columns) == 12, (
-        "Unexpected number of columns in processed dataframe."
-    )
+    assert (
+        len(reader_v2_pmx.processed_dataframe.index) == 1056
+    ), "Unexpected number of localizations in file."
+    assert (
+        len(reader_v2_pmx.processed_dataframe.columns) == 12
+    ), "Unexpected number of columns in processed dataframe."
     assert np.all(
         reader_v2_pmx.processed_dataframe.columns
         == reader_v1_pmx.processed_dataframe.columns
@@ -548,12 +548,12 @@ def test_consistence_of_pmx_versions(extract_pmx_various_versions):
     assert status_str == "", f"Unexpected status string: {status_str}."
     assert reader_class_v3_pmx is MinFluxReaderV2, "Expected V2 MinFluxReader class!"
     reader_v3_pmx = reader_class_v3_pmx(v3_pmx, z_scaling_factor=0.7)
-    assert len(reader_v3_pmx.processed_dataframe.index) == 404, (
-        "Unexpected number of localizations in file."
-    )
-    assert len(reader_v3_pmx.processed_dataframe.columns) == 13, (
-        "Unexpected number of columns in processed dataframe."
-    )
+    assert (
+        len(reader_v3_pmx.processed_dataframe.index) == 404
+    ), "Unexpected number of localizations in file."
+    assert (
+        len(reader_v3_pmx.processed_dataframe.columns) == 13
+    ), "Unexpected number of columns in processed dataframe."
     n_fluo1_v3 = np.sum(reader_v3_pmx.processed_dataframe["fluo"] == 1)
     n_fluo2_v3 = np.sum(reader_v3_pmx.processed_dataframe["fluo"] == 2)
     assert n_fluo1_v3 == 138, "Unexpected number of fluo IDs = 1"
