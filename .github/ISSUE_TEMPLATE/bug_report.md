@@ -24,7 +24,7 @@ If applicable, add screenshots to help explain your problem.
  - OS details: [e.g. Ubuntu Linux 24.04]
  - Version [e.g. 0.6.0]
  - Distribution [pre-pakaged app, pypi, git]
- - Python version [e.g., 3.10]
+ - Python version [e.g., 3.14]
 
 **Additional context**
 Add any other context about the problem here.

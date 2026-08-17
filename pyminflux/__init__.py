@@ -27,7 +27,7 @@ pg.setConfigOption("imageAxisOrder", "row-major")  # For best performance
 __doc__ = f"""
 This is the documentation of the `pyminflux` core command-line API (version {__version__}).
 
-Currently, `pyminflux` is compatible with python 3.10, 3.11 and 3.12.
+Currently, `pyminflux` is compatible with Python 3.11, 3.12, 3.13, and 3.14.
 
 **Usage**: see [example notebook](https://github.com/bsse-scf/pyMINFLUX/blob/master/examples/processing.ipynb).
 

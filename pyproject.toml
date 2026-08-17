@@ -7,7 +7,7 @@ authors = [
 ]
 license = {text = "Apache-2.0"}
 readme = "README.md"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.15"
 keywords = ["MINFLUX", "Visualization", "Filtering", "Analysis", "Python"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -18,13 +18,17 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering"
 ]
 dependencies = [
     "numpy>=2.0.0,<3.0.0",
     "pandas>=2.2.3,<3.0.0",
-    "pyarrow>=19.0.1,<20.0.0",
-    "pyside6>=6.8.0,<7.0.0",
+    "pyarrow>=25.0.0,<26.0.0",
+    "pyside6>=6.8.6,<7.0.0",
     "pyqtgraph>=0.14.0,<0.15.0",
     "scipy>=1.14.0,<2.0.0",
     "scikit-learn>=1.5.0,<2.0.0",
@@ -59,7 +63,7 @@ Documentation = "https://github.com/bsse-scf/pyMINFLUX/wiki"
 
 [tool.black]
 line-length = 88
-target-version = ['py310', 'py311']
+target-version = ['py311']
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -74,7 +78,7 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
-py_version = 310
+py_version = 311
 multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
