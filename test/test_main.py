@@ -12,9 +12,31 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import subprocess
+import sys
+from pathlib import Path
+
 
 def test_application_entry_point_imports():
     """The console-script entry point and its application imports are valid."""
     from pyminflux.main import main
 
     assert callable(main)
+
+
+def test_application_script_imports():
+    """The application script and its imports are valid in a fresh process."""
+    application_script = Path(__file__).parents[1] / "pyminflux" / "main.py"
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import runpy, sys; "
+                "module = runpy.run_path(sys.argv[1], run_name='pyminflux_test'); "
+                "assert callable(module['main'])"
+            ),
+            str(application_script),
+        ],
+        check=True,
+    )
