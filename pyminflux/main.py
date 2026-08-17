@@ -12,12 +12,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import sys
+
+# Import pandas before initializing PySide6. On Python 3.12.0, Shiboken's
+# import hook cannot inspect the ``six.moves`` module imported by pandas.
+import pandas  # noqa: F401
 from vispy import app
 
 # Ensure PySide6 is recognized as the Qt backend by VisPy
 app.use_app("pyside6")
-
-import sys
 
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication

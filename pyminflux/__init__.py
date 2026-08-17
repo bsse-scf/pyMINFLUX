@@ -12,6 +12,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# Import pandas before PyQtGraph initializes PySide6. On Python 3.12.0,
+# Shiboken's import hook cannot inspect the ``six.moves`` module used by pandas.
+import pandas  # noqa: F401
 import pyqtgraph as pg
 
 __APP_NAME__ = "pyMINFLUX"
