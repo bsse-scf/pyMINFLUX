@@ -12,7 +12,7 @@ To ensure code quality and consistency, we require all contributors to use `pre-
 
 1. Clone the repository to your local machine and install all necessary dependencies:
 ```sh
-$ conda create -n pyminflux-env python=3.11  # or 3.12, 3.13, 3.14
+$ conda create -n pyminflux-env python=3.11  # or 3.12, 3.13
 $ conda activate pyminflux-env
 $ git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
 $ cd /path/to/pyminflux
