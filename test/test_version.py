@@ -20,9 +20,9 @@ from pyminflux.utils._utils import check_for_updates
 
 def test_version():
     assert pyminflux.__version__ != "", "pyMINFLUX version not set."
-    assert len(pyminflux.__version__.split(".")) == 3, (
-        "The version number should be in the format x.y.z."
-    )
+    assert (
+        len(pyminflux.__version__.split(".")) == 3
+    ), "The version number should be in the format x.y.z."
 
 
 @pytest.mark.skipif(
@@ -35,6 +35,6 @@ def test_retrieve_version_from_server():
 
     assert code != -1, "Retrieving the version number should not fail!"
     assert version != "", "The version number should be retrieved!"
-    assert len(version.split(".")) == 3, (
-        "The version number should be in the format x.y.z."
-    )
+    assert (
+        len(version.split(".")) == 3
+    ), "The version number should be in the format x.y.z."

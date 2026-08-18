@@ -287,9 +287,9 @@ def test_unmixing_with_single_fluorophore_and_all_selected():
             current_fluo_id = 1
 
     # Now current_fluo_id should be 1, not 0
-    assert current_fluo_id == 1, (
-        "Should have extracted the actual fluorophore ID from data"
-    )
+    assert (
+        current_fluo_id == 1
+    ), "Should have extracted the actual fluorophore ID from data"
 
     # Get all existing fluorophore IDs
     all_existing_fluo_ids = set(

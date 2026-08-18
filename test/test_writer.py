@@ -63,9 +63,9 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     assert reader.processed_dataframe is not None, "Failed processing dataframe."
-    assert processor.processed_dataframe is not None, (
-        "Failed retrieving full dataframe."
-    )
+    assert (
+        processor.processed_dataframe is not None
+    ), "Failed retrieving full dataframe."
     assert processor.filtered_dataframe is not None, "Failed filtering dataframe."
 
     # Assign fluorophores
@@ -75,29 +75,29 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
 
     # Apply EFO filter and check counts
     processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 11064, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 11064, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 11064
+    ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 2432, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 2432, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 2432
+    ), "Wrong number of filtered entries"
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Write to disk
-        assert MinFluxWriter.write_npy(processor, Path(tmp_dir) / "out.npy") is True, (
-            "Could not save .npy file."
-        )
+        assert (
+            MinFluxWriter.write_npy(processor, Path(tmp_dir) / "out.npy") is True
+        ), "Could not save .npy file."
 
         # Now load the stored NumPy file
         reloaded_reader = MinFluxReader(Path(tmp_dir) / "out.npy")
@@ -105,23 +105,23 @@ def test_consistence_of_written_npy_files(extract_raw_npy_data_files):
         # And pass it to a new MinFluxProcessor
         reloaded_processor = MinFluxProcessor(reloaded_reader)
 
-    assert reloaded_processor.processed_dataframe is not None, (
-        "Failed retrieving full dataframe."
-    )
-    assert reloaded_processor.filtered_dataframe is not None, (
-        "Failed filtering dataframe."
-    )
+    assert (
+        reloaded_processor.processed_dataframe is not None
+    ), "Failed retrieving full dataframe."
+    assert (
+        reloaded_processor.filtered_dataframe is not None
+    ), "Failed filtering dataframe."
 
     # Now compare the processed file with its reloaded version
-    assert len(processor.processed_dataframe.index) == 12580, (
-        "Original processor's full dataframe must be untouched."
-    )
-    assert len(reloaded_processor.processed_dataframe.index) == 2432, (
-        "Unexpected number of entries in reloaded .npy file."
-    )
-    assert len(reloaded_processor.filtered_dataframe.index) == 2432, (
-        "The filtered dataframe does not correspond to the full dataframe after clean reload."
-    )
+    assert (
+        len(processor.processed_dataframe.index) == 12580
+    ), "Original processor's full dataframe must be untouched."
+    assert (
+        len(reloaded_processor.processed_dataframe.index) == 2432
+    ), "Unexpected number of entries in reloaded .npy file."
+    assert (
+        len(reloaded_processor.filtered_dataframe.index) == 2432
+    ), "The filtered dataframe does not correspond to the full dataframe after clean reload."
     assert len(processor.filtered_dataframe.index) == len(
         reloaded_processor.filtered_dataframe.index
     ), "Unexpected number of entries in reloaded .npy file."
@@ -151,9 +151,9 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     assert reader.processed_dataframe is not None, "Failed processing dataframe."
-    assert processor.processed_dataframe is not None, (
-        "Failed retrieving full dataframe."
-    )
+    assert (
+        processor.processed_dataframe is not None
+    ), "Failed retrieving full dataframe."
     assert processor.filtered_dataframe is not None, "Failed filtering dataframe."
 
     # Assign fluorophores
@@ -163,23 +163,23 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
 
     # Apply EFO filter and check counts
     processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 11064, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 11064, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 11064
+    ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 2432, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 2432, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 2432
+    ), "Wrong number of filtered entries"
 
     # Now get the filtered dataframes for fluorophore ID = "All", "1", and "2"
     processor.current_fluorophore_id = 0
@@ -216,9 +216,9 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
         (filtered_dataframe_1["fluo"] == 2).to_numpy()
         == (filtered_numpy_array_1["fluo"] == 2)
     ), "Fluorophore ID mismatch"
-    assert (filtered_numpy_array_1["fluo"] == 2).sum() == 0, (
-        "There should be no localizations for fluorophore 2."
-    )
+    assert (
+        filtered_numpy_array_1["fluo"] == 2
+    ).sum() == 0, "There should be no localizations for fluorophore 2."
     assert len(filtered_dataframe_2.index) == len(filtered_numpy_array_2)
     assert np.all(
         (filtered_dataframe_2["fluo"] == 1).to_numpy()
@@ -228,9 +228,9 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
         (filtered_dataframe_2["fluo"] == 2).to_numpy()
         == (filtered_numpy_array_2["fluo"] == 2)
     ), "Fluorophore ID mismatch"
-    assert (filtered_numpy_array_2["fluo"] == 1).sum() == 0, (
-        "There should be no localizations for fluorophore 1."
-    )
+    assert (
+        filtered_numpy_array_2["fluo"] == 1
+    ).sum() == 0, "There should be no localizations for fluorophore 1."
 
     # Constants
     factor = 1e9
@@ -248,23 +248,23 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
         filtered_dataframe_all["tim"].to_numpy(), filtered_numpy_array_all["tim"]
     ), "Content mismatch."
     efo = filtered_numpy_array_all["itr"][:, efo_index]["efo"]
-    assert np.allclose(filtered_dataframe_all["efo"].to_numpy(), efo), (
-        "Content mismatch."
-    )
+    assert np.allclose(
+        filtered_dataframe_all["efo"].to_numpy(), efo
+    ), "Content mismatch."
     cfr = filtered_numpy_array_all["itr"][:, cfr_index]["cfr"]
-    assert np.allclose(filtered_dataframe_all["cfr"].to_numpy(), cfr), (
-        "Content mismatch."
-    )
+    assert np.allclose(
+        filtered_dataframe_all["cfr"].to_numpy(), cfr
+    ), "Content mismatch."
     loc = filtered_numpy_array_all["itr"][:, loc_index]["loc"] * factor
-    assert np.allclose(filtered_dataframe_all["x"].to_numpy(), loc[:, 0]), (
-        "Content mismatch."
-    )
-    assert np.allclose(filtered_dataframe_all["y"].to_numpy(), loc[:, 1]), (
-        "Content mismatch."
-    )
-    assert np.allclose(filtered_dataframe_all["z"].to_numpy(), loc[:, 2]), (
-        "Content mismatch."
-    )
+    assert np.allclose(
+        filtered_dataframe_all["x"].to_numpy(), loc[:, 0]
+    ), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_all["y"].to_numpy(), loc[:, 1]
+    ), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_all["z"].to_numpy(), loc[:, 2]
+    ), "Content mismatch."
 
     # Fluorphore 1
     assert np.all(
@@ -278,15 +278,15 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
     cfr = filtered_numpy_array_1["itr"][:, cfr_index]["cfr"]
     assert np.allclose(filtered_dataframe_1["cfr"].to_numpy(), cfr), "Content mismatch."
     loc = filtered_numpy_array_1["itr"][:, loc_index]["loc"] * factor
-    assert np.allclose(filtered_dataframe_1["x"].to_numpy(), loc[:, 0]), (
-        "Content mismatch."
-    )
-    assert np.allclose(filtered_dataframe_1["y"].to_numpy(), loc[:, 1]), (
-        "Content mismatch."
-    )
-    assert np.allclose(filtered_dataframe_1["z"].to_numpy(), loc[:, 2]), (
-        "Content mismatch."
-    )
+    assert np.allclose(
+        filtered_dataframe_1["x"].to_numpy(), loc[:, 0]
+    ), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_1["y"].to_numpy(), loc[:, 1]
+    ), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_1["z"].to_numpy(), loc[:, 2]
+    ), "Content mismatch."
 
     # Fluorphore 2
     assert np.all(
@@ -300,15 +300,15 @@ def test_consistence_of_fluorophore_selection(extract_raw_npy_data_files):
     cfr = filtered_numpy_array_2["itr"][:, cfr_index]["cfr"]
     assert np.allclose(filtered_dataframe_2["cfr"].to_numpy(), cfr), "Content mismatch."
     loc = filtered_numpy_array_2["itr"][:, loc_index]["loc"] * factor
-    assert np.allclose(filtered_dataframe_2["x"].to_numpy(), loc[:, 0]), (
-        "Content mismatch."
-    )
-    assert np.allclose(filtered_dataframe_2["y"].to_numpy(), loc[:, 1]), (
-        "Content mismatch."
-    )
-    assert np.allclose(filtered_dataframe_2["z"].to_numpy(), loc[:, 2]), (
-        "Content mismatch."
-    )
+    assert np.allclose(
+        filtered_dataframe_2["x"].to_numpy(), loc[:, 0]
+    ), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_2["y"].to_numpy(), loc[:, 1]
+    ), "Content mismatch."
+    assert np.allclose(
+        filtered_dataframe_2["z"].to_numpy(), loc[:, 2]
+    ), "Content mismatch."
 
 
 def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
@@ -324,9 +324,9 @@ def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
     processor = MinFluxProcessor(reader, min_trace_length=1)
 
     assert reader.processed_dataframe is not None, "Failed processing dataframe."
-    assert processor.processed_dataframe is not None, (
-        "Failed retrieving full dataframe."
-    )
+    assert (
+        processor.processed_dataframe is not None
+    ), "Failed retrieving full dataframe."
     assert processor.filtered_dataframe is not None, "Failed filtering dataframe."
 
     # Assign fluorophores
@@ -337,43 +337,43 @@ def test_consistence_of_written_csv_files(extract_raw_npy_data_files):
     # Apply EFO filter and check counts
     processor.filter_by_1d_range("efo", (13823.70184744663, 48355.829889892586))
 
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 11064, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 11064, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 11064
+    ), "Wrong number of filtered entries"
 
     # Apply CFR filter and check counts
     processor.filter_by_1d_range("cfr", (-0.015163637960486809, 0.2715112942104868))
-    assert len(reader.processed_dataframe.index) == 12580, (
-        "Wrong total number of entries"
-    )
+    assert (
+        len(reader.processed_dataframe.index) == 12580
+    ), "Wrong total number of entries"
     assert processor.num_values == 2432, "Wrong number of filtered entries"
-    assert len(processor.filtered_dataframe.index) == 2432, (
-        "Wrong number of filtered entries"
-    )
+    assert (
+        len(processor.filtered_dataframe.index) == 2432
+    ), "Wrong number of filtered entries"
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Write to disk
-        assert MinFluxWriter.write_csv(processor, Path(tmp_dir) / "out.csv") is True, (
-            "Could not save .csv file."
-        )
+        assert (
+            MinFluxWriter.write_csv(processor, Path(tmp_dir) / "out.csv") is True
+        ), "Could not save .csv file."
 
         # Now load the stored csv file
         reloaded_dataframe = pd.read_csv(Path(tmp_dir) / "out.csv")
 
     # Now compare the processed file with its reloaded version
-    assert len(processor.processed_dataframe.index) == 12580, (
-        "Original processor's full dataframe must be untouched."
-    )
-    assert len(reloaded_dataframe.index) == 2432, (
-        "Unexpected number of entries in reloaded .npy file."
-    )
-    assert len(processor.filtered_dataframe.index) == len(reloaded_dataframe.index), (
-        "Unexpected number of entries in reloaded .npy file."
-    )
+    assert (
+        len(processor.processed_dataframe.index) == 12580
+    ), "Original processor's full dataframe must be untouched."
+    assert (
+        len(reloaded_dataframe.index) == 2432
+    ), "Unexpected number of entries in reloaded .npy file."
+    assert len(processor.filtered_dataframe.index) == len(
+        reloaded_dataframe.index
+    ), "Unexpected number of entries in reloaded .npy file."
     assert np.all(
         processor.filtered_dataframe["fluo"].to_numpy()
         == reloaded_dataframe["fluo"].to_numpy()

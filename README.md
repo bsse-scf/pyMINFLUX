@@ -34,10 +34,10 @@ Adapt the path for the `-OutFile` argument as needed.
 
 ### pip
 
-The latest version of pyMINFLUX can also be installed from [pypi.org](https://pypi.org/project/pyminflux/). pyMINFLUX is compatible with and tested on Python 3.10 and 3.11. It is recommended to install pyMINFLUX in a conda environment as follows:
+The latest version of pyMINFLUX can also be installed from [pypi.org](https://pypi.org/project/pyminflux/). pyMINFLUX is compatible with and tested on Python 3.11, 3.12, and 3.13. It is recommended to install pyMINFLUX in a conda environment as follows:
 
 ```sh
-$ conda create -n pyminflux-env python=3.11  # or 3.10
+$ conda create -n pyminflux-env python=3.11  # or 3.12, 3.13
 $ conda activate pyminflux-env
 $ pip install --upgrade pyminflux
 ```
@@ -66,10 +66,10 @@ $ uvx --refresh --from 'git+https://github.com/bsse-scf/pyMINFLUX@bead_alignment
 
 ## For developers and tinkerers
 
-pyMINFLUX is compatible with and tested on Python 3.10, 3.11, and 3.12. For development, you can e.g. install pyMINFLUX in editable mode in a [conda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links) environment as follows:
+pyMINFLUX is compatible with and tested on Python 3.11, 3.12, and 3.13. For development, you can e.g. install pyMINFLUX in editable mode in a [conda](https://docs.conda.io/en/latest/miniconda.html#latest-miniconda-installer-links) environment as follows:
 
 ```sh
-$ conda create -n pyminflux-env python=3.11  # or 3.10, 3.12
+$ conda create -n pyminflux-env python=3.11  # or 3.12, 3.13
 $ conda activate pyminflux-env
 $ git clone https://github.com/bsse-scf/pyMINFLUX /path/to/pyminflux
 $ cd /path/to/pyminflux
@@ -111,5 +111,3 @@ We value the contribution of our community members, and to make sure that everyo
 If you use pyMINFLUX in your research, please cite this repository as follows:
 
 > Aaron Ponti, Javier Casares Arias, & Thomas Horn. (2023). pyMINFLUX. Zenodo. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7895501.svg)](https://doi.org/10.5281/zenodo.7895501)
-
-

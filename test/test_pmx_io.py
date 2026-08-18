@@ -75,20 +75,20 @@ def test_pmx_write_read_cycle_with_filtering(extract_raw_npy_data_files):
         df_read = PMXReader.get_filtered_dataframe(pmx_file)
 
         # Verify the filtered data is preserved
-        assert len(df_read) == len(original_df), (
-            f"Number of entries mismatch: {len(df_read)} vs {len(original_df)}"
-        )
+        assert len(df_read) == len(
+            original_df
+        ), f"Number of entries mismatch: {len(df_read)} vs {len(original_df)}"
 
         # Verify data equality
-        assert original_df.equals(df_read), (
-            "Filtered dataframe not preserved through write-read cycle"
-        )
+        assert original_df.equals(
+            df_read
+        ), "Filtered dataframe not preserved through write-read cycle"
 
         # Verify metadata
         metadata = PMXReader.get_metadata(pmx_file)
-        assert metadata.min_trace_length == MIN_TRACE_LENGTH, (
-            "Filtering parameters not preserved"
-        )
+        assert (
+            metadata.min_trace_length == MIN_TRACE_LENGTH
+        ), "Filtering parameters not preserved"
 
         # Verify fluorophore names are preserved
         fluorophore_names = PMXReader.get_fluorophore_names(pmx_file)

@@ -713,9 +713,9 @@ class ColorsToBrushes(metaclass=Singleton):
             depth_indices = np.digitize(depth, current_depth_bin_edges, right=True) - 1
 
             assert np.min(depth_indices) >= 0, "Minimum bin index is smaller than zero!"
-            assert np.max(depth_indices) <= len(current_depth_bin_edges) - 1, (
-                "Maximum bin index is out of range!"
-            )
+            assert (
+                np.max(depth_indices) <= len(current_depth_bin_edges) - 1
+            ), "Maximum bin index is out of range!"
 
             self._depth_brushes = [
                 self._depth_to_brush_map[index] for index in depth_indices
@@ -785,9 +785,9 @@ class ColorsToBrushes(metaclass=Singleton):
             time_indices = np.digitize(time, current_time_bin_edges, right=True) - 1
 
             assert np.min(time_indices) >= 0, "Minimum bin index is smaller than zero!"
-            assert np.max(time_indices) <= len(current_time_bin_edges) - 1, (
-                "Maximum bin index is out of range!"
-            )
+            assert (
+                np.max(time_indices) <= len(current_time_bin_edges) - 1
+            ), "Maximum bin index is out of range!"
 
             self._time_brushes = [
                 self._time_to_brush_map[index] for index in time_indices
@@ -1049,9 +1049,9 @@ class ColorsToRGB(metaclass=Singleton):
             depth_indices = np.digitize(depth, current_depth_bin_edges, right=True) - 1
 
             assert np.min(depth_indices) >= 0, "Minimum bin index is smaller than zero!"
-            assert np.max(depth_indices) <= len(current_depth_bin_edges) - 1, (
-                "Maximum bin index is out of range!"
-            )
+            assert (
+                np.max(depth_indices) <= len(current_depth_bin_edges) - 1
+            ), "Maximum bin index is out of range!"
 
             self._depth_to_color_map = depth_indices
 
@@ -1107,9 +1107,9 @@ class ColorsToRGB(metaclass=Singleton):
             time_indices = np.digitize(time, current_time_bin_edges, right=True) - 1
 
             assert np.min(time_indices) >= 0, "Minimum bin index is smaller than zero!"
-            assert np.max(time_indices) <= len(current_time_bin_edges) - 1, (
-                "Maximum bin index is out of range!"
-            )
+            assert (
+                np.max(time_indices) <= len(current_time_bin_edges) - 1
+            ), "Maximum bin index is out of range!"
 
             self._time_to_color_map = time_indices
 

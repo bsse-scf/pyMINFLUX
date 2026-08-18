@@ -48,15 +48,13 @@ class Options(QDialog, Ui_Options):
         self.ui.teHelp.setText('Click on a "?" button to get help.')
 
         # Hide the border and change the background color
-        self.ui.teHelp.setStyleSheet(
-            """
+        self.ui.teHelp.setStyleSheet("""
             QTextEdit {
                 border: none;
                 background-color: transparent;
                 font-style: italic;
             }
-        """
-        )
+        """)
 
         # Keep track of the validity of all entries
         self.valid = {
