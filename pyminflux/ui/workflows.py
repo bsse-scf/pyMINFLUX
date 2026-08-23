@@ -97,7 +97,7 @@ class BaseWorkflow:
             return None
         return self.dataset.filename
 
-    def export_data_to_csv(self, file_name) -> bool:
+    def export_data_to_csv(self, file_name: str) -> bool:
         dataframe = self.plot_dataframe()
         if dataframe is None:
             return False
@@ -108,7 +108,7 @@ class BaseWorkflow:
             return False
         return True
 
-    def select_by_index_labels(self, labels: list) -> Optional[pd.DataFrame]:
+    def select_by_index_labels(self, labels: list[int]) -> Optional[pd.DataFrame]:
         """Return plotted rows matching dataframe index labels."""
         dataframe = self.plot_dataframe()
         if dataframe is None:
