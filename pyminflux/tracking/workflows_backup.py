@@ -97,7 +97,7 @@ class BaseWorkflow:
             return None
         return self.dataset.filename
 
-    def export_data_to_csv(self, file_name: str) -> bool:
+    def export_data_to_csv(self, file_name) -> bool:
         dataframe = self.plot_dataframe()
         if dataframe is None:
             return False
@@ -108,7 +108,7 @@ class BaseWorkflow:
             return False
         return True
 
-    def select_by_index_labels(self, labels: list[int]) -> Optional[pd.DataFrame]:
+    def select_by_index_labels(self, labels: list) -> Optional[pd.DataFrame]:
         """Return plotted rows matching dataframe index labels."""
         dataframe = self.plot_dataframe()
         if dataframe is None:
@@ -301,3 +301,226 @@ class LocalizationWorkflow(BaseWorkflow):
                 group="plots",
             ),
         ]
+
+
+class TrackingWorkflowPanel(QWidget):
+    """Minimal workflow panel for tracking datasets."""
+
+    workflow_action_triggered = Signal(str)
+    save_data_triggered = Signal()
+    export_data_triggered = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.dataset = None
+
+        layout = QVBoxLayout()
+        layout.setSpacing(8)
+
+        title = QLabel("Tracking workflow")
+        title.setObjectName("trackingWorkflowTitle")
+        layout.addWidget(title)
+
+        self.pbSaveData = QPushButton("Save")
+        self.pbCalculateLengths = QPushButton("Calculate lengths")
+        self.pbRemoveLargestTrack = QPushButton("Remove largest track")
+        self.pbExportData = QPushButton("Export data")
+        self.pbSaveData.clicked.connect(lambda _: self.save_data_triggered.emit())
+        self.pbCalculateLengths.clicked.connect(
+            lambda _: self.workflow_action_triggered.emit("calculate_track_lengths")
+        )
+        self.pbRemoveLargestTrack.clicked.connect(
+            lambda _: self.workflow_action_triggered.emit("remove_largest_track")
+        )
+        self.pbExportData.clicked.connect(lambda _: self.export_data_triggered.emit())
+        layout.addWidget(self.pbSaveData)
+        layout.addWidget(self.pbCalculateLengths)
+        layout.addWidget(self.pbRemoveLargestTrack)
+        layout.addWidget(self.pbExportData)
+
+        placeholder = QLabel("Tracks are stored internally as lists of spots.")
+        placeholder.setWordWrap(True)
+        layout.addWidget(placeholder)
+        layout.addStretch(1)
+
+        self.setLayout(layout)
+        self.enable_controls(False)
+
+    def set_dataset(self, dataset: Optional[MinFluxDataset]) -> None:
+        self.dataset = dataset
+        self.enable_controls(dataset is not None)
+
+    def enable_controls(self, enabled: bool = False):
+        self.pbSaveData.setVisible(False)
+        self.pbCalculateLengths.setVisible(enabled)
+        self.pbRemoveLargestTrack.setVisible(enabled)
+        self.pbExportData.setVisible(enabled)
+
+
+class TrackingWorkflow(BaseWorkflow):
+    """Initial tracking workflow.
+
+    It is intentionally dataset-backed for now; workflow implementers can later
+    replace plot_dataframe() with a native tracking-model adapter.
+    """
+
+    name = "tracking"
+
+    def __init__(
+        self,
+        dataset: Optional[MinFluxDataset] = None,
+        min_trace_length: int = 1,
+    ):
+        super().__init__(dataset=dataset, min_trace_length=min_trace_length)
+        self.tracks = []
+        self._tracks_dataframe = None
+        self._build_tracks()
+
+    def set_dataset(self, dataset: Optional[MinFluxDataset]) -> None:
+        super().set_dataset(dataset)
+        self._build_tracks()
+
+    def create_panel(self, parent=None) -> TrackingWorkflowPanel:
+        self.panel = TrackingWorkflowPanel(parent)
+        if self.dataset is not None:
+            self.panel.set_dataset(self.dataset)
+        return self.panel
+
+    def _build_tracks(self):
+        """Build list-of-dicts track representation from the dataset dataframe."""
+        self.tracks = []
+        self._tracks_dataframe = None
+        if self.dataset is None or self.dataset.processed_dataframe is None:
+            return
+
+        dataframe = self.dataset.processed_dataframe
+        if "tid" not in dataframe.columns:
+            return
+
+        for tid, group in dataframe.groupby("tid", sort=False):
+            if "tim" in group.columns:
+                group = group.sort_values("tim")
+            spots = group.to_dict(orient="records")
+            for spot in spots:
+                spot["tid"] = tid
+            self.tracks.append(
+                {
+                    "spots": spots,
+                    "properties": {},
+                }
+            )
+
+    def calculate_track_lengths(self):
+        """Calculate total path length for each track and store it as a property."""
+        for track in self.tracks:
+            track["properties"]["length"] = self._calculate_track_length(track)
+
+        self._tracks_dataframe = None
+
+    def remove_largest_track(self):
+        """Remove the track with the largest calculated path length."""
+        if not self.tracks:
+            return
+
+        lengths = [self._track_length(track) for track in self.tracks]
+        largest_track_index = int(np.nanargmax(lengths))
+        del self.tracks[largest_track_index]
+        self._tracks_dataframe = None
+
+    def _track_length(self, track) -> float:
+        length = track["properties"].get("length")
+        if length is None:
+            length = self._calculate_track_length(track)
+            track["properties"]["length"] = length
+        return length
+
+    def _calculate_track_length(self, track) -> float:
+        spots = track["spots"]
+        if len(spots) < 2:
+            return 0.0
+
+        use_z = bool(self.dataset is not None and self.dataset.is_3d)
+        coords = [
+            [
+                float(spot.get("x", np.nan)),
+                float(spot.get("y", np.nan)),
+                *([float(spot.get("z", np.nan))] if use_z else []),
+            ]
+            for spot in spots
+        ]
+        coords = np.asarray(coords, dtype=float)
+        diffs = np.diff(coords, axis=0)
+        return float(np.nansum(np.linalg.norm(diffs, axis=1)))
+
+    def plot_dataframe(self) -> Optional[pd.DataFrame]:
+        return self._tracks_to_dataframe()
+
+    def export_data_to_csv(self, file_name) -> bool:
+        dataframe = self._tracks_to_dataframe()
+        if dataframe is None:
+            return False
+        try:
+            dataframe.to_csv(file_name, index=False)
+        except Exception as e:
+            print(f"Could not save {file_name}: {e}")
+            return False
+        return True
+
+    def _tracks_to_dataframe(self) -> Optional[pd.DataFrame]:
+        if self._tracks_dataframe is not None:
+            return self._tracks_dataframe
+
+        rows = []
+        for track_index, track in enumerate(self.tracks):
+            properties = track["properties"]
+            for spot_index, spot in enumerate(track["spots"]):
+                row = dict(spot)
+                row["track_index"] = track_index
+                row["spot_index"] = spot_index
+                for name, value in properties.items():
+                    row[name] = value
+                rows.append(row)
+
+        if not rows:
+            return None
+
+        self._tracks_dataframe = pd.DataFrame(rows)
+        return self._tracks_dataframe
+
+    def stats_dataframe(self) -> Optional[pd.DataFrame]:
+        dataframe = self.plot_dataframe()
+        if dataframe is None:
+            return None
+        return MinFluxProcessor.calculate_statistics_on(dataframe, is_tracking=True)
+
+    def workflow_actions(self) -> list[WorkflowAction]:
+        return [
+            WorkflowAction(
+                id="export_stats",
+                text="Export stats",
+                handler_name="export_filtered_stats",
+                menu="file",
+            ),
+            WorkflowAction(
+                id="calculate_track_lengths",
+                text="Calculate lengths",
+                handler_name="calculate_track_lengths",
+                owner="workflow",
+                menu=None,
+                refresh_after=True,
+            ),
+            WorkflowAction(
+                id="remove_largest_track",
+                text="Remove largest track",
+                handler_name="remove_largest_track",
+                owner="workflow",
+                group="tracks",
+                refresh_after=True,
+            ),
+        ]
+
+    def color_columns(self, dataframe: Optional[pd.DataFrame]) -> list[str]:
+        """Tracking exposes only track-level length as an optional color column."""
+        if dataframe is not None and "length" in dataframe.columns:
+            return ["length"]
+        return []
