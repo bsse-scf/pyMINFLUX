@@ -81,7 +81,8 @@ from pyminflux.ui.state import State
 from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow
-from pyminflux.ui.workflows import LocalizationWorkflow, TrackingWorkflow
+from pyminflux.ui.workflows import LocalizationWorkflow
+from pyminflux.tracking._tracking_workflow import MinSptTrackingWorkflow
 from pyminflux.utils import check_for_updates
 from pyminflux.writer import PMXWriter
 
@@ -417,7 +418,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             and dataset.is_tracking
             and self.experimental_tracking_workflow_enabled()
         ):
-            return TrackingWorkflow(dataset)
+            return MinSptTrackingWorkflow(dataset)
         return LocalizationWorkflow(dataset, self.state.min_trace_length)
 
     @staticmethod
