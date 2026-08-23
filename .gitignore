@@ -21,3 +21,6 @@ __pycache__/
 /_playground
 examples/P*
 /html
+
+# ignore local MinSpt configs
+*_config.json
