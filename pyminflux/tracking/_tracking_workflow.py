@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import List, Optional, Dict
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -71,6 +71,7 @@ class MinSptTrackingWorkflow(BaseWorkflow):
         except Exception as e:
             print(f"Error occurred while building SptDataset: {e}")
 
+    @override
     def create_panel(self, parent=None) -> MinSptTrackingWorkflowPanel:
         self.panel = MinSptTrackingWorkflowPanel(parent)
         if self.dataset is not None:
@@ -80,6 +81,13 @@ class MinSptTrackingWorkflow(BaseWorkflow):
     # %% Main interface of UI workflow contract
     @override
     def plot_dataframe(self) -> Optional[pd.DataFrame]:
+        """
+        This method collects all localizations from all trajectories by sequence of their ID and exposes them as a pandas DataFrame.
+        This method is the main compatibility layer between the workflow and the UI visualization, as the UI expects a DataFrame representation of the dataset for plotting.
+
+        Returns:
+            Optional[pd.DataFrame]: A pandas DataFrame containing all localizations from the dataset, with columns for each plottable axis and additional columns for "tid", "track_index", and "spot_index". If the dataset is None, returns None.
+        """
 
         if self.dataset is None:
             return None
@@ -103,17 +111,8 @@ class MinSptTrackingWorkflow(BaseWorkflow):
         # add ID column to the pd df
         pd_df["tid"] = ID_array
 
-        # add both the "track_index" and "spot_index" columns to match the original datasetframe structure
-        # I am currently unsure if thees fields are required, but they can be removed later in case
-        pd_df["track_index"] = ID_array.copy()
-        pd_df["spot_index"] = np.concatenate(
-            [
-                np.arange(len(trajectory))
-                for i, trajectory in enumerate(self.dataset.trajectories)
-            ]
-        )
-
         # make sure all column names are lowercase to match the original datasetframe structure
+        # Important because the MinSpt Dataset uses uppercase column names, while the original PyMinfluxDataset uses lowercase column names.
         pd_df.columns = [col.lower() for col in pd_df.columns]
 
         return pd_df
@@ -121,6 +120,17 @@ class MinSptTrackingWorkflow(BaseWorkflow):
     # %% I/O
     @override
     def export_data_to_csv(self, file_name: str) -> bool:
+        """
+        Export the current dataset to a CSV file using the pandas DataFrame representation of the dataset.
+        This method ensures that the dataset is properly converted to a DataFrame and then saved to the specified CSV file.
+
+        Args:
+            file_name (str): The name of the CSV file to which the dataset will be exported.
+
+        Returns:
+            bool: True if the export was successful, False otherwise.
+        """
+
         if self.dataset is None:
             return False
         try:
@@ -147,7 +157,17 @@ class MinSptTrackingWorkflow(BaseWorkflow):
         return MinFluxProcessor.calculate_statistics_on(dataframe, is_tracking=True)
 
     @override
-    def color_columns(self, dataframe: Optional[pd.DataFrame]) -> List[str]:
+    def color_columns(self, dataframe: Optional[pd.DataFrame]) -> list[str]:
+        """
+        Return a list of column names that can be used for coloring the plot.
+        The list is based on the columns present in the provided dataframe and the plottable keys collected from the dataset.
+
+        Args:
+            dataframe (Optional[pd.DataFrame]): The DataFrame for which to identify colorable columns.
+
+        Returns:
+            list[str]: A list of column names that can be used for coloring the plot.
+        """
         if dataframe is None:
             return []
 
@@ -167,7 +187,17 @@ class MinSptTrackingWorkflow(BaseWorkflow):
 
     @override
     def select_by_index_labels(self, labels: list[int]) -> Optional[pd.DataFrame]:
-        """Return plotted rows matching dataframe index labels."""
+        """
+        Return plotted rows matching dataframe index labels.
+        This method ensures that all localizations belonging to the same trace (tid) are included in the selection,
+        even if only a subset of the localizations fall within the specified index labels.
+
+        Args:
+            labels (list[int]): List of index labels to select.
+
+        Returns:
+            Optional[pd.DataFrame]: The filtered DataFrame.
+        """
         dataframe = self.plot_dataframe()
         if dataframe is None:
             return None
@@ -193,7 +223,20 @@ class MinSptTrackingWorkflow(BaseWorkflow):
         x_range: tuple[float, float],
         y_range: tuple[float, float],
     ) -> Optional[pd.DataFrame]:
-        """Return plotted rows inside the selected 2D range."""
+        """
+        Return plotted rows inside the selected 2D range.
+        This version of the method ensures that all localizations belonging to the same trace (tid) are included in the selection,
+        even if only a subset of the localizations fall within the specified 2D range.
+
+        Args:
+            x_param (str): X axis parameter name (column name in the dataframe).
+            y_param (str): Y axis parameter name (column name in the dataframe).
+            x_range (tuple[float, float]): X axis range.
+            y_range (tuple[float, float]): Y axis range.
+
+        Returns:
+            Optional[pd.DataFrame]: The filtered DataFrame.
+        """
         dataframe = self.plot_dataframe()
         if dataframe is None:
             return None
@@ -220,12 +263,14 @@ class MinSptTrackingWorkflow(BaseWorkflow):
 
     # %% Workflow Test
     def find_longest_track(self) -> None:
+        """Test Workflow Action: Find the longest track in the dataset and print its ID and length."""
         longest_track = self.dataset.get_longest_track()
         print(
             f"Longest track ID: {longest_track.get('ID')}, Length: {len(longest_track.get('T'))} time points."
         )
 
     # %% Workflow Actions (UI Elements)
+    @override
     def workflow_actions(self) -> list[WorkflowAction]:
         return [
             WorkflowAction(
@@ -239,9 +284,20 @@ class MinSptTrackingWorkflow(BaseWorkflow):
         ]
 
     # %% Helpers
-    def _filter_by_tid_length(self, py_mfx_dataset: pd.DataFrame) -> pd.DataFrame:
+    def _filter_by_tid_length(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        """
+        Filter the dataset by the length of each trace.
+        Removes any trace with less than self.min_trace_length localizations.
+
+        Args:
+            dataframe (pd.DataFrame): The input DataFrame to filter.
+
+        Returns:
+            pd.DataFrame: The filtered DataFrame.
+        """
+
         # Make sure to count only currently selected rows
-        df = py_mfx_dataset.copy()
+        df = dataframe.copy()
 
         # Select all rows where the count of TIDs is larger than self._min_trace_num
         counts = df["tid"].value_counts(normalize=False)
@@ -250,7 +306,19 @@ class MinSptTrackingWorkflow(BaseWorkflow):
 
     def _make_conversion_dict_from_mfx_PyMinfluxDataset(
         self, py_mfx_dataset: Optional[PyMinfluxDataset]
-    ) -> Dict[int, Dict[str, np.ndarray]]:
+    ) -> dict[int, dict[str, np.ndarray]]:
+        """
+        Build a conversion dictionary from a PyMinfluxDataset object to a dictionary format suitable for SptDataset.
+        The methods also writes the MINFLUX iMSPECTOR version to the META tag in the conversion dict for the trajectories to inherit.
+        Importantly, the MinSpt backend expects time to be called "T" and the ID to be called "ID" in the conversion dict.
+
+        Args:
+            py_mfx_dataset (Optional[PyMinfluxDataset]): A PyMinfluxDataset object containing the processed data, i.e. only valid localizations and traces. If None, an empty dictionary is returned.
+
+        Returns:
+            dict[int, dict[str, np.ndarray]]: A conversion dictionary where each key is a trace ID (tid) and the value is another dictionary containing the data for that trace, including time ("T"), ID ("ID"), and other relevant axes. The META tag contains the MINFLUX iMSPECTOR version.
+        """
+
         # catch None case
         if py_mfx_dataset is None:
             return {}
@@ -266,7 +334,7 @@ class MinSptTrackingWorkflow(BaseWorkflow):
         py_mfx_dataframe = self._filter_by_tid_length(py_mfx_dataframe)
 
         # create conversion dict and populate it with the data from the filtered dataframe
-        conversion_dict: Dict[int, Dict[str, np.ndarray]] = {}
+        conversion_dict: dict[int, dict[str, np.ndarray]] = {}
         for tid in np.unique(py_mfx_dataframe["tid"]):
             trace_df = py_mfx_dataframe[py_mfx_dataframe["tid"] == tid]
             # track formation
@@ -295,6 +363,21 @@ class MinSptTrackingWorkflow(BaseWorkflow):
     def _make_SptDataset_from_MinFluxDataset(
         self, py_mfx_dataset: Optional[PyMinfluxDataset]
     ) -> SptDataset:
+        """
+        Create a MinSpt Dataset object from a PyMinfluxDataset object.
+        This is the main compatibility layer between the PyMinfluxDataset and the MinSpt Dataset object.
+
+        Args:
+            py_mfx_dataset (Optional[PyMinfluxDataset]): A PyMinfluxDataset object containing the processed data, i.e. only valid localizations and traces. If None, an error is raised.
+
+        Raises:
+            ValueError: If py_mfx_dataset is None, indicating that a valid PyMinfluxDataset is required to create a MinSpt Dataset.
+
+        Returns:
+            SptDataset: A MinSpt Dataset object initialized with the data from the PyMinfluxDataset.
+        """
+        if py_mfx_dataset is None:
+            raise ValueError("Cannot create SptDataset from None PyMinfluxDataset.")
         conversion_dict = self._make_conversion_dict_from_mfx_PyMinfluxDataset(
             py_mfx_dataset
         )
