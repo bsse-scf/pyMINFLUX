@@ -44,12 +44,24 @@ class MinSptTrackingWorkflow(BaseWorkflow):
         min_trace_length: int = 1,
     ):
         self.min_trace_length = min_trace_length
-        self._import_path: Optional[Path] = (
-            dataset.filename if dataset is not None else None
-        )
         self.dataset = self._make_SptDataset_from_MinFluxDataset(dataset)
         self.panel = None
         self.state = State()
+
+        # write import path to dataset META tag for later retrieval
+        if self.dataset is not None and dataset is not None:
+            self.dataset.set_meta(
+                "file_name",
+                dataset.filename if dataset.filename is not None else "Unknown",
+            )
+
+        # run post initialization to ensure dataset is properly initialized
+        self.__post_init__()
+
+    def __post_init__(self):
+        # Ensure that the dataset is properly initialized after the object is created
+        if self.dataset is None:
+            raise ValueError("Dataset must be provided for MinSptTrackingWorkflow.")
 
     @override
     def set_dataset(self, dataset: Optional[PyMinfluxDataset]) -> None:
@@ -300,7 +312,7 @@ class MinSptTrackingWorkflow(BaseWorkflow):
     def filename(self) -> Optional[Path]:
         if self.dataset is None:
             return None
-        return self._import_path
+        return self.dataset.get_meta("file_name", default=None)
 
     @filename.setter
     def filename(self, *args, **kwargs) -> None:
