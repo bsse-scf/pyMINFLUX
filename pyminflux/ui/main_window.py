@@ -82,7 +82,6 @@ from pyminflux.ui.time_inspector import TimeInspector
 from pyminflux.ui.trace_stats_viewer import TraceStatsViewer
 from pyminflux.ui.ui_main_window import Ui_MainWindow
 from pyminflux.ui.workflows import LocalizationWorkflow
-from pyminflux.tracking._tracking_workflow import MinSptTrackingWorkflow
 from pyminflux.utils import check_for_updates
 from pyminflux.writer import PMXWriter
 
@@ -92,6 +91,25 @@ __version__ = f"{__version__}{__modifier__}"
 __EXPERIMENTAL_TRACKING_WORKFLOW_ENV_VAR__ = "PYMINFLUX_EXPERIMENTAL_TRACKING_WORKFLOW"
 __WORKFLOW_SHELL_MARGIN__ = 11
 __WORKFLOW_SHELL_SPACING__ = 6
+
+# Experimental Tracking Workflow
+experimental_tracking = os.getenv(__EXPERIMENTAL_TRACKING_WORKFLOW_ENV_VAR__)
+if experimental_tracking is None:
+    experimental_tracking = False
+else:
+    experimental_tracking = experimental_tracking.strip().lower() not in {
+        "",
+        "0",
+        "false",
+        "no",
+        "off",
+    }
+
+if experimental_tracking:
+    # set environment variable MINSPT_FRAMEWORK_ONLY to 1
+    # to use the MinSPT framework without I/O and visualization.
+    os.environ["MINSPT_FRAMEWORK_ONLY"] = "1"
+    from pyminflux.tracking._tracking_workflow import MinSptTrackingWorkflow
 
 
 class WorkflowShell(QWidget):
