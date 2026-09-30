@@ -54,6 +54,9 @@ class BaseWorkflow:
 
     name = "base"
 
+    # Whether the 2D plotter connects consecutive points of the same `tid`
+    show_track_connectors = False
+
     def __init__(
         self,
         dataset: Optional[MinFluxDataset] = None,
@@ -201,6 +204,10 @@ class LocalizationWorkflow(BaseWorkflow):
         )
         if hasattr(self.panel, "set_processor"):
             self.panel.set_processor(self.processor)
+
+    @property
+    def show_track_connectors(self) -> bool:
+        return self.dataset is not None and self.dataset.is_tracking
 
     def create_panel(self, parent=None) -> WizardDialog:
         self.panel = WizardDialog(parent)
@@ -365,6 +372,7 @@ class TrackingWorkflow(BaseWorkflow):
     """
 
     name = "tracking"
+    show_track_connectors = True
 
     def __init__(
         self,
