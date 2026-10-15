@@ -502,7 +502,9 @@ class Ui_Options(object):
     # setupUi
 
     def retranslateUi(self, Options):
-        Options.setWindowTitle(QCoreApplication.translate("Options", "Options", None))
+        Options.setWindowTitle(
+            QCoreApplication.translate("Options", "Global settings", None)
+        )
         self.pbCFRRangeHelp.setText(QCoreApplication.translate("Options", "?", None))
         # if QT_CONFIG(tooltip)
         self.lbCFRRange.setToolTip("")
