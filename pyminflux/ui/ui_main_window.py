@@ -182,7 +182,7 @@ class Ui_MainWindow(object):
             QCoreApplication.translate("MainWindow", "[DEBUG] Show state", None)
         )
         self.actionOptions.setText(
-            QCoreApplication.translate("MainWindow", "Options", None)
+            QCoreApplication.translate("MainWindow", "Global settings", None)
         )
         self.actionAbout.setText(
             QCoreApplication.translate("MainWindow", "About", None)
