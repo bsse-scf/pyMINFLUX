@@ -390,6 +390,7 @@ class Plotter(PlotWidget):
         tid: pd.Series,
         color_values: Optional[pd.Series] = None,
         color_column: Optional[str] = None,
+        show_track_connectors: bool = False,
     ):
         """Plot localizations and other parameters in a 2D scatter plot.
 
@@ -410,6 +411,9 @@ class Plotter(PlotWidget):
             Values from the selected dataframe color column.
         color_column: Optional[str] = None
             Name of the selected dataframe color column.
+        show_track_connectors: bool = False
+            Whether to connect consecutive points with the same `tid` (spatial
+            parameters only). Set by the active workflow.
         """
 
         # Make sure our inputs are Pandas Series
@@ -460,8 +464,8 @@ class Plotter(PlotWidget):
             self.scatter_plot.sigClicked.connect(self.clicked)
             self.addItem(self.scatter_plot)
 
-            # For a tracking dataset, we also add the connecting line_plot (for spatial parameters only)
-            if self.state.is_tracking and (
+            # If requested, add the connecting line_plot (for spatial parameters only)
+            if show_track_connectors and (
                 x_param in ["x", "y", "z"] and y_param in ["x", "y", "z"]
             ):
                 # Add the line_plot within TIDs

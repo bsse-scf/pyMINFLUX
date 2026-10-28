@@ -2173,6 +2173,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
                 tid=tid,
                 color_values=color_values,
                 color_column=color_column,
+                show_track_connectors=self.workflow.show_track_connectors,
             )
 
         # Bring the active plot forward

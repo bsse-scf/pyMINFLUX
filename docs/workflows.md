@@ -16,6 +16,7 @@ Usually override:
 
 - `set_dataset(dataset)`: initialize workflow-native data structures.
 - `color_columns(dataframe) -> list[str]`: return allowed dataframe columns for point coloring.
+- `show_track_connectors`: whether the 2D plotter draws lines connecting consecutive points of the same `tid` (default `False`).
 - `workflow_actions() -> list[WorkflowAction]`: expose workflow-specific menu actions.
 - `stats_dataframe()`: provide exportable workflow statistics.
 - `export_data_to_csv(file_name)`: customize data export.
@@ -31,7 +32,7 @@ The dataframe should contain:
 
 - numeric columns for X/Y plot axes
 - optional `x`, `y`, `z` columns for spatial plotting
-- optional `tid` column if track lines should connect points
+- optional `tid` column if track lines should connect points (see [Track Connectors](#track-connectors))
 - any workflow-specific columns needed for coloring, selection, DataViewer display, or export
 
 For a real tracking workflow, keep the native track model internal and expose only a plotting/data-view adapter dataframe.
@@ -51,6 +52,23 @@ Example:
 ```python
 def color_columns(self, dataframe):
     return ["length"] if dataframe is not None and "length" in dataframe else []
+```
+
+## Track Connectors
+
+The workflow decides whether the 2D plotter draws connector lines between points; the plotter does not inspect the dataset type. `MainWindow` passes `workflow.show_track_connectors` to `plot_parameters(...)`.
+
+Connectors are drawn between consecutive rows of `plot_dataframe()` that share the same `tid`, and only when both plot axes are spatial (`x`, `y`, `z`). Rows of one track must therefore be contiguous and ordered (e.g. by `tim`).
+
+- `BaseWorkflow`: `False`.
+- `TrackingWorkflow`: `True`.
+- `LocalizationWorkflow`: a property returning `dataset.is_tracking`, so tracking datasets opened in the localization workflow keep their connectors.
+
+Use a class attribute for a fixed choice, or a `@property` if it depends on runtime state:
+
+```python
+class MyTrackingWorkflow(BaseWorkflow):
+    show_track_connectors = True
 ```
 
 ## Workflow Panel
