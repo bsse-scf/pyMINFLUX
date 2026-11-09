@@ -16,7 +16,7 @@ Usually override:
 
 - `set_dataset(dataset)`: initialize workflow-native data structures.
 - `color_columns(dataframe) -> list[str]`: return allowed dataframe columns for point coloring.
-- `show_track_connectors`: whether the 2D plotter draws lines connecting consecutive points of the same `tid` (default `False`).
+- `show_track_connectors`: whether the 2D and 3D plotters draw lines connecting consecutive points of the same `tid` (default `False`).
 - `workflow_actions() -> list[WorkflowAction]`: expose workflow-specific menu actions.
 - `stats_dataframe()`: provide exportable workflow statistics.
 - `export_data_to_csv(file_name)`: customize data export.
@@ -56,7 +56,7 @@ def color_columns(self, dataframe):
 
 ## Track Connectors
 
-The workflow decides whether the 2D plotter draws connector lines between points; the plotter does not inspect the dataset type. `MainWindow` passes `workflow.show_track_connectors` to `plot_parameters(...)`.
+The workflow decides whether the 2D and 3D plotters draw connector lines between points; the plotters do not inspect the dataset type. `MainWindow` passes `workflow.show_track_connectors` to `Plotter.plot_parameters(...)` and `Plotter3D.plot(...)`.
 
 Connectors are drawn between consecutive rows of `plot_dataframe()` that share the same `tid`, and only when both plot axes are spatial (`x`, `y`, `z`). Rows of one track must therefore be contiguous and ordered (e.g. by `tim`).
 

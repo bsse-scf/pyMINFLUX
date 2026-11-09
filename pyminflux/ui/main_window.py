@@ -2155,7 +2155,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
 
         if self.state.plot_3d:
             # Plot localizations in 3D
-            self.plotter3d.plot(dataframe[["x", "y", "z"]], color_values)
+            self.plotter3d.plot(
+                dataframe[["x", "y", "z"]],
+                color_values,
+                tid=tid,
+                show_track_connectors=self.workflow.show_track_connectors,
+            )
         else:
             # Remove the previous plots
             self.plotter.remove_points()
