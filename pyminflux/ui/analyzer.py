@@ -19,7 +19,7 @@ import pyqtgraph as pg
 from pyqtgraph import AxisItem, ViewBox
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
-from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
+from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
 from pyminflux.ui.state import State
@@ -116,6 +116,8 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.leTrLenTopPercentile.setValidator(
             QDoubleValidator(bottom=0.0, top=100.0, decimals=2)
         )
+        self.ui.leTrLenRemoveFirst.setText(str(self.state.tr_len_num_first_to_remove))
+        self.ui.leTrLenRemoveFirst.setValidator(QIntValidator(bottom=0))
 
         # Keep a reference to the ROIRanges dialog
         self.roi_ranges_dialog = None
@@ -159,6 +161,12 @@ class Analyzer(QDialog, Ui_Analyzer):
         )
         self.ui.leTrLenTopPercentile.textChanged.connect(
             self.persist_tr_len_top_percentile
+        )
+        self.ui.pbTrLenRemoveFirst.clicked.connect(
+            self.run_trace_start_filter_and_broadcast_viewers_update
+        )
+        self.ui.leTrLenRemoveFirst.textChanged.connect(
+            self.persist_tr_len_num_first_to_remove
         )
 
         # Others
@@ -388,6 +396,26 @@ class Analyzer(QDialog, Ui_Analyzer):
             tr_len_top_percentile = 100.0
             self.ui.leTrLenTopPercentile.setText(str(tr_len_top_percentile))
         self.state.tr_len_top_percentile = tr_len_top_percentile
+
+    @Slot(str)
+    def persist_tr_len_num_first_to_remove(self, text):
+        try:
+            self.state.tr_len_num_first_to_remove = max(0, int(text))
+        except ValueError as _:
+            return
+
+    @Slot()
+    def run_trace_start_filter_and_broadcast_viewers_update(self):
+        """Remove the first localizations of each trace and inform the rest of the application."""
+        if self.state.tr_len_num_first_to_remove == 0:
+            return
+        self.processor.filter_trace_start(self.state.tr_len_num_first_to_remove)
+
+        # Update the histograms
+        self.plot()
+
+        # Signal that the external viewers should be updated
+        self.data_filters_changed.emit()
 
     @Slot()
     def run_efo_filter_and_broadcast_viewers_update(self):

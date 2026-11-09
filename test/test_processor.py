@@ -1649,3 +1649,22 @@ def test_filter_by_1d_stats(extract_raw_npy_data_files):
     assert np.all(
         rejected_tid_fluo_2 == tids_outside_fluo_2
     ), "Unexpected set of rejected TIDs."
+
+
+def test_filter_trace_start_mock_reader():
+
+    # Remove the first two localizations of each trace (TID 51: 3 locs, TID 54: 5 locs)
+    reader = MockMinFluxReader()
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+    processor.filter_trace_start(2)
+
+    # Only the last localization of 51 and the last three of 54 remain
+    df = processor.filtered_dataframe
+    assert np.all(df["tid"].to_numpy() == np.array([51, 54, 54, 54]))
+    assert np.all(df["x"].to_numpy() == np.array([12.0, 12.0, 22.0, 23.0]))
+
+    # Applying it again removes two more per trace (51 is gone)
+    processor.filter_trace_start(2)
+    df = processor.filtered_dataframe
+    assert np.all(df["tid"].to_numpy() == np.array([54]))
+    assert np.all(df["x"].to_numpy() == np.array([23.0]))

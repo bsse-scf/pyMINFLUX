@@ -325,6 +325,33 @@
         </widget>
        </item>
        <item>
+        <widget class="QLabel" name="lbTrLenRemoveFirst">
+         <property name="text">
+          <string>Remove first</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="leTrLenRemoveFirst">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>Number of localizations to remove from the beginning of each trace</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pbTrLenRemoveFirst">
+         <property name="text">
+          <string>Remove</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="hsTraceLenAfter">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>

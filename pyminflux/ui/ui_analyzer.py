@@ -248,6 +248,25 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout.addWidget(self.pbTrLenRunFilter)
 
+        self.lbTrLenRemoveFirst = QLabel(self.tab_trlen_thresholding)
+        self.lbTrLenRemoveFirst.setObjectName("lbTrLenRemoveFirst")
+
+        self.horizontalLayout.addWidget(self.lbTrLenRemoveFirst)
+
+        self.leTrLenRemoveFirst = QLineEdit(self.tab_trlen_thresholding)
+        self.leTrLenRemoveFirst.setObjectName("leTrLenRemoveFirst")
+        sizePolicy2.setHeightForWidth(
+            self.leTrLenRemoveFirst.sizePolicy().hasHeightForWidth()
+        )
+        self.leTrLenRemoveFirst.setSizePolicy(sizePolicy2)
+
+        self.horizontalLayout.addWidget(self.leTrLenRemoveFirst)
+
+        self.pbTrLenRemoveFirst = QPushButton(self.tab_trlen_thresholding)
+        self.pbTrLenRemoveFirst.setObjectName("pbTrLenRemoveFirst")
+
+        self.horizontalLayout.addWidget(self.pbTrLenRemoveFirst)
+
         self.hsTraceLenAfter = QSpacerItem(
             355, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
@@ -322,6 +341,21 @@ class Ui_Analyzer(object):
         )
         self.pbTrLenRunFilter.setText(
             QCoreApplication.translate("Analyzer", "Filter", None)
+        )
+        self.lbTrLenRemoveFirst.setText(
+            QCoreApplication.translate("Analyzer", "Remove first", None)
+        )
+        # if QT_CONFIG(tooltip)
+        self.leTrLenRemoveFirst.setToolTip(
+            QCoreApplication.translate(
+                "Analyzer",
+                "Number of localizations to remove from the beginning of each trace",
+                None,
+            )
+        )
+        # endif // QT_CONFIG(tooltip)
+        self.pbTrLenRemoveFirst.setText(
+            QCoreApplication.translate("Analyzer", "Remove", None)
         )
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_trlen_thresholding),
