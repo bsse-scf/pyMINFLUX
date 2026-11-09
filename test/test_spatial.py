@@ -14,7 +14,12 @@
 
 import numpy as np
 
-from pyminflux.spatial import align_to_plane, fit_plane_least_squares, recenter_xy
+from pyminflux.spatial import (
+    align_to_plane,
+    fit_plane_least_squares,
+    points_in_polygon,
+    recenter_xy,
+)
 
 
 def test_fitting_points_to_plane_and_projecting():
@@ -175,3 +180,17 @@ def test_fitting_points_to_plane_and_projecting():
     recentered_pos = recenter_xy(aligned_points, new_cm)
     recentered_cm = np.mean(recentered_pos, axis=0)
     assert np.allclose(new_cm, recentered_cm[:2]), "Unexpected recentered coordinates."
+
+
+def test_points_in_polygon():
+    # Non-convex "U" shape: the notch (1 < x < 2, y > 1) is outside
+    poly_x = np.array([0.0, 3.0, 3.0, 2.0, 2.0, 1.0, 1.0, 0.0])
+    poly_y = np.array([0.0, 0.0, 3.0, 3.0, 1.0, 1.0, 3.0, 3.0])
+
+    x = np.array([0.5, 1.5, 1.5, 2.5, 4.0, -1.0])
+    y = np.array([2.0, 0.5, 2.0, 2.5, 1.0, 1.0])
+    inside = points_in_polygon(x, y, poly_x, poly_y)
+    assert np.all(inside == np.array([True, True, False, True, False, False]))
+
+    # Degenerate polygon selects nothing
+    assert not np.any(points_in_polygon(x, y, poly_x[:2], poly_y[:2]))

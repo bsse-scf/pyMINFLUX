@@ -34,6 +34,7 @@ from PySide6.QtWidgets import QDialog, QFileDialog, QInputDialog, QMenu
 from pyminflux.ui.state import State
 
 from ..reader import MSRReader
+from ..spatial import points_in_polygon
 from .colors import ColorsToBrushes
 from .custom_dialogs import TreeDialog
 from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
@@ -43,6 +44,7 @@ class Plotter(PlotWidget):
     # Signals
     locations_selected = Signal(list)
     locations_selected_by_range = Signal(str, str, tuple, tuple)
+    locations_selected_by_labels = Signal(list)
     crop_region_selected = Signal(str, str, tuple, tuple)
     added_confocal_image = Signal()
     removed_confocal_image = Signal()
@@ -85,6 +87,11 @@ class Plotter(PlotWidget):
         self._roi_is_being_drawn = False
         self._line_start_point = None
         self._line_is_being_drawn = False
+
+        # Lasso (freehand polygon) for localizations selection
+        self.lasso = None
+        self._lasso_points = []
+        self._lasso_is_being_drawn = False
 
         # Keep track of last plot
         self._last_x_param = None
@@ -140,6 +147,24 @@ class Plotter(PlotWidget):
 
             # Make sure to react to ROI shifts
             self.ROI.sigRegionChangeFinished.connect(self.roi_moved)
+
+            # Accept the event
+            ev.accept()
+
+        elif (
+            self.scatter_plot is not None
+            and ev.button() == Qt.MouseButton.LeftButton
+            and ev.modifiers() == QtCore.Qt.AltModifier
+        ):
+            # Is the user trying to initiate drawing a lasso?
+            self._remove_lasso()
+            start = self.getPlotItem().getViewBox().mapSceneToView(ev.position())
+            self._lasso_points = [(start.x(), start.y())]
+            self._lasso_is_being_drawn = True
+            self.lasso = PlotCurveItem(
+                x=[start.x()], y=[start.y()], pen=mkPen(color=(255, 0, 0), width=2)
+            )
+            self.addItem(self.lasso)
 
             # Accept the event
             ev.accept()
@@ -259,6 +284,22 @@ class Plotter(PlotWidget):
 
             # Accept the event
             ev.accept()
+
+        elif (
+            self.scatter_plot is not None
+            and ev.buttons() == Qt.MouseButton.LeftButton
+            and self._lasso_is_being_drawn
+        ):
+            # Is the user drawing a lasso? Append the point and redraw it closed
+            current_point = (
+                self.getPlotItem().getViewBox().mapSceneToView(ev.position())
+            )
+            self._lasso_points.append((current_point.x(), current_point.y()))
+            poly = np.array(self._lasso_points + self._lasso_points[:1])
+            self.lasso.setData(x=poly[:, 0], y=poly[:, 1])
+
+            # Accept the event
+            ev.accept()
         else:
             # Call the parent method
             ev.ignore()
@@ -295,6 +336,21 @@ class Plotter(PlotWidget):
                         self.removeItem(self.ROI)
                         self.ROI.deleteLater()
                         self.ROI = None
+
+                # Accept the event
+                ev.accept()
+
+            elif self._lasso_is_being_drawn:
+                self._lasso_is_being_drawn = False
+                poly = np.array(self._lasso_points)
+                if len(poly) < 3:
+                    self._remove_lasso()
+                else:
+                    # Select the plotted points inside the lasso (by index label)
+                    x, y = self.scatter_plot.getData()
+                    inside = points_in_polygon(x, y, poly[:, 0], poly[:, 1])
+                    labels = self.scatter_plot.data["data"][inside].tolist()
+                    self.locations_selected_by_labels.emit(labels)
 
                 # Accept the event
                 ev.accept()
@@ -641,6 +697,17 @@ class Plotter(PlotWidget):
         if self.ROI is not None:
             self.removeItem(self.ROI)
             self.ROI = None
+
+        # Remove lasso if it exists
+        self._remove_lasso()
+
+    def _remove_lasso(self):
+        """Remove the lasso from the plot (if it exists)."""
+        if self.lasso is not None:
+            self.removeItem(self.lasso)
+            self.lasso.deleteLater()
+            self.lasso = None
+        self._lasso_points = []
 
     def _get_ranges_from_roi(self):
         """Calculate x and y ranges from ROI."""

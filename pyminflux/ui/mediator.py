@@ -233,6 +233,9 @@ class Mediator:
         self.dialogs["plotter"].locations_selected_by_range.connect(
             self.dialogs["main_window"].show_selected_points_by_range_in_dataviewer
         )
+        self.dialogs["plotter"].locations_selected_by_labels.connect(
+            self.dialogs["main_window"].show_selected_points_by_labels_in_dataviewer
+        )
         self.dialogs["plotter"].crop_region_selected.connect(
             self.dialogs["main_window"].crop_data_by_range
         )

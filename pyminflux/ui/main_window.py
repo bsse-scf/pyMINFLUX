@@ -2004,6 +2004,26 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         point_str = "event" if num_selected == 1 else "events"
         print(f"Selected {num_selected} {point_str}.")
 
+    @Slot(list)
+    def show_selected_points_by_labels_in_dataviewer(self, labels):
+        """Show the data for the points selected by index label (e.g., lasso) in the dataframe viewer."""
+
+        if self.data_viewer is None:
+            raise Exception("DataViewer object not ready!")
+
+        if self.workflow is None:
+            return
+
+        df = self.workflow.select_by_index_labels(sorted(labels))
+
+        # Update the dataviewer
+        self.data_viewer.set_data(df)
+
+        # Inform
+        num_selected = 0 if df is None else len(df.index)
+        point_str = "event" if num_selected == 1 else "events"
+        print(f"Selected {num_selected} {point_str}.")
+
     @Slot(tuple, tuple)
     def show_selected_points_by_range_in_dataviewer(
         self, x_param, y_param, x_range, y_range

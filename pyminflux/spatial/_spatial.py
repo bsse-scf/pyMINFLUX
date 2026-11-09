@@ -313,3 +313,45 @@ def recenter_xy(
     pos_shifted[:, 1] += shift[1]
 
     return pos_shifted
+
+
+def points_in_polygon(
+    x: np.ndarray, y: np.ndarray, poly_x: np.ndarray, poly_y: np.ndarray
+) -> np.ndarray:
+    """
+    Test which points lie inside a (closed, possibly non-convex) polygon.
+
+    Uses the even-odd ray casting rule; the polygon is closed implicitly.
+
+    Parameters
+    ----------
+    x, y : np.ndarray
+        Coordinates of the N points to test.
+
+    poly_x, poly_y : np.ndarray
+        Coordinates of the M polygon vertices.
+
+    Returns
+    -------
+    inside : np.ndarray
+        Boolean array of length N, True for points inside the polygon.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    poly_x = np.asarray(poly_x, dtype=float)
+    poly_y = np.asarray(poly_y, dtype=float)
+
+    inside = np.zeros(x.shape, dtype=bool)
+    if len(poly_x) < 3:
+        return inside
+
+    # Toggle for each polygon edge (x1, y1) -> (x2, y2) crossed by a ray towards +x
+    for x1, y1, x2, y2 in zip(
+        poly_x, poly_y, np.roll(poly_x, -1), np.roll(poly_y, -1)
+    ):
+        if y1 == y2:
+            continue
+        crosses = (y1 > y) != (y2 > y)
+        x_cross = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
+        inside ^= crosses & (x < x_cross)
+    return inside
