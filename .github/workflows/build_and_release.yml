@@ -1,11 +1,9 @@
 name: Build standalone app
 
+# Build manually (Actions tab) or when pushing a tag (release)
 on:
   workflow_dispatch:
-  pull_request:
   push:
-    branches:
-      - master
     tags:
       - "*"
 
