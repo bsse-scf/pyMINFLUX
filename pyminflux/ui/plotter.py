@@ -63,7 +63,6 @@ class Plotter(PlotWidget):
         # Set aspect ratio to 1.0 locked
         view_box = self.getPlotItem().getViewBox()
         view_box.setAspectLocked(lock=True, ratio=1.0)
-        view_box.invertY(True)
 
         # Keep a reference to the singleton State class
         self.state = State()
@@ -481,6 +480,9 @@ class Plotter(PlotWidget):
                     brush=None,
                 )
                 self.addItem(self.line_plot)
+
+            # Flip the vertical axis (imaging convention) only when it shows y
+            self.getViewBox().invertY(y_param == "y")
 
             self.setLabel("bottom", text=x_param)
             self.setLabel("left", text=y_param)
