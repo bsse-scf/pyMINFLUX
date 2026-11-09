@@ -2139,6 +2139,12 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
             color_column = None
             self.state.color_column = None
         color_values = dataframe[color_column] if color_column is not None else None
+
+        # Integer columns are colored categorically: cast photon counts to float
+        # so that they are mapped onto a continuous colormap instead
+        if color_column == "eco":
+            color_values = color_values.astype(float)
+
         if (
             color_values is not None
             and pd.api.types.is_numeric_dtype(color_values)
