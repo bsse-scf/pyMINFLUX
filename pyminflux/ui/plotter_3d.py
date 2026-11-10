@@ -37,6 +37,7 @@ class Plotter3D(QWidget):
         self.canvas = None
         self.view = None
         self.scatter = None
+        self.track_lines = None
 
         # Create the layout
         self.layout = QVBoxLayout()
@@ -95,6 +96,11 @@ class Plotter3D(QWidget):
             # Store the original camera rotation
             self.original_rotation = self.view.camera._quaternion.copy()
 
+            # Create and add the track connector lines (added first to be drawn below the markers)
+            self.track_lines = scene.visuals.Line()
+            self.track_lines.visible = False
+            self.view.add(self.track_lines)
+
             # Create and add the scatter plot
             self.scatter = scene.visuals.Markers()
             self.view.add(self.scatter)
@@ -116,6 +122,7 @@ class Plotter3D(QWidget):
             return
 
         self.scatter.set_data(None)
+        self.track_lines.visible = False
         self.scatter_is_empty = True
 
         # Reset the camera
@@ -148,8 +155,12 @@ class Plotter3D(QWidget):
         self.view.camera.view_changed()
         self.canvas.update()
 
-    def plot(self, positions, color_values=None):
-        """Plot localizations in a 3D scatter plot."""
+    def plot(self, positions, color_values=None, tid=None, show_track_connectors=False):
+        """Plot localizations in a 3D scatter plot.
+
+        If `show_track_connectors` is True, consecutive points with the same `tid`
+        are connected by lines (as in the 2D plotter).
+        """
 
         # Make sure to have the correct datatype
         self.positions = positions.to_numpy().astype(np.float32)
@@ -179,6 +190,9 @@ class Plotter3D(QWidget):
             size=sz,
         )
 
+        # Draw (or hide) the track connectors
+        self._update_track_lines(tid if show_track_connectors else None)
+
         # Reset scene
         requested_fov = 0 if self.state.plot_3d_orthogonal else 45
         if self.scatter_is_empty or self.view.camera.fov != requested_fov:
@@ -189,6 +203,24 @@ class Plotter3D(QWidget):
 
         # Show the canvas
         self.canvas.show()
+
+    def _update_track_lines(self, tid):
+        """Connect consecutive positions that share the same `tid` (hide lines if `tid` is None)."""
+        if tid is None:
+            self.track_lines.visible = False
+            return
+
+        # Index pairs (i, i + 1) of consecutive points within the same track
+        starts = np.flatnonzero(np.diff(np.asarray(tid)) == 0)
+        if len(starts) == 0:
+            self.track_lines.visible = False
+            return
+        connect = np.column_stack((starts, starts + 1))
+
+        self.track_lines.set_data(
+            pos=self.positions, connect=connect, color=(1.0, 1.0, 1.0, 0.5), width=1
+        )
+        self.track_lines.visible = True
 
     def update_point_size(self, event):
         """Update point sizes based on camera distance."""
@@ -322,6 +354,7 @@ class Plotter3D(QWidget):
         # Finally translate back to original position
         transform.translate((x_center, y_center, z_center))
         self.scatter.transform = transform
+        self.track_lines.transform = transform
 
 
 class CustomSceneCanvas(scene.SceneCanvas):
