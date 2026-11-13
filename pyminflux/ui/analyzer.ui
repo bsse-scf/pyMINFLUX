@@ -332,7 +332,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="leTrLenRemoveFirst">
+        <widget class="QSpinBox" name="sbTrLenRemoveFirst">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -341,6 +341,12 @@
          </property>
          <property name="toolTip">
           <string>Number of localizations to remove from the beginning of each trace</string>
+         </property>
+         <property name="minimum">
+          <number>0</number>
+         </property>
+         <property name="maximum">
+          <number>1000</number>
          </property>
         </widget>
        </item>

@@ -19,7 +19,7 @@ import pyqtgraph as pg
 from pyqtgraph import AxisItem, ViewBox
 from PySide6 import QtCore
 from PySide6.QtCore import QPoint, QSignalBlocker, Signal, Slot
-from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, QIntValidator, Qt
+from PySide6.QtGui import QAction, QColor, QDoubleValidator, QFont, Qt
 from PySide6.QtWidgets import QDialog, QLabel, QMenu
 
 from pyminflux.ui.state import State
@@ -116,8 +116,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.leTrLenTopPercentile.setValidator(
             QDoubleValidator(bottom=0.0, top=100.0, decimals=2)
         )
-        self.ui.leTrLenRemoveFirst.setText(str(self.state.tr_len_num_first_to_remove))
-        self.ui.leTrLenRemoveFirst.setValidator(QIntValidator(bottom=0))
+        self.ui.sbTrLenRemoveFirst.setValue(self.state.tr_len_num_first_to_remove)
 
         # Keep a reference to the ROIRanges dialog
         self.roi_ranges_dialog = None
@@ -165,7 +164,7 @@ class Analyzer(QDialog, Ui_Analyzer):
         self.ui.pbTrLenRemoveFirst.clicked.connect(
             self.run_trace_start_filter_and_broadcast_viewers_update
         )
-        self.ui.leTrLenRemoveFirst.textChanged.connect(
+        self.ui.sbTrLenRemoveFirst.valueChanged.connect(
             self.persist_tr_len_num_first_to_remove
         )
 
@@ -397,12 +396,9 @@ class Analyzer(QDialog, Ui_Analyzer):
             self.ui.leTrLenTopPercentile.setText(str(tr_len_top_percentile))
         self.state.tr_len_top_percentile = tr_len_top_percentile
 
-    @Slot(str)
-    def persist_tr_len_num_first_to_remove(self, text):
-        try:
-            self.state.tr_len_num_first_to_remove = max(0, int(text))
-        except ValueError as _:
-            return
+    @Slot(int)
+    def persist_tr_len_num_first_to_remove(self, value):
+        self.state.tr_len_num_first_to_remove = value
 
     @Slot()
     def run_trace_start_filter_and_broadcast_viewers_update(self):

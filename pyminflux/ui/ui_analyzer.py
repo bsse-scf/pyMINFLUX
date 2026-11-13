@@ -51,6 +51,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QSpacerItem,
+    QSpinBox,
     QTabWidget,
     QWidget,
 )
@@ -253,14 +254,16 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout.addWidget(self.lbTrLenRemoveFirst)
 
-        self.leTrLenRemoveFirst = QLineEdit(self.tab_trlen_thresholding)
-        self.leTrLenRemoveFirst.setObjectName("leTrLenRemoveFirst")
+        self.sbTrLenRemoveFirst = QSpinBox(self.tab_trlen_thresholding)
+        self.sbTrLenRemoveFirst.setObjectName("sbTrLenRemoveFirst")
         sizePolicy2.setHeightForWidth(
-            self.leTrLenRemoveFirst.sizePolicy().hasHeightForWidth()
+            self.sbTrLenRemoveFirst.sizePolicy().hasHeightForWidth()
         )
-        self.leTrLenRemoveFirst.setSizePolicy(sizePolicy2)
+        self.sbTrLenRemoveFirst.setSizePolicy(sizePolicy2)
+        self.sbTrLenRemoveFirst.setMinimum(0)
+        self.sbTrLenRemoveFirst.setMaximum(1000)
 
-        self.horizontalLayout.addWidget(self.leTrLenRemoveFirst)
+        self.horizontalLayout.addWidget(self.sbTrLenRemoveFirst)
 
         self.pbTrLenRemoveFirst = QPushButton(self.tab_trlen_thresholding)
         self.pbTrLenRemoveFirst.setObjectName("pbTrLenRemoveFirst")
@@ -346,7 +349,7 @@ class Ui_Analyzer(object):
             QCoreApplication.translate("Analyzer", "Remove first", None)
         )
         # if QT_CONFIG(tooltip)
-        self.leTrLenRemoveFirst.setToolTip(
+        self.sbTrLenRemoveFirst.setToolTip(
             QCoreApplication.translate(
                 "Analyzer",
                 "Number of localizations to remove from the beginning of each trace",
