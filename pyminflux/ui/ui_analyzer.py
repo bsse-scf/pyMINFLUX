@@ -51,6 +51,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QSpacerItem,
+    QSpinBox,
     QTabWidget,
     QWidget,
 )
@@ -248,6 +249,27 @@ class Ui_Analyzer(object):
 
         self.horizontalLayout.addWidget(self.pbTrLenRunFilter)
 
+        self.lbTrLenRemoveFirst = QLabel(self.tab_trlen_thresholding)
+        self.lbTrLenRemoveFirst.setObjectName("lbTrLenRemoveFirst")
+
+        self.horizontalLayout.addWidget(self.lbTrLenRemoveFirst)
+
+        self.sbTrLenRemoveFirst = QSpinBox(self.tab_trlen_thresholding)
+        self.sbTrLenRemoveFirst.setObjectName("sbTrLenRemoveFirst")
+        sizePolicy2.setHeightForWidth(
+            self.sbTrLenRemoveFirst.sizePolicy().hasHeightForWidth()
+        )
+        self.sbTrLenRemoveFirst.setSizePolicy(sizePolicy2)
+        self.sbTrLenRemoveFirst.setMinimum(0)
+        self.sbTrLenRemoveFirst.setMaximum(1000)
+
+        self.horizontalLayout.addWidget(self.sbTrLenRemoveFirst)
+
+        self.pbTrLenRemoveFirst = QPushButton(self.tab_trlen_thresholding)
+        self.pbTrLenRemoveFirst.setObjectName("pbTrLenRemoveFirst")
+
+        self.horizontalLayout.addWidget(self.pbTrLenRemoveFirst)
+
         self.hsTraceLenAfter = QSpacerItem(
             355, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
         )
@@ -322,6 +344,21 @@ class Ui_Analyzer(object):
         )
         self.pbTrLenRunFilter.setText(
             QCoreApplication.translate("Analyzer", "Filter", None)
+        )
+        self.lbTrLenRemoveFirst.setText(
+            QCoreApplication.translate("Analyzer", "Remove first", None)
+        )
+        # if QT_CONFIG(tooltip)
+        self.sbTrLenRemoveFirst.setToolTip(
+            QCoreApplication.translate(
+                "Analyzer",
+                "Number of localizations to remove from the beginning of each trace",
+                None,
+            )
+        )
+        # endif // QT_CONFIG(tooltip)
+        self.pbTrLenRemoveFirst.setText(
+            QCoreApplication.translate("Analyzer", "Apply", None)
         )
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_trlen_thresholding),

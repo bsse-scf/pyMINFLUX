@@ -1131,6 +1131,56 @@ class MinFluxProcessor:
         self._stats_to_be_recomputed = True
         self._weighted_localizations_to_be_recomputed = True
 
+    def filter_trace_start(self, num_locs: int):
+        """Remove the first `num_locs` localizations of each trace (e.g., lock-on artifacts).
+
+        The position of a localization within its trace is computed with respect to
+        the original (unfiltered) data, so applying the filter repeatedly with the
+        same `num_locs` does not remove additional localizations.
+
+        Parameters
+        ----------
+
+        num_locs: int
+            Number of localizations to remove from the beginning of each original trace.
+        """
+
+        if num_locs <= 0 or self.processed_dataframe is None:
+            return
+
+        # Position of each localization within its original trace, in temporal
+        # order (ties, if any, are broken by row order). Fall back to row order
+        # if no time information is available.
+        df = self.processed_dataframe
+        if "tim" in df.columns:
+            position_in_trace = df.groupby("tid")["tim"].rank(method="first") - 1
+        else:
+            position_in_trace = df.groupby("tid").cumcount()
+        rows_to_keep = position_in_trace >= num_locs
+
+        # Apply filter
+        if self.current_fluorophore_id == 0:
+            # Apply to all fluorophores
+            for fluo_id in self._selected_rows_dict.keys():
+                self._selected_rows_dict[fluo_id] = (
+                    self._selected_rows_dict[fluo_id] & rows_to_keep
+                )
+        elif self.current_fluorophore_id in self._selected_rows_dict:
+            # Apply to specific fluorophore
+            self._selected_rows_dict[self.current_fluorophore_id] = (
+                self._selected_rows_dict[self.current_fluorophore_id] & rows_to_keep
+            )
+
+        # Apply the global filters
+        self._apply_global_filters()
+
+        # Mark that dynamic filters have been applied
+        self._has_dynamic_filters = True
+
+        # Make sure to flag the derived data to be recomputed
+        self._stats_to_be_recomputed = True
+        self._weighted_localizations_to_be_recomputed = True
+
     def _calculate_statistics(self):
         """Calculate per-trace statistics."""
 

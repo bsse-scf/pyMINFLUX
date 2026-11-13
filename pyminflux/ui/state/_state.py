@@ -64,6 +64,7 @@ class State(metaclass=Singleton):
         "show_confocal",
         "show_localizations",
         "time_thresholds",
+        "tr_len_num_first_to_remove",
         "tr_len_range",
         "tr_len_thresholds",
         "tr_len_top_percentile",
@@ -120,6 +121,9 @@ class State(metaclass=Singleton):
 
         # Trace length top percentile
         self.tr_len_top_percentile: float = 100.0
+
+        # Number of localizations to remove from the beginning of each trace
+        self.tr_len_num_first_to_remove: int = 0
 
         # Weigh average localization by ECO
         self.weigh_avg_localization_by_eco: bool = False
@@ -214,6 +218,7 @@ class State(metaclass=Singleton):
             "show_confocal": self.show_confocal,
             "show_localizations": self.show_localizations,
             "time_thresholds": self.time_thresholds,
+            "tr_len_num_first_to_remove": self.tr_len_num_first_to_remove,
             "tr_len_range": self.tr_len_range,
             "tr_len_thresholds": self.tr_len_thresholds,
             "tr_len_top_percentile": self.tr_len_top_percentile,
@@ -278,6 +283,7 @@ class State(metaclass=Singleton):
         self.tr_len_range = None
         self.tr_len_thresholds = None
         self.tr_len_top_percentile = 100.0
+        self.tr_len_num_first_to_remove = 0
         self.weigh_avg_localization_by_eco = False
         self.x_param = "x"
         self.y_param = "y"
