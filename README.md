@@ -17,20 +17,20 @@ Reader, analyzer, and viewer of MINFLUX raw data.
 On macOS, it is recommended to download the zipped app via **curl** or **wget** to prevent Gatekeeper from quarantining the application (see also [troubleshooting guide](https://github.com/bsse-scf/pyMINFLUX/wiki/Troubleshooting#installation)).
 
 ```bash
-$ curl -LJO https://github.com/bsse-scf/pyMINFLUX/releases/download/0.5.0/pyMINFLUX_0.5.0_macos_m1.zip
+$ curl -LJO https://github.com/bsse-scf/pyMINFLUX/releases/download/0.7.0/pyMINFLUX-0.7.0-macos-arm64.zip
 ```
 Alternatively, if `wget` is installed:
 
 ```bash
-$ wget --content-disposition https://github.com/bsse-scf/pyMINFLUX/releases/download/0.5.0/pyMINFLUX_0.5.0_macos_m1.zip
+$ wget --content-disposition https://github.com/bsse-scf/pyMINFLUX/releases/download/0.7.0/pyMINFLUX-0.7.0-macos-arm64.zip
 ```
 
 The equivalent call for **Powershell** on Windows is:
 
 ```bash
-$ Invoke-WebRequest -Uri "https://github.com/bsse-scf/pyMINFLUX/releases/download/0.5.0/pyMINFLUX_0.5.0_win.zip" -OutFile C:\pyMINFLUX_0.5.0_win.zip 
+$ Invoke-WebRequest -Uri "https://github.com/bsse-scf/pyMINFLUX/releases/download/0.7.0/pyMINFLUX-0.7.0-windows-x64.zip" -OutFile C:\pyMINFLUX-0.7.0-windows-x64.zip 
 ```
-Adapt the path for the `-OutFile` argument as needed.
+Adapt the path for the `-OutFile` argument as needed. Replace the version number and platform suffix (`linux-x64`, `windows-x64`, `macos-intel`, `macos-arm64`) to download other builds.
 
 ### pip
 
@@ -58,9 +58,9 @@ For the latest stable release on PyPI:
 $ uvx --refresh pyminflux
 ```
 
-For a development version on GitHub (supported for pyminflux versions > 0.6.0):
+For the development version on GitHub (supported for pyminflux versions > 0.6.0; replace `master` with any other branch name as needed):
 ```sh
-$ uvx --refresh --from 'git+https://github.com/bsse-scf/pyMINFLUX@bead_alignment' pyminflux
+$ uvx --refresh --from 'git+https://github.com/bsse-scf/pyMINFLUX@master' pyminflux
 ```
 
 
@@ -76,7 +76,7 @@ $ cd /path/to/pyminflux
 $ python -m pip install -e ".[dev]"
 ```
 
-If you want to participate to the development of pyMINFLUX, please have a look at [how you can contribute](CONTRIBUTING.md) and at our [code of conduct](CODE_OF_CONDUCT.md).
+If you want to participate in the development of pyMINFLUX, please have a look at [how you can contribute](CONTRIBUTING.md) and at our [code of conduct](CODE_OF_CONDUCT.md).
 
 ### Running pyMINFLUX from console
 
@@ -88,7 +88,7 @@ $ pyminflux                 # as a standalone tool
 
 ### Using the pyMINFLUX API from Python scripts or Jupyter Notebooks
 
-The graphical user interface is not the only way to use pyMINFLUX. Indeed, the pyMINFLUX core library can be integrated in Python scripts or Jupyter Notebooks. The documentation for the pyMIMFLUX core API can be found on [https://pyminflux.ethz.ch/api/pyminflux/](https://pyminflux.ethz.ch/api/pyminflux/); an example Jupyter Notebook is [bundled with the code](/examples/processing.ipynb).
+The graphical user interface is not the only way to use pyMINFLUX. Indeed, the pyMINFLUX core library can be integrated in Python scripts or Jupyter Notebooks. The documentation for the pyMINFLUX core API can be found on [https://pyminflux.ethz.ch/api/pyminflux/](https://pyminflux.ethz.ch/api/pyminflux/); an example Jupyter Notebook is [bundled with the code](/examples/processing.ipynb).
 
 ## User manual
 
