@@ -22,6 +22,7 @@ from scipy.stats import mode
 from pyminflux.analysis import calculate_total_distance_traveled, calculate_trace_time
 from pyminflux.processor._dataset import MinFluxDataset
 from pyminflux.reader import MinFluxReader, MinFluxReaderV2
+from pyminflux.spatial import mask_in_2d_polygon
 
 
 class MinFluxProcessor:
@@ -881,26 +882,87 @@ class MinFluxProcessor:
         if y_max < y_min:
             y_max, y_min = y_min, y_max
 
+        df = self.filtered_dataframe
+        self._apply_2d_selection_mask(
+            (df[x_prop] >= x_min)
+            & (df[x_prop] < x_max)
+            & (df[y_prop] >= y_min)
+            & (df[y_prop] < y_max)
+        )
+
+    def select_by_2d_polygon(
+        self, x_prop, y_prop, polygon, from_weighted_locs: bool = False
+    ) -> Union[None, pd.DataFrame]:
+        """Return a view on a subset of the filtered dataset or the weighted localisations contained in
+        a polygon defined over two parameters.
+
+        The underlying dataframe is not modified.
+
+        Parameters
+        ----------
+
+        x_prop: str
+            Property along the first coordinate of the polygon vertices.
+
+        y_prop: str
+            Property along the second coordinate of the polygon vertices.
+
+        polygon: array-like
+            (N, 2) array of polygon vertices (closed implicitly). For an axis-aligned
+            rectangle, the result is identical to `select_by_2d_range()`.
+
+        from_weighted_locs: bool
+            If True, select from the weighted_localizations dataframe; otherwise, from the filtered_dataframe.
+
+        Returns
+        -------
+
+        subset: Union[None, pd.DataFrame]
+            A view on a subset of the dataframe contained in the polygon, or None if no file
+            was loaded.
+        """
+        df = (
+            self._weighted_localizations
+            if from_weighted_locs
+            else self.filtered_dataframe
+        )
+        if df is None:
+            return None
+        return df.loc[mask_in_2d_polygon(df, x_prop, y_prop, polygon)]
+
+    def filter_by_2d_polygon(self, x_prop, y_prop, polygon):
+        """Filter dataset by a polygonal ROI defined over two parameters.
+
+        Parameters
+        ----------
+
+        x_prop: str
+            Property along the first coordinate of the polygon vertices.
+
+        y_prop: str
+            Property along the second coordinate of the polygon vertices.
+
+        polygon: array-like
+            (N, 2) array of polygon vertices (closed implicitly). For an axis-aligned
+            rectangle, the result is identical to `filter_by_2d_range()`.
+        """
+        df = self.filtered_dataframe
+        self._apply_2d_selection_mask(mask_in_2d_polygon(df, x_prop, y_prop, polygon))
+
+    def _apply_2d_selection_mask(self, mask: pd.Series):
+        """Restrict the selected rows of the current fluorophore(s) to the passed mask
+        (aligned to filtered_dataframe) and flag derived data for recomputation."""
+
         if self.current_fluorophore_id == 0:
             # Apply to all fluorophores
             for fluo_id in self._selected_rows_dict.keys():
                 self._selected_rows_dict[fluo_id] = (
-                    self._selected_rows_dict[fluo_id]
-                    & (self.filtered_dataframe[x_prop] >= x_min)
-                    & (self.filtered_dataframe[x_prop] < x_max)
-                    & (self.filtered_dataframe[y_prop] >= y_min)
-                    & (self.filtered_dataframe[y_prop] < y_max)
+                    self._selected_rows_dict[fluo_id] & mask
                 )
         elif self.current_fluorophore_id in self._selected_rows_dict:
             # Apply to specific fluorophore
             fluo_id = self.current_fluorophore_id
-            self._selected_rows_dict[fluo_id] = (
-                self._selected_rows_dict[fluo_id]
-                & (self.filtered_dataframe[x_prop] >= x_min)
-                & (self.filtered_dataframe[x_prop] < x_max)
-                & (self.filtered_dataframe[y_prop] >= y_min)
-                & (self.filtered_dataframe[y_prop] < y_max)
-            )
+            self._selected_rows_dict[fluo_id] = self._selected_rows_dict[fluo_id] & mask
 
         # Make sure to always apply the global filters
         self._apply_global_filters()

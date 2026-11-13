@@ -15,6 +15,7 @@
 from typing import Optional, Tuple, Union
 
 import numpy as np
+import pandas as pd
 
 
 def fit_plane_least_squares(
@@ -313,3 +314,122 @@ def recenter_xy(
     pos_shifted[:, 1] += shift[1]
 
     return pos_shifted
+
+
+def points_in_polygon(
+    x: np.ndarray, y: np.ndarray, poly_x: np.ndarray, poly_y: np.ndarray
+) -> np.ndarray:
+    """
+    Test which points lie inside a (closed, possibly non-convex) polygon.
+
+    Uses the even-odd ray casting rule; the polygon is closed implicitly.
+    For an axis-aligned rectangle this reproduces the half-open
+    [min, max) x [min, max) bounds used by the range filters.
+
+    Parameters
+    ----------
+    x, y : np.ndarray
+        Coordinates of the N points to test.
+
+    poly_x, poly_y : np.ndarray
+        Coordinates of the M polygon vertices.
+
+    Returns
+    -------
+    inside : np.ndarray
+        Boolean array of length N, True for points inside the polygon.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    poly_x = np.asarray(poly_x, dtype=float)
+    poly_y = np.asarray(poly_y, dtype=float)
+
+    inside = np.zeros(x.shape, dtype=bool)
+    if len(poly_x) < 3:
+        return inside
+
+    # Only test the points within the bounding box of the polygon
+    candidates = np.flatnonzero(
+        (x >= poly_x.min())
+        & (x <= poly_x.max())
+        & (y >= poly_y.min())
+        & (y <= poly_y.max())
+    )
+    cx = x[candidates]
+    cy = y[candidates]
+
+    # Toggle for each polygon edge (x1, y1) -> (x2, y2) crossed by a ray towards +x
+    inside_candidates = np.zeros(cx.shape, dtype=bool)
+    for x1, y1, x2, y2 in zip(poly_x, poly_y, np.roll(poly_x, -1), np.roll(poly_y, -1)):
+        if y1 == y2:
+            continue
+        crosses = (y1 > cy) != (y2 > cy)
+        x_cross = x1 + (cy - y1) * (x2 - x1) / (y2 - y1)
+        inside_candidates ^= crosses & (cx < x_cross)
+    inside[candidates] = inside_candidates
+    return inside
+
+
+def mask_in_2d_polygon(
+    df: pd.DataFrame, x_col: str, y_col: str, polygon: np.ndarray
+) -> pd.Series:
+    """
+    Return a boolean mask of the dataframe rows that lie inside a 2D polygon.
+
+    The polygon is defined in the (x_col, y_col) plane. For an axis-aligned
+    rectangle, the mask reproduces the half-open [min, max) x [min, max)
+    bounds of a 2D range selection.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe containing the columns `x_col` and `y_col`.
+
+    x_col, y_col : str
+        Names of the columns along the first and second polygon coordinate.
+
+    polygon : np.ndarray
+        (M, 2) array of polygon vertices (closed implicitly). Fewer than
+        three vertices select nothing.
+
+    Returns
+    -------
+    mask : pd.Series
+        Boolean series aligned to `df.index`.
+    """
+    polygon = np.asarray(polygon, dtype=float).reshape(-1, 2)
+    inside = points_in_polygon(
+        df[x_col].to_numpy(), df[y_col].to_numpy(), polygon[:, 0], polygon[:, 1]
+    )
+    return pd.Series(inside, index=df.index)
+
+
+def select_in_2d_polygon(
+    df: pd.DataFrame, x_col: str, y_col: str, polygon: np.ndarray
+) -> pd.DataFrame:
+    """
+    Return the dataframe rows that lie inside a 2D polygon.
+
+    Convenience wrapper around `mask_in_2d_polygon()` for implementing
+    polygon (rectangle or lasso) selections on any dataframe. If `x_col` or
+    `y_col` is not a column of `df`, nothing is selected.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe to select from.
+
+    x_col, y_col : str
+        Names of the columns along the first and second polygon coordinate.
+
+    polygon : np.ndarray
+        (M, 2) array of polygon vertices (closed implicitly).
+
+    Returns
+    -------
+    subset : pd.DataFrame
+        The rows of `df` inside the polygon (an empty frame if none).
+    """
+    if x_col not in df.columns or y_col not in df.columns:
+        return df.iloc[[]]
+    return df.loc[mask_in_2d_polygon(df, x_col, y_col, polygon)]

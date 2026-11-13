@@ -22,6 +22,7 @@ from PySide6.QtWidgets import QLabel, QPushButton, QSizePolicy, QVBoxLayout, QWi
 
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.processor._dataset import MinFluxDataset
+from pyminflux.spatial import select_in_2d_polygon
 from pyminflux.ui.state import State
 from pyminflux.ui.wizard import WizardDialog
 
@@ -121,37 +122,32 @@ class BaseWorkflow:
             return dataframe.iloc[[]]
         return dataframe.loc[labels]
 
-    def select_by_2d_range(
+    def select_by_2d_polygon(
         self,
         x_param: str,
         y_param: str,
-        x_range: tuple[float, float],
-        y_range: tuple[float, float],
+        polygon: np.ndarray,
     ) -> Optional[pd.DataFrame]:
-        """Return plotted rows inside the selected 2D range."""
+        """Return plotted rows inside the selected 2D polygon.
+
+        `polygon` is an (N, 2) array of vertices in (x_param, y_param)
+        coordinates; rectangular selections are passed as 4-vertex polygons.
+
+        Workflows that override this to select from their own data can use
+        `pyminflux.spatial.select_in_2d_polygon()` (or `mask_in_2d_polygon()`).
+        """
         dataframe = self.plot_dataframe()
         if dataframe is None:
             return None
-        if x_param not in dataframe.columns or y_param not in dataframe.columns:
-            return dataframe.iloc[[]]
+        return select_in_2d_polygon(dataframe, x_param, y_param, polygon)
 
-        x_min, x_max = sorted(x_range)
-        y_min, y_max = sorted(y_range)
-        return dataframe.loc[
-            (dataframe[x_param] >= x_min)
-            & (dataframe[x_param] < x_max)
-            & (dataframe[y_param] >= y_min)
-            & (dataframe[y_param] < y_max)
-        ]
-
-    def crop_by_2d_range(
+    def crop_by_2d_polygon(
         self,
         x_param: str,
         y_param: str,
-        x_range: tuple[float, float],
-        y_range: tuple[float, float],
+        polygon: np.ndarray,
     ) -> bool:
-        """Crop workflow data by a 2D range.
+        """Crop workflow data by a 2D polygon.
 
         The base workflow does not own mutable filtered data, so cropping is a
         no-op by default. Workflows with native filtering should override this.
@@ -240,16 +236,15 @@ class LocalizationWorkflow(BaseWorkflow):
             return None
         return self.processor.filtered_dataframe_stats
 
-    def crop_by_2d_range(
+    def crop_by_2d_polygon(
         self,
         x_param: str,
         y_param: str,
-        x_range: tuple[float, float],
-        y_range: tuple[float, float],
+        polygon: np.ndarray,
     ) -> bool:
         if self.processor is None:
             return False
-        self.processor.filter_by_2d_range(x_param, y_param, x_range, y_range)
+        self.processor.filter_by_2d_polygon(x_param, y_param, polygon)
         return True
 
     def can_save(self) -> bool:

@@ -13,8 +13,16 @@
 #  limitations under the License.
 
 import numpy as np
+import pandas as pd
 
-from pyminflux.spatial import align_to_plane, fit_plane_least_squares, recenter_xy
+from pyminflux.spatial import (
+    align_to_plane,
+    fit_plane_least_squares,
+    mask_in_2d_polygon,
+    points_in_polygon,
+    recenter_xy,
+    select_in_2d_polygon,
+)
 
 
 def test_fitting_points_to_plane_and_projecting():
@@ -175,3 +183,49 @@ def test_fitting_points_to_plane_and_projecting():
     recentered_pos = recenter_xy(aligned_points, new_cm)
     recentered_cm = np.mean(recentered_pos, axis=0)
     assert np.allclose(new_cm, recentered_cm[:2]), "Unexpected recentered coordinates."
+
+
+def test_points_in_polygon():
+    # Non-convex "U" shape: the notch (1 < x < 2, y > 1) is outside
+    poly_x = np.array([0.0, 3.0, 3.0, 2.0, 2.0, 1.0, 1.0, 0.0])
+    poly_y = np.array([0.0, 0.0, 3.0, 3.0, 1.0, 1.0, 3.0, 3.0])
+
+    x = np.array([0.5, 1.5, 1.5, 2.5, 4.0, -1.0])
+    y = np.array([2.0, 0.5, 2.0, 2.5, 1.0, 1.0])
+    inside = points_in_polygon(x, y, poly_x, poly_y)
+    assert np.all(inside == np.array([True, True, False, True, False, False]))
+
+    # Degenerate polygon selects nothing
+    assert not np.any(points_in_polygon(x, y, poly_x[:2], poly_y[:2]))
+
+    # An axis-aligned rectangle reproduces the half-open [min, max) bounds
+    rect_x = np.array([0.0, 2.0, 2.0, 0.0])
+    rect_y = np.array([0.0, 0.0, 1.0, 1.0])
+    x = np.array([0.0, 2.0, 1.0, 1.0, 1.0, 0.0, 2.0])
+    y = np.array([0.5, 0.5, 0.0, 1.0, 0.5, 0.0, 1.0])
+    expected = (x >= 0) & (x < 2) & (y >= 0) & (y < 1)
+    assert np.all(points_in_polygon(x, y, rect_x, rect_y) == expected)
+    assert np.all(points_in_polygon(x, y, rect_x[::-1], rect_y[::-1]) == expected)
+
+
+def test_select_dataframe_in_2d_polygon():
+    # Non-index-aligned labels to make sure the mask follows df.index
+    df = pd.DataFrame(
+        {"a": [0.5, 1.5, 1.5, 2.5, 4.0], "b": [2.0, 0.5, 2.0, 2.5, 1.0]},
+        index=[10, 20, 30, 40, 50],
+    )
+    # Same "U" shape as in test_points_in_polygon, as an (N, 2) array
+    polygon = np.array(
+        [[0, 0], [3, 0], [3, 3], [2, 3], [2, 1], [1, 1], [1, 3], [0, 3]], dtype=float
+    )
+
+    mask = mask_in_2d_polygon(df, "a", "b", polygon)
+    assert mask.index.equals(df.index)
+    assert mask.tolist() == [True, True, False, True, False]
+
+    subset = select_in_2d_polygon(df, "a", "b", polygon)
+    assert subset.index.tolist() == [10, 20, 40]
+
+    # Missing columns or degenerate polygons select nothing
+    assert select_in_2d_polygon(df, "a", "missing", polygon).empty
+    assert select_in_2d_polygon(df, "a", "b", polygon[:2]).empty
