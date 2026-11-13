@@ -1134,21 +1134,25 @@ class MinFluxProcessor:
     def filter_trace_start(self, num_locs: int):
         """Remove the first `num_locs` localizations of each trace (e.g., lock-on artifacts).
 
+        The position of a localization within its trace is computed with respect to
+        the original (unfiltered) data, so applying the filter repeatedly with the
+        same `num_locs` does not remove additional localizations.
+
         Parameters
         ----------
 
         num_locs: int
-            Number of localizations to remove from the beginning of each trace.
+            Number of localizations to remove from the beginning of each original trace.
         """
 
-        if num_locs <= 0 or self.filtered_dataframe is None:
+        if num_locs <= 0 or self.processed_dataframe is None:
             return
 
-        # Position of each (currently kept) localization within its trace
-        position_in_trace = self.filtered_dataframe.groupby("tid").cumcount()
+        # Position of each localization within its original trace
+        position_in_trace = self.processed_dataframe.groupby("tid").cumcount()
         rows_to_keep = position_in_trace >= num_locs
 
-        # Apply filter (rows not in the filtered dataframe become False on alignment)
+        # Apply filter
         if self.current_fluorophore_id == 0:
             # Apply to all fluorophores
             for fluo_id in self._selected_rows_dict.keys():

@@ -1663,8 +1663,14 @@ def test_filter_trace_start_mock_reader():
     assert np.all(df["tid"].to_numpy() == np.array([51, 54, 54, 54]))
     assert np.all(df["x"].to_numpy() == np.array([12.0, 12.0, 22.0, 23.0]))
 
-    # Applying it again removes two more per trace (51 is gone)
+    # Applying it again with the same value is a no-op (positions refer to the original traces)
     processor.filter_trace_start(2)
+    df = processor.filtered_dataframe
+    assert np.all(df["tid"].to_numpy() == np.array([51, 54, 54, 54]))
+    assert np.all(df["x"].to_numpy() == np.array([12.0, 12.0, 22.0, 23.0]))
+
+    # A larger value removes the additional localizations (51 is gone)
+    processor.filter_trace_start(4)
     df = processor.filtered_dataframe
     assert np.all(df["tid"].to_numpy() == np.array([54]))
     assert np.all(df["x"].to_numpy() == np.array([23.0]))

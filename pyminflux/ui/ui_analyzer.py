@@ -355,7 +355,7 @@ class Ui_Analyzer(object):
         )
         # endif // QT_CONFIG(tooltip)
         self.pbTrLenRemoveFirst.setText(
-            QCoreApplication.translate("Analyzer", "Remove", None)
+            QCoreApplication.translate("Analyzer", "Apply", None)
         )
         self.tabFilterOptions.setTabText(
             self.tabFilterOptions.indexOf(self.tab_trlen_thresholding),

@@ -347,7 +347,7 @@
        <item>
         <widget class="QPushButton" name="pbTrLenRemoveFirst">
          <property name="text">
-          <string>Remove</string>
+          <string>Apply</string>
          </property>
         </widget>
        </item>
