@@ -1674,3 +1674,25 @@ def test_filter_trace_start_mock_reader():
     df = processor.filtered_dataframe
     assert np.all(df["tid"].to_numpy() == np.array([54]))
     assert np.all(df["x"].to_numpy() == np.array([23.0]))
+
+
+def test_filter_trace_start_shuffled_rows():
+
+    # Shuffle the rows of the mock reader: the position of a localization within
+    # its trace must be defined by time, not by row order
+    reader = MockMinFluxReader()
+    reader._df = reader._df.iloc[[7, 2, 4, 0, 6, 3, 1, 5]].reset_index(drop=True)
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+    processor.filter_trace_start(2)
+
+    # The two earliest localizations of each trace are removed
+    df = processor.filtered_dataframe.sort_values("tim")
+    assert np.all(df["tid"].to_numpy() == np.array([51, 54, 54, 54]))
+    assert np.all(df["tim"].to_numpy() == np.array([2, 5, 6, 7]))
+    assert np.all(df["x"].to_numpy() == np.array([12.0, 12.0, 22.0, 23.0]))
+
+    # A larger value removes the additional localizations (51 is gone)
+    processor.filter_trace_start(4)
+    df = processor.filtered_dataframe
+    assert np.all(df["tid"].to_numpy() == np.array([54]))
+    assert np.all(df["tim"].to_numpy() == np.array([7]))

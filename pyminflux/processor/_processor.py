@@ -1148,8 +1148,14 @@ class MinFluxProcessor:
         if num_locs <= 0 or self.processed_dataframe is None:
             return
 
-        # Position of each localization within its original trace
-        position_in_trace = self.processed_dataframe.groupby("tid").cumcount()
+        # Position of each localization within its original trace, in temporal
+        # order (ties, if any, are broken by row order). Fall back to row order
+        # if no time information is available.
+        df = self.processed_dataframe
+        if "tim" in df.columns:
+            position_in_trace = df.groupby("tid")["tim"].rank(method="first") - 1
+        else:
+            position_in_trace = df.groupby("tid").cumcount()
         rows_to_keep = position_in_trace >= num_locs
 
         # Apply filter
