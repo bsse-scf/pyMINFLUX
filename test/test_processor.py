@@ -974,6 +974,50 @@ def test_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
     assert (processor.filtered_dataframe["y"] >= -12000).sum() == 0, "Failed filtering."
 
 
+def test_select_and_filter_dataframe_by_2d_polygon(extract_raw_npy_data_files):
+
+    # An axis-aligned rectangle (in any vertex order) must reproduce the
+    # half-open [min, max) semantics of the 2D range selection and filtering
+    rectangle = np.array(
+        [[2000, -12000], [3000, -12000], [3000, -13000], [2000, -13000]], dtype=float
+    )
+    for min_trace_length in [1, 4]:
+        reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+        processor_range = MinFluxProcessor(reader, min_trace_length=min_trace_length)
+        processor_poly = MinFluxProcessor(reader, min_trace_length=min_trace_length)
+
+        df_range = processor_range.select_by_2d_range(
+            "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
+        )
+        df_poly = processor_poly.select_by_2d_polygon("x", "y", rectangle)
+        assert df_poly.index.equals(df_range.index), "Selection differs from range."
+
+        processor_range.filter_by_2d_range(
+            "x", "y", x_range=(2000, 3000), y_range=(-13000, -12000)
+        )
+        processor_poly.filter_by_2d_polygon("x", "y", rectangle)
+        assert processor_poly.num_values == processor_range.num_values
+        assert processor_poly.filtered_dataframe.index.equals(
+            processor_range.filtered_dataframe.index
+        ), "Filtering differs from range."
+
+    # A triangle (lower-left half of the rectangle) selects a strict subset
+    reader = MinFluxReader(Path(__file__).parent / "data" / "2D_ValidOnly.npy")
+    processor = MinFluxProcessor(reader, min_trace_length=1)
+    triangle = np.array([[2000, -13000], [3000, -13000], [2000, -12000]], dtype=float)
+    df = processor.select_by_2d_polygon("x", "y", triangle)
+    assert 0 < len(df.index) < 1165, "Unexpected number of selected entries."
+    # Inside the triangle: x - 2000 + y + 13000 <= 1000
+    assert ((df["x"] - 2000) + (df["y"] + 13000) <= 1000 + 1e-6).all()
+
+    processor.filter_by_2d_polygon("x", "y", triangle)
+    assert processor.num_values == len(df.index), "Wrong number of filtered entries"
+
+    # A degenerate polygon selects nothing
+    df = processor.select_by_2d_polygon("x", "y", triangle[:2])
+    assert len(df.index) == 0, "Degenerate polygon should select nothing."
+
+
 def test_select_and_filter_dataframe_by_2d_range(extract_raw_npy_data_files):
 
     #

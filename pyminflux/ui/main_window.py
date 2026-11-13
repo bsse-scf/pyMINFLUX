@@ -2004,9 +2004,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         point_str = "event" if num_selected == 1 else "events"
         print(f"Selected {num_selected} {point_str}.")
 
-    @Slot(list)
-    def show_selected_points_by_labels_in_dataviewer(self, labels):
-        """Show the data for the points selected by index label (e.g., lasso) in the dataframe viewer."""
+    @Slot(str, str, object)
+    def show_selected_points_by_polygon_in_dataviewer(self, x_param, y_param, polygon):
+        """Select the data inside a polygon (rectangle or lasso) and show in the dataframe viewer."""
 
         if self.data_viewer is None:
             raise Exception("DataViewer object not ready!")
@@ -2014,7 +2014,8 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.workflow is None:
             return
 
-        df = self.workflow.select_by_index_labels(sorted(labels))
+        # Get the active workflow dataframe subset contained in the polygon.
+        df = self.workflow.select_by_2d_polygon(x_param, y_param, polygon)
 
         # Update the dataviewer
         self.data_viewer.set_data(df)
@@ -2024,39 +2025,9 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         point_str = "event" if num_selected == 1 else "events"
         print(f"Selected {num_selected} {point_str}.")
 
-    @Slot(tuple, tuple)
-    def show_selected_points_by_range_in_dataviewer(
-        self, x_param, y_param, x_range, y_range
-    ):
-        """Select the data by x and y range and show in the dataframe viewer."""
-
-        if self.data_viewer is None:
-            raise Exception("DataViewer object not ready!")
-
-        if self.workflow is None:
-            return
-
-        # Get the active workflow dataframe subset contained in the ranges.
-        df = self.workflow.select_by_2d_range(
-            x_param,
-            y_param,
-            x_range,
-            y_range,
-        )
-
-        # Update the dataviewer
-        self.data_viewer.set_data(df)
-
-        # Inform
-        if df is not None:
-            point_str = "event" if len(df.index) == 1 else "events"
-            print(f"Selected {len(df.index)} {point_str}.")
-        else:
-            print(f"Selected 0 events.")
-
-    @Slot(tuple, tuple)
-    def crop_data_by_range(self, x_param, y_param, x_range, y_range):
-        """Filter the data by x and y range and show in the dataframe viewer."""
+    @Slot(str, str, object)
+    def crop_data_by_polygon(self, x_param, y_param, polygon):
+        """Filter the data by a polygon (rectangle or lasso) over two parameters."""
 
         if self.plotter is None:
             raise Exception("Plotter object not ready!")
@@ -2064,7 +2035,7 @@ class PyMinFluxMainWindow(QMainWindow, Ui_MainWindow):
         if self.workflow is None:
             return
 
-        if not self.workflow.crop_by_2d_range(x_param, y_param, x_range, y_range):
+        if not self.workflow.crop_by_2d_polygon(x_param, y_param, polygon):
             return
 
         # Update the Analyzer

@@ -20,7 +20,7 @@ Usually override:
 - `workflow_actions() -> list[WorkflowAction]`: expose workflow-specific menu actions.
 - `stats_dataframe()`: provide exportable workflow statistics.
 - `export_data_to_csv(file_name)`: customize data export.
-- `select_by_index_labels(labels)` / `select_by_2d_range(...)`: customize plot selection behavior.
+- `select_by_index_labels(labels)` / `select_by_2d_polygon(...)`: customize plot selection behavior.
 
 ## Data Boundary
 
@@ -101,11 +101,11 @@ Plot selections are resolved through the active workflow, not the processor.
 Defaults:
 
 - click selection uses `select_by_index_labels()`
-- rectangular selection uses `select_by_2d_range()`
+- rectangle and lasso selections use `select_by_2d_polygon()` (a rectangle is passed as a 4-vertex polygon)
 
 The default implementation selects rows from `plot_dataframe()`. Override these methods if selected plot points need to map back to a richer native model.
 
-Cropping is also workflow-owned through `crop_by_2d_range(...)`. The base implementation is a no-op. `LocalizationWorkflow` delegates to `MinFluxProcessor.filter_by_2d_range(...)`; tracking workflows can later implement track-aware cropping without changing `MainWindow`.
+Cropping is also workflow-owned through `crop_by_2d_polygon(...)`. The base implementation is a no-op. `LocalizationWorkflow` delegates to `MinFluxProcessor.filter_by_2d_polygon(...)`; tracking workflows can later implement track-aware cropping without changing `MainWindow`.
 
 ## Save And Export
 

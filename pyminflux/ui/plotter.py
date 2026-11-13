@@ -27,8 +27,8 @@ from pyqtgraph import (
     mkPen,
 )
 from PySide6 import QtCore
-from PySide6.QtCore import QPoint, Qt, Signal
-from PySide6.QtGui import QAction
+from PySide6.QtCore import QPoint, QPointF, Qt, Signal
+from PySide6.QtGui import QAction, QPainter, QPainterPath, QPolygonF
 from PySide6.QtWidgets import QDialog, QFileDialog, QInputDialog, QMenu
 
 from pyminflux.ui.state import State
@@ -40,12 +40,58 @@ from .custom_dialogs import TreeDialog
 from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive
 
 
+class LassoROI(ROI):
+    """Freehand polygon ROI.
+
+    Like the rectangular selection ROI, it can be dragged and is highlighted on
+    hover (anywhere inside the polygon); it cannot be resized or rotated.
+    Vertices are stored relative to the ROI position, so dragging just moves it.
+    """
+
+    def __init__(self, start, **kwargs):
+        super().__init__(
+            pos=start, size=(0, 0), resizable=False, rotatable=False, **kwargs
+        )
+        self._vertices = [QPointF(0.0, 0.0)]
+        self._path = QPainterPath()
+
+    def add_point(self, point):
+        """Append a vertex (in data coordinates) to the polygon."""
+        self._vertices.append(
+            QPointF(point.x() - self.pos().x(), point.y() - self.pos().y())
+        )
+        path = QPainterPath()
+        path.addPolygon(QPolygonF(self._vertices))
+        path.closeSubpath()
+        self.prepareGeometryChange()
+        self._path = path
+        self.update()
+
+    def polygon(self) -> np.ndarray:
+        """Return the (N, 2) polygon vertices in data coordinates."""
+        offset = np.array([self.pos().x(), self.pos().y()])
+        local = np.array([(v.x(), v.y()) for v in self._vertices], dtype=float)
+        return local + offset
+
+    def boundingRect(self):
+        return self._path.boundingRect()
+
+    def shape(self):
+        return self._path
+
+    def paint(self, p, opt, widget):
+        p.setRenderHint(QPainter.RenderHint.Antialiasing, self._antialias)
+        p.setPen(self.currentPen)
+        p.drawPath(self._path)
+
+
 class Plotter(PlotWidget):
     # Signals
     locations_selected = Signal(list)
-    locations_selected_by_range = Signal(str, str, tuple, tuple)
-    locations_selected_by_labels = Signal(list)
-    crop_region_selected = Signal(str, str, tuple, tuple)
+    # (x_param, y_param, polygon): polygon is an (N, 2) array of vertices in
+    # data coordinates; rectangular selections are emitted as 4-vertex polygons
+    locations_selected_by_polygon = Signal(str, str, object)
+    crop_region_selected = Signal(str, str, object)
     added_confocal_image = Signal()
     removed_confocal_image = Signal()
 
@@ -79,19 +125,19 @@ class Plotter(PlotWidget):
         self.line_plot = None
         self.image_item = None
 
-        # ROI for localizations selection
-        self.ROI = None
+        # Selection of localizations: at most one at a time, either a
+        # rectangular ROI or a freehand LassoROI (both draggable)
+        self._selection = None
+        self._selection_kind = None  # None, "rectangle" or "lasso"
+        self._selection_is_being_drawn = False
+        self._roi_start_point = None
+        self._lasso_last_scene_pos = None
+
+        # Line for distance measurements
         self.line = None
         self.line_text = None
-        self._roi_start_point = None
-        self._roi_is_being_drawn = False
         self._line_start_point = None
         self._line_is_being_drawn = False
-
-        # Lasso (freehand polygon) for localizations selection
-        self.lasso = None
-        self._lasso_points = []
-        self._lasso_is_being_drawn = False
 
         # Keep track of last plot
         self._last_x_param = None
@@ -123,30 +169,21 @@ class Plotter(PlotWidget):
             and ev.button() == Qt.MouseButton.LeftButton
             and ev.modifiers() == QtCore.Qt.ShiftModifier
         ):
-            # Remove previous ROI if it exists
-            if self.ROI is not None:
-                self.removeItem(self.ROI)
-                self.ROI.deleteLater()
-                self.ROI = None
+            # Replace the current selection (if any)
+            self._remove_selection()
 
             # Create ROI and keep track of position
-            self._roi_is_being_drawn = True
             self._roi_start_point = (
                 self.getPlotItem().getViewBox().mapSceneToView(ev.position())
             )
-            self.ROI = ROI(
+            roi = ROI(
                 pos=self._roi_start_point,
                 size=(0, 0),
                 resizable=False,
                 rotatable=False,
                 pen=(255, 0, 0),
             )
-            self.ROI.setAcceptedMouseButtons(Qt.MouseButton.RightButton)
-            self.addItem(self.ROI)
-            self.ROI.show()
-
-            # Make sure to react to ROI shifts
-            self.ROI.sigRegionChangeFinished.connect(self.roi_moved)
+            self._add_selection(roi, "rectangle")
 
             # Accept the event
             ev.accept()
@@ -157,14 +194,13 @@ class Plotter(PlotWidget):
             and ev.modifiers() == QtCore.Qt.AltModifier
         ):
             # Is the user trying to initiate drawing a lasso?
-            self._remove_lasso()
+
+            # Replace the current selection (if any)
+            self._remove_selection()
+
             start = self.getPlotItem().getViewBox().mapSceneToView(ev.position())
-            self._lasso_points = [(start.x(), start.y())]
-            self._lasso_is_being_drawn = True
-            self.lasso = PlotCurveItem(
-                x=[start.x()], y=[start.y()], pen=mkPen(color=(255, 0, 0), width=2)
-            )
-            self.addItem(self.lasso)
+            self._lasso_last_scene_pos = ev.position()
+            self._add_selection(LassoROI(start, pen=(255, 0, 0)), "lasso")
 
             # Accept the event
             ev.accept()
@@ -212,9 +248,9 @@ class Plotter(PlotWidget):
                 and ev.button() == Qt.MouseButton.RightButton
             ):
                 menu = QMenu()
-                if self.ROI is not None:
+                if self._selection is not None:
                     crop_data_action = QAction("Crop data")
-                    crop_data_action.triggered.connect(self.crop_data_by_roi_selection)
+                    crop_data_action.triggered.connect(self.crop_data_by_selection)
                     menu.addAction(crop_data_action)
                     menu.addSeparator()
                 set_scalebar_size_action = QAction("Set scale bar size")
@@ -253,14 +289,14 @@ class Plotter(PlotWidget):
         if (
             self.scatter_plot is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
-            and self.ROI is not None
-            and self._roi_is_being_drawn
+            and self._selection_is_being_drawn
+            and self._selection_kind == "rectangle"
         ):
             # Resize the ROI
             current_point = (
                 self.getPlotItem().getViewBox().mapSceneToView(ev.position())
             )
-            self.ROI.setSize(current_point - self._roi_start_point)
+            self._selection.setSize(current_point - self._roi_start_point)
 
             # Accept the event
             ev.accept()
@@ -288,15 +324,18 @@ class Plotter(PlotWidget):
         elif (
             self.scatter_plot is not None
             and ev.buttons() == Qt.MouseButton.LeftButton
-            and self._lasso_is_being_drawn
+            and self._selection_is_being_drawn
+            and self._selection_kind == "lasso"
         ):
-            # Is the user drawing a lasso? Append the point and redraw it closed
-            current_point = (
-                self.getPlotItem().getViewBox().mapSceneToView(ev.position())
-            )
-            self._lasso_points.append((current_point.x(), current_point.y()))
-            poly = np.array(self._lasso_points + self._lasso_points[:1])
-            self.lasso.setData(x=poly[:, 0], y=poly[:, 1])
+            # Is the user drawing a lasso? Append the point (if the cursor moved
+            # far enough to matter, to keep the polygon small)
+            pos = ev.position()
+            delta = pos - self._lasso_last_scene_pos
+            if abs(delta.x()) + abs(delta.y()) >= 2:
+                self._lasso_last_scene_pos = pos
+                self._selection.add_point(
+                    self.getPlotItem().getViewBox().mapSceneToView(pos)
+                )
 
             # Accept the event
             ev.accept()
@@ -307,50 +346,21 @@ class Plotter(PlotWidget):
 
     def mouseReleaseEvent(self, ev):
         if self.scatter_plot is not None and ev.button() == Qt.MouseButton.LeftButton:
-            if self._roi_is_being_drawn:
-                # Extract the ranges
-                x_range, y_range = self._get_ranges_from_roi()
-                if x_range is None or y_range is None:
-                    # Handle the case where ranges are None
-                    return
+            if self._selection_is_being_drawn:
+                self._selection_is_being_drawn = False
+                self._roi_start_point = None
+                self._lasso_last_scene_pos = None
 
-                # Get current parameters
-                x_param = self.state.x_param
-                y_param = self.state.y_param
-
-                # Update the DataViewer with current selection
-                self.locations_selected_by_range.emit(
-                    x_param, y_param, x_range, y_range
+                # Update the DataViewer with current selection (a degenerate
+                # selection selects nothing)
+                polygon = self._selection_polygon()
+                self.locations_selected_by_polygon.emit(
+                    self.state.x_param, self.state.y_param, polygon
                 )
 
-                # Reset flags
-                self._roi_start_point = None
-                self._roi_is_being_drawn = False
-
-                # Check if the ROI has 0 size
-                if (
-                    np.abs(x_range[1] - x_range[0]) < 1e-4
-                    or np.abs(y_range[1] - y_range[0]) < 1e-4
-                ):
-                    if hasattr(self, "ROI") and self.ROI:
-                        self.removeItem(self.ROI)
-                        self.ROI.deleteLater()
-                        self.ROI = None
-
-                # Accept the event
-                ev.accept()
-
-            elif self._lasso_is_being_drawn:
-                self._lasso_is_being_drawn = False
-                poly = np.array(self._lasso_points)
-                if len(poly) < 3:
-                    self._remove_lasso()
-                else:
-                    # Select the plotted points inside the lasso (by index label)
-                    x, y = self.scatter_plot.getData()
-                    inside = points_in_polygon(x, y, poly[:, 0], poly[:, 1])
-                    labels = self.scatter_plot.data["data"][inside].tolist()
-                    self.locations_selected_by_labels.emit(labels)
+                # Discard degenerate selections (e.g., a click without drag)
+                if self._is_degenerate(polygon):
+                    self._remove_selection()
 
                 # Accept the event
                 ev.accept()
@@ -436,6 +446,10 @@ class Plotter(PlotWidget):
     def remove_points(self):
         self.setBackground("k")
         self.clear()
+
+        # The selection item was removed from the plot by clear():
+        # drop the stale reference
+        self._forget_selection()
 
     def plot_parameters(
         self,
@@ -649,79 +663,85 @@ class Plotter(PlotWidget):
         # Return
         return recreate_brushes
 
-    def crop_data_by_roi_selection(self, item):
-        """Open dialog to manually set the filter ranges"""
+    def crop_data_by_selection(self, item):
+        """Crop the data to the current selection (rectangle or lasso)."""
 
-        # Get the ROI bounds
-        pos = self.ROI.pos()
-        size = self.ROI.size()
+        if self._selection is None:
+            return
 
-        # Create the ranges
-        x_range = (pos[0], pos[0] + size[0])
-        y_range = (pos[1], pos[1] + size[1])
+        polygon = self._selection_polygon()
+        self.crop_region_selected.emit(self.state.x_param, self.state.y_param, polygon)
 
-        # Get the parameter names
-        x_param = self.state.x_param
-        y_param = self.state.y_param
-
-        self.crop_region_selected.emit(x_param, y_param, x_range, y_range)
-
-        # Delete ROI after it has been used to crop
-        self.removeItem(self.ROI)
-        self.ROI.deleteLater()
-        self.ROI = None
+        # Delete the selection after it has been used to crop
+        self._remove_selection()
 
     def roi_moved(self):
         """Inform that the selection of localizations may have changed after the ROI was moved."""
 
-        # If the ROI is being drawn now, do nothing
-        if self._roi_is_being_drawn:
+        # If the selection is being drawn now, do nothing
+        if self._selection is None or self._selection_is_being_drawn:
             return
 
-        # Extract the ranges
-        x_range, y_range = self._get_ranges_from_roi()
-
-        # Get current parameters
-        x_param = self.state.x_param
-        y_param = self.state.y_param
-
         # Update the DataViewer with current selection
-        if x_range is not None and y_range is not None:
-            self.locations_selected_by_range.emit(x_param, y_param, x_range, y_range)
+        self.locations_selected_by_polygon.emit(
+            self.state.x_param, self.state.y_param, self._selection_polygon()
+        )
 
     def clicked(self, _, points):
         """Emit 'signal_selected_locations' when points are selected in the plot."""
         self.locations_selected.emit(points)
 
-        # Remove ROI if it exists
-        if self.ROI is not None:
-            self.removeItem(self.ROI)
-            self.ROI = None
+        # Remove the selection if it exists
+        self._remove_selection()
 
-        # Remove lasso if it exists
-        self._remove_lasso()
+    def _add_selection(self, roi: ROI, kind: str):
+        """Add `roi` to the plot as the current (being drawn) selection of type `kind`."""
+        self._selection = roi
+        self._selection_kind = kind
+        self._selection_is_being_drawn = True
 
-    def _remove_lasso(self):
-        """Remove the lasso from the plot (if it exists)."""
-        if self.lasso is not None:
-            self.removeItem(self.lasso)
-            self.lasso.deleteLater()
-            self.lasso = None
-        self._lasso_points = []
+        # Right-clickable (for the context menu), draggable, highlighted on hover
+        roi.setAcceptedMouseButtons(Qt.MouseButton.RightButton)
+        self.addItem(roi)
+        roi.show()
 
-    def _get_ranges_from_roi(self):
-        """Calculate x and y ranges from ROI."""
+        # Make sure to react to ROI shifts
+        roi.sigRegionChangeFinished.connect(self.roi_moved)
 
-        # Initialize x and y ranges to None
-        x_range = None
-        y_range = None
+    def _remove_selection(self):
+        """Remove the current selection from the plot (if it exists)."""
+        if self._selection is not None:
+            self.removeItem(self._selection)
+            self._selection.deleteLater()
+        self._forget_selection()
 
-        # Extract x and y ranges
-        if self.ROI is not None:
-            x_range = (self.ROI.pos()[0], self.ROI.pos()[0] + self.ROI.size()[0])
-            y_range = (self.ROI.pos()[1], self.ROI.pos()[1] + self.ROI.size()[1])
+    def _forget_selection(self):
+        """Reset the selection state without touching the plot items."""
+        self._selection = None
+        self._selection_kind = None
+        self._selection_is_being_drawn = False
+        self._roi_start_point = None
+        self._lasso_last_scene_pos = None
 
-        return x_range, y_range
+    def _selection_polygon(self) -> np.ndarray:
+        """Return the current selection as an (N, 2) array of vertices in data coordinates."""
+        if self._selection_kind == "rectangle":
+            x0, y0 = self._selection.pos()
+            w, h = self._selection.size()
+            return np.array(
+                [[x0, y0], [x0 + w, y0], [x0 + w, y0 + h], [x0, y0 + h]], dtype=float
+            )
+        if self._selection_kind == "lasso":
+            return self._selection.polygon()
+        return np.empty((0, 2), dtype=float)
+
+    @staticmethod
+    def _is_degenerate(polygon: np.ndarray) -> bool:
+        """Whether the polygon cannot contain any point (too few vertices or no extent)."""
+        if len(polygon) < 3:
+            return True
+        extent = polygon.max(axis=0) - polygon.min(axis=0)
+        return bool(np.any(extent < 1e-4))
 
     def set_scalebar_size(self):
         """Ask the user to specify the size of the scalebar."""

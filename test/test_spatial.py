@@ -194,3 +194,12 @@ def test_points_in_polygon():
 
     # Degenerate polygon selects nothing
     assert not np.any(points_in_polygon(x, y, poly_x[:2], poly_y[:2]))
+
+    # An axis-aligned rectangle reproduces the half-open [min, max) bounds
+    rect_x = np.array([0.0, 2.0, 2.0, 0.0])
+    rect_y = np.array([0.0, 0.0, 1.0, 1.0])
+    x = np.array([0.0, 2.0, 1.0, 1.0, 1.0, 0.0, 2.0])
+    y = np.array([0.5, 0.5, 0.0, 1.0, 0.5, 0.0, 1.0])
+    expected = (x >= 0) & (x < 2) & (y >= 0) & (y < 1)
+    assert np.all(points_in_polygon(x, y, rect_x, rect_y) == expected)
+    assert np.all(points_in_polygon(x, y, rect_x[::-1], rect_y[::-1]) == expected)

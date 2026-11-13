@@ -230,14 +230,11 @@ class Mediator:
         self.dialogs["plotter"].locations_selected.connect(
             self.dialogs["main_window"].show_selected_points_by_indices_in_dataviewer
         )
-        self.dialogs["plotter"].locations_selected_by_range.connect(
-            self.dialogs["main_window"].show_selected_points_by_range_in_dataviewer
-        )
-        self.dialogs["plotter"].locations_selected_by_labels.connect(
-            self.dialogs["main_window"].show_selected_points_by_labels_in_dataviewer
+        self.dialogs["plotter"].locations_selected_by_polygon.connect(
+            self.dialogs["main_window"].show_selected_points_by_polygon_in_dataviewer
         )
         self.dialogs["plotter"].crop_region_selected.connect(
-            self.dialogs["main_window"].crop_data_by_range
+            self.dialogs["main_window"].crop_data_by_polygon
         )
         self.dialogs["plotter"].added_confocal_image.connect(
             self.dialogs["main_window"].plot_selected_parameters

@@ -322,6 +322,8 @@ def points_in_polygon(
     Test which points lie inside a (closed, possibly non-convex) polygon.
 
     Uses the even-odd ray casting rule; the polygon is closed implicitly.
+    For an axis-aligned rectangle this reproduces the half-open
+    [min, max) x [min, max) bounds used by the range filters.
 
     Parameters
     ----------
@@ -345,13 +347,23 @@ def points_in_polygon(
     if len(poly_x) < 3:
         return inside
 
+    # Only test the points within the bounding box of the polygon
+    candidates = np.flatnonzero(
+        (x >= poly_x.min())
+        & (x <= poly_x.max())
+        & (y >= poly_y.min())
+        & (y <= poly_y.max())
+    )
+    cx = x[candidates]
+    cy = y[candidates]
+
     # Toggle for each polygon edge (x1, y1) -> (x2, y2) crossed by a ray towards +x
-    for x1, y1, x2, y2 in zip(
-        poly_x, poly_y, np.roll(poly_x, -1), np.roll(poly_y, -1)
-    ):
+    inside_candidates = np.zeros(cx.shape, dtype=bool)
+    for x1, y1, x2, y2 in zip(poly_x, poly_y, np.roll(poly_x, -1), np.roll(poly_y, -1)):
         if y1 == y2:
             continue
-        crosses = (y1 > y) != (y2 > y)
-        x_cross = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
-        inside ^= crosses & (x < x_cross)
+        crosses = (y1 > cy) != (y2 > cy)
+        x_cross = x1 + (cy - y1) * (x2 - x1) / (y2 - y1)
+        inside_candidates ^= crosses & (cx < x_cross)
+    inside[candidates] = inside_candidates
     return inside
