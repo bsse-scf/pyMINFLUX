@@ -14,6 +14,8 @@
 from ._spatial import (
     align_to_plane,
     fit_plane_least_squares,
+    mask_in_2d_polygon,
     points_in_polygon,
     recenter_xy,
+    select_in_2d_polygon,
 )

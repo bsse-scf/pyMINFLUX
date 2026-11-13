@@ -22,7 +22,7 @@ from scipy.stats import mode
 from pyminflux.analysis import calculate_total_distance_traveled, calculate_trace_time
 from pyminflux.processor._dataset import MinFluxDataset
 from pyminflux.reader import MinFluxReader, MinFluxReaderV2
-from pyminflux.spatial import points_in_polygon
+from pyminflux.spatial import mask_in_2d_polygon
 
 
 class MinFluxProcessor:
@@ -928,7 +928,7 @@ class MinFluxProcessor:
         )
         if df is None:
             return None
-        return df.loc[self._mask_in_2d_polygon(df, x_prop, y_prop, polygon)]
+        return df.loc[mask_in_2d_polygon(df, x_prop, y_prop, polygon)]
 
     def filter_by_2d_polygon(self, x_prop, y_prop, polygon):
         """Filter dataset by a polygonal ROI defined over two parameters.
@@ -947,18 +947,7 @@ class MinFluxProcessor:
             rectangle, the result is identical to `filter_by_2d_range()`.
         """
         df = self.filtered_dataframe
-        self._apply_2d_selection_mask(
-            self._mask_in_2d_polygon(df, x_prop, y_prop, polygon)
-        )
-
-    @staticmethod
-    def _mask_in_2d_polygon(df, x_prop, y_prop, polygon) -> pd.Series:
-        """Return a boolean Series (aligned to df) for the rows contained in the polygon."""
-        polygon = np.asarray(polygon, dtype=float)
-        inside = points_in_polygon(
-            df[x_prop].to_numpy(), df[y_prop].to_numpy(), polygon[:, 0], polygon[:, 1]
-        )
-        return pd.Series(inside, index=df.index)
+        self._apply_2d_selection_mask(mask_in_2d_polygon(df, x_prop, y_prop, polygon))
 
     def _apply_2d_selection_mask(self, mask: pd.Series):
         """Restrict the selected rows of the current fluorophore(s) to the passed mask

@@ -15,6 +15,7 @@
 from typing import Optional, Tuple, Union
 
 import numpy as np
+import pandas as pd
 
 
 def fit_plane_least_squares(
@@ -367,3 +368,68 @@ def points_in_polygon(
         inside_candidates ^= crosses & (cx < x_cross)
     inside[candidates] = inside_candidates
     return inside
+
+
+def mask_in_2d_polygon(
+    df: pd.DataFrame, x_col: str, y_col: str, polygon: np.ndarray
+) -> pd.Series:
+    """
+    Return a boolean mask of the dataframe rows that lie inside a 2D polygon.
+
+    The polygon is defined in the (x_col, y_col) plane. For an axis-aligned
+    rectangle, the mask reproduces the half-open [min, max) x [min, max)
+    bounds of a 2D range selection.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe containing the columns `x_col` and `y_col`.
+
+    x_col, y_col : str
+        Names of the columns along the first and second polygon coordinate.
+
+    polygon : np.ndarray
+        (M, 2) array of polygon vertices (closed implicitly). Fewer than
+        three vertices select nothing.
+
+    Returns
+    -------
+    mask : pd.Series
+        Boolean series aligned to `df.index`.
+    """
+    polygon = np.asarray(polygon, dtype=float).reshape(-1, 2)
+    inside = points_in_polygon(
+        df[x_col].to_numpy(), df[y_col].to_numpy(), polygon[:, 0], polygon[:, 1]
+    )
+    return pd.Series(inside, index=df.index)
+
+
+def select_in_2d_polygon(
+    df: pd.DataFrame, x_col: str, y_col: str, polygon: np.ndarray
+) -> pd.DataFrame:
+    """
+    Return the dataframe rows that lie inside a 2D polygon.
+
+    Convenience wrapper around `mask_in_2d_polygon()` for implementing
+    polygon (rectangle or lasso) selections on any dataframe. If `x_col` or
+    `y_col` is not a column of `df`, nothing is selected.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe to select from.
+
+    x_col, y_col : str
+        Names of the columns along the first and second polygon coordinate.
+
+    polygon : np.ndarray
+        (M, 2) array of polygon vertices (closed implicitly).
+
+    Returns
+    -------
+    subset : pd.DataFrame
+        The rows of `df` inside the polygon (an empty frame if none).
+    """
+    if x_col not in df.columns or y_col not in df.columns:
+        return df.iloc[[]]
+    return df.loc[mask_in_2d_polygon(df, x_col, y_col, polygon)]

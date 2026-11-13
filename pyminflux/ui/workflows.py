@@ -22,7 +22,7 @@ from PySide6.QtWidgets import QLabel, QPushButton, QSizePolicy, QVBoxLayout, QWi
 
 from pyminflux.processor import MinFluxProcessor
 from pyminflux.processor._dataset import MinFluxDataset
-from pyminflux.spatial import points_in_polygon
+from pyminflux.spatial import select_in_2d_polygon
 from pyminflux.ui.state import State
 from pyminflux.ui.wizard import WizardDialog
 
@@ -132,21 +132,14 @@ class BaseWorkflow:
 
         `polygon` is an (N, 2) array of vertices in (x_param, y_param)
         coordinates; rectangular selections are passed as 4-vertex polygons.
+
+        Workflows that override this to select from their own data can use
+        `pyminflux.spatial.select_in_2d_polygon()` (or `mask_in_2d_polygon()`).
         """
         dataframe = self.plot_dataframe()
         if dataframe is None:
             return None
-        if x_param not in dataframe.columns or y_param not in dataframe.columns:
-            return dataframe.iloc[[]]
-
-        polygon = np.asarray(polygon, dtype=float)
-        inside = points_in_polygon(
-            dataframe[x_param].to_numpy(),
-            dataframe[y_param].to_numpy(),
-            polygon[:, 0],
-            polygon[:, 1],
-        )
-        return dataframe.loc[inside]
+        return select_in_2d_polygon(dataframe, x_param, y_param, polygon)
 
     def crop_by_2d_polygon(
         self,

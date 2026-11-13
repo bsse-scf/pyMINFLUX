@@ -34,7 +34,6 @@ from PySide6.QtWidgets import QDialog, QFileDialog, QInputDialog, QMenu
 from pyminflux.ui.state import State
 
 from ..reader import MSRReader
-from ..spatial import points_in_polygon
 from .colors import ColorsToBrushes
 from .custom_dialogs import TreeDialog
 from .helpers import BottomLeftAnchoredScaleBar, export_plot_interactive

@@ -105,6 +105,8 @@ Defaults:
 
 The default implementation selects rows from `plot_dataframe()`. Override these methods if selected plot points need to map back to a richer native model.
 
+To implement a polygon selection on your own data, use `pyminflux.spatial.select_in_2d_polygon(df, x_col, y_col, polygon)` (or `mask_in_2d_polygon(...)` for a boolean mask aligned to `df.index`). These helpers are independent of any workflow or processor; the base workflow and `MinFluxProcessor` both use them.
+
 Cropping is also workflow-owned through `crop_by_2d_polygon(...)`. The base implementation is a no-op. `LocalizationWorkflow` delegates to `MinFluxProcessor.filter_by_2d_polygon(...)`; tracking workflows can later implement track-aware cropping without changing `MainWindow`.
 
 ## Save And Export
