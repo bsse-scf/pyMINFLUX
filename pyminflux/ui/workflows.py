@@ -177,6 +177,11 @@ class BaseWorkflow:
             color_columns.append("z")
         if "tim" in columns:
             color_columns.append("tim")
+
+        # Localization quality measurements (continuous colormap)
+        for column in ["efo", "cfr", "eco", "dcr", "dwell", "fbg"]:
+            if column in columns:
+                color_columns.append(column)
         return color_columns
 
 
